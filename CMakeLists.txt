@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
 # Force 64 bit builds
-if(NOT CMAKE_CL_64)
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
   MESSAGE(FATAL_ERROR "32 bit build detected. Please switch to a 64 bit build")
 endif()
 
