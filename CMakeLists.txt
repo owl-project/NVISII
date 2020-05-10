@@ -99,15 +99,36 @@ endif()
 set(SWIG_FOUND true)
 set(SWIG_VERSION 4.0.1)
 if(MSVC)
-set(SWIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/win64/")
-set(SWIG_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/win64/swig.exe")
+  set(SWIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/win64/Lib/")
+  set(SWIG_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/win64/swig.exe")
+  # include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/win64/Lib/)
+  # include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/win64/Lib/python)
 endif()
 if(UNIX)
-set(SWIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/bin/")
-set(SWIG_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/bin/swig")
+  set(SWIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/bin/")
+  set(SWIG_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/bin/swig")
 endif()
 find_package(SWIG 4.0.1)
 include(${SWIG_USE_FILE})
+
+# python
+find_package(PythonLibs)
+find_package(Python3 3.6 COMPONENTS Development REQUIRED)
+if (UNIX AND NOT Python3_FOUND)
+  message(FATAL_ERROR "Python 3 development libraries missing!"
+    "You probably dont have python 3.6 or later development libraries installed on your system. It is possible to recover "
+    "by running \"sudo apt install python3-dev\" (or equivalent on your unix distro)")
+endif()
+if (MSVC AND NOT Python3_FOUND)
+  message(FATAL_ERROR "Python 3 development libraries missing!"
+    "You probably dont have python 3.6 or later development libraries installed on your system. It is possible to recover "
+    "by downloading python from https://www.python.org/downloads/. NOTE: for debug builds, make sure to check \"Download debug binaries\" "
+    "in the \"Advanced Options\" tab of the Python installation wizard (debug build of python also required).")
+endif()
+include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
+
+# glm
+include_directories(SYSTEM externals/glm)
 
 # # glad
 # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include)
@@ -136,9 +157,6 @@ include(${SWIG_USE_FILE})
 # add_subdirectory(external/glfw)
 # include_directories(SYSTEM external/glfw/include)
 # set_property(TARGET glfw PROPERTY FOLDER "external/GLFW3" )
-
-# # glm
-# include_directories(SYSTEM external/glm)
 
 # # OpenGL
 # find_package(OpenGL)
@@ -172,19 +190,6 @@ include(${SWIG_USE_FILE})
 #   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_rangeslider.cpp
 #   )
 
-# find_package(PythonLibs)
-# # python
-# #    For commandline control over project
-# find_package(Python3 3.6 COMPONENTS Development REQUIRED)
-# if (UNIX AND NOT APPLE)
-#   if (NOT Python3_FOUND)
-#     message(FATAL_ERROR "Python 3 development libraries missing!"
-#       "You probably dont have python 3.8 or later development libraries installed on your system. It is possible to recover "
-#       "by running \"sudo apt install python3-dev\" (or equivalent on your unix distro)")
-#   endif()  
-# endif()
-# include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
-
 # # tbb
 # find_package(TBB REQUIRED)
 # include_directories(${TBB_INCLUDE_DIR})
@@ -199,25 +204,23 @@ include(${SWIG_USE_FILE})
 # include(configure_optix)
 # # include(configure_build_type)
 
-# # add libraries to a list for linking
-# set (
-#   LIBRARIES
-#   ${PYTHON_LIBRARY}
-#   ${GLFW_LIBRARIES}
-#   ${OPENGL_gl_LIBRARY}
-#   ${TBB_LIBRARIES}
-#   owl
-#   )
+# add libraries to a list for linking
+set (
+  LIBRARIES
+  ${PYTHON_LIBRARY}
+  # ${GLFW_LIBRARIES}
+  # ${OPENGL_gl_LIBRARY}
+  # ${TBB_LIBRARIES}
+  # owl
+  )
   
-# if(NOT WIN32)
-#   set (
-#     LIBRARIES
-#     ${LIBRARIES}
-#     -latomic
-#   )
-# endif()
-
-# # ${TBB_LIBRARY_DEBUG}
+if(NOT WIN32)
+  set (
+    LIBRARIES
+    ${LIBRARIES}
+    -latomic
+  )
+endif()
 
 # # ┌──────────────────────────────────────────────────────────────────┐
 # # │  Macros                                                          │
@@ -238,10 +241,50 @@ include(${SWIG_USE_FILE})
 #   set(${output_var} ${embedded_file})
 # endmacro()
 
-# # ┌──────────────────────────────────────────────────────────────────┐
-# # │  Add source files                                                │
-# # └──────────────────────────────────────────────────────────────────┘
-# include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR})
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  Add source files                                                │
+# └──────────────────────────────────────────────────────────────────┘
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR})
 # add_subdirectory(RTXBigUMesh)
 
 
+set_property(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i PROPERTY CPLUSPLUS ON)
+set_property(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
+swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
+set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${GLM_HDR})
+set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY FOLDER "swig_libraries/visii")
+target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES})
+# target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} RTXBigUMeshLib)
+
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  Misc Install                                                    │
+# └──────────────────────────────────────────────────────────────────┘
+
+# Install
+# install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES ${CMAKE_BINARY_DIR}/visii.py DESTINATION ${CMAKE_INSTALL_PREFIX})
+# install(FILES ${CMAKE_BINARY_DIR}/glm.py DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
+    # GLM debug module
+    if (WIN32) 
+    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX} RENAME _visii_d.pyd)
+    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb DESTINATION ${CMAKE_INSTALL_PREFIX} RENAME _visii_d.pdb OPTIONAL)
+    else()
+    install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX} RENAME _visii.so)
+    endif()
+ELSE(CMAKE_BUILD_TYPE MATCHES Debug)
+    # GLM module
+    if (WIN32) 
+    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX})
+    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
+    else()
+    install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX})
+    endif()
+ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
+
+# # TBB DLL for windows
+# if (WIN32) 
+# install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
+# install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb_debug.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
+# endif(WIN32)
