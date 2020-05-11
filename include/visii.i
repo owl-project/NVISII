@@ -35,5 +35,19 @@ if hasattr(sys, 'gettotalrefcount'):
 %}
 #endif
 
-%include "externals/glm-bindings/glm.i"
+%feature("autodoc","2");
+%include "glm-bindings/glm.i"
+%feature("autodoc", "");
+
+
+// %feature("doxygen:ignore:transferfull");
+// %feature("doxygen:ignore:compileroptions", range="line");
+// %feature("doxygen:ignore:forcpponly", range="end");
+// %feature("doxygen:ignore:beginPythonOnly", range="end:endPythonOnly", contents="parse");
+
+%{
+#include "visii/visii.h"
+%}
+
+%include "visii/visii.h"
 

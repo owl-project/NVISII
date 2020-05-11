@@ -12,5 +12,5 @@ set(Utilities_HDR
 	${CMAKE_CURRENT_SOURCE_DIR}/system.h
 	${CMAKE_CURRENT_SOURCE_DIR}/static_factory.h
 	${CMAKE_CURRENT_SOURCE_DIR}/singleton.h
-	${CMAKE_CURRENT_SOURCE_DIR}/version.hh
+	${CMAKE_CURRENT_SOURCE_DIR}/version.h
 	PARENT_SCOPE)

@@ -1,8 +1,4 @@
 
-%module glm
-
-%feature("autodoc","2");
-
 %{
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -18,7 +14,6 @@
 // included in math/ofVectorMath.h
 #include <glm/glm.hpp>
 #include <glm/fwd.hpp>
-// C:\Users\natevm\git\rtxbigumesh\external\glm\glm\fwd.hpp
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
