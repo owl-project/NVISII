@@ -248,14 +248,21 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 # │  Add source files                                                │
 # └──────────────────────────────────────────────────────────────────┘
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR})
-# add_subdirectory(RTXBigUMesh)
 
+# defines a global ${HDR} variable containing a list of all project headers
+add_subdirectory(include) 
+
+# defines a global ${SRC} variable containing a list of all .cpp files
+add_subdirectory(src)
+
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  Setup Targets                                                   │
+# └──────────────────────────────────────────────────────────────────┘
 set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY CPLUSPLUS ON)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-# set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-py3")
 swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
-set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${GLM_HDR})
+set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
 target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES})
 # target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} RTXBigUMeshLib)
 set(SWIG_DEFS 

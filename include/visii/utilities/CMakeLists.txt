@@ -1,0 +1,16 @@
+# Calculate value of variable GIT_CODE_VERSION
+execute_process(
+  COMMAND git rev-parse HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_CODE_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_SOURCE_DIR}/version.h)
+set(Utilities_HDR
+	${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
+	${CMAKE_CURRENT_SOURCE_DIR}/system.h
+	${CMAKE_CURRENT_SOURCE_DIR}/static_factory.h
+	${CMAKE_CURRENT_SOURCE_DIR}/singleton.h
+	${CMAKE_CURRENT_SOURCE_DIR}/version.hh
+	PARENT_SCOPE)

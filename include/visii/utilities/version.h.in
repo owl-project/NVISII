@@ -1,0 +1,1 @@
+#define CODE_VERSION "@GIT_CODE_VERSION@"
