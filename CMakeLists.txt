@@ -3,8 +3,8 @@
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Projects Settings                                               │
 # └──────────────────────────────────────────────────────────────────┘
-cmake_minimum_required (VERSION 3.10)
-cmake_policy( VERSION 3.10...3.14 )
+cmake_minimum_required (VERSION 3.13)
+cmake_policy( VERSION 3.13...3.14 )
 project(ViSII CXX C)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -67,15 +67,6 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 # Build options go here... Things like "Build Tests", or "Generate documentation"...
 
 # ┌──────────────────────────────────────────────────────────────────┐
-# │  Definitions                                                     │
-# └──────────────────────────────────────────────────────────────────┘
-
-# Global compiler definitions go here... 
-
-# For MSVC
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-
-# ┌──────────────────────────────────────────────────────────────────┐
 # │  External Dependencies                                           │
 # └──────────────────────────────────────────────────────────────────┘
 
@@ -105,7 +96,7 @@ if(MSVC)
   # include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/win64/Lib/python)
 endif()
 if(UNIX)
-  set(SWIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/bin/")
+  set(SWIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/share/swig/4.0.1/")
   set(SWIG_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/bin/swig")
 endif()
 find_package(SWIG 4.0.1)
@@ -123,7 +114,7 @@ if (MSVC AND NOT Python3_FOUND)
   message(FATAL_ERROR "Python 3 development libraries missing!"
     "You probably dont have python 3.6 or later development libraries installed on your system. It is possible to recover "
     "by downloading python from https://www.python.org/downloads/. NOTE: for debug builds, make sure to check \"Download debug binaries\" "
-    "in the \"Advanced Options\" tab of the Python installation wizard (debug build of python also required).")
+    "in the \"Advanced Options\" tab of the Python installation wizard, and to run with python_d.exe")
 endif()
 include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
 
@@ -222,6 +213,18 @@ if(NOT WIN32)
   )
 endif()
 
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  Definitions                                                     │
+# └──────────────────────────────────────────────────────────────────┘
+
+# For MSVC
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+# message(WARN ${Python3_VERSION_MAJOR})
+# add_definitions(-DPython3_VERSION_MAJOR=${Python3_VERSION_MAJOR})
+# add_definitions(-DPython3_VERSION_MINOR=${Python3_VERSION_MINOR})
+# add_definitions(-DPython3_VERSION_PATCH=${Python3_VERSION_PATCH})
+
+
 # # ┌──────────────────────────────────────────────────────────────────┐
 # # │  Macros                                                          │
 # # └──────────────────────────────────────────────────────────────────┘
@@ -247,14 +250,22 @@ endif()
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR})
 # add_subdirectory(RTXBigUMesh)
 
-
-set_property(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i PROPERTY CPLUSPLUS ON)
-set_property(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
+set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
+set_property(SOURCE ${VISII_INTERFACE} PROPERTY CPLUSPLUS ON)
+set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
+set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-py3" "-builtin" "-extranative")
+swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${GLM_HDR})
-set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY FOLDER "swig_libraries/visii")
 target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES})
 # target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} RTXBigUMeshLib)
+set(SWIG_DEFS 
+  Python3_VERSION_MAJOR=${Python3_VERSION_MAJOR} 
+  Python3_VERSION_MINOR=${Python3_VERSION_MINOR})
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+set(SWIG_DEFS ${SWIG_DEFS} Python3_DEBUG)
+endif()
+set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
+
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Misc Install                                                    │
