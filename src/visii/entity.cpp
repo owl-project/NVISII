@@ -1,8 +1,7 @@
 #include <visii/entity.h>
-// #include "./Entity.hxx"
+#include <visii/transform.h>
 
 // #include "RTXBigUMesh/Camera/Camera.hxx"
-// #include "RTXBigUMesh/Components/Transform.hxx"
 // #include "RTXBigUMesh/Material/Material.hxx"
 // #include "RTXBigUMesh/Light/Light.hxx"
 // #include "RTXBigUMesh/Mesh/Mesh.hxx"
@@ -13,12 +12,7 @@
 
 Entity Entity::entities[MAX_ENTITIES];
 EntityStruct Entity::entity_structs[MAX_ENTITIES];
-// EntityStruct* Entity::pinnedMemory;
 std::map<std::string, uint32_t> Entity::lookupTable;
-// vk::Buffer Entity::SSBO;
-// vk::DeviceMemory Entity::SSBOMemory;
-// vk::Buffer Entity::stagingSSBO;
-// vk::DeviceMemory Entity::stagingSSBOMemory;
 std::shared_ptr<std::mutex> Entity::creation_mutex;
 bool Entity::Initialized = false;
 bool Entity::Dirty = true;
@@ -153,46 +147,46 @@ EntityStruct Entity::get_struct() {
 // 	return rigid_body;
 // }
 
-// void Entity::set_transform(int32_t transform_id) 
-// {
-// 	if (transform_id < -1) 
-// 		throw std::runtime_error( std::string("Transform id must be greater than or equal to -1"));
-// 	if (transform_id >= MAX_TRANSFORMS)
-// 		throw std::runtime_error( std::string("Transform id must be less than max transforms"));
-// 	this->entity_struct.transform_id = transform_id;
-// 	mark_dirty();
-// }
+void Entity::set_transform(int32_t transform_id) 
+{
+	if (transform_id < -1) 
+		throw std::runtime_error( std::string("Transform id must be greater than or equal to -1"));
+	if (transform_id >= MAX_TRANSFORMS)
+		throw std::runtime_error( std::string("Transform id must be less than max transforms"));
+	entity_structs[id].transform_id = transform_id;
+	mark_dirty();
+}
 
-// void Entity::set_transform(Transform* transform) 
-// {
-// 	if (!transform) 
-// 		throw std::runtime_error( std::string("Invalid transform handle."));
-// 	if (!transform->is_initialized())
-// 		throw std::runtime_error("Error, transform not initialized");
-// 	this->entity_struct.transform_id = transform->get_id();
-// 	mark_dirty();
-// }
+void Entity::set_transform(Transform* transform) 
+{
+	if (!transform) 
+		throw std::runtime_error( std::string("Invalid transform handle."));
+	if (!transform->is_initialized())
+		throw std::runtime_error("Error, transform not initialized");
+	entity_structs[id].transform_id = transform->get_id();
+	mark_dirty();
+}
 
-// void Entity::clear_transform()
-// {
-// 	this->entity_struct.transform_id = -1;
-// 	mark_dirty();
-// }
+void Entity::clear_transform()
+{
+	entity_structs[id].transform_id = -1;
+	mark_dirty();
+}
 
-// int32_t Entity::get_transform_id() 
-// {
-// 	return this->entity_struct.transform_id;
-// }
+int32_t Entity::get_transform_id() 
+{
+	return entity_structs[id].transform_id;
+}
 
-// Transform* Entity::get_transform()
-// {
-// 	if ((this->entity_struct.transform_id < 0) || (this->entity_struct.transform_id >= MAX_TRANSFORMS)) 
-// 		return nullptr;
-// 	auto transform = Transform::Get(this->entity_struct.transform_id); 
-// 	if (!transform->is_initialized())
-// 		return nullptr;
-// 	return transform;
-// }
+Transform* Entity::get_transform()
+{
+	if ((entity_structs[id].transform_id < 0) || (entity_structs[id].transform_id >= MAX_TRANSFORMS)) 
+		return nullptr;
+	auto transform = Transform::Get(entity_structs[id].transform_id); 
+	if (!transform->is_initialized())
+		return nullptr;
+	return transform;
+}
 
 // void Entity::set_camera(int32_t camera_id) 
 // {
@@ -514,8 +508,8 @@ void Entity::CleanUp()
 
 /* Static Factory Implementations */
 Entity* Entity::Create(
-	std::string name//, 
-	// Transform* transform//, 
+	std::string name, 
+	Transform* transform//, 
 	// Camera* camera, 
 	// Material* material, 
 	// Light* light, 
@@ -526,7 +520,7 @@ Entity* Entity::Create(
 {
 	auto entity =  StaticFactory::Create(creation_mutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
 	try {
-		// if (transform) entity->set_transform(transform);
+		if (transform) entity->set_transform(transform);
 		// if (camera) entity->set_camera(camera);
 		// if (material) entity->set_material(material);
 		// if (light) entity->set_light(light);

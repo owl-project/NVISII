@@ -8,7 +8,7 @@
 #include <visii/entity_struct.h>
 
 // class Camera;
-// class Transform;
+class Transform;
 // class Material;
 // class Light;
 // class Mesh;
@@ -78,10 +78,9 @@ private:
 
 public:
     /** Constructs an Entity with the given name.
-     * \return an Entity allocated by the renderer.
-    */
-	static Entity* Create(std::string name//, 
-		// Transform* transform = nullptr //, 
+     * \return an Entity allocated by the renderer. */
+	static Entity* Create(std::string name, 
+		Transform* transform = nullptr //, 
 		// Camera* camera = nullptr,
 		// Material* material = nullptr,
 		// Light* light = nullptr,
@@ -91,13 +90,11 @@ public:
 	);
 
     /** Gets an Entity by name 
-     * \return an Entity who's primary name key matches \p name 
-    */
+     * \return an Entity who's primary name key matches \p name */
 	static Entity* Get(std::string name);
     
     /** Gets an Entity by id 
-     * \return an Entity who's primary id key matches \p id 
-    */
+     * \return an Entity who's primary id key matches \p id */
 	static Entity* Get(uint32_t id);
 
     /** \return a pointer to the table of EntityStructs */
@@ -145,10 +142,10 @@ public:
 	// int32_t get_collider_id();
 	// Collider* get_collider();
 
-    /** \return True if the entity has been modified since the previous frame, and False otherwise */
+    /** \return True if the Entity has been modified since the previous frame, and False otherwise */
 	bool is_dirty() { return dirty; }
 
-    /** \return True if the entity has not been modified since the previous frame, and False otherwise */
+    /** \return True if the Entity has not been modified since the previous frame, and False otherwise */
 	bool is_clean() { return !dirty; }
 
     /** Tags the current component as being modified since the previous frame. */
@@ -163,11 +160,20 @@ public:
     /** Returns the simplified struct used to represent the current component */
 	EntityStruct get_struct();
 
-	// void set_transform(int32_t transform_id);
-	// void set_transform(Transform* transform);
-	// void clear_transform();
-	// int32_t get_transform_id();
-	// Transform* get_transform();
+    /** Connects a transform component to the current entity by primary id key */
+	void set_transform(int32_t transform_id);
+
+    /** Connects a transform component to the current entity */
+	void set_transform(Transform* transform);
+
+    /** Disconnects any transform component from the current entity */
+	void clear_transform();
+    
+    /** \return the primary id key of the connected transform component, or -1 if no component is connected. */
+	int32_t get_transform_id();
+
+    /** \return a reference to the connected transform component, or None/nullptr if no component is connected. */
+	Transform* get_transform();
 
 	// void set_camera(int32_t camera_id);
 	// void set_camera(Camera *camera);

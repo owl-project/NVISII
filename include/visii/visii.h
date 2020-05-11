@@ -1,5 +1,6 @@
 #pragma once
 #include <visii/entity.h>
+#include <visii/transform.h>
 
 namespace visii 
 {
@@ -10,6 +11,7 @@ namespace visii
 void Initialize()
 {
     Entity::Initialize();
+    Transform::Initialize();
 }
 
 };
