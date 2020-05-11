@@ -257,6 +257,17 @@ add_subdirectory(include)
 add_subdirectory(src)
 
 # ┌──────────────────────────────────────────────────────────────────┐
+# │  ViSII Library                                                   │
+# └──────────────────────────────────────────────────────────────────┘
+add_library(ViSII_LIB SHARED ${SRC} ${HDR} ${ptxCode})
+target_link_libraries(ViSII_LIB PUBLIC ${LIBRARIES})
+set_target_properties(ViSII_LIB PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+install(TARGETS ViSII_LIB 
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    RENAME "ViSII_LIB"
+)
+
+# ┌──────────────────────────────────────────────────────────────────┐
 # │  Setup Targets                                                   │
 # └──────────────────────────────────────────────────────────────────┘
 set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
@@ -265,8 +276,7 @@ set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES T
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen" "-debug-doxygen-parser")
 swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
-target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES})
-# target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} RTXBigUMeshLib)
+target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} ViSII_LIB)
 set(SWIG_DEFS 
   Python3_VERSION_MAJOR=${Python3_VERSION_MAJOR} 
   Python3_VERSION_MINOR=${Python3_VERSION_MINOR})
@@ -277,7 +287,7 @@ set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINIT
 
 
 # ┌──────────────────────────────────────────────────────────────────┐
-# │  Misc Install                                                    │
+# │  Install                                                         │
 # └──────────────────────────────────────────────────────────────────┘
 
 # Install

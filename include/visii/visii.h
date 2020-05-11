@@ -1,16 +1,15 @@
+#pragma once
+#include <visii/entity.h>
+
+namespace visii 
+{
+
 /**
-   A contrived example of ignoring too many commands in one comment.
-
-   @forcpponly
-   This is C++-specific.
-   @endforcpponly
-
-   @beginPythonOnly
-   This is specific to @b Python.
-   @endPythonOnly
-
-   @transferfull Command ignored, but anything here is still included.
-
-   @compileroptions This function must be compiled with /EHa when using MSVC.
+   Initializes various backend systems required to render scene data.
 */
-int Contrived() {return 1;}
+void Initialize()
+{
+    Entity::Initialize();
+}
+
+};
