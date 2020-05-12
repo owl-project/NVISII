@@ -1,8 +1,8 @@
 #include <visii/entity.h>
 #include <visii/transform.h>
+#include <visii/material.h>
 
 // #include "RTXBigUMesh/Camera/Camera.hxx"
-// #include "RTXBigUMesh/Material/Material.hxx"
 // #include "RTXBigUMesh/Light/Light.hxx"
 // #include "RTXBigUMesh/Mesh/Mesh.hxx"
 // #include "RTXBigUMesh/RigidBody/RigidBody.hxx"
@@ -229,45 +229,45 @@ Transform* Entity::get_transform()
 // 	return camera;
 // }
 
-// void Entity::set_material(int32_t material_id) 
-// {
-// 	if (material_id < -1) 
-// 		throw std::runtime_error( std::string("Material id must be greater than or equal to -1"));
-// 	if (material_id >= MAX_MATERIALS)
-// 		throw std::runtime_error( std::string("Material id must be less than max materials"));
-// 	this->entity_struct.material_id = material_id;
-// 	mark_dirty();
-// }
+void Entity::set_material(int32_t material_id) 
+{
+	if (material_id < -1) 
+		throw std::runtime_error( std::string("Material id must be greater than or equal to -1"));
+	if (material_id >= MAX_MATERIALS)
+		throw std::runtime_error( std::string("Material id must be less than max materials"));
+	entity_structs[id].material_id = material_id;
+	mark_dirty();
+}
 
-// void Entity::set_material(Material *material) 
-// {
-// 	if (!material)
-// 		throw std::runtime_error( std::string("Invalid material handle."));
-// 	if (!material->is_initialized())
-// 		throw std::runtime_error("Error, material not initialized");
-// 	this->entity_struct.material_id = material->get_id();
-// 	mark_dirty();
-// }
+void Entity::set_material(Material *material) 
+{
+	if (!material)
+		throw std::runtime_error( std::string("Invalid material handle."));
+	if (!material->is_initialized())
+		throw std::runtime_error("Error, material not initialized");
+	entity_structs[id].material_id = material->get_id();
+	mark_dirty();
+}
 
-// void Entity::clear_material()
-// {
-// 	this->entity_struct.material_id = -1;
-// 	mark_dirty();
-// }
+void Entity::clear_material()
+{
+	entity_structs[id].material_id = -1;
+	mark_dirty();
+}
 
-// int32_t Entity::get_material_id() 
-// {
-// 	return this->entity_struct.material_id;
-// }
+int32_t Entity::get_material_id() 
+{
+	return entity_structs[id].material_id;
+}
 
-// Material* Entity::get_material()
-// {
-// 	if ((this->entity_struct.material_id < 0) || (this->entity_struct.material_id >= MAX_MATERIALS)) 
-// 		return nullptr;
-// 	auto material = Material::Get(this->entity_struct.material_id);
-// 	if (!material->is_initialized()) return nullptr;
-// 	return material;
-// }
+Material* Entity::get_material()
+{
+	if ((entity_structs[id].material_id < 0) || (entity_structs[id].material_id >= MAX_MATERIALS)) 
+		return nullptr;
+	auto material = Material::Get(entity_structs[id].material_id);
+	if (!material->is_initialized()) return nullptr;
+	return material;
+}
 
 // void Entity::set_light(int32_t light_id) 
 // {
@@ -509,9 +509,9 @@ void Entity::CleanUp()
 /* Static Factory Implementations */
 Entity* Entity::Create(
 	std::string name, 
-	Transform* transform//, 
+	Transform* transform, 
+	Material* material//, 
 	// Camera* camera, 
-	// Material* material, 
 	// Light* light, 
 	// Mesh* mesh, 
 	// RigidBody* rigid_body,
@@ -521,8 +521,8 @@ Entity* Entity::Create(
 	auto entity =  StaticFactory::Create(creation_mutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
 	try {
 		if (transform) entity->set_transform(transform);
+		if (material) entity->set_material(material);
 		// if (camera) entity->set_camera(camera);
-		// if (material) entity->set_material(material);
 		// if (light) entity->set_light(light);
 		// if (mesh) entity->set_mesh(mesh);
 		// if (rigid_body) entity->set_rigid_body(rigid_body);

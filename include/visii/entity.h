@@ -9,7 +9,7 @@
 
 // class Camera;
 class Transform;
-// class Material;
+class Material;
 // class Light;
 // class Mesh;
 // class RigidBody;
@@ -80,9 +80,9 @@ public:
     /** Constructs an Entity with the given name.
      * \return an Entity allocated by the renderer. */
 	static Entity* Create(std::string name, 
-		Transform* transform = nullptr //, 
+		Transform* transform = nullptr, 
+		Material* material = nullptr//,
 		// Camera* camera = nullptr,
-		// Material* material = nullptr,
 		// Light* light = nullptr,
 		// Mesh* mesh = nullptr,
 		// RigidBody* rigid_body = nullptr,
@@ -181,11 +181,21 @@ public:
 	// int32_t get_camera_id();
 	// Camera* get_camera();
 
-	// void set_material(int32_t material_id);
-	// void set_material(Material *material);
-	// void clear_material();
-	// int32_t get_material_id();
-	// Material* get_material();
+	/** Connects a material component to the current entity by primary id key */
+    void set_material(int32_t material_id);
+
+	/** Connects a material component to the current entity */
+    void set_material(Material *material);
+
+	/** Disconnects any material component from the current entity */
+    void clear_material();
+
+	/** \return the primary id key of the connected material component, or -1 if no component is connected. */
+    int32_t get_material_id();
+
+	/** \return a reference to the connected material component, or None/nullptr if no component is connected. */
+    Material* get_material();
+
 
 	// void set_light(int32_t light_id);
 	// void set_light(Light* light);

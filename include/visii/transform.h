@@ -75,12 +75,7 @@ class Transform : public StaticFactory
     static Transform transforms[MAX_TRANSFORMS];
     static TransformStruct transform_structs[MAX_TRANSFORMS];
     static std::map<std::string, uint32_t> lookupTable;
-    // static TransformStruct* pinnedMemory;
-    // static vk::Buffer stagingSSBO;
-    // static vk::DeviceMemory stagingSSBOMemory;
-    // static vk::Buffer SSBO;
-    // static vk::DeviceMemory SSBOMemory;
-
+    
     /* Updates cached rotation values */
     void update_rotation();
 

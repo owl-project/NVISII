@@ -50,10 +50,12 @@ if hasattr(sys, 'gettotalrefcount'):
 
 #include "visii/entity.h"
 #include "visii/transform.h"
+#include "visii/material.h"
 %}
 
 %include "visii/visii.h"
 %include "visii/utilities/static_factory.h"
 %include "visii/entity.h"
 %include "visii/transform.h"
+%include "visii/material.h"
 
