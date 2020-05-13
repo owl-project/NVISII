@@ -45,6 +45,11 @@ if hasattr(sys, 'gettotalrefcount'):
   }
 }
 
+%feature("kwargs") Entity;
+%feature("kwargs") Transform;
+%feature("kwargs") Material;
+
+/* -------- GLM Vector Math Library --------------*/
 %feature("autodoc","2");
 %include "glm-bindings/glm.i"
 %feature("autodoc", "");
