@@ -35,6 +35,16 @@ if hasattr(sys, 'gettotalrefcount'):
 %}
 #endif
 
+/* -------- Features --------------*/
+%include "exception.i"
+%exception {
+  try {
+	$action
+  } catch (const std::exception& e) {
+	SWIG_exception(SWIG_RuntimeError, e.what());
+  }
+}
+
 %feature("autodoc","2");
 %include "glm-bindings/glm.i"
 %feature("autodoc", "");
