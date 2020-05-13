@@ -24,13 +24,17 @@
 using namespace glm;
 using namespace std;
 
+/**
+ * The "Transform" component places an entity into the scene.
+ * These transform components represent a scale, a rotation, and a translation, in that order.
+*/
 class Transform : public StaticFactory
 {
     friend class StaticFactory;
   private:
     /* Scene graph information */
     int32_t parent = -1;
-	std::set<int32_t> children;
+	  std::set<int32_t> children;
 
     /* Local <=> Parent */
     vec3 scale = vec3(1.0);
@@ -111,68 +115,67 @@ class Transform : public StaticFactory
     bool dirty = true;
 
   public:
-    /** Constructs a Transform with the given name.
+    /** Constructs a transform with the given name.
+     * \returns a reference to a transform component
      * \param name A unique name for this transform.
-     * \return a Transform allocated by the renderer. */
+    */
     static Transform* Create(std::string name);
 
-    /** Gets a Transform by name 
-     * \param name A unique name used to lookup this transform.
-     * \return a Transform who's primary name key matches \p name */
+    /** Gets a transform by name 
+     * \returns a transform who's primary name key matches \p name 
+     * \param name A unique name used to lookup this transform. */
     static Transform* Get(std::string name);
 
-    /** Gets a Transform by id 
-     * \param id A unique id used to lookup this transform.
-     * \return a Transform who's primary id key matches \p id */
+    /** Gets a transform by id 
+     * \returns a transform who's primary id key matches \p id 
+     * \param id A unique id used to lookup this transform. */
     static Transform* Get(uint32_t id);
 
-    /** \return a pointer to the table of TransformStructs */
+    /** \returns a pointer to the table of TransformStructs required for rendering*/
     static TransformStruct* GetFrontStruct();
 
-    /** \return a pointer to the table of Transform components */
+    /** \returns a pointer to the table of transform components */
     static Transform* GetFront();
 
-    /** \return the number of allocated entities */
-	static uint32_t GetCount();
+    /** \returns the number of allocated transforms */
+	  static uint32_t GetCount();
 
-    /** Deletes the Transform who's primary name key matches \p name 
-     * \param name A unique name used to lookup the transform for deletion.
-    */
+    /** Deletes the transform who's primary name key matches \p name 
+     * \param name A unique name used to lookup the transform for deletion.*/
     static void Delete(std::string name);
 
-    /** Deletes the Transform who's primary id key matches \p id 
-     * \param id A unique id used to lookup the transform for deletion.
-    */
+    /** Deletes the transform who's primary id key matches \p id 
+     * \param id A unique id used to lookup the transform for deletion.*/
     static void Delete(uint32_t id);
 
-    /** Allocates the tables used to store all Transform components */
+    /** Allocates the tables used to store all transform components */
     static void Initialize();
 
-    /** \return True if the tables used to store all Transform components have been allocated, and False otherwise */
+    /** \return True if the tables used to store all transform components have been allocated, and False otherwise */
     static bool IsInitialized();
 
     /** Iterates through all transform components, computing transform metadata for rendering purposes. */
     static void UpdateComponents();
 
-    /** Frees any tables used to store Transform components */
+    /** Frees any tables used to store transform components */
     static void CleanUp();
 
     /** \return True if the Transform has been modified since the previous frame, and False otherwise */
-	bool is_dirty() { return dirty; }
+	  bool is_dirty() { return dirty; }
 
     /** \return True if the Transform has not been modified since the previous frame, and False otherwise */
-	bool is_clean() { return !dirty; }
+	  bool is_clean() { return !dirty; }
 
     /** Tags the current component as being modified since the previous frame. */
-	void mark_dirty() {
-		// Dirty = true;
-		dirty = true;
-	};
+	  void mark_dirty() {
+		  // Dirty = true;
+		  dirty = true;
+	  };
 
     /** Tags the current component as being unmodified since the previous frame. */
-	void mark_clean() { dirty = false; }
+	  void mark_clean() { dirty = false; }
 
-    /** \return a string representation of the current component */
+    /** \return a json string representation of the current component */
     std::string to_string();
 
     /** Transforms direction from local to parent.

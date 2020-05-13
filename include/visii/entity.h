@@ -1,31 +1,18 @@
-// ┌──────────────────────────────────────────────────────────────────┐
-// │  Entity                                                          │
-// └──────────────────────────────────────────────────────────────────┘
-
 #pragma once
 
 #include <visii/utilities/static_factory.h>
 #include <visii/entity_struct.h>
 
-// class Camera;
 class Transform;
 class Material;
-// class Light;
-// class Mesh;
-// class RigidBody;
-// class Collider;
-
 
 /**
  * The "Entity" component is the most basic component in a scene.
  * They can be thought of as a "join table" in a data base, connecting
  * different objects together through a collection of primary keys.
- * 
  * Currently, only one component of a given type can be connected to an entity 
  * at any given point in time.
- * 
  * In order to place an Entity into a scene, connect to a Transform component.
- * 
  * For an Entity to be visible, connect both a Mesh component and a Material
  * component.
  * 

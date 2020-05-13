@@ -28,47 +28,64 @@ enum MaterialFlags : uint32_t {
   MATERIAL_FLAGS_SHOW_SKYBOX = 2
 };
 
+/**
+ * The "Material" component describes the surface properties of an entity.
+ * This material follows a physically based workflow, more specifically the 
+ * Blender principled shader, and very similar to the Disney material model. 
+*/
 class Material : public StaticFactory
 {
   friend class StaticFactory;
   public:
-    /* Creates a new material component */
+    /** Constructs a material with the given name.
+     * \returns a reference to a material component
+     * \param name A unique name for this material.
+    */
     static Material* Create(std::string name);
 
-    /* Retrieves a material component by name*/
+    /** Gets a material by name 
+     * \returns a material who's primary name key matches \p name 
+     * \param name A unique name used to lookup this material. */
     static Material* Get(std::string name);
 
-    /* Retrieves a material component by id */
+    /** Gets a material by id 
+     * \returns a material who's primary id key matches \p id 
+     * \param id A unique id used to lookup this material. */
     static Material* Get(uint32_t id);
 
-    /* Returns a pointer to the list of material components */
+    /** \returns a pointer to the table of MaterialStructs required for rendering */
+    static MaterialStruct* GetFrontStruct();
+
+    /** \returns a pointer to the table of material components */
     static Material* GetFront();
 
-    /* Returns the total number of reserved materials */
-    static uint32_t GetCount();
+    /** \returns the number of allocated materials */
+	  static uint32_t GetCount();
 
-    /* Deallocates a material with the given name */
+    /** Deletes the material who's primary name key matches \p name 
+     * \param name A unique name used to lookup the material for deletion.*/
     static void Delete(std::string name);
 
-    /* Deallocates a material with the given id */
+    /** Deletes the material who's primary id key matches \p id 
+     * \param id A unique id used to lookup the material for deletion.*/
     static void Delete(uint32_t id);
 
-    /* Initializes all vulkan descriptor resources, as well as the Mesh factory. */
+    /** Allocates the tables used to store all material components */
     static void Initialize();
 
-    /* TODO: Explain this */
+    /** \return True if the tables used to store all material components have been allocated, and False otherwise */
     static bool IsInitialized();
 
-    /* Transfers all material components to an SSBO */
+    /** Iterates through all material components, computing material metadata for rendering purposes. */
     static void UpdateComponents();
 
-    /* Releases vulkan resources */
+    /** Frees any tables used to store material components */
     static void CleanUp();
 
-    /** \return True if the Transform has been modified since the previous frame, and False otherwise */
+    /** \return True if the material has been modified since the previous frame, and False otherwise */
     bool is_dirty() { return dirty; }
 
-    /** \return True if the Transform has not been modified since the previous frame, and False otherwise */
+    /** \return True if the material has not been modified since the previous frame, and False otherwise */
     bool is_clean() { return !dirty; }
 
     /** Tags the current component as being modified since the previous frame. */
@@ -77,56 +94,191 @@ class Material : public StaticFactory
         dirty = true;
     };
 
-    /* Returns a json string summarizing the material */
-    std::string to_string();
-
     /** Tags the current component as being unmodified since the previous frame. */
     void mark_clean() { dirty = false; }
+
+    /** Returns a json string representation of the current component */
+    std::string to_string();
 
     // /* This method prevents an entity from rendering. */
     // void hidden(bool hide);
 
-    // /* Accessors / Mutators */
-    // void set_base_color(vec3 color);
-    // void set_base_color(float r, float g, float b);
-    // void set_subsurface_color(vec3 color);
-    // void set_subsurface_color(float r, float g, float b);
-    // void set_subsurface_radius(vec3 subsurface_radius);
-    // void set_subsurface_radius(float x, float y, float z);
-    // void set_alpha(float a);
-    // void set_subsurface(float subsurface);
-    // void set_metallic(float metallic);
-    // void set_specular(float specular);
-    // void set_specular_tint(float specular_tint);
-    // void set_roughness(float roughness);
-    // void set_anisotropic(float anisotropic);
-    // void set_anisotropic_rotation(float anisotropic_rotation);
-    // void set_sheen(float sheen);
-    // void set_sheen_tint(float sheen_tint);
-    // void set_clearcoat(float clearcoat);
-    // void set_clearcoat_roughness(float clearcoat_roughness);
-    // void set_ior(float ior);
-    // void set_transmission(float transmission);
-    // void set_transmission_roughness(float transmission_roughness);
+    /* Accessors / Mutators */
     
-    // vec3 get_base_color();
-    // vec3 get_subsurface_color();
-    // vec3 get_subsurface_radius();
-    // float get_alpha();
-    // float get_subsurface();
-    // float get_metallic();
-    // float get_specular();
-    // float get_specular_tint();
-    // float get_roughness();
-    // float get_anisotropic();
-    // float get_anisotropic_rotation();
-    // float get_sheen();
-    // float get_sheen_tint();
-    // float get_clearcoat();
-    // float get_clearcoat_roughness();
-    // float get_ior();
-    // float get_transmission();
-    // float get_transmission_roughness();
+    /** The diffuse or metal surface color. Ignored if a base color texture is set.
+      * \param color a red, green, blue color intensity vector, usually between 0 and 1 */
+    void set_base_color(vec3 color);
+    
+    /** The diffuse or metal surface color. Ignored if a base color texture is set.
+      * \param r red intensity, usually between 0 and 1
+      * \param g green intensity, usually between 0 and 1
+      * \param b blue intensity, usually between 0 and 1 */
+    void set_base_color(float r, float g, float b);
+
+    /** The diffuse or metal surface color. Ignored if a base color texture is set.
+      * \returns the color intensity vector */
+    vec3 get_base_color();
+
+    /** Mix between diffuse and subsurface scattering. 
+      * \param subsurface Rather than being a simple mix between Diffuse and Subsurface Scattering, 
+      * this value controls a multiplier for the Subsurface Radius. */
+    void set_subsurface(float subsurface);
+
+    /** Mix between diffuse and subsurface scattering. 
+     * \returns the current subsurface radius multiplier. */
+    float get_subsurface();
+
+    /** Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
+      *  as light bleeds into shadows and through the object. The scattering distance is specified separately 
+      *  for the RGB channels, to render materials such as skin where red light scatters deeper. 
+      *  \param subsurface_radius control the subsurface radius. The X, Y and Z values of this vector are mapped to the R, G and B radius values, respectively. */
+    void set_subsurface_radius(vec3 subsurface_radius);
+
+    /** Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
+      *  as light bleeds into shadows and through the object. The scattering distance is specified separately 
+      *  for the RGB channels, to render materials such as skin where red light scatters deeper. 
+      *  \param r control the red subsurface radius 
+      *  \param g control the green subsurface radius
+      *  \param b control the blue subsurface radius */
+    void set_subsurface_radius(float r, float g, float b);
+
+    /** Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
+      *  as light bleeds into shadows and through the object. 
+      * \returns The subsurface scattering distance is specified separately for the RGB channels. */
+    vec3 get_subsurface_radius();
+
+    /** The subsurface scattering base color. 
+     * \param color the color intensity vector, usually between 0 and 1 */
+    void set_subsurface_color(vec3 color);
+
+    /** The subsurface scattering base color. 
+     * \param r the red subsurface color intensity 
+     * \param g the green subsurface color intensity 
+     * \param b the blue subsurface color intensity */
+    void set_subsurface_color(float r, float g, float b);
+
+    /** The subsurface scattering base color.
+     * \returns the color intensity vector, usually between 0 and 1 */
+    vec3 get_subsurface_color();    
+    
+    /** Blends between a non-metallic and metallic material model. 
+      * \param metallic A value of 1.0 gives 
+      * a fully specular reflection tinted with the base color, without diffuse reflection 
+      * or transmission. At 0.0 the material consists of a diffuse or transmissive base layer, 
+      * with a specular reflection layer on top. */
+    void set_metallic(float metallic);
+
+    /** Blends between a non-metallic and metallic material model. 
+      * \returns the current metallic value. */
+    float get_metallic();
+
+    /** The amount of dielectric specular reflection. 
+     * \param specular Specifies facing (along normal) reflectivity in the most common 0 - 8% range. Since materials with reflectivity above 8% do exist, the field allows values above 1.*/
+    void set_specular(float specular);
+
+    /** The amount of dielectric specular reflection. 
+      * \returns the current dielectric specular reflection value. */
+    float get_specular();
+
+    /** Tints the facing specular reflection using the base color, while glancing reflection remains white.
+      * Normal dielectrics have colorless reflection, so this parameter is not technically physically correct 
+      * and is provided for faking the appearance of materials with complex surface structure. 
+      * \param specular_tint a value between 0 and 1, enabling/disabling specular tint */
+    void set_specular_tint(float specular_tint);
+
+    /** Tints the facing specular reflection using the base color, while glancing reflection remains white.
+      * \returns the current specular tint value, between 0 and 1 */
+    float get_specular_tint();
+
+    /** Microfacet roughness of the surface for diffuse and specular reflection. 
+      * \param roughness Specifies the surface microfacet roughness value, between 0 and 1 */
+    void set_roughness(float roughness);
+
+    /** Microfacet roughness of the surface for diffuse and specular reflection. 
+      * \returns the current surface microfacet roughness value, between 0 and 1 */
+    float get_roughness();
+
+    /** The transparency of the surface, independent of transmission.
+      * \param a Controls the transparency of the surface, with 1.0 being fully opaque. */
+    void set_alpha(float a);
+
+    /** The transparency of the surface, independent of transmission.
+      * \returns the current surface transparency, with 1.0 being fully opaque and 0.0 being fully transparent. */
+    float get_alpha();
+
+    /** The amount of anisotropy for specular reflection.
+      * \param anistropic The amount of anisotropy for specular reflection. Higher values give elongated highlights along the tangent direction; negative values give highlights shaped perpendicular to the tangent direction. */
+    void set_anisotropic(float anisotropic);
+
+    /** The amount of anisotropy for specular reflection.
+      * \returns The current amount of anisotropy for specular reflection. */
+    float get_anisotropic();
+
+    /** The direction of anisotropy.
+      * \param anisotropic_rotation Rotates the direction of anisotropy, with 1.0 going full circle. */
+    void set_anisotropic_rotation(float anisotropic_rotation);
+
+    /** The direction of anisotropy.
+      * \returns the current the direction of anisotropy, between 0 and 1. */
+    float get_anisotropic_rotation();
+
+    /** Amount of soft velvet like reflection near edges, for simulating materials such as cloth. 
+     * \param sheen controls the amount of sheen, between 0 and 1 */
+    void set_sheen(float sheen);
+    
+    /** Amount of soft velvet like reflection near edges, for simulating materials such as cloth. 
+     * \returns the current sheen amount, between 0 and 1 */
+    float get_sheen();
+
+    /** Mix between white and using base color for sheen reflection. 
+     * \param sheen_tint controls the mix between white and base color for sheen reflection. */
+    void set_sheen_tint(float sheen_tint);
+    
+    /** Mix between white and using base color for sheen reflection. 
+     * \returns the current value used to mix between white and base color for sheen reflection. */
+    float get_sheen_tint();
+
+    /** Extra white specular layer on top of others. This is useful for materials like car paint and the like. 
+     * \param clearcoat controls the influence of clear coat, between 0 and 1 */
+    void set_clearcoat(float clearcoat);
+
+    /** Extra white specular layer on top of others. This is useful for materials like car paint and the like. 
+     * \returns the current clear coat influence */
+    float get_clearcoat();
+    
+    /** Microfacet surface roughness of clearcoat specular. 
+     * \param clearcoat_roughness the roughness of the microfacet distribution influencing the clearcoat, between 0 and 1 */
+    void set_clearcoat_roughness(float clearcoat_roughness);
+
+    /** Microfacet surface roughness of clearcoat specular. 
+     * \returns the current clearcoat microfacet roughness value, between 0 and 1 */
+    float get_clearcoat_roughness();
+    
+    /** Index of refraction used for transmission events. 
+     * \param ior the index of refraction. A value of 1 results in no refraction. For reference, the IOR of water is roughly 1.33, and for glass is roughly 1.57. */
+    void set_ior(float ior);
+
+    /** Index of refraction used for transmission events. 
+     * \returns the current index of refraction. */
+    float get_ior();
+    
+    /** Controls how much the surface looks like glass. Note, metallic takes precedence.
+     * \param transmission Mixes between a fully opaque surface at zero to fully glass like transmissions at one. */
+    void set_transmission(float transmission);
+
+    /** Controls how much the surface looks like glass. Note, metallic takes precedence.
+     * \returns the current specular transmission of the surface. */
+    float get_transmission();
+    
+    /** The roughness of the interior surface used for transmitted light. 
+     * \param transmission_roughness Controls the roughness value used for transmitted light. */
+    void set_transmission_roughness(float transmission_roughness);
+
+    /** The roughness of the interior surface used for transmitted light. 
+     * \returns the current roughness value used for transmitted light. */
+    float get_transmission_roughness();
+    
+    
 
     // /* Certain constant material properties can be replaced with texture lookups. */
     // void set_base_color_texture(uint32_t texture_id);

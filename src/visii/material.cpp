@@ -127,6 +127,11 @@ void Material::Delete(uint32_t id) {
 	Dirty = true;
 }
 
+MaterialStruct* Material::GetFrontStruct()
+{
+	return material_structs;
+}
+
 Material* Material::GetFront() {
 	return materials;
 }
@@ -284,192 +289,198 @@ uint32_t Material::GetCount() {
 // 	}
 // }
 
-// void Material::set_base_color(glm::vec3 color) {
-// 	this->material_struct.base_color.r = color.r;
-// 	this->material_struct.base_color.g = color.g;
-// 	this->material_struct.base_color.b = color.b;
-// 	mark_dirty();
-// }
+void Material::set_base_color(glm::vec3 color) {
+	material_structs[id].base_color.r = color.r;
+	material_structs[id].base_color.g = color.g;
+	material_structs[id].base_color.b = color.b;
+	mark_dirty();
+}
 
-// void Material::set_base_color(float r, float g, float b) {
-// 	this->material_struct.base_color.r = r;
-// 	this->material_struct.base_color.g = g;
-// 	this->material_struct.base_color.b = b;
-// 	mark_dirty();
-// }
+void Material::set_base_color(float r, float g, float b) {
+	material_structs[id].base_color.r = r;
+	material_structs[id].base_color.g = g;
+	material_structs[id].base_color.b = b;
+	mark_dirty();
+}
 
-// glm::vec3 Material::get_base_color() {
-// 	return vec3(this->material_struct.base_color.r, this->material_struct.base_color.g, this->material_struct.base_color.b);
-// }
+glm::vec3 Material::get_base_color() {
+	return vec3(material_structs[id].base_color.r, 
+				material_structs[id].base_color.g, 
+				material_structs[id].base_color.b);
+}
 
-// void Material::set_subsurface_color(glm::vec3 color) {
-// 	this->material_struct.subsurface_color.r = color.r;
-// 	this->material_struct.subsurface_color.g = color.g;
-// 	this->material_struct.subsurface_color.b = color.b;
-// 	mark_dirty();
-// }
+void Material::set_subsurface_color(glm::vec3 color) {
+	material_structs[id].subsurface_color.r = color.r;
+	material_structs[id].subsurface_color.g = color.g;
+	material_structs[id].subsurface_color.b = color.b;
+	mark_dirty();
+}
 
-// void Material::set_subsurface_color(float r, float g, float b) {
-// 	this->material_struct.subsurface_color.r = r;
-// 	this->material_struct.subsurface_color.g = g;
-// 	this->material_struct.subsurface_color.b = b;
-// 	mark_dirty();
-// }
+void Material::set_subsurface_color(float r, float g, float b) {
+	material_structs[id].subsurface_color.r = r;
+	material_structs[id].subsurface_color.g = g;
+	material_structs[id].subsurface_color.b = b;
+	mark_dirty();
+}
 
-// glm::vec3 Material::get_subsurface_color() {
-// 	return glm::vec3(this->material_struct.subsurface_color.r, this->material_struct.subsurface_color.g, this->material_struct.subsurface_color.b);
-// }
+glm::vec3 Material::get_subsurface_color() {
+	return glm::vec3(material_structs[id].subsurface_color.r, 
+					 material_structs[id].subsurface_color.g, 
+					 material_structs[id].subsurface_color.b);
+}
 
-// void Material::set_subsurface_radius(glm::vec3 radius) {
-// 	this->material_struct.subsurface_radius = glm::vec4(radius.x, radius.y, radius.z, 0.0);
-// 	mark_dirty();
-// }
+void Material::set_subsurface_radius(glm::vec3 radius) {
+	material_structs[id].subsurface_radius = glm::vec4(radius.x, radius.y, radius.z, 0.0);
+	mark_dirty();
+}
 
-// void Material::set_subsurface_radius(float x, float y, float z) {
-// 	this->material_struct.subsurface_radius = glm::vec4(x, y, z, 0.0);
-// 	mark_dirty();
-// }
+void Material::set_subsurface_radius(float x, float y, float z) {
+	material_structs[id].subsurface_radius = glm::vec4(x, y, z, 0.0);
+	mark_dirty();
+}
 
-// glm::vec3 Material::get_subsurface_radius() {
-// 	return glm::vec3(this->material_struct.subsurface_radius.x, this->material_struct.subsurface_radius.y, this->material_struct.subsurface_radius.z);
-// }
+glm::vec3 Material::get_subsurface_radius() {
+	return glm::vec3(material_structs[id].subsurface_radius.x, 
+					 material_structs[id].subsurface_radius.y, 
+					 material_structs[id].subsurface_radius.z);
+}
 
-// void Material::set_alpha(float a) 
-// {
-// 	this->material_struct.base_color.a = a;
-// 	mark_dirty();
-// }
+void Material::set_alpha(float a) 
+{
+	material_structs[id].base_color.a = a;
+	mark_dirty();
+}
 
-// float Material::get_alpha()
-// {
-// 	return this->material_struct.base_color.a;
-// }
+float Material::get_alpha()
+{
+	return material_structs[id].base_color.a;
+}
 
-// void Material::set_subsurface(float subsurface) {
-// 	this->material_struct.subsurface = subsurface;
-// 	mark_dirty();
-// }
+void Material::set_subsurface(float subsurface) {
+	material_structs[id].subsurface = subsurface;
+	mark_dirty();
+}
 
-// float Material::get_subsurface() {
-// 	return this->material_struct.subsurface;
-// }
+float Material::get_subsurface() {
+	return material_structs[id].subsurface;
+}
 
-// void Material::set_metallic(float metallic) {
-// 	this->material_struct.metallic = metallic;
-// 	mark_dirty();
-// }
+void Material::set_metallic(float metallic) {
+	material_structs[id].metallic = metallic;
+	mark_dirty();
+}
 
-// float Material::get_metallic() {
-// 	return this->material_struct.metallic;
-// }
+float Material::get_metallic() {
+	return material_structs[id].metallic;
+}
 
-// void Material::set_specular(float specular) {
-// 	this->material_struct.specular = specular;
-// 	mark_dirty();
-// }
+void Material::set_specular(float specular) {
+	material_structs[id].specular = specular;
+	mark_dirty();
+}
 
-// float Material::get_specular() {
-// 	return this->material_struct.specular;
-// }
+float Material::get_specular() {
+	return material_structs[id].specular;
+}
 
-// void Material::set_specular_tint(float specular_tint) {
-// 	this->material_struct.specular_tint = specular_tint;
-// 	mark_dirty();
-// }
+void Material::set_specular_tint(float specular_tint) {
+	material_structs[id].specular_tint = specular_tint;
+	mark_dirty();
+}
 
-// float Material::get_specular_tint() {
-// 	return this->material_struct.specular_tint;
-// }
+float Material::get_specular_tint() {
+	return material_structs[id].specular_tint;
+}
 
-// void Material::set_roughness(float roughness) {
-// 	this->material_struct.roughness = roughness;
-// 	mark_dirty();
-// }
+void Material::set_roughness(float roughness) {
+	material_structs[id].roughness = roughness;
+	mark_dirty();
+}
 
-// float Material::get_roughness() {
-// 	return this->material_struct.roughness;
-// }
+float Material::get_roughness() {
+	return material_structs[id].roughness;
+}
 
-// void Material::set_anisotropic(float anisotropic) {
-// 	this->material_struct.anisotropic = anisotropic;
-// 	mark_dirty();
-// }
+void Material::set_anisotropic(float anisotropic) {
+	material_structs[id].anisotropic = anisotropic;
+	mark_dirty();
+}
 
-// float Material::get_anisotropic() {
-// 	return this->material_struct.anisotropic;
-// }
+float Material::get_anisotropic() {
+	return material_structs[id].anisotropic;
+}
 
-// void Material::set_anisotropic_rotation(float anisotropic_rotation) {
-// 	this->material_struct.anisotropic_rotation = anisotropic_rotation;
-// 	mark_dirty();
-// }
+void Material::set_anisotropic_rotation(float anisotropic_rotation) {
+	material_structs[id].anisotropic_rotation = anisotropic_rotation;
+	mark_dirty();
+}
 
-// float Material::get_anisotropic_rotation() {
-// 	return this->material_struct.anisotropic_rotation;
-// }
+float Material::get_anisotropic_rotation() {
+	return material_structs[id].anisotropic_rotation;
+}
 
-// void Material::set_sheen(float sheen) {
-// 	this->material_struct.sheen = sheen;
-// 	mark_dirty();
-// }
+void Material::set_sheen(float sheen) {
+	material_structs[id].sheen = sheen;
+	mark_dirty();
+}
 
-// float Material::get_sheen() {
-// 	return this->material_struct.sheen;
-// }
+float Material::get_sheen() {
+	return material_structs[id].sheen;
+}
 
-// void Material::set_sheen_tint(float sheen_tint) {
-// 	this->material_struct.sheen_tint = sheen_tint;
-// 	mark_dirty();
-// }
+void Material::set_sheen_tint(float sheen_tint) {
+	material_structs[id].sheen_tint = sheen_tint;
+	mark_dirty();
+}
 
-// float Material::get_sheen_tint() {
-// 	return this->material_struct.sheen_tint;
-// }
+float Material::get_sheen_tint() {
+	return material_structs[id].sheen_tint;
+}
 
-// void Material::set_clearcoat(float clearcoat) {
-// 	this->material_struct.clearcoat = clearcoat;
-// 	mark_dirty();
-// }
+void Material::set_clearcoat(float clearcoat) {
+	material_structs[id].clearcoat = clearcoat;
+	mark_dirty();
+}
 
-// float Material::get_clearcoat() {
-// 	return this->material_struct.clearcoat;
-// }
+float Material::get_clearcoat() {
+	return material_structs[id].clearcoat;
+}
 
-// void Material::set_clearcoat_roughness(float clearcoat_roughness) {
-// 	this->material_struct.clearcoat_roughness = clearcoat_roughness;
-// 	mark_dirty();
-// }
+void Material::set_clearcoat_roughness(float clearcoat_roughness) {
+	material_structs[id].clearcoat_roughness = clearcoat_roughness;
+	mark_dirty();
+}
 
-// float Material::get_clearcoat_roughness() {
-// 	return this->material_struct.clearcoat_roughness;
-// }
+float Material::get_clearcoat_roughness() {
+	return material_structs[id].clearcoat_roughness;
+}
 
-// void Material::set_ior(float ior) {
-// 	this->material_struct.ior = ior;
-// 	mark_dirty();
-// }
+void Material::set_ior(float ior) {
+	material_structs[id].ior = ior;
+	mark_dirty();
+}
 
-// float Material::get_ior() {
-// 	return this->material_struct.ior;
-// }
+float Material::get_ior() {
+	return material_structs[id].ior;
+}
 
-// void Material::set_transmission(float transmission) {
-// 	this->material_struct.transmission = transmission;
-// 	mark_dirty();
-// }
+void Material::set_transmission(float transmission) {
+	material_structs[id].transmission = transmission;
+	mark_dirty();
+}
 
-// float Material::get_transmission() {
-// 	return this->material_struct.transmission;
-// }
+float Material::get_transmission() {
+	return material_structs[id].transmission;
+}
 
-// void Material::set_transmission_roughness(float transmission_roughness) {
-// 	this->material_struct.transmission_roughness = transmission_roughness;
-// 	mark_dirty();
-// }
+void Material::set_transmission_roughness(float transmission_roughness) {
+	material_structs[id].transmission_roughness = transmission_roughness;
+	mark_dirty();
+}
 
-// float Material::get_transmission_roughness() {
-// 	return this->material_struct.transmission_roughness;
-// }
+float Material::get_transmission_roughness() {
+	return material_structs[id].transmission_roughness;
+}
 
 // bool Material::contains_transparency() {
 // 	/* We can expand this to other transparency cases if needed */
