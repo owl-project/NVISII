@@ -1,0 +1,3 @@
+pip install cmake
+cmake .
+make install
