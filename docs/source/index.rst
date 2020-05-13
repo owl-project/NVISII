@@ -7,6 +7,7 @@ Welcome to ViSII's documentation!
 
    entity
    transform
+   material
    all
 
 
