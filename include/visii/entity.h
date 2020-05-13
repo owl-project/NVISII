@@ -1,31 +1,18 @@
-// ┌──────────────────────────────────────────────────────────────────┐
-// │  Entity                                                          │
-// └──────────────────────────────────────────────────────────────────┘
-
 #pragma once
 
 #include <visii/utilities/static_factory.h>
 #include <visii/entity_struct.h>
 
-// class Camera;
 class Transform;
-// class Material;
-// class Light;
-// class Mesh;
-// class RigidBody;
-// class Collider;
-
+class Material;
 
 /**
  * The "Entity" component is the most basic component in a scene.
  * They can be thought of as a "join table" in a data base, connecting
  * different objects together through a collection of primary keys.
- * 
  * Currently, only one component of a given type can be connected to an entity 
  * at any given point in time.
- * 
  * In order to place an Entity into a scene, connect to a Transform component.
- * 
  * For an Entity to be visible, connect both a Mesh component and a Material
  * component.
  * 
@@ -80,9 +67,9 @@ public:
     /** Constructs an Entity with the given name.
      * \return an Entity allocated by the renderer. */
 	static Entity* Create(std::string name, 
-		Transform* transform = nullptr //, 
+		Transform* transform = nullptr, 
+		Material* material = nullptr//,
 		// Camera* camera = nullptr,
-		// Material* material = nullptr,
 		// Light* light = nullptr,
 		// Mesh* mesh = nullptr,
 		// RigidBody* rigid_body = nullptr,
@@ -181,11 +168,21 @@ public:
 	// int32_t get_camera_id();
 	// Camera* get_camera();
 
-	// void set_material(int32_t material_id);
-	// void set_material(Material *material);
-	// void clear_material();
-	// int32_t get_material_id();
-	// Material* get_material();
+	/** Connects a material component to the current entity by primary id key */
+    void set_material(int32_t material_id);
+
+	/** Connects a material component to the current entity */
+    void set_material(Material *material);
+
+	/** Disconnects any material component from the current entity */
+    void clear_material();
+
+	/** \return the primary id key of the connected material component, or -1 if no component is connected. */
+    int32_t get_material_id();
+
+	/** \return a reference to the connected material component, or None/nullptr if no component is connected. */
+    Material* get_material();
+
 
 	// void set_light(int32_t light_id);
 	// void set_light(Light* light);

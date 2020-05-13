@@ -35,6 +35,21 @@ if hasattr(sys, 'gettotalrefcount'):
 %}
 #endif
 
+/* -------- Features --------------*/
+%include "exception.i"
+%exception {
+  try {
+	$action
+  } catch (const std::exception& e) {
+	SWIG_exception(SWIG_RuntimeError, e.what());
+  }
+}
+
+%feature("kwargs") Entity;
+%feature("kwargs") Transform;
+%feature("kwargs") Material;
+
+/* -------- GLM Vector Math Library --------------*/
 %feature("autodoc","2");
 %include "glm-bindings/glm.i"
 %feature("autodoc", "");
@@ -50,10 +65,12 @@ if hasattr(sys, 'gettotalrefcount'):
 
 #include "visii/entity.h"
 #include "visii/transform.h"
+#include "visii/material.h"
 %}
 
 %include "visii/visii.h"
 %include "visii/utilities/static_factory.h"
 %include "visii/entity.h"
 %include "visii/transform.h"
+%include "visii/material.h"
 
