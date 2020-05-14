@@ -5,6 +5,7 @@
 
 class Transform;
 class Material;
+class Mesh;
 
 /**
  * The "Entity" component is the most basic component in a scene.
@@ -189,10 +190,19 @@ public:
 	// void clear_light();
 	// int32_t get_light_id();
 	// Light* get_light();
-
-	// void set_mesh(int32_t mesh_id);
-	// void set_mesh(Mesh* mesh);
-	// void clear_mesh();
-	// int32_t get_mesh_id();
-	// Mesh* get_mesh();
+	
+	/** Connects a mesh component to the current entity by primary id key */
+	void set_mesh(int32_t mesh_id);
+	
+	/** Connects a mesh component to the current entity */
+	void set_mesh(Mesh* mesh);
+	
+	/** Disconnects any mesh component from the current entity */
+	void clear_mesh();
+	
+	/** \return the primary id key of the connected mesh component, or -1 if no component is connected. */
+	int32_t get_mesh_id();
+	
+	/** \return a reference to the connected mesh component, or None/nullptr if no component is connected. */
+	Mesh* get_mesh();
 };
