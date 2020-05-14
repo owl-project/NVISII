@@ -31,84 +31,84 @@ class Mesh : public StaticFactory
 		/* Creates a mesh component from a procedural box */
 		static Mesh* CreateBox(std::string name);
 		
-		// /* Creates a mesh component from a procedural cone capped on the bottom */
-		// static Mesh* CreateCappedCone(std::string name, float radius = 1.0, float height = 1.0);
+		/* Creates a mesh component from a procedural cone capped on the bottom */
+		static Mesh* CreateCappedCone(std::string name, float radius = 1.0, float height = 1.0);
 		
-		// /* Creates a mesh component from a procedural cylinder capped on the bottom */
-		// static Mesh* CreateCappedCylinder(std::string name, float radius = 1.0f, float size = 1.f, int slices = 32, int segments = 1, int rings = 1, float start = 0.0f, float sweep = 6.28319f);
+		/* Creates a mesh component from a procedural cylinder capped on the bottom */
+		static Mesh* CreateCappedCylinder(std::string name, float radius = 1.0f, float size = 1.f, int slices = 32, int segments = 1, int rings = 1, float start = 0.0f, float sweep = 6.28319f);
 		
-		// /* Creates a mesh component from a procedural tube capped on both ends */
-		// static Mesh* CreateCappedTube(std::string name);
+		/* Creates a mesh component from a procedural tube capped on both ends */
+		static Mesh* CreateCappedTube(std::string name);
 		
-		// /* Creates a mesh component from a procedural capsule */
-		// static Mesh* CreateCapsule(std::string name, float radius = 1.0, float size = 0.5, int slices = 32, int segments = 4, int rings = 8, float start = 0.0, float sweep = 6.28319f);
+		/* Creates a mesh component from a procedural capsule */
+		static Mesh* CreateCapsule(std::string name, float radius = 1.0, float size = 0.5, int slices = 32, int segments = 4, int rings = 8, float start = 0.0, float sweep = 6.28319f);
 		
-		// /* Creates a mesh component from a procedural cone */
-		// static Mesh* CreateCone(std::string name, float radius = 1.0, float height = 1.0);
+		/* Creates a mesh component from a procedural cone */
+		static Mesh* CreateCone(std::string name, float radius = 1.0, float height = 1.0);
 		
-		// /* Creates a mesh component from a procedural pentagon */
-		// static Mesh* CreatePentagon(std::string name);
+		/* Creates a mesh component from a procedural pentagon */
+		static Mesh* CreatePentagon(std::string name);
 		
-		// /* Creates a mesh component from a procedural cylinder (uncapped) */
-		// static Mesh* CreateCylinder(std::string name);
+		/* Creates a mesh component from a procedural cylinder (uncapped) */
+		static Mesh* CreateCylinder(std::string name);
 
-		// /* Creates a mesh component from a procedural disk */
-		// static Mesh* CreateDisk(std::string name);
+		/* Creates a mesh component from a procedural disk */
+		static Mesh* CreateDisk(std::string name);
 
-		// /* Creates a mesh component from a procedural dodecahedron */
-		// static Mesh* CreateDodecahedron(std::string name);
+		/* Creates a mesh component from a procedural dodecahedron */
+		static Mesh* CreateDodecahedron(std::string name);
 
-		// /* Creates a mesh component from a procedural plane */
-		// static Mesh* CreatePlane(std::string name);
+		/* Creates a mesh component from a procedural plane */
+		static Mesh* CreatePlane(std::string name);
 
-		// /* Creates a mesh component from a procedural icosahedron */
-		// static Mesh* CreateIcosahedron(std::string name);
+		/* Creates a mesh component from a procedural icosahedron */
+		static Mesh* CreateIcosahedron(std::string name);
 
-		// /* Creates a mesh component from a procedural icosphere */
-		// static Mesh* CreateIcosphere(std::string name);
+		/* Creates a mesh component from a procedural icosphere */
+		static Mesh* CreateIcosphere(std::string name);
 
-		// /* Creates a mesh component from a procedural parametric mesh. (TODO: accept a callback which given an x and y position 
-		// 	returns a Z hightfield) */
-		// // static Mesh* CreateParametricMesh(std::string name);
+		/* Creates a mesh component from a procedural parametric mesh. (TODO: accept a callback which given an x and y position 
+			returns a Z hightfield) */
+		// static Mesh* CreateParametricMesh(std::string name);
 
-		// /* Creates a mesh component from a procedural box with rounded edges */
-		// static Mesh* CreateRoundedBox(std::string name, float radius = .25, glm::vec3 size = glm::vec3(.75f, .75f, .75f), int slices=4, glm::ivec3 segments=glm::ivec3(1, 1, 1));
+		/* Creates a mesh component from a procedural box with rounded edges */
+		static Mesh* CreateRoundedBox(std::string name, float radius = .25, glm::vec3 size = glm::vec3(.75f, .75f, .75f), int slices=4, glm::ivec3 segments=glm::ivec3(1, 1, 1));
 	
-		// /* Creates a mesh component from a procedural sphere */
-		// static Mesh* CreateSphere(std::string name, float radius = 1.0f, int slices = 16, int segments = 16, float slice_start = 0.f, float slice_sweep = 6.28319f, float segment_start = 0.f, float segment_sweep = 6.28319f);
+		/* Creates a mesh component from a procedural sphere */
+		static Mesh* CreateSphere(std::string name, float radius = 1.0f, int slices = 16, int segments = 16, float slice_start = 0.f, float slice_sweep = 6.28319f, float segment_start = 0.f, float segment_sweep = 6.28319f);
 
-		// /* Creates a mesh component from a procedural cone with a rounded cap */
-		// static Mesh* CreateSphericalCone(std::string name);
+		/* Creates a mesh component from a procedural cone with a rounded cap */
+		static Mesh* CreateSphericalCone(std::string name);
 
-		// /* Creates a mesh component from a procedural quarter-hemisphere */
-		// static Mesh* CreateSphericalTriangle(std::string name);
+		/* Creates a mesh component from a procedural quarter-hemisphere */
+		static Mesh* CreateSphericalTriangle(std::string name);
 
-		// /* Creates a mesh component from a procedural spring */
-		// static Mesh* CreateSpring(std::string name);
+		/* Creates a mesh component from a procedural spring */
+		static Mesh* CreateSpring(std::string name);
 
-		// /* Creates a mesh component from a procedural utah teapot */
-		// static Mesh* CreateTeapotahedron(std::string name, uint32_t segments = 8);
+		/* Creates a mesh component from a procedural utah teapot */
+		static Mesh* CreateTeapotahedron(std::string name, uint32_t segments = 8);
 
-		// /* Creates a mesh component from a procedural torus */
-		// static Mesh* CreateTorus(std::string name);
+		/* Creates a mesh component from a procedural torus */
+		static Mesh* CreateTorus(std::string name);
 
-		// /* Creates a mesh component from a procedural torus knot */
-		// static Mesh* CreateTorusKnot(std::string name);
+		/* Creates a mesh component from a procedural torus knot */
+		static Mesh* CreateTorusKnot(std::string name);
 
-		// /* Creates a mesh component from a procedural triangle */
-		// static Mesh* CreateTriangle(std::string name);
+		/* Creates a mesh component from a procedural triangle */
+		static Mesh* CreateTriangle(std::string name);
 
-		// /* Creates a mesh component from a procedural tube (uncapped) */
-		// static Mesh* CreateTube(std::string name);
+		/* Creates a mesh component from a procedural tube (uncapped) */
+		static Mesh* CreateTube(std::string name);
 
-		// /* Creates a mesh component from a procedural tube (uncapped) generated from a polyline */
-		// static Mesh* CreateTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius = 1.0, uint32_t segments = 16);
+		/* Creates a mesh component from a procedural tube (uncapped) generated from a polyline */
+		static Mesh* CreateTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius = 1.0, uint32_t segments = 16);
 
-		// /* Creates a mesh component from a procedural rounded rectangle tube (uncapped) generated from a polyline */
-		// static Mesh* CreateRoundedRectangleTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius = 1.0, float size_x = .75, float size_y = .75);
+		/* Creates a mesh component from a procedural rounded rectangle tube (uncapped) generated from a polyline */
+		static Mesh* CreateRoundedRectangleTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius = 1.0, float size_x = .75, float size_y = .75);
 
-		// /* Creates a mesh component from a procedural rectangle tube (uncapped) generated from a polyline */
-		// static Mesh* CreateRectangleTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float size_x = 1.0, float size_y = 1.0);
+		/* Creates a mesh component from a procedural rectangle tube (uncapped) generated from a polyline */
+		static Mesh* CreateRectangleTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float size_x = 1.0, float size_y = 1.0);
 
 		// /* Creates a mesh component from an OBJ file (ignores .mtl files) */
 		// static Mesh* CreateFromOBJ(std::string name, std::string objPath);
