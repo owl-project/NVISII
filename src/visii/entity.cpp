@@ -1,6 +1,7 @@
 #include <visii/entity.h>
 #include <visii/transform.h>
 #include <visii/material.h>
+#include <visii/mesh.h>
 
 // #include "RTXBigUMesh/Camera/Camera.hxx"
 // #include "RTXBigUMesh/Light/Light.hxx"
@@ -310,55 +311,55 @@ Material* Entity::get_material()
 // 	return light;
 // }
 
-// void Entity::set_mesh(int32_t mesh_id) 
-// {
-// 	if (mesh_id < -1) 
-// 		throw std::runtime_error( std::string("Mesh id must be greater than or equal to -1"));
-// 	if (mesh_id >= MAX_MESHES)
-// 		throw std::runtime_error( std::string("Mesh id must be less than max meshes"));
-// 	this->entity_struct.mesh_id = mesh_id;
+void Entity::set_mesh(int32_t mesh_id) 
+{
+	if (mesh_id < -1) 
+		throw std::runtime_error( std::string("Mesh id must be greater than or equal to -1"));
+	if (mesh_id >= MAX_MESHES)
+		throw std::runtime_error( std::string("Mesh id must be less than max meshes"));
+	this->entity_structs[id].mesh_id = mesh_id;
 
-// 	auto rs = Systems::RenderSystem::Get();
-// 	rs->enqueue_bvh_rebuild();
-// 	mark_dirty();
-// }
+	// auto rs = Systems::RenderSystem::Get();
+	// rs->enqueue_bvh_rebuild();
+	mark_dirty();
+}
 
-// void Entity::set_mesh(Mesh* mesh) 
-// {
-// 	if (!mesh) 
-// 		throw std::runtime_error( std::string("Invalid mesh handle."));
-// 	if (!mesh->is_initialized())
-// 		throw std::runtime_error("Error, mesh not initialized");
-// 	this->entity_struct.mesh_id = mesh->get_id();
+void Entity::set_mesh(Mesh* mesh) 
+{
+	if (!mesh) 
+		throw std::runtime_error( std::string("Invalid mesh handle."));
+	if (!mesh->is_initialized())
+		throw std::runtime_error("Error, mesh not initialized");
+	this->entity_structs[id].mesh_id = mesh->get_id();
 
-// 	auto rs = Systems::RenderSystem::Get();
-// 	rs->enqueue_bvh_rebuild();
-// 	mark_dirty();
-// }
+	// auto rs = Systems::RenderSystem::Get();
+	// rs->enqueue_bvh_rebuild();
+	mark_dirty();
+}
 
-// void Entity::clear_mesh()
-// {
-// 	this->entity_struct.mesh_id = -1;
+void Entity::clear_mesh()
+{
+	this->entity_structs[id].mesh_id = -1;
 
-// 	auto rs = Systems::RenderSystem::Get();
-// 	rs->enqueue_bvh_rebuild();
-// 	mark_dirty();
-// }
+	// auto rs = Systems::RenderSystem::Get();
+	// rs->enqueue_bvh_rebuild();
+	mark_dirty();
+}
 
-// int32_t Entity::get_mesh_id() 
-// {
-// 	return this->entity_struct.mesh_id;
-// }
+int32_t Entity::get_mesh_id() 
+{
+	return this->entity_structs[id].mesh_id;
+}
 
-// Mesh* Entity::get_mesh()
-// {
-// 	if ((this->entity_struct.mesh_id < 0) || (this->entity_struct.mesh_id >= MAX_MESHES)) 
-// 		return nullptr;
-// 	auto mesh = Mesh::Get(this->entity_struct.mesh_id);
-// 	if (!mesh->is_initialized()) 
-// 		return nullptr;
-// 	return mesh;
-// }
+Mesh* Entity::get_mesh()
+{
+	if ((this->entity_structs[id].mesh_id < 0) || (this->entity_structs[id].mesh_id >= MAX_MESHES)) 
+		return nullptr;
+	auto mesh = Mesh::Get(this->entity_structs[id].mesh_id);
+	if (!mesh->is_initialized()) 
+		return nullptr;
+	return mesh;
+}
 
 /* SSBO logic */
 void Entity::Initialize()
