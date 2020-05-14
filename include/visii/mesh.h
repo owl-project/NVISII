@@ -28,101 +28,101 @@ class Mesh : public StaticFactory
 {
 	friend class StaticFactory;
 	public:
-		/* Creates a mesh component from a procedural box */
+		/** Creates a mesh component from a procedural box */
 		static Mesh* CreateBox(std::string name);
 		
-		/* Creates a mesh component from a procedural cone capped on the bottom */
+		/** Creates a mesh component from a procedural cone capped on the bottom */
 		static Mesh* CreateCappedCone(std::string name, float radius = 1.0, float height = 1.0);
 		
-		/* Creates a mesh component from a procedural cylinder capped on the bottom */
+		/** Creates a mesh component from a procedural cylinder capped on the bottom */
 		static Mesh* CreateCappedCylinder(std::string name, float radius = 1.0f, float size = 1.f, int slices = 32, int segments = 1, int rings = 1, float start = 0.0f, float sweep = 6.28319f);
 		
-		/* Creates a mesh component from a procedural tube capped on both ends */
+		/** Creates a mesh component from a procedural tube capped on both ends */
 		static Mesh* CreateCappedTube(std::string name);
 		
-		/* Creates a mesh component from a procedural capsule */
+		/** Creates a mesh component from a procedural capsule */
 		static Mesh* CreateCapsule(std::string name, float radius = 1.0, float size = 0.5, int slices = 32, int segments = 4, int rings = 8, float start = 0.0, float sweep = 6.28319f);
 		
-		/* Creates a mesh component from a procedural cone */
+		/** Creates a mesh component from a procedural cone */
 		static Mesh* CreateCone(std::string name, float radius = 1.0, float height = 1.0);
 		
-		/* Creates a mesh component from a procedural pentagon */
+		/** Creates a mesh component from a procedural pentagon */
 		static Mesh* CreatePentagon(std::string name);
 		
-		/* Creates a mesh component from a procedural cylinder (uncapped) */
+		/** Creates a mesh component from a procedural cylinder (uncapped) */
 		static Mesh* CreateCylinder(std::string name);
 
-		/* Creates a mesh component from a procedural disk */
+		/** Creates a mesh component from a procedural disk */
 		static Mesh* CreateDisk(std::string name);
 
-		/* Creates a mesh component from a procedural dodecahedron */
+		/** Creates a mesh component from a procedural dodecahedron */
 		static Mesh* CreateDodecahedron(std::string name);
 
-		/* Creates a mesh component from a procedural plane */
+		/** Creates a mesh component from a procedural plane */
 		static Mesh* CreatePlane(std::string name);
 
-		/* Creates a mesh component from a procedural icosahedron */
+		/** Creates a mesh component from a procedural icosahedron */
 		static Mesh* CreateIcosahedron(std::string name);
 
-		/* Creates a mesh component from a procedural icosphere */
+		/** Creates a mesh component from a procedural icosphere */
 		static Mesh* CreateIcosphere(std::string name);
 
-		/* Creates a mesh component from a procedural parametric mesh. (TODO: accept a callback which given an x and y position 
+		/** Creates a mesh component from a procedural parametric mesh. (TODO: accept a callback which given an x and y position 
 			returns a Z hightfield) */
 		// static Mesh* CreateParametricMesh(std::string name);
 
-		/* Creates a mesh component from a procedural box with rounded edges */
+		/** Creates a mesh component from a procedural box with rounded edges */
 		static Mesh* CreateRoundedBox(std::string name, float radius = .25, glm::vec3 size = glm::vec3(.75f, .75f, .75f), int slices=4, glm::ivec3 segments=glm::ivec3(1, 1, 1));
 	
-		/* Creates a mesh component from a procedural sphere */
+		/** Creates a mesh component from a procedural sphere */
 		static Mesh* CreateSphere(std::string name, float radius = 1.0f, int slices = 16, int segments = 16, float slice_start = 0.f, float slice_sweep = 6.28319f, float segment_start = 0.f, float segment_sweep = 6.28319f);
 
-		/* Creates a mesh component from a procedural cone with a rounded cap */
+		/** Creates a mesh component from a procedural cone with a rounded cap */
 		static Mesh* CreateSphericalCone(std::string name);
 
-		/* Creates a mesh component from a procedural quarter-hemisphere */
+		/** Creates a mesh component from a procedural quarter-hemisphere */
 		static Mesh* CreateSphericalTriangle(std::string name);
 
-		/* Creates a mesh component from a procedural spring */
+		/** Creates a mesh component from a procedural spring */
 		static Mesh* CreateSpring(std::string name);
 
-		/* Creates a mesh component from a procedural utah teapot */
+		/** Creates a mesh component from a procedural utah teapot */
 		static Mesh* CreateTeapotahedron(std::string name, uint32_t segments = 8);
 
-		/* Creates a mesh component from a procedural torus */
+		/** Creates a mesh component from a procedural torus */
 		static Mesh* CreateTorus(std::string name);
 
-		/* Creates a mesh component from a procedural torus knot */
+		/** Creates a mesh component from a procedural torus knot */
 		static Mesh* CreateTorusKnot(std::string name);
 
-		/* Creates a mesh component from a procedural triangle */
+		/** Creates a mesh component from a procedural triangle */
 		static Mesh* CreateTriangle(std::string name);
 
-		/* Creates a mesh component from a procedural tube (uncapped) */
+		/** Creates a mesh component from a procedural tube (uncapped) */
 		static Mesh* CreateTube(std::string name);
 
-		/* Creates a mesh component from a procedural tube (uncapped) generated from a polyline */
+		/** Creates a mesh component from a procedural tube (uncapped) generated from a polyline */
 		static Mesh* CreateTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius = 1.0, uint32_t segments = 16);
 
-		/* Creates a mesh component from a procedural rounded rectangle tube (uncapped) generated from a polyline */
+		/** Creates a mesh component from a procedural rounded rectangle tube (uncapped) generated from a polyline */
 		static Mesh* CreateRoundedRectangleTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius = 1.0, float size_x = .75, float size_y = .75);
 
-		/* Creates a mesh component from a procedural rectangle tube (uncapped) generated from a polyline */
+		/** Creates a mesh component from a procedural rectangle tube (uncapped) generated from a polyline */
 		static Mesh* CreateRectangleTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float size_x = 1.0, float size_y = 1.0);
 
-		// /* Creates a mesh component from an OBJ file (ignores .mtl files) */
+		// /** Creates a mesh component from an OBJ file (ignores .mtl files) */
 		// static Mesh* CreateFromOBJ(std::string name, std::string objPath);
 
-		// /* Creates a mesh component from an ASCII STL file */
+		// /** Creates a mesh component from an ASCII STL file */
 		// static Mesh* CreateFromSTL(std::string name, std::string stlPath);
 
-		// /* Creates a mesh component from a GLB file (material properties are ignored) */
+		// /** Creates a mesh component from a GLB file (material properties are ignored) */
 		// static Mesh* CreateFromGLB(std::string name, std::string glbPath);
 
-		// /* Creates a mesh component from TetGen node/element files (Can be made using "Mesh::tetrahedrahedralize") */
+		// /** Creates a mesh component from TetGen node/element files (Can be made using "Mesh::tetrahedrahedralize") */
 		// static Mesh* CreateFromTetgen(std::string name, std::string path);
 
-		// /* Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates, 
+		// /** Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates, 
 		// 	and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length
 		// 	as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other
 		// 	supplied per vertex data must be a multiple of 3 in length. */
@@ -336,10 +336,10 @@ class Mesh : public StaticFactory
 		// bool should_show_bounding_box();
 
 	private:
-		/* Creates an uninitialized mesh. Useful for preallocation. */
+		/** Creates an uninitialized mesh. Useful for preallocation. */
 		Mesh();
 
-		/* Creates a mesh with the given name and id. */
+		/** Creates a mesh with the given name and id. */
 		Mesh(std::string name, uint32_t id);
 
 		/* TODO */
@@ -409,22 +409,22 @@ class Mesh : public StaticFactory
 		/* Frees any resources this mesh component may have allocated */
 		void cleanup();
 
-		// /* Creates a generic vertex buffer object */
+		// /** Creates a generic vertex buffer object */
 		// uint64_t createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, vk::DeviceMemory &bufferMemory);
 
-		// /* Creates a position buffer, and uploads position data stored in the positions list */
+		// /** Creates a position buffer, and uploads position data stored in the positions list */
 		// void createPointBuffer(bool allow_edits, bool submit_immediately);
 
-		// /* Creates a per vertex color buffer, and uploads per vertex color data stored in the colors list */
+		// /** Creates a per vertex color buffer, and uploads per vertex color data stored in the colors list */
 		// void createColorBuffer(bool allow_edits, bool submit_immediately);
 
-		// /* Creates a normal buffer, and uploads normal data stored in the normals list */
+		// /** Creates a normal buffer, and uploads normal data stored in the normals list */
 		// void createNormalBuffer(bool allow_edits, bool submit_immediately);
 
-		// /* Creates a texture coordinate buffer, and uploads texture coordinate data stored in the texture coordinates list */
+		// /** Creates a texture coordinate buffer, and uploads texture coordinate data stored in the texture coordinates list */
 		// void createTexCoordBuffer(bool allow_edits, bool submit_immediately);
 
-		// /* Creates an index buffer, and uploads index data stored in the indices list */
+		// /** Creates an index buffer, and uploads index data stored in the indices list */
 		// void createTriangleIndexBuffer(bool allow_edits, bool submit_immediately);
 
 		// /* Loads in an OBJ mesh and copies per vertex data to the GPU */
@@ -450,7 +450,7 @@ class Mesh : public StaticFactory
 		// 	bool submit_immediately
 		// );
 		
-		/* Creates a procedural mesh from the given mesh generator, and copies per vertex to the GPU */
+		/** Creates a procedural mesh from the given mesh generator, and copies per vertex to the GPU */
 		template <class Generator>
 		void generate_procedural(Generator &mesh, bool flip_z)
 		{
