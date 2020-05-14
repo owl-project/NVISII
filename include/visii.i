@@ -48,6 +48,7 @@ if hasattr(sys, 'gettotalrefcount'):
 %feature("kwargs") Entity;
 %feature("kwargs") Transform;
 %feature("kwargs") Material;
+%feature("kwargs") Mesh;
 
 /* -------- GLM Vector Math Library --------------*/
 %feature("autodoc","2");
@@ -66,6 +67,7 @@ if hasattr(sys, 'gettotalrefcount'):
 #include "visii/entity.h"
 #include "visii/transform.h"
 #include "visii/material.h"
+#include "visii/mesh.h"
 %}
 
 %include "visii/visii.h"
@@ -73,4 +75,5 @@ if hasattr(sys, 'gettotalrefcount'):
 %include "visii/entity.h"
 %include "visii/transform.h"
 %include "visii/material.h"
+%include "visii/mesh.h"
 

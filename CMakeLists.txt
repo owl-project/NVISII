@@ -67,6 +67,14 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 # Build options go here... Things like "Build Tests", or "Generate documentation"...
 
 # ┌──────────────────────────────────────────────────────────────────┐
+# │  Definitions                                                     │
+# └──────────────────────────────────────────────────────────────────┘
+
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+add_definitions(-DNOMINMAX)
+add_definitions(-DGENERATOR_USE_GLM)
+
+# ┌──────────────────────────────────────────────────────────────────┐
 # │  External Dependencies                                           │
 # └──────────────────────────────────────────────────────────────────┘
 
@@ -119,7 +127,12 @@ endif()
 include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
 
 # glm
-include_directories(SYSTEM externals/glm)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
+
+# geometry generator
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/externals/generator)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/generator/include)
+set_property(TARGET generator PROPERTY FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/externals/generator")
 
 # # glad
 # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include)
@@ -199,6 +212,7 @@ include_directories(SYSTEM externals/glm)
 set (
   LIBRARIES
   ${PYTHON_LIBRARY}
+  generator
   # ${GLFW_LIBRARIES}
   # ${OPENGL_gl_LIBRARY}
   # ${TBB_LIBRARIES}
@@ -216,9 +230,6 @@ endif()
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Definitions                                                     │
 # └──────────────────────────────────────────────────────────────────┘
-
-# For MSVC
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 # message(WARN ${Python3_VERSION_MAJOR})
 # add_definitions(-DPython3_VERSION_MAJOR=${Python3_VERSION_MAJOR})
 # add_definitions(-DPython3_VERSION_MINOR=${Python3_VERSION_MINOR})
@@ -273,7 +284,7 @@ install(TARGETS ViSII_LIB
 set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY CPLUSPLUS ON)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen")
+set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen" "-builtin" "-py3" "-O")
 swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
 target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} ViSII_LIB)
