@@ -33,7 +33,7 @@ class Mesh : public StaticFactory
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param size Half of the side length in x (0), y (1) and z (2) direction. 
 		 * @param segments The number of segments in x (0), y (1) and z (2)
-		 * directions. All should be >= 1. If any one is zero faces in that
+		 * directions. All should be >= 1. If any one is zero, faces in that
 		 * direction are not genereted. If more than one is zero the mesh is empty.
 		 * @returns a reference to the mesh component
 		 */
