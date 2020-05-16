@@ -12,11 +12,11 @@
 // #include "RTXBigUMesh/Systems/PhysicsSystem/PhysicsSystem.hxx"
 
 Entity Entity::entities[MAX_ENTITIES];
-EntityStruct Entity::entity_structs[MAX_ENTITIES];
+EntityStruct Entity::entityStructs[MAX_ENTITIES];
 std::map<std::string, uint32_t> Entity::lookupTable;
-std::shared_ptr<std::mutex> Entity::creation_mutex;
-bool Entity::Initialized = false;
-bool Entity::Dirty = true;
+std::shared_ptr<std::mutex> Entity::creationMutex;
+bool Entity::factoryInitialized = false;
+bool Entity::anyDirty = true;
 
 Entity::Entity() {
 	this->initialized = false;
@@ -26,35 +26,35 @@ Entity::Entity(std::string name, uint32_t id) {
 	this->initialized = true;
 	this->name = name;
 	this->id = id;
-	entity_structs[id].initialized = true;
-	entity_structs[id].transform_id = -1;
-	entity_structs[id].camera_id = -1;
-	entity_structs[id].material_id = -1;
-	entity_structs[id].light_id = -1;
-	entity_structs[id].mesh_id = -1;
-	entity_structs[id].rigid_body_id = -1;
-	entity_structs[id].collider_id = -1;
+	entityStructs[id].initialized = true;
+	entityStructs[id].transform_id = -1;
+	entityStructs[id].camera_id = -1;
+	entityStructs[id].material_id = -1;
+	entityStructs[id].light_id = -1;
+	entityStructs[id].mesh_id = -1;
+	entityStructs[id].rigid_body_id = -1;
+	entityStructs[id].collider_id = -1;
 }
 
-std::string Entity::to_string()
+std::string Entity::toString()
 {
 	std::string output;
 	output += "{\n";
 	output += "\ttype: \"Entity\",\n";
 	output += "\tname: \"" + name + "\",\n";
 	output += "\tid: \"" + std::to_string(id) + "\",\n";
-	output += "\ttransform_id: " + std::to_string(entity_structs[id].transform_id) + "\n";
-	output += "\tcamera_id: " + std::to_string(entity_structs[id].camera_id) + "\n";
-	output += "\tmaterial_id: " + std::to_string(entity_structs[id].material_id) + "\n";
-	output += "\tlight_id: " + std::to_string(entity_structs[id].light_id) + "\n";
-	output += "\tmesh_id: " + std::to_string(entity_structs[id].mesh_id) + "\n";
+	output += "\ttransform_id: " + std::to_string(entityStructs[id].transform_id) + "\n";
+	output += "\tcamera_id: " + std::to_string(entityStructs[id].camera_id) + "\n";
+	output += "\tmaterial_id: " + std::to_string(entityStructs[id].material_id) + "\n";
+	output += "\tlight_id: " + std::to_string(entityStructs[id].light_id) + "\n";
+	output += "\tmesh_id: " + std::to_string(entityStructs[id].mesh_id) + "\n";
 	output += "}";
 	return output;
 }
 
 
-EntityStruct Entity::get_struct() {
-	return entity_structs[id];
+EntityStruct Entity::getStruct() {
+	return entityStructs[id];
 }
 
 // void Entity::set_collider(int32_t collider_id) 
@@ -63,33 +63,33 @@ EntityStruct Entity::get_struct() {
 // 		throw std::runtime_error( std::string("Collider id must be greater than or equal to -1"));
 // 	if (collider_id >= MAX_COLLIDERS)
 // 		throw std::runtime_error( std::string("Collider id must be less than max colliders"));
-// 	auto ps = Systems::PhysicsSystem::Get();
+// 	auto ps = Systems::PhysicsSystem::get();
 // 	auto edit_mutex = ps->get_edit_mutex();
 //     auto edit_lock = std::lock_guard<std::mutex>(*edit_mutex.get());
 // 	this->entity_struct.collider_id = collider_id;
-// 	mark_dirty();
+// 	markDirty();
 // }
 
 // void Entity::set_collider(Collider* collider) 
 // {
 // 	if (!collider) 
 // 		throw std::runtime_error( std::string("Invalid rigid body handle."));
-// 	if (!collider->is_initialized())
+// 	if (!collider->isFactoryInitialized())
 // 		throw std::runtime_error("Error, collider not initialized");
-// 	auto ps = Systems::PhysicsSystem::Get();
+// 	auto ps = Systems::PhysicsSystem::get();
 // 	auto edit_mutex = ps->get_edit_mutex();
 //     auto edit_lock = std::lock_guard<std::mutex>(*edit_mutex.get());
-// 	this->entity_struct.collider_id = collider->get_id();
-// 	mark_dirty();
+// 	this->entity_struct.collider_id = collider->getId();
+// 	markDirty();
 // }
 
 // void Entity::clear_collider()
 // {
-// 	auto ps = Systems::PhysicsSystem::Get();
+// 	auto ps = Systems::PhysicsSystem::get();
 // 	auto edit_mutex = ps->get_edit_mutex();
 //     auto edit_lock = std::lock_guard<std::mutex>(*edit_mutex.get());
 // 	this->entity_struct.collider_id = -1;
-// 	mark_dirty();
+// 	markDirty();
 // }
 
 // int32_t Entity::get_collider_id() 
@@ -101,8 +101,8 @@ EntityStruct Entity::get_struct() {
 // {
 // 	if ((this->entity_struct.collider_id < 0) || (this->entity_struct.collider_id >= MAX_COLLIDERS)) 
 // 		return nullptr;
-// 	auto collider = Collider::Get(this->entity_struct.collider_id); 
-// 	if (!collider->is_initialized())
+// 	auto collider = Collider::get(this->entity_struct.collider_id); 
+// 	if (!collider->isFactoryInitialized())
 // 		return nullptr;
 // 	return collider;
 // }
@@ -114,23 +114,23 @@ EntityStruct Entity::get_struct() {
 // 	if (rigid_body_id >= MAX_RIGIDBODIES)
 // 		throw std::runtime_error( std::string("RigidBody id must be less than max rigid bodies"));
 // 	this->entity_struct.rigid_body_id = rigid_body_id;
-// 	mark_dirty();
+// 	markDirty();
 // }
 
 // void Entity::set_rigid_body(RigidBody* rigid_body) 
 // {
 // 	if (!rigid_body) 
 // 		throw std::runtime_error( std::string("Invalid rigid body handle."));
-// 	if (!rigid_body->is_initialized())
+// 	if (!rigid_body->isFactoryInitialized())
 // 		throw std::runtime_error("Error, rigid body not initialized");
-// 	this->entity_struct.rigid_body_id = rigid_body->get_id();
-// 	mark_dirty();
+// 	this->entity_struct.rigid_body_id = rigid_body->getId();
+// 	markDirty();
 // }
 
 // void Entity::clear_rigid_body()
 // {
 // 	this->entity_struct.rigid_body_id = -1;
-// 	mark_dirty();
+// 	markDirty();
 // }
 
 // int32_t Entity::get_rigid_body_id() 
@@ -142,49 +142,49 @@ EntityStruct Entity::get_struct() {
 // {
 // 	if ((this->entity_struct.rigid_body_id < 0) || (this->entity_struct.rigid_body_id >= MAX_RIGIDBODIES)) 
 // 		return nullptr;
-// 	auto rigid_body = RigidBody::Get(this->entity_struct.rigid_body_id);
-// 	if (!rigid_body->is_initialized())
+// 	auto rigid_body = RigidBody::get(this->entity_struct.rigid_body_id);
+// 	if (!rigid_body->isFactoryInitialized())
 // 		return nullptr;
 // 	return rigid_body;
 // }
 
-void Entity::set_transform(int32_t transform_id) 
+void Entity::setTransform(int32_t transform_id) 
 {
 	if (transform_id < -1) 
 		throw std::runtime_error( std::string("Transform id must be greater than or equal to -1"));
 	if (transform_id >= MAX_TRANSFORMS)
 		throw std::runtime_error( std::string("Transform id must be less than max transforms"));
-	entity_structs[id].transform_id = transform_id;
-	mark_dirty();
+	entityStructs[id].transform_id = transform_id;
+	markDirty();
 }
 
-void Entity::set_transform(Transform* transform) 
+void Entity::setTransform(Transform* transform) 
 {
 	if (!transform) 
 		throw std::runtime_error( std::string("Invalid transform handle."));
-	if (!transform->is_initialized())
+	if (!transform->isFactoryInitialized())
 		throw std::runtime_error("Error, transform not initialized");
-	entity_structs[id].transform_id = transform->get_id();
-	mark_dirty();
+	entityStructs[id].transform_id = transform->getId();
+	markDirty();
 }
 
-void Entity::clear_transform()
+void Entity::clearTransform()
 {
-	entity_structs[id].transform_id = -1;
-	mark_dirty();
+	entityStructs[id].transform_id = -1;
+	markDirty();
 }
 
-int32_t Entity::get_transform_id() 
+int32_t Entity::getTransformId() 
 {
-	return entity_structs[id].transform_id;
+	return entityStructs[id].transform_id;
 }
 
-Transform* Entity::get_transform()
+Transform* Entity::getTransform()
 {
-	if ((entity_structs[id].transform_id < 0) || (entity_structs[id].transform_id >= MAX_TRANSFORMS)) 
+	if ((entityStructs[id].transform_id < 0) || (entityStructs[id].transform_id >= MAX_TRANSFORMS)) 
 		return nullptr;
-	auto transform = Transform::Get(entity_structs[id].transform_id); 
-	if (!transform->is_initialized())
+	auto transform = Transform::get(entityStructs[id].transform_id); 
+	if (!transform->isFactoryInitialized())
 		return nullptr;
 	return transform;
 }
@@ -196,23 +196,23 @@ Transform* Entity::get_transform()
 // 	if (camera_id >= MAX_CAMERAS)
 // 		throw std::runtime_error( std::string("Camera id must be less than max cameras"));
 // 	this->entity_struct.camera_id = camera_id;
-// 	mark_dirty();
+// 	markDirty();
 // }
 
 // void Entity::set_camera(Camera *camera) 
 // {
 // 	if (!camera)
 // 		throw std::runtime_error( std::string("Invalid camera handle."));
-// 	if (!camera->is_initialized())
+// 	if (!camera->isFactoryInitialized())
 // 		throw std::runtime_error("Error, camera not initialized");
-// 	this->entity_struct.camera_id = camera->get_id();
-// 	mark_dirty();
+// 	this->entity_struct.camera_id = camera->getId();
+// 	markDirty();
 // }
 
 // void Entity::clear_camera()
 // {
 // 	this->entity_struct.camera_id = -1;
-// 	mark_dirty();
+// 	markDirty();
 // }
 
 // int32_t Entity::get_camera_id() 
@@ -224,49 +224,49 @@ Transform* Entity::get_transform()
 // {
 // 	if ((this->entity_struct.camera_id < 0) || (this->entity_struct.camera_id >= MAX_CAMERAS)) 
 // 		return nullptr;
-// 	auto camera = Camera::Get(this->entity_struct.camera_id); 
-// 	if (!camera->is_initialized())
+// 	auto camera = Camera::get(this->entity_struct.camera_id); 
+// 	if (!camera->isFactoryInitialized())
 // 		return nullptr;
 // 	return camera;
 // }
 
-void Entity::set_material(int32_t material_id) 
+void Entity::setMaterial(int32_t material_id) 
 {
 	if (material_id < -1) 
 		throw std::runtime_error( std::string("Material id must be greater than or equal to -1"));
 	if (material_id >= MAX_MATERIALS)
 		throw std::runtime_error( std::string("Material id must be less than max materials"));
-	entity_structs[id].material_id = material_id;
-	mark_dirty();
+	entityStructs[id].material_id = material_id;
+	markDirty();
 }
 
-void Entity::set_material(Material *material) 
+void Entity::setMaterial(Material *material) 
 {
 	if (!material)
 		throw std::runtime_error( std::string("Invalid material handle."));
-	if (!material->is_initialized())
+	if (!material->isFactoryInitialized())
 		throw std::runtime_error("Error, material not initialized");
-	entity_structs[id].material_id = material->get_id();
-	mark_dirty();
+	entityStructs[id].material_id = material->getId();
+	markDirty();
 }
 
-void Entity::clear_material()
+void Entity::clearMaterial()
 {
-	entity_structs[id].material_id = -1;
-	mark_dirty();
+	entityStructs[id].material_id = -1;
+	markDirty();
 }
 
-int32_t Entity::get_material_id() 
+int32_t Entity::getMaterialId() 
 {
-	return entity_structs[id].material_id;
+	return entityStructs[id].material_id;
 }
 
-Material* Entity::get_material()
+Material* Entity::getMaterial()
 {
-	if ((entity_structs[id].material_id < 0) || (entity_structs[id].material_id >= MAX_MATERIALS)) 
+	if ((entityStructs[id].material_id < 0) || (entityStructs[id].material_id >= MAX_MATERIALS)) 
 		return nullptr;
-	auto material = Material::Get(entity_structs[id].material_id);
-	if (!material->is_initialized()) return nullptr;
+	auto material = Material::get(entityStructs[id].material_id);
+	if (!material->isFactoryInitialized()) return nullptr;
 	return material;
 }
 
@@ -277,23 +277,23 @@ Material* Entity::get_material()
 // 	if (light_id >= MAX_LIGHTS)
 // 		throw std::runtime_error( std::string("Light id must be less than max lights"));
 // 	this->entity_struct.light_id = light_id;
-// 	mark_dirty();
+// 	markDirty();
 // }
 
 // void Entity::set_light(Light* light) 
 // {
 // 	if (!light) 
 // 		throw std::runtime_error( std::string("Invalid light handle."));
-// 	if (!light->is_initialized())
+// 	if (!light->isFactoryInitialized())
 // 		throw std::runtime_error("Error, light not initialized");
-// 	this->entity_struct.light_id = light->get_id();
-// 	mark_dirty();
+// 	this->entity_struct.light_id = light->getId();
+// 	markDirty();
 // }
 
 // void Entity::clear_light()
 // {
 // 	this->entity_struct.light_id = -1;
-// 	mark_dirty();
+// 	markDirty();
 // }
 
 // int32_t Entity::get_light_id() 
@@ -305,68 +305,68 @@ Material* Entity::get_material()
 // {
 // 	if ((this->entity_struct.light_id < 0) || (this->entity_struct.light_id >= MAX_LIGHTS)) 
 // 		return nullptr;
-// 	auto light = Light::Get(this->entity_struct.light_id); 
-// 	if (!light->is_initialized())
+// 	auto light = Light::get(this->entity_struct.light_id); 
+// 	if (!light->isFactoryInitialized())
 // 		return nullptr;
 // 	return light;
 // }
 
-void Entity::set_mesh(int32_t mesh_id) 
+void Entity::setMesh(int32_t mesh_id) 
 {
 	if (mesh_id < -1) 
 		throw std::runtime_error( std::string("Mesh id must be greater than or equal to -1"));
 	if (mesh_id >= MAX_MESHES)
 		throw std::runtime_error( std::string("Mesh id must be less than max meshes"));
-	this->entity_structs[id].mesh_id = mesh_id;
+	this->entityStructs[id].mesh_id = mesh_id;
 
-	// auto rs = Systems::RenderSystem::Get();
+	// auto rs = Systems::RenderSystem::get();
 	// rs->enqueue_bvh_rebuild();
-	mark_dirty();
+	markDirty();
 }
 
-void Entity::set_mesh(Mesh* mesh) 
+void Entity::setMesh(Mesh* mesh) 
 {
 	if (!mesh) 
 		throw std::runtime_error( std::string("Invalid mesh handle."));
-	if (!mesh->is_initialized())
+	if (!mesh->isFactoryInitialized())
 		throw std::runtime_error("Error, mesh not initialized");
-	this->entity_structs[id].mesh_id = mesh->get_id();
+	this->entityStructs[id].mesh_id = mesh->getId();
 
-	// auto rs = Systems::RenderSystem::Get();
+	// auto rs = Systems::RenderSystem::get();
 	// rs->enqueue_bvh_rebuild();
-	mark_dirty();
+	markDirty();
 }
 
-void Entity::clear_mesh()
+void Entity::clearMesh()
 {
-	this->entity_structs[id].mesh_id = -1;
+	this->entityStructs[id].mesh_id = -1;
 
-	// auto rs = Systems::RenderSystem::Get();
+	// auto rs = Systems::RenderSystem::get();
 	// rs->enqueue_bvh_rebuild();
-	mark_dirty();
+	markDirty();
 }
 
-int32_t Entity::get_mesh_id() 
+int32_t Entity::getMeshId() 
 {
-	return this->entity_structs[id].mesh_id;
+	return this->entityStructs[id].mesh_id;
 }
 
-Mesh* Entity::get_mesh()
+Mesh* Entity::getMesh()
 {
-	if ((this->entity_structs[id].mesh_id < 0) || (this->entity_structs[id].mesh_id >= MAX_MESHES)) 
+	if ((this->entityStructs[id].mesh_id < 0) || (this->entityStructs[id].mesh_id >= MAX_MESHES)) 
 		return nullptr;
-	auto mesh = Mesh::Get(this->entity_structs[id].mesh_id);
-	if (!mesh->is_initialized()) 
+	auto mesh = Mesh::get(this->entityStructs[id].mesh_id);
+	if (!mesh->isFactoryInitialized()) 
 		return nullptr;
 	return mesh;
 }
 
 /* SSBO logic */
-void Entity::Initialize()
+void Entity::initializeFactory()
 {
-	if (IsInitialized()) return;
+	if (isFactoryInitialized()) return;
 
-	// auto vulkan = Libraries::Vulkan::Get();
+	// auto vulkan = Libraries::Vulkan::get();
 	// auto device = vulkan->get_device();
 	// auto physical_device = vulkan->get_physical_device();
 
@@ -408,24 +408,24 @@ void Entity::Initialize()
 	// 	device.bindBufferMemory(SSBO, SSBOMemory, 0);
 	// }
 
-	creation_mutex = std::make_shared<std::mutex>();
+	creationMutex = std::make_shared<std::mutex>();
 
-	Initialized = true;
+	factoryInitialized = true;
 
 }
 
-bool Entity::IsInitialized()
+bool Entity::isFactoryInitialized()
 {
-	return Initialized;
+	return factoryInitialized;
 }
 
 // void Entity::UpdateComponents()
 // {
 // 	/* TODO: remove this for loop */
 // 	for (int i = 0; i < MAX_ENTITIES; ++i) {
-// 		if (!entities[i].is_initialized()) continue;
+// 		if (!entities[i].isFactoryInitialized()) continue;
 // 		/* TODO: account for parent transforms */
-// 		entity_structs[i] = entities[i].entity_struct;
+// 		entityStructs[i] = entities[i].entity_struct;
 // 	};
 // }
 
@@ -433,7 +433,7 @@ bool Entity::IsInitialized()
 // {
 // 	if (!Dirty) return;
 // 	Dirty = false;
-// 	auto vulkan = Libraries::Vulkan::Get();
+// 	auto vulkan = Libraries::Vulkan::get();
 // 	auto device = vulkan->get_device();
 
 // 	if (SSBOMemory == vk::DeviceMemory()) return;
@@ -445,17 +445,17 @@ bool Entity::IsInitialized()
 // 	pinnedMemory = (EntityStruct*) device.mapMemory(stagingSSBOMemory, 0, bufferSize);
 
 // 	if (pinnedMemory == nullptr) return;
-// 	EntityStruct entity_structs[MAX_ENTITIES];
+// 	EntityStruct entityStructs[MAX_ENTITIES];
 	
 // 	/* TODO: remove this for loop */
 // 	for (int i = 0; i < MAX_ENTITIES; ++i) {
-// 		// if (!entities[i].is_initialized()) continue;
+// 		// if (!entities[i].isFactoryInitialized()) continue;
 // 		/* TODO: account for parent transforms */
-// 		entity_structs[i] = entities[i].entity_struct;
+// 		entityStructs[i] = entities[i].entity_struct;
 // 	};
 
 // 	/* Copy to GPU mapped memory */
-// 	memcpy(pinnedMemory, entity_structs, sizeof(entity_structs));
+// 	memcpy(pinnedMemory, entityStructs, sizeof(entityStructs));
 
 // 	device.unmapMemory(stagingSSBOMemory);
 
@@ -464,30 +464,30 @@ bool Entity::IsInitialized()
 // 	command_buffer.copyBuffer(stagingSSBO, SSBO, copyRegion);
 // }
 
-// vk::Buffer Entity::GetSSBO()
+// vk::Buffer Entity::getSsbo()
 // {
 // 	if ((SSBO != vk::Buffer()) && (SSBOMemory != vk::DeviceMemory()))
 // 		return SSBO;
 // 	else return vk::Buffer();
 // }
 
-// uint32_t Entity::GetSSBOSize()
+// uint32_t Entity::getSsboSize()
 // {
 // 	return MAX_ENTITIES * sizeof(EntityStruct);
 // }
 
-void Entity::CleanUp()
+void Entity::cleanUp()
 {
-	if (!IsInitialized()) return;
+	if (!isFactoryInitialized()) return;
 
 	for (auto &entity : entities) {
 		if (entity.initialized) {
-			Entity::Delete(entity.id);
+			Entity::remove(entity.id);
 		}
 	}
 
-	// auto vulkan = Libraries::Vulkan::Get();
-	// if (!vulkan->is_initialized())
+	// auto vulkan = Libraries::Vulkan::get();
+	// if (!vulkan->isFactoryInitialized())
 	// 	throw std::runtime_error( std::string("Vulkan library is not initialized"));
 	// auto device = vulkan->get_device();
 	// if (device == vk::Device())
@@ -504,11 +504,11 @@ void Entity::CleanUp()
 	// stagingSSBO = vk::Buffer();
 	// stagingSSBOMemory = vk::DeviceMemory();
 
-	Initialized = false;
+	factoryInitialized = false;
 }	
 
 /* Static Factory Implementations */
-Entity* Entity::Create(
+Entity* Entity::create(
 	std::string name, 
 	Transform* transform, 
 	Material* material//, 
@@ -519,48 +519,48 @@ Entity* Entity::Create(
 	// Collider* collider
     )
 {
-	auto entity =  StaticFactory::Create(creation_mutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
+	auto entity =  StaticFactory::create(creationMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
 	try {
-		if (transform) entity->set_transform(transform);
-		if (material) entity->set_material(material);
-		// if (camera) entity->set_camera(camera);
-		// if (light) entity->set_light(light);
-		// if (mesh) entity->set_mesh(mesh);
-		// if (rigid_body) entity->set_rigid_body(rigid_body);
-		// if (collider) entity->set_collider(collider);
+		if (transform) entity->setTransform(transform);
+		if (material) entity->setMaterial(material);
+		// if (camera) entity->setCamera(camera);
+		// if (light) entity->setLight(light);
+		// if (mesh) entity->setMesh(mesh);
+		// if (rigid_body) entity->setRigidBody(rigidBody);
+		// if (collider) entity->setCollider(collider);
 		return entity;
 	} catch (...) {
-		StaticFactory::DeleteIfExists(creation_mutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
+		StaticFactory::removeIfExists(creationMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
 		throw;
 	}
 }
 
-Entity* Entity::Get(std::string name) {
-	return StaticFactory::Get(creation_mutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
+Entity* Entity::get(std::string name) {
+	return StaticFactory::get(creationMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
 }
 
-Entity* Entity::Get(uint32_t id) {
-	return StaticFactory::Get(creation_mutex, id, "Entity", lookupTable, entities, MAX_ENTITIES);
+Entity* Entity::get(uint32_t id) {
+	return StaticFactory::get(creationMutex, id, "Entity", lookupTable, entities, MAX_ENTITIES);
 }
 
-void Entity::Delete(std::string name) {
-	StaticFactory::Delete(creation_mutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
-	Dirty = true;
+void Entity::remove(std::string name) {
+	StaticFactory::remove(creationMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
+	anyDirty = true;
 }
 
-void Entity::Delete(uint32_t id) {
-	StaticFactory::Delete(creation_mutex, id, "Entity", lookupTable, entities, MAX_ENTITIES);
-	Dirty = true;
+void Entity::remove(uint32_t id) {
+	StaticFactory::remove(creationMutex, id, "Entity", lookupTable, entities, MAX_ENTITIES);
+	anyDirty = true;
 }
 
-EntityStruct* Entity::GetFrontStruct() {
-	return entity_structs;
+EntityStruct* Entity::getFrontStruct() {
+	return entityStructs;
 }
 
-Entity* Entity::GetFront() {
+Entity* Entity::getFront() {
 	return entities;
 }
 
-uint32_t Entity::GetCount() {
+uint32_t Entity::getCount() {
 	return MAX_ENTITIES;
 }

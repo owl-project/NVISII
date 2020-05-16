@@ -284,7 +284,7 @@ install(TARGETS ViSII_LIB
 set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY CPLUSPLUS ON)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen" "-builtin" "-py3" "-O")
+set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen" "-py3") # -builtin seems to remove kwargs...
 swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
 target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} ViSII_LIB)
