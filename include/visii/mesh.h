@@ -29,104 +29,104 @@ class Mesh : public StaticFactory
 	friend class StaticFactory;
 	public:
 		/* Creates a mesh component from a procedural box */
-		static Mesh* CreateBox(std::string name);
+		static Mesh* createBox(std::string name);
 		
 		/* Creates a mesh component from a procedural cone capped on the bottom */
-		static Mesh* CreateCappedCone(std::string name, float radius = 1.0, float height = 1.0);
+		static Mesh* createCappedCone(std::string name, float radius = 1.0, float height = 1.0);
 		
 		/* Creates a mesh component from a procedural cylinder capped on the bottom */
-		static Mesh* CreateCappedCylinder(std::string name, float radius = 1.0f, float size = 1.f, int slices = 32, int segments = 1, int rings = 1, float start = 0.0f, float sweep = 6.28319f);
+		static Mesh* createCappedCylinder(std::string name, float radius = 1.0f, float size = 1.f, int slices = 32, int segments = 1, int rings = 1, float start = 0.0f, float sweep = 6.28319f);
 		
 		/* Creates a mesh component from a procedural tube capped on both ends */
-		static Mesh* CreateCappedTube(std::string name);
+		static Mesh* createCappedTube(std::string name);
 		
 		/* Creates a mesh component from a procedural capsule */
-		static Mesh* CreateCapsule(std::string name, float radius = 1.0, float size = 0.5, int slices = 32, int segments = 4, int rings = 8, float start = 0.0, float sweep = 6.28319f);
+		static Mesh* createCapsule(std::string name, float radius = 1.0, float size = 0.5, int slices = 32, int segments = 4, int rings = 8, float start = 0.0, float sweep = 6.28319f);
 		
 		/* Creates a mesh component from a procedural cone */
-		static Mesh* CreateCone(std::string name, float radius = 1.0, float height = 1.0);
+		static Mesh* createCone(std::string name, float radius = 1.0, float height = 1.0);
 		
 		/* Creates a mesh component from a procedural pentagon */
-		static Mesh* CreatePentagon(std::string name);
+		static Mesh* createPentagon(std::string name);
 		
 		/* Creates a mesh component from a procedural cylinder (uncapped) */
-		static Mesh* CreateCylinder(std::string name);
+		static Mesh* createCylinder(std::string name);
 
 		/* Creates a mesh component from a procedural disk */
-		static Mesh* CreateDisk(std::string name);
+		static Mesh* createDisk(std::string name);
 
 		/* Creates a mesh component from a procedural dodecahedron */
-		static Mesh* CreateDodecahedron(std::string name);
+		static Mesh* createDodecahedron(std::string name);
 
 		/* Creates a mesh component from a procedural plane */
-		static Mesh* CreatePlane(std::string name);
+		static Mesh* createPlane(std::string name);
 
 		/* Creates a mesh component from a procedural icosahedron */
-		static Mesh* CreateIcosahedron(std::string name);
+		static Mesh* createIcosahedron(std::string name);
 
 		/* Creates a mesh component from a procedural icosphere */
-		static Mesh* CreateIcosphere(std::string name);
+		static Mesh* createIcosphere(std::string name);
 
 		/* Creates a mesh component from a procedural parametric mesh. (TODO: accept a callback which given an x and y position 
 			returns a Z hightfield) */
-		// static Mesh* CreateParametricMesh(std::string name);
+		// static Mesh* createParametricMesh(std::string name);
 
 		/* Creates a mesh component from a procedural box with rounded edges */
-		static Mesh* CreateRoundedBox(std::string name, float radius = .25, glm::vec3 size = glm::vec3(.75f, .75f, .75f), int slices=4, glm::ivec3 segments=glm::ivec3(1, 1, 1));
+		static Mesh* createRoundedBox(std::string name, float radius = .25, glm::vec3 size = glm::vec3(.75f, .75f, .75f), int slices=4, glm::ivec3 segments=glm::ivec3(1, 1, 1));
 	
 		/* Creates a mesh component from a procedural sphere */
-		static Mesh* CreateSphere(std::string name, float radius = 1.0f, int slices = 16, int segments = 16, float slice_start = 0.f, float slice_sweep = 6.28319f, float segment_start = 0.f, float segment_sweep = 6.28319f);
+		static Mesh* createSphere(std::string name, float radius = 1.0f, int slices = 16, int segments = 16, float slice_start = 0.f, float sliceSweep = 6.28319f, float segmentStart = 0.f, float segmentSweep = 6.28319f);
 
 		/* Creates a mesh component from a procedural cone with a rounded cap */
-		static Mesh* CreateSphericalCone(std::string name);
+		static Mesh* createSphericalCone(std::string name);
 
 		/* Creates a mesh component from a procedural quarter-hemisphere */
-		static Mesh* CreateSphericalTriangle(std::string name);
+		static Mesh* createSphericalTriangle(std::string name);
 
 		/* Creates a mesh component from a procedural spring */
-		static Mesh* CreateSpring(std::string name);
+		static Mesh* createSpring(std::string name);
 
 		/* Creates a mesh component from a procedural utah teapot */
-		static Mesh* CreateTeapotahedron(std::string name, uint32_t segments = 8);
+		static Mesh* createTeapotahedron(std::string name, uint32_t segments = 8);
 
 		/* Creates a mesh component from a procedural torus */
-		static Mesh* CreateTorus(std::string name);
+		static Mesh* createTorus(std::string name);
 
 		/* Creates a mesh component from a procedural torus knot */
-		static Mesh* CreateTorusKnot(std::string name);
+		static Mesh* createTorusKnot(std::string name);
 
 		/* Creates a mesh component from a procedural triangle */
-		static Mesh* CreateTriangle(std::string name);
+		static Mesh* createTriangle(std::string name);
 
 		/* Creates a mesh component from a procedural tube (uncapped) */
-		static Mesh* CreateTube(std::string name);
+		static Mesh* createTube(std::string name);
 
 		/* Creates a mesh component from a procedural tube (uncapped) generated from a polyline */
-		static Mesh* CreateTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius = 1.0, uint32_t segments = 16);
+		static Mesh* createTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius = 1.0, uint32_t segments = 16);
 
 		/* Creates a mesh component from a procedural rounded rectangle tube (uncapped) generated from a polyline */
-		static Mesh* CreateRoundedRectangleTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius = 1.0, float size_x = .75, float size_y = .75);
+		static Mesh* createRoundedRectangleTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius = 1.0, float sizeX = .75, float sizeY = .75);
 
 		/* Creates a mesh component from a procedural rectangle tube (uncapped) generated from a polyline */
-		static Mesh* CreateRectangleTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float size_x = 1.0, float size_y = 1.0);
+		static Mesh* createRectangleTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float sizeX = 1.0, float sizeY = 1.0);
 
 		// /* Creates a mesh component from an OBJ file (ignores .mtl files) */
-		// static Mesh* CreateFromOBJ(std::string name, std::string objPath);
+		// static Mesh* createFromObj(std::string name, std::string objPath);
 
 		// /* Creates a mesh component from an ASCII STL file */
-		// static Mesh* CreateFromSTL(std::string name, std::string stlPath);
+		// static Mesh* createFromStl(std::string name, std::string stlPath);
 
 		// /* Creates a mesh component from a GLB file (material properties are ignored) */
-		// static Mesh* CreateFromGLB(std::string name, std::string glbPath);
+		// static Mesh* createFromGlb(std::string name, std::string glbPath);
 
 		// /* Creates a mesh component from TetGen node/element files (Can be made using "Mesh::tetrahedrahedralize") */
-		// static Mesh* CreateFromTetgen(std::string name, std::string path);
+		// static Mesh* createFromTetgen(std::string name, std::string path);
 
 		// /* Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates, 
 		// 	and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length
 		// 	as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other
 		// 	supplied per vertex data must be a multiple of 3 in length. */
-		// static Mesh* CreateFromRaw(
+		// static Mesh* createFromRaw(
 		// 	std::string name,
 		// 	std::vector<glm::vec4> positions, 
 		// 	std::vector<glm::vec4> normals = std::vector<glm::vec4>(), 
@@ -138,56 +138,56 @@ class Mesh : public StaticFactory
         /** Gets a mesh by name 
          * \returns a mesh who's primary name key matches \p name 
          * \param name A unique name used to lookup this mesh. */
-        static Mesh* Get(std::string name);
+        static Mesh* get(std::string name);
 
         /** Gets a mesh by id 
          * \returns a mesh who's primary id key matches \p id 
          * \param id A unique id used to lookup this mesh. */
-        static Mesh* Get(uint32_t id);
+        static Mesh* get(uint32_t id);
 
         /** \returns a pointer to the table of MeshStructs required for rendering */
-        static MeshStruct* GetFrontStruct();
+        static MeshStruct* getFrontStruct();
 
         /** \returns a pointer to the table of mesh components */
-        static Mesh* GetFront();
+        static Mesh* getFront();
 
         /** \returns the number of allocated meshes */
-        static uint32_t GetCount();
+        static uint32_t getCount();
 
         /** Deletes the mesh who's primary name key matches \p name 
          * \param name A unique name used to lookup the mesh for deletion.*/
-        static void Delete(std::string name);
+        static void remove(std::string name);
 
         /** Deletes the mesh who's primary id key matches \p id 
          * \param id A unique id used to lookup the mesh for deletion.*/
-        static void Delete(uint32_t id);
+        static void remove(uint32_t id);
 
         /** Allocates the tables used to store all mesh components */
-        static void Initialize();
+        static void initializeFactory();
 
         /** \return True if the tables used to store all mesh components have been allocated, and False otherwise */
-        static bool IsInitialized();
+        static bool isFactoryInitialized();
 
         /** Iterates through all mesh components, computing mesh metadata for rendering purposes. */
-        static void UpdateComponents();
+        static void updateComponents();
 
         /** Frees any tables used to store mesh components */
-        static void CleanUp();
+        static void cleanUp();
 
         /** \return True if the mesh has been modified since the previous frame, and False otherwise */
-        bool is_dirty() { return dirty; }
+        bool isDirty() { return dirty; }
 
         /** \return True if the mesh has not been modified since the previous frame, and False otherwise */
-        bool is_clean() { return !dirty; }
+        bool isClean() { return !dirty; }
 
         /** Tags the current component as being modified since the previous frame. */
-        void mark_dirty() {
+        void markDirty() {
             // Dirty = true;
             dirty = true;
         };
 
         /** Tags the current component as being unmodified since the previous frame. */
-        void mark_clean() { dirty = false; }
+        void markClean() { dirty = false; }
 		
 		// /* TODO EXPLAIN THIS*/
 		// static std::vector<vk::Buffer> GetPositionSSBOs();
@@ -220,7 +220,7 @@ class Mesh : public StaticFactory
 		// static std::vector<uint32_t> GetIndexSSBOSizes();
 
 		/** Returns a json string representation of the current component */
-		std::string to_string();
+		std::string toString();
 		
 		// /* If editing is enabled, returns a list of per vertex positions */
 		// std::vector<glm::vec4> get_positions();
@@ -275,7 +275,7 @@ class Mesh : public StaticFactory
 
 		/* Computes the average of all vertex positions. (centroid) 
 			as well as min/max bounds and bounding sphere data. */
-		void compute_metadata();
+		void computeMetadata();
 
 		// /* TODO: Explain this */
 		// void save_tetrahedralization(float quality_bound, float maximum_volume);
@@ -343,14 +343,14 @@ class Mesh : public StaticFactory
 		Mesh(std::string name, uint32_t id);
 
 		/* TODO */
-		static std::shared_ptr<std::mutex> creation_mutex;
+		static std::shared_ptr<std::mutex> creationMutex;
 		
 		/* TODO */
-		static bool Initialized;
+		static bool factoryInitialized;
 		
 		/* A list of the mesh components, allocated statically */
 		static Mesh meshes[MAX_MESHES];
-		static MeshStruct mesh_structs[MAX_MESHES];
+		static MeshStruct meshStructs[MAX_MESHES];
 
 		/* A lookup table of name to mesh id */
 		static std::map<std::string, uint32_t> lookupTable;
@@ -359,9 +359,9 @@ class Mesh : public StaticFactory
 		std::vector<glm::vec4> positions;
 		std::vector<glm::vec4> normals;
 		std::vector<glm::vec4> colors;
-		std::vector<glm::vec2> texcoords;
+		std::vector<glm::vec2> texCoords;
 		// std::vector<uint32_t> tetrahedra_indices;
-		std::vector<uint32_t> triangle_indices;
+		std::vector<uint32_t> triangleIndices;
 		// std::vector<uint32_t> edge_indices;
 
 		// /* A handle to the attributes loaded from tiny obj */
@@ -407,7 +407,7 @@ class Mesh : public StaticFactory
 		// bool allowEdits = false;
 
 		/* Frees any resources this mesh component may have allocated */
-		void cleanup();
+		// void cleanup();
 
 		// /* Creates a generic vertex buffer object */
 		// uint64_t createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, vk::DeviceMemory &bufferMemory);
@@ -452,7 +452,7 @@ class Mesh : public StaticFactory
 		
 		/* Creates a procedural mesh from the given mesh generator, and copies per vertex to the GPU */
 		template <class Generator>
-		void generate_procedural(Generator &mesh, bool flip_z)
+		void generateProcedural(Generator &mesh, bool flip_z)
 		{
 			std::vector<Vertex> vertices;
 
@@ -464,7 +464,7 @@ class Mesh : public StaticFactory
 					normals.push_back(glm::vec4(-vertex.normal.x, -vertex.normal.y, -vertex.normal.z, 0.0f));
 				else
 					normals.push_back(glm::vec4(vertex.normal.x, vertex.normal.y, vertex.normal.z, 0.0f));
-				texcoords.push_back(vertex.texCoord);
+				texCoords.push_back(vertex.texCoord);
 				colors.push_back(glm::vec4(0.0, 0.0, 0.0, 0.0));
 				genVerts.next();
 			}
@@ -472,23 +472,23 @@ class Mesh : public StaticFactory
 			auto genTriangles = mesh.triangles();
 			while (!genTriangles.done()) {
 				auto triangle = genTriangles.generate();
-				triangle_indices.push_back(triangle.vertices[0]);
-				triangle_indices.push_back(triangle.vertices[1]);
-				triangle_indices.push_back(triangle.vertices[2]);
+				triangleIndices.push_back(triangle.vertices[0]);
+				triangleIndices.push_back(triangle.vertices[1]);
+				triangleIndices.push_back(triangle.vertices[2]);
 				genTriangles.next();
 			}
 
-			cleanup();
+			// cleanup();
 			// createPointBuffer();
 			// createColorBuffer();
 			// createNormalBuffer();
 			// createTexCoordBuffer();
 			// createTriangleIndexBuffer();
-			compute_metadata();
+			computeMetadata();
 		}
 
 		/* Indicates that one of the components has been edited */
-		static bool Dirty;
+		static bool anyDirty;
 
 		/* Indicates this component has been edited */
 		bool dirty = true;

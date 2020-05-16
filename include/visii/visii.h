@@ -10,12 +10,12 @@ namespace visii
 /**
    Initializes various backend systems required to render scene data.
 */
-void Initialize()
+void initialize()
 {
-    Entity::Initialize();
-    Transform::Initialize();
-    Material::Initialize();
-    Mesh::Initialize();
+    Entity::initializeFactory();
+    Transform::initializeFactory();
+    Material::initializeFactory();
+    Mesh::initializeFactory();
 }
 
 };

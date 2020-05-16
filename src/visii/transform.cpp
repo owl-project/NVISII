@@ -1,88 +1,88 @@
 #include <visii/transform.h>
 
 Transform Transform::transforms[MAX_TRANSFORMS];
-TransformStruct Transform::transform_structs[MAX_TRANSFORMS];
+TransformStruct Transform::transformStructs[MAX_TRANSFORMS];
 std::map<std::string, uint32_t> Transform::lookupTable;
 
-std::shared_ptr<std::mutex> Transform::creation_mutex;
-bool Transform::Initialized = false;
-bool Transform::Dirty = true;
+std::shared_ptr<std::mutex> Transform::creationMutex;
+bool Transform::factoryInitialized = false;
+bool Transform::anyDirty = true;
 
-void Transform::Initialize()
+void Transform::initializeFactory()
 {
-	if (IsInitialized()) return;
-	creation_mutex = std::make_shared<std::mutex>();
-	Initialized = true;
+	if (isFactoryInitialized()) return;
+	creationMutex = std::make_shared<std::mutex>();
+	factoryInitialized = true;
 }
 
-bool Transform::IsInitialized()
+bool Transform::isFactoryInitialized()
 {
-	return Initialized;
+	return factoryInitialized;
 }
 
-void Transform::UpdateComponents() 
+void Transform::updateComponents() 
 {
 	for (int i = 0; i < MAX_TRANSFORMS; ++i) {
-		if (!transforms[i].is_initialized()) continue;
-		transform_structs[i].worldToLocalPrev = transform_structs[i].worldToLocal;
-		transform_structs[i].localToWorldPrev = transform_structs[i].localToWorld;
-		transform_structs[i].worldToLocalRotationPrev = transform_structs[i].worldToLocalRotation;
-		transform_structs[i].worldToLocalTranslationPrev = transform_structs[i].worldToLocalTranslation;
+		if (!transforms[i].isFactoryInitialized()) continue;
+		transformStructs[i].worldToLocalPrev = transformStructs[i].worldToLocal;
+		transformStructs[i].localToWorldPrev = transformStructs[i].localToWorld;
+		transformStructs[i].worldToLocalRotationPrev = transformStructs[i].worldToLocalRotation;
+		transformStructs[i].worldToLocalTranslationPrev = transformStructs[i].worldToLocalTranslation;
 
-		transform_structs[i].worldToLocal = transforms[i].get_world_to_local_matrix();
-		transform_structs[i].localToWorld = transforms[i].get_local_to_world_matrix();
-		transform_structs[i].worldToLocalRotation = transforms[i].get_world_to_local_rotation_matrix();
-		transform_structs[i].worldToLocalTranslation = transforms[i].get_world_to_local_translation_matrix();
+		transformStructs[i].worldToLocal = transforms[i].getWorldToLocalMatrix();
+		transformStructs[i].localToWorld = transforms[i].getLocalToWorldMatrix();
+		transformStructs[i].worldToLocalRotation = transforms[i].getWorldToLocalRotationMatrix();
+		transformStructs[i].worldToLocalTranslation = transforms[i].getWorldToLocalTranslationMatrix();
 	};
 }
 
-void Transform::CleanUp() 
+void Transform::cleanUp() 
 {
-	if (!IsInitialized()) return;
+	if (!isFactoryInitialized()) return;
 
 	for (auto &transform : transforms) {
 		if (transform.initialized) {
-			Transform::Delete(transform.id);
+			Transform::remove(transform.id);
 		}
 	}
 
-	Initialized = false;
+	factoryInitialized = false;
 }
 
 
 /* Static Factory Implementations */
-Transform* Transform::Create(std::string name) {
-	auto t = StaticFactory::Create(creation_mutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
-	Dirty = true;
+Transform* Transform::create(std::string name) {
+	auto t = StaticFactory::create(creationMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+	anyDirty = true;
 	return t;
 }
 
-Transform* Transform::Get(std::string name) {
-	return StaticFactory::Get(creation_mutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+Transform* Transform::get(std::string name) {
+	return StaticFactory::get(creationMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 }
 
-Transform* Transform::Get(uint32_t id) {
-	return StaticFactory::Get(creation_mutex, id, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+Transform* Transform::get(uint32_t id) {
+	return StaticFactory::get(creationMutex, id, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 }
 
-void Transform::Delete(std::string name) {
-	StaticFactory::Delete(creation_mutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+void Transform::remove(std::string name) {
+	StaticFactory::remove(creationMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 }
 
-void Transform::Delete(uint32_t id) {
-	StaticFactory::Delete(creation_mutex, id, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+void Transform::remove(uint32_t id) {
+	StaticFactory::remove(creationMutex, id, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 }
 
-TransformStruct* Transform::GetFrontStruct()
+TransformStruct* Transform::getFrontStruct()
 {
-	return transform_structs;
+	return transformStructs;
 }
 
-Transform* Transform::GetFront() {
+Transform* Transform::getFront() {
 	return transforms;
 }
 
-uint32_t Transform::GetCount() {
+uint32_t Transform::getCount() {
 	return MAX_TRANSFORMS;
 }
 
@@ -94,51 +94,51 @@ Transform::Transform(std::string name, uint32_t id) {
 	initialized = true; this->name = name; this->id = id;
 }
 
-std::string Transform::to_string()
+std::string Transform::toString()
 {
 	std::string output;
 	output += "{\n";
 	output += "\ttype: \"Transform\",\n";
 	output += "\tname: \"" + name + "\",\n";
 	output += "\tid: \"" + std::to_string(id) + "\",\n";
-	output += "\tscale: " + glm::to_string(get_scale()) + "\n";
-	output += "\tposition: " + glm::to_string(get_position()) + "\n";
-	output += "\trotation: " + glm::to_string(get_rotation()) + "\n";
+	output += "\tscale: " + glm::to_string(getScale()) + "\n";
+	output += "\tposition: " + glm::to_string(getPosition()) + "\n";
+	output += "\trotation: " + glm::to_string(getRotation()) + "\n";
 	output += "\tright: " + glm::to_string(right) + "\n";
 	output += "\tup: " + glm::to_string(up) + "\n";
 	output += "\tforward: " + glm::to_string(forward) + "\n";
-	output += "\tlocal_to_parent_matrix: " + glm::to_string(get_local_to_parent_matrix()) + "\n";
-	output += "\tparent_to_local_matrix: " + glm::to_string(get_parent_to_local_matrix()) + "\n";
+	output += "\tlocal_to_parent_matrix: " + glm::to_string(getLocalToParentMatrix()) + "\n";
+	output += "\tparent_to_local_matrix: " + glm::to_string(getParentToLocalMatrix()) + "\n";
 	output += "}";
 	return output;
 }
 
-vec3 Transform::transform_direction(vec3 direction)
+vec3 Transform::transformDirection(vec3 direction)
 {
 	return vec3(localToParentRotation * vec4(direction, 0.0));
 }
 
-vec3 Transform::transform_point(vec3 point)
+vec3 Transform::transformPoint(vec3 point)
 {
 	return vec3(localToParentMatrix * vec4(point, 1.0));
 }
 
-vec3 Transform::transform_vector(vec3 vector)
+vec3 Transform::transformVector(vec3 vector)
 {
 	return vec3(localToParentMatrix * vec4(vector, 0.0));
 }
 
-vec3 Transform::inverse_transform_direction(vec3 direction)
+vec3 Transform::inverseTransformDirection(vec3 direction)
 {
 	return vec3(parentToLocalRotation * vec4(direction, 0.0));
 }
 
-vec3 Transform::inverse_transform_point(vec3 point)
+vec3 Transform::inverseTransformPoint(vec3 point)
 {
 	return vec3(parentToLocalMatrix * vec4(point, 1.0));
 }
 
-vec3 Transform::inverse_transform_vector(vec3 vector)
+vec3 Transform::inverseTransformVector(vec3 vector)
 {
 	return vec3(localToParentMatrix * vec4(vector, 0.0));
 }
@@ -159,11 +159,11 @@ by the parentUp vector.
 // 	add_rotation(amount, axis);
 // }
 
-void Transform::rotate_around(vec3 point, float angle, vec3 axis)
+void Transform::rotateAround(vec3 point, float angle, vec3 axis)
 {
-	glm::vec3 direction = point - get_position();
-	glm::vec3 newPosition = get_position() + direction;
-	glm::quat newRotation = glm::angleAxis(angle, axis) * get_rotation();
+	glm::vec3 direction = point - getPosition();
+	glm::vec3 newPosition = getPosition() + direction;
+	glm::quat newRotation = glm::angleAxis(angle, axis) * getRotation();
 	newPosition = newPosition - direction * glm::angleAxis(-angle, axis);
 
 	rotation = glm::normalize(newRotation);
@@ -174,15 +174,15 @@ void Transform::rotate_around(vec3 point, float angle, vec3 axis)
 	localToParentTranslation = glm::translate(glm::mat4(1.0), position);
 	parentToLocalTranslation = glm::translate(glm::mat4(1.0), -position);
 
-	update_matrix();
-	mark_dirty();
+	updateMatrix();
+	markDirty();
 }
 
-void Transform::rotate_around(vec3 point, glm::quat rot)
+void Transform::rotateAround(vec3 point, glm::quat rot)
 {
-	glm::vec3 direction = point - get_position();
-	glm::vec3 newPosition = get_position() + direction;
-	glm::quat newRotation = rot * get_rotation();
+	glm::vec3 direction = point - getPosition();
+	glm::vec3 newPosition = getPosition() + direction;
+	glm::quat newRotation = rot * getRotation();
 	newPosition = newPosition - direction * glm::inverse(rot);
 
 	rotation = glm::normalize(newRotation);
@@ -193,11 +193,11 @@ void Transform::rotate_around(vec3 point, glm::quat rot)
 	localToParentTranslation = glm::translate(glm::mat4(1.0), position);
 	parentToLocalTranslation = glm::translate(glm::mat4(1.0), -position);
 
-	update_matrix();
-	mark_dirty();
+	updateMatrix();
+	markDirty();
 }
 
-void Transform::set_transform(glm::mat4 transformation, bool decompose)
+void Transform::setTransform(glm::mat4 transformation, bool decompose)
 {
 	if (decompose)
 	{
@@ -216,166 +216,166 @@ void Transform::set_transform(glm::mat4 transformation, bool decompose)
 		scale = glm::max(scale, glm::vec3(.0001f));
 		
 		if (!(glm::any(glm::isnan(translation))))
-			set_position(translation);
+			setPosition(translation);
 		if (!(glm::any(glm::isnan(scale))))
-			set_scale(scale);
+			setScale(scale);
 		if (!(glm::any(glm::isnan(rotation))))
-			set_rotation(rotation);
+			setRotation(rotation);
 	}
 	else {
 		this->localToParentTransform = transformation;
 		this->parentToLocalTransform = glm::inverse(transformation);
-		update_matrix();
+		updateMatrix();
 	}
-	mark_dirty();
+	markDirty();
 }
 
-quat Transform::get_rotation()
+quat Transform::getRotation()
 {
 	return rotation;
 }
 
-void Transform::set_rotation(quat newRotation)
+void Transform::setRotation(quat newRotation)
 {
 	rotation = glm::normalize(newRotation);
-	update_rotation();
-	mark_dirty();
+	updateRotation();
+	markDirty();
 }
 
-void Transform::set_rotation(float angle, vec3 axis)
+void Transform::setRotation(float angle, vec3 axis)
 {
-	set_rotation(glm::angleAxis(angle, axis));
-	mark_dirty();
+	setRotation(glm::angleAxis(angle, axis));
+	markDirty();
 }
 
-void Transform::add_rotation(quat additionalRotation)
+void Transform::addRotation(quat additionalRotation)
 {
-	set_rotation(get_rotation() * additionalRotation);
-	update_rotation();
-	mark_dirty();
+	setRotation(getRotation() * additionalRotation);
+	updateRotation();
+	markDirty();
 }
 
-void Transform::add_rotation(float angle, vec3 axis)
+void Transform::addRotation(float angle, vec3 axis)
 {
-	add_rotation(glm::angleAxis(angle, axis));
-	mark_dirty();
+	addRotation(glm::angleAxis(angle, axis));
+	markDirty();
 }
 
-void Transform::update_rotation()
+void Transform::updateRotation()
 {
 	localToParentRotation = glm::toMat4(rotation);
 	parentToLocalRotation = glm::inverse(localToParentRotation);
-	update_matrix();
-	mark_dirty();
+	updateMatrix();
+	markDirty();
 }
 
-vec3 Transform::get_position()
+vec3 Transform::getPosition()
 {
 	return position;
 }
 
-vec3 Transform::get_right()
+vec3 Transform::getRight()
 {
 	return right;
 }
 
-vec3 Transform::get_up()
+vec3 Transform::getUp()
 {
 	return up;
 }
 
-vec3 Transform::get_forward()
+vec3 Transform::getForward()
 {
 	return forward;
 }
 
-void Transform::set_position(vec3 newPosition)
+void Transform::setPosition(vec3 newPosition)
 {
 	position = newPosition;
-	update_position();
-	mark_dirty();
+	updatePosition();
+	markDirty();
 }
 
-void Transform::add_position(vec3 additionalPosition)
+void Transform::addPosition(vec3 additionalPosition)
 {
-	set_position(get_position() + additionalPosition);
-	update_position();
-	mark_dirty();
+	setPosition(getPosition() + additionalPosition);
+	updatePosition();
+	markDirty();
 }
 
-void Transform::set_position(float x, float y, float z)
+void Transform::setPosition(float x, float y, float z)
 {
-	set_position(glm::vec3(x, y, z));
-	mark_dirty();
+	setPosition(glm::vec3(x, y, z));
+	markDirty();
 }
 
-void Transform::add_position(float dx, float dy, float dz)
+void Transform::addPosition(float dx, float dy, float dz)
 {
-	add_position(glm::vec3(dx, dy, dz));
-	mark_dirty();
+	addPosition(glm::vec3(dx, dy, dz));
+	markDirty();
 }
 
-void Transform::update_position()
+void Transform::updatePosition()
 {
 	localToParentTranslation = glm::translate(glm::mat4(1.0), position);
 	parentToLocalTranslation = glm::translate(glm::mat4(1.0), -position);
-	update_matrix();
-	mark_dirty();
+	updateMatrix();
+	markDirty();
 }
 
-vec3 Transform::get_scale()
+vec3 Transform::getScale()
 {
 	return scale;
 }
 
-void Transform::set_scale(vec3 newScale)
+void Transform::setScale(vec3 newScale)
 {
 	scale = newScale;
-	update_scale();
-	mark_dirty();
+	updateScale();
+	markDirty();
 }
 
-void Transform::set_scale(float newScale)
+void Transform::setScale(float newScale)
 {
 	scale = vec3(newScale, newScale, newScale);
-	update_scale();
-	mark_dirty();
+	updateScale();
+	markDirty();
 }
 
-void Transform::add_scale(vec3 additionalScale)
+void Transform::addScale(vec3 additionalScale)
 {
-	set_scale(get_scale() + additionalScale);
-	update_scale();
-	mark_dirty();
+	setScale(getScale() + additionalScale);
+	updateScale();
+	markDirty();
 }
 
-void Transform::set_scale(float x, float y, float z)
+void Transform::setScale(float x, float y, float z)
 {
-	set_scale(glm::vec3(x, y, z));
-	mark_dirty();
+	setScale(glm::vec3(x, y, z));
+	markDirty();
 }
 
-void Transform::add_scale(float dx, float dy, float dz)
+void Transform::addScale(float dx, float dy, float dz)
 {
-	add_scale(glm::vec3(dx, dy, dz));
-	mark_dirty();
+	addScale(glm::vec3(dx, dy, dz));
+	markDirty();
 }
 
-void Transform::add_scale(float ds)
+void Transform::addScale(float ds)
 {
-	add_scale(glm::vec3(ds, ds, ds));
-	mark_dirty();
+	addScale(glm::vec3(ds, ds, ds));
+	markDirty();
 }
 
-void Transform::update_scale()
+void Transform::updateScale()
 {
 	localToParentScale = glm::scale(glm::mat4(1.0), scale);
 	parentToLocalScale = glm::scale(glm::mat4(1.0), glm::vec3(1.0 / scale.x, 1.0 / scale.y, 1.0 / scale.z));
-	update_matrix();
-	mark_dirty();
+	updateMatrix();
+	markDirty();
 }
 
-void Transform::update_matrix()
+void Transform::updateMatrix()
 {
 	localToParentMatrix = (localToParentTransform * localToParentTranslation * localToParentRotation * localToParentScale);
 	parentToLocalMatrix = (parentToLocalScale * parentToLocalRotation * parentToLocalTranslation * parentToLocalTransform);
@@ -385,21 +385,21 @@ void Transform::update_matrix()
 	up = glm::vec3(localToParentMatrix[2]);
 	position = glm::vec3(localToParentMatrix[3]);
 
-	update_children();
-	mark_dirty();
+	updateChildren();
+	markDirty();
 }
 
-glm::mat4 Transform::compute_world_to_local_matrix()
+glm::mat4 Transform::computeWorldToLocalMatrix()
 {
 	glm::mat4 parentMatrix = glm::mat4(1.0);
 	if (parent != -1) {
-		parentMatrix = transforms[parent].compute_world_to_local_matrix();
-		return get_parent_to_local_matrix() * parentMatrix;
+		parentMatrix = transforms[parent].computeWorldToLocalMatrix();
+		return getParentToLocalMatrix() * parentMatrix;
 	}
-	else return get_parent_to_local_matrix();
+	else return getParentToLocalMatrix();
 }
 
-void Transform::update_world_matrix()
+void Transform::updateWorldMatrix()
 {
 	if (parent == -1) {
 		worldToLocalMatrix = parentToLocalMatrix;
@@ -411,67 +411,67 @@ void Transform::update_world_matrix()
 		worldSkew = glm::vec3(0.f, 0.f, 0.f);
 		worldPerspective = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // not sure what this should default to...
 	} else {
-		worldToLocalMatrix = compute_world_to_local_matrix();
+		worldToLocalMatrix = computeWorldToLocalMatrix();
 		localToWorldMatrix = glm::inverse(worldToLocalMatrix); 
 		glm::decompose(localToWorldMatrix, worldScale, worldRotation, worldTranslation, worldSkew, worldPerspective);
 	}
-	mark_dirty();
+	markDirty();
 }
 
-glm::mat4 Transform::get_parent_to_local_matrix()
+glm::mat4 Transform::getParentToLocalMatrix()
 {
 	return /*(interpolation >= 1.0 ) ?*/ parentToLocalMatrix /*: glm::interpolate(glm::mat4(1.0), parentToLocalMatrix, interpolation)*/;
 }
 
-glm::mat4 Transform::get_local_to_parent_matrix()
+glm::mat4 Transform::getLocalToParentMatrix()
 {
 	return /*(interpolation >= 1.0 ) ?*/ localToParentMatrix /*: glm::interpolate(glm::mat4(1.0), localToParentMatrix, interpolation)*/;
 }
 
-glm::mat4 Transform::get_local_to_parent_translation_matrix()
+glm::mat4 Transform::getLocalToParentTranslationMatrix()
 {
 	return localToParentTranslation;
 }
 
-glm::mat4 Transform::get_local_to_parent_scale_matrix()
+glm::mat4 Transform::getLocalToParentScaleMatrix()
 {
 	return localToParentScale;
 }
 
-glm::mat4 Transform::get_local_to_parent_rotation_matrix()
+glm::mat4 Transform::getLocalToParentRotationMatrix()
 {
 	return localToParentRotation;
 }
 
-glm::mat4 Transform::get_parent_to_local_translation_matrix()
+glm::mat4 Transform::getParentToLocalTranslationMatrix()
 {
 	return parentToLocalTranslation;
 }
 
-glm::mat4 Transform::get_parent_to_local_scale_matrix()
+glm::mat4 Transform::getParentToLocalScaleMatrix()
 {
 	return parentToLocalScale;
 }
 
-glm::mat4 Transform::get_parent_to_local_rotation_matrix()
+glm::mat4 Transform::getParentToLocalRotationMatrix()
 {
 	return parentToLocalRotation;
 }
 
-void Transform::set_parent(uint32_t parent) {
+void Transform::setParent(uint32_t parent) {
 	if ((parent < 0) || (parent >= MAX_TRANSFORMS))
 		throw std::runtime_error(std::string("Error: parent must be between 0 and ") + std::to_string(MAX_TRANSFORMS));
 	
-	if (parent == this->get_id())
+	if (parent == this->getId())
 		throw std::runtime_error(std::string("Error: a component cannot be the parent of itself"));
 
 	this->parent = parent;
 	transforms[parent].children.insert(this->id);
-	update_children();
-	mark_dirty();
+	updateChildren();
+	markDirty();
 }
 
-void Transform::clear_parent()
+void Transform::clearParent()
 {
 	if ((parent < 0) || (parent >= MAX_TRANSFORMS)){
 		parent = -1;
@@ -480,28 +480,28 @@ void Transform::clear_parent()
 	
 	transforms[parent].children.erase(this->id);
 	this->parent = -1;
-	update_children();
-	mark_dirty();
+	updateChildren();
+	markDirty();
 }
 
-void Transform::add_child(uint32_t object) {
+void Transform::addChild(uint32_t object) {
 	if ((object < 0) || (object >= MAX_TRANSFORMS))
 		throw std::runtime_error(std::string("Error: child must be between 0 and ") + std::to_string(MAX_TRANSFORMS));
 	
-	if (object == this->get_id())
+	if (object == this->getId())
 		throw std::runtime_error(std::string("Error: a component cannot be it's own child"));
 
 	children.insert(object);
 	transforms[object].parent = this->id;
-	transforms[object].update_world_matrix();
-	transforms[object].mark_dirty();
+	transforms[object].updateWorldMatrix();
+	transforms[object].markDirty();
 }
 
-void Transform::remove_child(uint32_t object) {
+void Transform::removeChild(uint32_t object) {
 	if ((object < 0) || (object >= MAX_TRANSFORMS))
 		throw std::runtime_error(std::string("Error: child must be between 0 and ") + std::to_string(MAX_TRANSFORMS));
 	
-	if (object == this->get_id())
+	if (object == this->getId())
 		throw std::runtime_error(std::string("Error: a component cannot be it's own child"));
 
 	if (children.find(object) == children.end()) 
@@ -509,76 +509,76 @@ void Transform::remove_child(uint32_t object) {
 
 	children.erase(object);
 	transforms[object].parent = -1;
-	transforms[object].update_world_matrix();
-	transforms[object].mark_dirty();
+	transforms[object].updateWorldMatrix();
+	transforms[object].markDirty();
 }
 
-glm::mat4 Transform::get_world_to_local_matrix() {
+glm::mat4 Transform::getWorldToLocalMatrix() {
 	return worldToLocalMatrix;
 }
 
-glm::mat4 Transform::get_local_to_world_matrix() {
+glm::mat4 Transform::getLocalToWorldMatrix() {
 	return localToWorldMatrix;
 }
 
-glm::quat Transform::get_world_rotation() {
+glm::quat Transform::getWorldRotation() {
 	return worldRotation;
 }
 
-glm::vec3 Transform::get_world_translation() {
+glm::vec3 Transform::getWorldTranslation() {
 	return worldTranslation;
 }
 
-glm::mat4 Transform::get_world_to_local_rotation_matrix()
+glm::mat4 Transform::getWorldToLocalRotationMatrix()
 {
 	return glm::toMat4(glm::inverse(worldRotation));
 }
 
-glm::mat4 Transform::get_local_to_world_rotation_matrix()
+glm::mat4 Transform::getLocalToWorldRotationMatrix()
 {
 	return glm::toMat4(worldRotation);
 }
 
-glm::mat4 Transform::get_world_to_local_translation_matrix()
+glm::mat4 Transform::getWorldToLocalTranslationMatrix()
 {
 	glm::mat4 m(1.0);
 	m = glm::translate(m, -1.0f * worldTranslation);
 	return m;
 }
 
-glm::mat4 Transform::get_local_to_world_translation_matrix()
+glm::mat4 Transform::getLocalToWorldTranslationMatrix()
 {
 	glm::mat4 m(1.0);
 	m = glm::translate(m, worldTranslation);
 	return m;
 }
 
-glm::mat4 Transform::get_world_to_local_scale_matrix()
+glm::mat4 Transform::getWorldToLocalScaleMatrix()
 {
 	glm::mat4 m(1.0);
 	m = glm::scale(m, 1.0f / worldScale);
 	return m;
 }
 
-glm::mat4 Transform::get_local_to_world_scale_matrix()
+glm::mat4 Transform::getLocalToWorldScaleMatrix()
 {
 	glm::mat4 m(1.0);
 	m = glm::scale(m, worldScale);
 	return m;
 }
 
-void Transform::update_children()
+void Transform::updateChildren()
 {
 	for (auto &c : children) {
 		auto &t = transforms[c];
-		t.update_children();
+		t.updateChildren();
 	}
 
-	update_world_matrix();
-	mark_dirty();
+	updateWorldMatrix();
+	markDirty();
 }
 
-TransformStruct &Transform::get_struct()
+TransformStruct &Transform::getStruct()
 {
-	return transform_structs[id];
+	return transformStructs[id];
 }

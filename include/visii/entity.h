@@ -28,16 +28,16 @@ private:
 	//std::map<std::type_index, std::vector<std::shared_ptr<Component>>> components;
 	
 	/** Prevents multiple components from simultaneously being added and/or removed from the component list */
-	static std::shared_ptr<std::mutex> creation_mutex;
+	static std::shared_ptr<std::mutex> creationMutex;
 	
     /** Marks that the StaticFactory has allocated the table of components */
-	static bool Initialized;
+	static bool factoryInitialized;
 	
     /** The table of Entity components */
 	static Entity entities[MAX_ENTITIES];
 
     /** The table of Entity Structs */
-	static EntityStruct entity_structs[MAX_ENTITIES];
+	static EntityStruct entityStructs[MAX_ENTITIES];
 
     /** A lookup table where, given the name of a component, returns the primary key of that component */
 	static std::map<std::string, uint32_t> lookupTable;
@@ -59,7 +59,7 @@ private:
 	Entity(std::string name, uint32_t id);
 
 	/** Indicates that one of the components has been edited */
-    static bool Dirty;
+    static bool anyDirty;
 
     /** Indicates this component has been edited */
     bool dirty = true;
@@ -67,7 +67,7 @@ private:
 public:
     /** Constructs an Entity with the given name.
      * \return an Entity allocated by the renderer. */
-	static Entity* Create(std::string name, 
+	static Entity* create(std::string name, 
 		Transform* transform = nullptr, 
 		Material* material = nullptr//,
 		// Camera* camera = nullptr,
@@ -79,32 +79,32 @@ public:
 
     /** Gets an Entity by name 
      * \return an Entity who's primary name key matches \p name */
-	static Entity* Get(std::string name);
+	static Entity* get(std::string name);
     
     /** Gets an Entity by id 
      * \return an Entity who's primary id key matches \p id */
-	static Entity* Get(uint32_t id);
+	static Entity* get(uint32_t id);
 
     /** \return a pointer to the table of EntityStructs */
-	static EntityStruct* GetFrontStruct();
+	static EntityStruct* getFrontStruct();
 
     /** \return a pointer to the table of Entity components */
-	static Entity* GetFront();
+	static Entity* getFront();
 
     /** \return the number of allocated entities */
-	static uint32_t GetCount();
+	static uint32_t getCount();
 
     /** Deletes the Entity who's primary name key matches \p name */
-	static void Delete(std::string name);
+	static void remove(std::string name);
 
     /** Deletes the Entity who's primary id key matches \p id */
-	static void Delete(uint32_t id);
+	static void remove(uint32_t id);
 	
     /** Allocates the tables used to store all Entity components */
-    static void Initialize();
+    static void initializeFactory();
 
     /** \return True if the tables used to store all Entity components have been allocated, and False otherwise */
-	static bool IsInitialized();
+	static bool isFactoryInitialized();
 
     // static void UpdateComponents(); // remove this... 
 
@@ -113,10 +113,10 @@ public:
 	// static uint32_t GetSSBOSize();
 
     /** Frees any tables used to store Entity components */
-    static void CleanUp();	
+    static void cleanUp();	
 
     /** \return a string representation of the current component */
-	std::string to_string();
+	std::string toString();
 	
 	// void set_rigid_body(int32_t rigid_body_id);
 	// void set_rigid_body(RigidBody* rigid_body);
@@ -131,37 +131,37 @@ public:
 	// Collider* get_collider();
 
     /** \return True if the Entity has been modified since the previous frame, and False otherwise */
-	bool is_dirty() { return dirty; }
+	bool isDirty() { return dirty; }
 
     /** \return True if the Entity has not been modified since the previous frame, and False otherwise */
-	bool is_clean() { return !dirty; }
+	bool isClean() { return !dirty; }
 
     /** Tags the current component as being modified since the previous frame. */
-	void mark_dirty() {
+	void markDirty() {
 		// Dirty = true;
 		dirty = true;
 	};
 
     /** Tags the current component as being unmodified since the previous frame. */
-	void mark_clean() { dirty = false; }
+	void markClean() { dirty = false; }
 
     /** Returns the simplified struct used to represent the current component */
-	EntityStruct get_struct();
+	EntityStruct getStruct();
 
     /** Connects a transform component to the current entity by primary id key */
-	void set_transform(int32_t transform_id);
+	void setTransform(int32_t transform_id);
 
     /** Connects a transform component to the current entity */
-	void set_transform(Transform* transform);
+	void setTransform(Transform* transform);
 
     /** Disconnects any transform component from the current entity */
-	void clear_transform();
+	void clearTransform();
     
     /** \return the primary id key of the connected transform component, or -1 if no component is connected. */
-	int32_t get_transform_id();
+	int32_t getTransformId();
 
     /** \return a reference to the connected transform component, or None/nullptr if no component is connected. */
-	Transform* get_transform();
+	Transform* getTransform();
 
 	// void set_camera(int32_t camera_id);
 	// void set_camera(Camera *camera);
@@ -170,19 +170,19 @@ public:
 	// Camera* get_camera();
 
 	/** Connects a material component to the current entity by primary id key */
-    void set_material(int32_t material_id);
+    void setMaterial(int32_t material_id);
 
 	/** Connects a material component to the current entity */
-    void set_material(Material *material);
+    void setMaterial(Material *material);
 
 	/** Disconnects any material component from the current entity */
-    void clear_material();
+    void clearMaterial();
 
 	/** \return the primary id key of the connected material component, or -1 if no component is connected. */
-    int32_t get_material_id();
+    int32_t getMaterialId();
 
 	/** \return a reference to the connected material component, or None/nullptr if no component is connected. */
-    Material* get_material();
+    Material* getMaterial();
 
 
 	// void set_light(int32_t light_id);
@@ -192,17 +192,17 @@ public:
 	// Light* get_light();
 	
 	/** Connects a mesh component to the current entity by primary id key */
-	void set_mesh(int32_t mesh_id);
+	void setMesh(int32_t mesh_id);
 	
 	/** Connects a mesh component to the current entity */
-	void set_mesh(Mesh* mesh);
+	void setMesh(Mesh* mesh);
 	
 	/** Disconnects any mesh component from the current entity */
-	void clear_mesh();
+	void clearMesh();
 	
 	/** \return the primary id key of the connected mesh component, or -1 if no component is connected. */
-	int32_t get_mesh_id();
+	int32_t getMeshId();
 	
 	/** \return a reference to the connected mesh component, or None/nullptr if no component is connected. */
-	Mesh* get_mesh();
+	Mesh* getMesh();
 };

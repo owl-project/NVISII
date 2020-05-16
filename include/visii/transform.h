@@ -73,43 +73,43 @@ class Transform : public StaticFactory
     // float interpolation = 1.0;
 
     /* TODO */
-	static std::shared_ptr<std::mutex> creation_mutex;
-    static bool Initialized;
+	static std::shared_ptr<std::mutex> creationMutex;
+    static bool factoryInitialized;
 
     static Transform transforms[MAX_TRANSFORMS];
-    static TransformStruct transform_structs[MAX_TRANSFORMS];
+    static TransformStruct transformStructs[MAX_TRANSFORMS];
     static std::map<std::string, uint32_t> lookupTable;
     
     /* Updates cached rotation values */
-    void update_rotation();
+    void updateRotation();
 
     /* Updates cached position values */
-    void update_position();
+    void updatePosition();
 
     /* Updates cached scale values */
-    void update_scale();
+    void updateScale();
 
     /* Updates cached final local to parent matrix values */
-    void update_matrix();
+    void updateMatrix();
 
     /* Updates cached final local to world matrix values */
-    void update_world_matrix();
+    void updateWorldMatrix();
 
     /* updates all childrens cached final local to world matrix values */
-    void update_children();
+    void updateChildren();
 
     /* updates the struct for this transform which can be uploaded to the GPU. */
-    void update_struct();
+    void updateStruct();
     
     /* traverses from the current transform up through its ancestors, 
     computing a final world to local matrix */
-    glm::mat4 compute_world_to_local_matrix();
+    glm::mat4 computeWorldToLocalMatrix();
 
     Transform();
     Transform(std::string name, uint32_t id);
 
     /* Indicates that one of the components has been edited */
-    static bool Dirty;
+    static bool anyDirty;
 
     /* Indicates this component has been edited */
     bool dirty = true;
@@ -119,64 +119,64 @@ class Transform : public StaticFactory
      * \returns a reference to a transform component
      * \param name A unique name for this transform.
     */
-    static Transform* Create(std::string name);
+    static Transform* create(std::string name);
 
     /** Gets a transform by name 
      * \returns a transform who's primary name key matches \p name 
      * \param name A unique name used to lookup this transform. */
-    static Transform* Get(std::string name);
+    static Transform* get(std::string name);
 
     /** Gets a transform by id 
      * \returns a transform who's primary id key matches \p id 
      * \param id A unique id used to lookup this transform. */
-    static Transform* Get(uint32_t id);
+    static Transform* get(uint32_t id);
 
     /** \returns a pointer to the table of TransformStructs required for rendering*/
-    static TransformStruct* GetFrontStruct();
+    static TransformStruct* getFrontStruct();
 
     /** \returns a pointer to the table of transform components */
-    static Transform* GetFront();
+    static Transform* getFront();
 
     /** \returns the number of allocated transforms */
-	  static uint32_t GetCount();
+	  static uint32_t getCount();
 
     /** Deletes the transform who's primary name key matches \p name 
      * \param name A unique name used to lookup the transform for deletion.*/
-    static void Delete(std::string name);
+    static void remove(std::string name);
 
     /** Deletes the transform who's primary id key matches \p id 
      * \param id A unique id used to lookup the transform for deletion.*/
-    static void Delete(uint32_t id);
+    static void remove(uint32_t id);
 
     /** Allocates the tables used to store all transform components */
-    static void Initialize();
+    static void initializeFactory();
 
     /** \return True if the tables used to store all transform components have been allocated, and False otherwise */
-    static bool IsInitialized();
+    static bool isFactoryInitialized();
 
     /** Iterates through all transform components, computing transform metadata for rendering purposes. */
-    static void UpdateComponents();
+    static void updateComponents();
 
     /** Frees any tables used to store transform components */
-    static void CleanUp();
+    static void cleanUp();
 
     /** \return True if the Transform has been modified since the previous frame, and False otherwise */
-	  bool is_dirty() { return dirty; }
+	  bool isDirty() { return dirty; }
 
     /** \return True if the Transform has not been modified since the previous frame, and False otherwise */
-	  bool is_clean() { return !dirty; }
+	  bool isClean() { return !dirty; }
 
     /** Tags the current component as being modified since the previous frame. */
-	  void mark_dirty() {
+	  void markDirty() {
 		  // Dirty = true;
 		  dirty = true;
 	  };
 
     /** Tags the current component as being unmodified since the previous frame. */
-	  void mark_clean() { dirty = false; }
+	  void markClean() { dirty = false; }
 
     /** \return a json string representation of the current component */
-    std::string to_string();
+    std::string toString();
 
     /** Transforms direction from local to parent.
      *  This operation is not affected by scale or position of the transform.
@@ -184,14 +184,14 @@ class Transform : public StaticFactory
      *  \param direction The direction to apply the transform to.
      *  \return The transformed direction.
     */
-    vec3 transform_direction(vec3 direction);
+    vec3 transformDirection(vec3 direction);
 
     /** Transforms position from local to parent. Note, affected by scale.
       * The opposite conversion, from parent to local, can be done with Transform.inverse_transform_point
       * \param point The point to apply the transform to.
       * \return The transformed point. 
     */
-    vec3 transform_point(vec3 point);
+    vec3 transformPoint(vec3 point);
 
     /** Transforms vector from local to parent.
       * This is not affected by position of the transform, but is affected by scale.
@@ -199,7 +199,7 @@ class Transform : public StaticFactory
       * \param vector The vector to apply the transform to.
       * \return The transformed vector.
     */
-    vec3 transform_vector(vec3 vector);
+    vec3 transformVector(vec3 vector);
 
     /** Transforms a direction from parent space to local space.
       * The opposite of Transform.transform_direction.
@@ -207,7 +207,7 @@ class Transform : public StaticFactory
       * \param point The direction to apply the inverse transform to.
       * \return The transformed direction.
     */
-    vec3 inverse_transform_direction(vec3 direction);
+    vec3 inverseTransformDirection(vec3 direction);
 
     /** Transforms position from parent space to local space.
       * Essentially the opposite of Transform.transform_point.
@@ -215,7 +215,7 @@ class Transform : public StaticFactory
       * \param point The point to apply the inverse transform to.
       * \return The transformed point.
     */
-    vec3 inverse_transform_point(vec3 point);
+    vec3 inverseTransformPoint(vec3 point);
 
     /** Transforms a vector from parent space to local space.
       * The opposite of Transform.transform_vector.
@@ -223,7 +223,7 @@ class Transform : public StaticFactory
       * \param point The vector to apply the inverse transform to.
       * \return The transformed vector.
     */
-    vec3 inverse_transform_vector(vec3 vector);
+    vec3 inverseTransformVector(vec3 vector);
 
     /**
     Rotates the transform so the forward vector points at the target's current position.
@@ -247,7 +247,7 @@ class Transform : public StaticFactory
       * \param angle The angle (in radians) to rotate.
       * \param axis  The axis to rotate about.
     */
-    void rotate_around(vec3 point, float angle, vec3 axis);
+    void rotateAround(vec3 point, float angle, vec3 axis);
 
     /** Rotates the transform through the provided quaternion, passing through the provided point in parent 
       * coordinates.
@@ -255,35 +255,35 @@ class Transform : public StaticFactory
       * \param point The pivot point in space to rotate around.
       * \param rot   The quaternion to use for rotation.
     */
-    void rotate_around(vec3 point, glm::quat rot);
+    void rotateAround(vec3 point, glm::quat rot);
 
     /** Sets an optional additional transform, useful for representing normally unsupported transformations
       * like sheers and projections. 
       * \param transformation  a 4 by 4 column major transformation matrix
       * \param decompose       attempts to use singular value decomposition to decompose the provided transform into a translation, rotation, and scale 
     */
-    void set_transform(glm::mat4 transformation, bool decompose = true);
+    void setTransform(glm::mat4 transformation, bool decompose = true);
 
     /** \return A quaternion rotating the transform from local to parent */
-    quat get_rotation();
+    quat getRotation();
 
     /** Sets the rotation of the transform from local to parent via a quaternion 
       * \param newRotation The new rotation quaternion to set the current transform quaternion to.
     */
-    void set_rotation(quat newRotation);
+    void setRotation(quat newRotation);
 
     /** Sets the rotation of the transform from local to parent using an axis 
       * in local space to rotate about, and an angle in radians to drive the rotation. 
       * \param angle The angle (in radians) to rotate.
       * \param axis  The axis to rotate about.
     */
-    void set_rotation(float angle, vec3 axis);
+    void setRotation(float angle, vec3 axis);
 
     /** Adds a rotation to the existing transform rotation from local to parent 
       * via a quaternion. 
       * \param additionalRotation The rotation quaternion apply to the existing transform quaternion.
     */
-    void add_rotation(quat additionalRotation);
+    void addRotation(quat additionalRotation);
 
     /** Adds a rotation to the existing transform rotation from local to parent 
       * using an axis in local space to rotate about, and an angle in radians to 
@@ -291,31 +291,31 @@ class Transform : public StaticFactory
       * \param angle The angle (in radians) to rotate the current transform quaterion by.
       * \param axis  The axis to rotate about.
     */
-    void add_rotation(float angle, vec3 axis);
+    void addRotation(float angle, vec3 axis);
 
     /** \returns a position vector describing where this transform will be translated to in its parent space. */
-    vec3 get_position();
+    vec3 getPosition();
 
     /** \returns a vector pointing right relative to the current transform placed in its parent's space. */
-    vec3 get_right();
+    vec3 getRight();
 
     /** \returns a vector pointing up relative to the current transform placed in its parent's space. */
-    vec3 get_up();
+    vec3 getUp();
 
     /** \returns a vector pointing forward relative to the current transform placed in its parent's space. */
-    vec3 get_forward();
+    vec3 getForward();
 
     /** Sets the position vector describing where this transform should be translated to when placed in its 
       * parent space. 
       * \param newPosition The new position to set the current transform position to.
     */
-    void set_position(vec3 newPosition);
+    void setPosition(vec3 newPosition);
 
     /** Adds to the current the position vector describing where this transform should be translated to 
       * when placed in its parent space. 
       * \param additionalPosition The position (interpreted as a vector) to add onto the current transform position.
     */
-    void add_position(vec3 additionalPosition);
+    void addPosition(vec3 additionalPosition);
 
     /** Sets the position vector describing where this transform should be translated to when placed in its 
       * parent space. 
@@ -323,7 +323,7 @@ class Transform : public StaticFactory
       * \param y The y component of the new position.
       * \param z The z component of the new position.
     */
-    void set_position(float x, float y, float z);
+    void setPosition(float x, float y, float z);
 
     /** Adds to the current the position vector describing where this transform should be translated to 
       * when placed in its parent space. 
@@ -331,29 +331,29 @@ class Transform : public StaticFactory
       * \param dy The change in y to add onto the current transform position.
       * \param dz The change in z to add onto the current transform position.
     */
-    void add_position(float dx, float dy, float dz);
+    void addPosition(float dx, float dy, float dz);
 
     /** \returns the scale of this transform from local to parent space along its right, up, and forward 
       * directions respectively */
-    vec3 get_scale();
+    vec3 getScale();
 
     /** Sets the scale of this transform from local to parent space along its right, up, and forward 
       * directions respectively. 
       * \param newScale The new scale to set the current transform scale to.
     */
-    void set_scale(vec3 newScale);
+    void setScale(vec3 newScale);
 
     /** Sets the scale of this transform from local to parent space along its right, up, and forward 
       * directions simultaneously.
       * \param newScale The new uniform scale to set the current transform scale to.
     */
-    void set_scale(float newScale);
+    void setScale(float newScale);
 
     /** Adds to the current the scale of this transform from local to parent space along its right, up, 
       * and forward directions respectively 
       * \param additionalScale The scale to add onto the current transform scale.
     */
-    void add_scale(vec3 additionalScale);
+    void addScale(vec3 additionalScale);
 
     /** Sets the scale of this transform from local to parent space along its right, up, and forward 
       * directions respectively.
@@ -361,7 +361,7 @@ class Transform : public StaticFactory
       * \param y The y component of the new scale.
       * \param z The z component of the new scale.
     */
-    void set_scale(float x, float y, float z);
+    void setScale(float x, float y, float z);
 
     /** Adds to the current the scale of this transform from local to parent space along its right, up, 
       * and forward directions respectively 
@@ -369,106 +369,106 @@ class Transform : public StaticFactory
       * \param dy The change in y to add onto the current transform scale.
       * \param dz The change in z to add onto the current transform scale.
     */
-    void add_scale(float dx, float dy, float dz);
+    void addScale(float dx, float dy, float dz);
 
     /** Adds to the scale of this transform from local to parent space along its right, up, and forward 
       * directions simultaneously 
       * \param ds The change in scale to uniformly add onto all components of the current transform scale.
     */
-    void add_scale(float ds);
+    void addScale(float ds);
 
     /** \returns the final matrix transforming this object from it's parent coordinate space to it's 
       * local coordinate space */
-    glm::mat4 get_parent_to_local_matrix();
+    glm::mat4 getParentToLocalMatrix();
 
     /** \returns the final matrix transforming this object from it's local coordinate space to it's 
       * parents coordinate space */
-    glm::mat4 get_local_to_parent_matrix();
+    glm::mat4 getLocalToParentMatrix();
 
     /** \returns the final matrix translating this object from it's local coordinate space to it's 
       * parent coordinate space */
-    glm::mat4 get_local_to_parent_translation_matrix();
+    glm::mat4 getLocalToParentTranslationMatrix();
 
     /** \returns the final matrix translating this object from it's local coordinate space to it's 
       * parent coordinate space */
-    glm::mat4 get_local_to_parent_scale_matrix();
+    glm::mat4 getLocalToParentScaleMatrix();
 
     /** \returns the final matrix rotating this object in it's local coordinate space to it's 
       * parent coordinate space */
-    glm::mat4 get_local_to_parent_rotation_matrix();
+    glm::mat4 getLocalToParentRotationMatrix();
 
     /** \returns the final matrix translating this object from it's parent coordinate space to it's 
       * local coordinate space */
-    glm::mat4 get_parent_to_local_translation_matrix();
+    glm::mat4 getParentToLocalTranslationMatrix();
 
     /** \returns the final matrix scaling this object from it's parent coordinate space to it's 
       * local coordinate space */
-    glm::mat4 get_parent_to_local_scale_matrix();
+    glm::mat4 getParentToLocalScaleMatrix();
 
     /** \returns the final matrix rotating this object from it's parent coordinate space to it's 
       * local coordinate space */
-    glm::mat4 get_parent_to_local_rotation_matrix();
+    glm::mat4 getParentToLocalRotationMatrix();
 
     /** Set the parent of this transform, whose transformation will be applied after the current
       * transform. 
       * \param parent The primary id key of the transform component to constrain the current transform to. Any existing parent constraint is replaced.
     */
-    void set_parent(uint32_t parent);
+    void setParent(uint32_t parent);
 
     /** Removes the parent-child relationship affecting this node. */
-    void clear_parent();
+    void clearParent();
 
     /** Add a child to this transform, whose transformation will be applied before the current
       * transform. 
       * \param child The primary id key of the child transform component to constrain to the current transform. Any existing parent constraint is replaced.
     */
-	void add_child(uint32_t child);
+	void addChild(uint32_t child);
 
     /** Removes a child transform previously added to the current transform. 
       * \param child The primary id key of the constrained child transform component to un-constrain from the current transform. Any existing parent constraint is replaced.
     */
-	void remove_child(uint32_t child);
+	void removeChild(uint32_t child);
 
     /** \returns a matrix transforming this component from world space to its local space, taking all 
       * parent transforms into account. */
-    glm::mat4 get_world_to_local_matrix();
+    glm::mat4 getWorldToLocalMatrix();
 
     /** \returns a matrix transforming this component from its local space to world space, taking all 
       * parent transforms into account. */
-	glm::mat4 get_local_to_world_matrix();
+	glm::mat4 getLocalToWorldMatrix();
 
     /** \returns a (possibly approximate) rotation rotating the current transform from 
       * local space to world space, taking all parent transforms into account */
-	glm::quat get_world_rotation();
+	glm::quat getWorldRotation();
 
     /** \returns a (possibly approximate) translation moving the current transform from 
       * local space to world space, taking all parent transforms into account */
-    glm::vec3 get_world_translation();
+    glm::vec3 getWorldTranslation();
 
     /** \returns a (possibly approximate) rotation matrix rotating the current transform from 
       * local space to world space, taking all parent transforms into account */
-    glm::mat4 get_world_to_local_rotation_matrix();
+    glm::mat4 getWorldToLocalRotationMatrix();
 
     /** \returns a (possibly approximate) rotation matrix rotating the current transform from 
       * world space to local space, taking all parent transforms into account */
-    glm::mat4 get_local_to_world_rotation_matrix();
+    glm::mat4 getLocalToWorldRotationMatrix();
 
     /** \returns a (possibly approximate) translation matrix translating the current transform from 
       * local space to world space, taking all parent transforms into account */
-    glm::mat4 get_world_to_local_translation_matrix();
+    glm::mat4 getWorldToLocalTranslationMatrix();
 
     /** \returns a (possibly approximate) translation matrix rotating the current transform from 
       * world space to local space */
-    glm::mat4 get_local_to_world_translation_matrix();
+    glm::mat4 getLocalToWorldTranslationMatrix();
 
     /** \returns a (possibly approximate) scale matrix scaling the current transform from 
       * local space to world space, taking all parent transforms into account */
-    glm::mat4 get_world_to_local_scale_matrix();
+    glm::mat4 getWorldToLocalScaleMatrix();
 
     /** \returns a (possibly approximate) scale matrix scaling the current transform from 
       * world space to local space, taking all parent transforms into account */
-    glm::mat4 get_local_to_world_scale_matrix();
+    glm::mat4 getLocalToWorldScaleMatrix();
 
     /** \returns a struct with only essential data */
-    TransformStruct &get_struct();
+    TransformStruct &getStruct();
 };
