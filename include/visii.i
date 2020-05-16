@@ -63,6 +63,7 @@ if hasattr(sys, 'gettotalrefcount'):
 %{
 #include "visii/visii.h"
 
+#include "visii/camera.h"
 #include "visii/entity.h"
 #include "visii/transform.h"
 #include "visii/material.h"
@@ -72,11 +73,7 @@ if hasattr(sys, 'gettotalrefcount'):
 %rename("%(undercase)s",%$isfunction) "";
 %rename("%(undercase)s",%$isclass) "";
 
-%feature("kwargs") Entity;
-%feature("kwargs") Transform;
-%feature("kwargs") Material;
-%feature("kwargs") Mesh;
-
+%feature("kwargs") camera;
 %feature("kwargs") entity;
 %feature("kwargs") transform;
 %feature("kwargs") material;
@@ -84,6 +81,7 @@ if hasattr(sys, 'gettotalrefcount'):
 
 %include "visii/visii.h"
 %include "visii/utilities/static_factory.h"
+%include "visii/camera.h"
 %include "visii/entity.h"
 %include "visii/transform.h"
 %include "visii/material.h"

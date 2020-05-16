@@ -1,3 +1,4 @@
+#include <visii/camera.h>
 #include <visii/entity.h>
 #include <visii/transform.h>
 #include <visii/material.h>
@@ -189,46 +190,46 @@ Transform* Entity::getTransform()
 	return transform;
 }
 
-// void Entity::set_camera(int32_t camera_id) 
-// {
-// 	if (camera_id < -1) 
-// 		throw std::runtime_error( std::string("Camera id must be greater than or equal to -1"));
-// 	if (camera_id >= MAX_CAMERAS)
-// 		throw std::runtime_error( std::string("Camera id must be less than max cameras"));
-// 	this->entity_struct.camera_id = camera_id;
-// 	markDirty();
-// }
+void Entity::setCamera(int32_t camera_id) 
+{
+	if (camera_id < -1) 
+		throw std::runtime_error( std::string("Camera id must be greater than or equal to -1"));
+	if (camera_id >= MAX_CAMERAS)
+		throw std::runtime_error( std::string("Camera id must be less than max cameras"));
+	entityStructs[id].camera_id = camera_id;
+	markDirty();
+}
 
-// void Entity::set_camera(Camera *camera) 
-// {
-// 	if (!camera)
-// 		throw std::runtime_error( std::string("Invalid camera handle."));
-// 	if (!camera->isFactoryInitialized())
-// 		throw std::runtime_error("Error, camera not initialized");
-// 	this->entity_struct.camera_id = camera->getId();
-// 	markDirty();
-// }
+void Entity::setCamera(Camera *camera) 
+{
+	if (!camera)
+		throw std::runtime_error( std::string("Invalid camera handle."));
+	if (!camera->isFactoryInitialized())
+		throw std::runtime_error("Error, camera not initialized");
+	entityStructs[id].camera_id = camera->getId();
+	markDirty();
+}
 
-// void Entity::clear_camera()
-// {
-// 	this->entity_struct.camera_id = -1;
-// 	markDirty();
-// }
+void Entity::clearCamera()
+{
+	entityStructs[id].camera_id = -1;
+	markDirty();
+}
 
-// int32_t Entity::get_camera_id() 
-// {
-// 	return this->entity_struct.camera_id;
-// }
+int32_t Entity::getCameraId() 
+{
+	return entityStructs[id].camera_id;
+}
 
-// Camera* Entity::get_camera()
-// {
-// 	if ((this->entity_struct.camera_id < 0) || (this->entity_struct.camera_id >= MAX_CAMERAS)) 
-// 		return nullptr;
-// 	auto camera = Camera::get(this->entity_struct.camera_id); 
-// 	if (!camera->isFactoryInitialized())
-// 		return nullptr;
-// 	return camera;
-// }
+Camera* Entity::getCamera()
+{
+	if ((entityStructs[id].camera_id < 0) || (entityStructs[id].camera_id >= MAX_CAMERAS)) 
+		return nullptr;
+	auto camera = Camera::get(entityStructs[id].camera_id); 
+	if (!camera->isFactoryInitialized())
+		return nullptr;
+	return camera;
+}
 
 void Entity::setMaterial(int32_t material_id) 
 {
@@ -511,10 +512,10 @@ void Entity::cleanUp()
 Entity* Entity::create(
 	std::string name, 
 	Transform* transform, 
-	Material* material//, 
-	// Camera* camera, 
+	Material* material, 
+	Mesh* mesh, 
+	Camera* camera//, 
 	// Light* light, 
-	// Mesh* mesh, 
 	// RigidBody* rigid_body,
 	// Collider* collider
     )
@@ -523,9 +524,9 @@ Entity* Entity::create(
 	try {
 		if (transform) entity->setTransform(transform);
 		if (material) entity->setMaterial(material);
-		// if (camera) entity->setCamera(camera);
+		if (camera) entity->setCamera(camera);
+		if (mesh) entity->setMesh(mesh);
 		// if (light) entity->setLight(light);
-		// if (mesh) entity->setMesh(mesh);
 		// if (rigid_body) entity->setRigidBody(rigidBody);
 		// if (collider) entity->setCollider(collider);
 		return entity;
