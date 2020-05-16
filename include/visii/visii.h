@@ -3,6 +3,7 @@
 #include <visii/transform.h>
 #include <visii/material.h>
 #include <visii/mesh.h>
+#include <visii/camera.h>
 
 namespace visii 
 {
@@ -12,6 +13,7 @@ namespace visii
 */
 void initialize()
 {
+    Camera::initializeFactory();
     Entity::initializeFactory();
     Transform::initializeFactory();
     Material::initializeFactory();

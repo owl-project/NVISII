@@ -270,12 +270,12 @@ add_subdirectory(src)
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  ViSII Library                                                   │
 # └──────────────────────────────────────────────────────────────────┘
-add_library(ViSII_LIB SHARED ${SRC} ${HDR} ${ptxCode})
-target_link_libraries(ViSII_LIB PUBLIC ${LIBRARIES})
-set_target_properties(ViSII_LIB PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
-install(TARGETS ViSII_LIB 
+add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode})
+target_link_libraries(visii_lib PUBLIC ${LIBRARIES})
+set_target_properties(visii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+install(TARGETS visii_lib 
     DESTINATION ${CMAKE_INSTALL_PREFIX}
-    RENAME "ViSII_LIB"
+    RENAME "visii_lib"
 )
 
 # ┌──────────────────────────────────────────────────────────────────┐
@@ -287,7 +287,7 @@ set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES T
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen" "-py3") # -builtin seems to remove kwargs...
 swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
-target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} ViSII_LIB)
+target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
 set(SWIG_DEFS 
   Python3_VERSION_MAJOR=${Python3_VERSION_MAJOR} 
   Python3_VERSION_MINOR=${Python3_VERSION_MINOR})

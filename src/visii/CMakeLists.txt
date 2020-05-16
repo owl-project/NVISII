@@ -1,5 +1,6 @@
 set (
     SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/camera.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/entity.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/material.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/mesh.cpp

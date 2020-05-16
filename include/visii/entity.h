@@ -3,6 +3,7 @@
 #include <visii/utilities/static_factory.h>
 #include <visii/entity_struct.h>
 
+class Camera;
 class Transform;
 class Material;
 class Mesh;
@@ -69,10 +70,10 @@ public:
      * \return an Entity allocated by the renderer. */
 	static Entity* create(std::string name, 
 		Transform* transform = nullptr, 
-		Material* material = nullptr//,
-		// Camera* camera = nullptr,
+		Material* material = nullptr,
+		Mesh* mesh = nullptr,
+		Camera* camera = nullptr//,
 		// Light* light = nullptr,
-		// Mesh* mesh = nullptr,
 		// RigidBody* rigid_body = nullptr,
 		// Collider* collider = nullptr
 	);
@@ -163,12 +164,21 @@ public:
     /** \return a reference to the connected transform component, or None/nullptr if no component is connected. */
 	Transform* getTransform();
 
-	// void set_camera(int32_t camera_id);
-	// void set_camera(Camera *camera);
-	// void clear_camera();
-	// int32_t get_camera_id();
-	// Camera* get_camera();
+	/** Connects a camera component to the current entity by primary id key */
+	void setCamera(int32_t camera_id);
 
+	/** Connects a camera component to the current entity */
+	void setCamera(Camera *camera);
+
+	/** Disconnects any camera component from the current entity */
+	void clearCamera();
+
+	/** \return the primary id key of the connected camera component, or -1 if no component is connected. */
+	int32_t getCameraId();
+
+	/** \return a reference to the connected camera component, or None/nullptr if no component is connected. */
+	Camera* getCamera();
+	
 	/** Connects a material component to the current entity by primary id key */
     void setMaterial(int32_t material_id);
 

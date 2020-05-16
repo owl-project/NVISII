@@ -3,7 +3,6 @@
 Material Material::materials[MAX_MATERIALS];
 MaterialStruct Material::materialStructs[MAX_MATERIALS];
 std::map<std::string, uint32_t> Material::lookupTable;
-
 std::shared_ptr<std::mutex> Material::creationMutex;
 bool Material::factoryInitialized = false;
 bool Material::anyDirty = true;
@@ -86,7 +85,7 @@ bool Material::isFactoryInitialized()
 
 void Material::updateComponents()
 {
-
+	if (!anyDirty) return;
 } 
 
 void Material::cleanUp()
