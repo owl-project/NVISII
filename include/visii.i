@@ -45,16 +45,15 @@ if hasattr(sys, 'gettotalrefcount'):
   }
 }
 
-%feature("kwargs") Entity;
-%feature("kwargs") Transform;
-%feature("kwargs") Material;
-%feature("kwargs") Mesh;
-
 /* -------- GLM Vector Math Library --------------*/
 %feature("autodoc","2");
 %include "glm-bindings/glm.i"
 %feature("autodoc", "");
 
+// %rename("Entity") "entity";
+// %rename("Transform") "transform";
+// %rename("Material") "material";
+// %rename("Mesh") "mesh";
 
 // %feature("doxygen:ignore:transferfull");
 // %feature("doxygen:ignore:compileroptions", range="line");
@@ -69,6 +68,19 @@ if hasattr(sys, 'gettotalrefcount'):
 #include "visii/material.h"
 #include "visii/mesh.h"
 %}
+
+%rename("%(undercase)s",%$isfunction) "";
+%rename("%(undercase)s",%$isclass) "";
+
+%feature("kwargs") Entity;
+%feature("kwargs") Transform;
+%feature("kwargs") Material;
+%feature("kwargs") Mesh;
+
+%feature("kwargs") entity;
+%feature("kwargs") transform;
+%feature("kwargs") material;
+%feature("kwargs") mesh;
 
 %include "visii/visii.h"
 %include "visii/utilities/static_factory.h"
