@@ -1875,7 +1875,7 @@ Mesh* Mesh::createTube(std::string name, float radius, float innerRadius, float 
 	}
 }
 
-Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius, uint32_t segments)
+Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius, int segments)
 {
 	if (positions.size() <= 1)
 		throw std::runtime_error("Error: positions must be greater than 1!");

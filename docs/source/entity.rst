@@ -1,4 +1,4 @@
 Entity
 =================================
-.. autoclass:: visii.Entity
+.. autoclass:: visii.entity
     :members:

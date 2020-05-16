@@ -1,4 +1,4 @@
 Material
 =================================
-.. autoclass:: visii.Material
+.. autoclass:: visii.material
     :members:

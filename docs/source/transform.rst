@@ -1,4 +1,4 @@
 Transform
 =================================
-.. autoclass:: visii.Transform
+.. autoclass:: visii.transform
     :members:

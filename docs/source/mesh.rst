@@ -1,4 +1,4 @@
 Mesh
 =================================
-.. autoclass:: visii.Mesh
+.. autoclass:: visii.mesh
     :members:
