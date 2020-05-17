@@ -47,7 +47,7 @@ if hasattr(sys, 'gettotalrefcount'):
 
 /* -------- GLM Vector Math Library --------------*/
 %feature("autodoc","2");
-%include "glm-bindings/glm.i"
+%include "glm.i"
 %feature("autodoc", "");
 
 // %rename("Entity") "entity";
@@ -87,3 +87,12 @@ if hasattr(sys, 'gettotalrefcount'):
 %include "visii/material.h"
 %include "visii/mesh.h"
 
+
+// Cleanup on exit
+// %init %{
+//     atexit(cleanup);
+// %}
+
+%init %{
+  atexit(cleanup);
+%}

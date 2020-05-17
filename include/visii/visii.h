@@ -5,19 +5,12 @@
 #include <visii/mesh.h>
 #include <visii/camera.h>
 
-namespace visii 
-{
-
 /**
    Initializes various backend systems required to render scene data.
 */
-void initialize()
-{
-    Camera::initializeFactory();
-    Entity::initializeFactory();
-    Transform::initializeFactory();
-    Material::initializeFactory();
-    Mesh::initializeFactory();
-}
+void initialize();
 
-};
+/**
+   Cleans up any allocated resources, closes windows and shuts down any running backend systems.
+*/
+void cleanup();

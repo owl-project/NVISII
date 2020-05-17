@@ -134,36 +134,35 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/externals/generator)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/generator/include)
 set_property(TARGET generator PROPERTY FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/externals/generator")
 
-# # glad
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include)
-# set(GLAD_SRC ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/src/glad.c)
+# glad
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/glad/include)
+set(GLAD_SRC ${CMAKE_CURRENT_SOURCE_DIR}/externals/glad/src/glad.c)
 
-# # glfw
-# #    note: on linux, xorg-dev might be required
-# if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw/CMakeLists.txt")
-#   message(FATAL_ERROR "The GLFW submodule directory is empty! "
-#     "You probably did not clone the project with --recursive. It is possible to recover "
-#     "by running \"git submodule update --init --recursive\"")
-# endif()
-# if (UNIX AND NOT APPLE)
-#   find_package(X11 REQUIRED)
-#   if (NOT X11_Xrandr_FOUND OR NOT X11_Xinerama_FOUND OR NOT X11_Xkb_FOUND OR NOT X11_Xcursor_FOUND)
-#     message(FATAL_ERROR "Some X11 development libraries are missing! "
-#       "You probably dont have xorg-dev installed on your system. It is possible to recover "
-#       "by running \"sudo apt install xorg-dev\" (or equivalent on your unix distro)")
-#   endif()  
-# endif()
-# set(GLFW_BUILD_DOCS OFF CACHE STRING "" FORCE)
-# set(GLFW_BUILD_EXAMPLES OFF CACHE STRING "" FORCE)
-# set(GLFW_BUILD_TESTS    OFF CACHE STRING "" FORCE)
-# set(GLFW_INSTALL        OFF CACHE STRING "" FORCE)
-# # set(GLFW_VULKAN_STATIC  ON CACHE STRING "" FORCE)
-# add_subdirectory(external/glfw)
-# include_directories(SYSTEM external/glfw/include)
-# set_property(TARGET glfw PROPERTY FOLDER "external/GLFW3" )
+# glfw
+#    note: on linux, xorg-dev might be required
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/externals/glfw/CMakeLists.txt")
+  message(FATAL_ERROR "The GLFW submodule directory is empty! "
+    "You probably did not clone the project with --recursive. It is possible to recover "
+    "by running \"git submodule update --init --recursive\"")
+endif()
+if (UNIX AND NOT APPLE)
+  find_package(X11 REQUIRED)
+  if (NOT X11_Xrandr_FOUND OR NOT X11_Xinerama_FOUND OR NOT X11_Xkb_FOUND OR NOT X11_Xcursor_FOUND)
+    message(FATAL_ERROR "Some X11 development libraries are missing! "
+      "You probably dont have xorg-dev installed on your system. It is possible to recover "
+      "by running \"sudo apt install xorg-dev\" (or equivalent on your unix distro)")
+  endif()  
+endif()
+set(GLFW_BUILD_DOCS OFF CACHE STRING "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE STRING "" FORCE)
+set(GLFW_BUILD_TESTS    OFF CACHE STRING "" FORCE)
+set(GLFW_INSTALL        OFF CACHE STRING "" FORCE)
+add_subdirectory(externals/glfw)
+include_directories(SYSTEM externals/glfw/include)
+set_property(TARGET glfw PROPERTY FOLDER "externals/GLFW3" )
 
-# # OpenGL
-# find_package(OpenGL)
+# OpenGL
+find_package(OpenGL)
 
 # # stb
 # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/stb/)
@@ -213,8 +212,9 @@ set (
   LIBRARIES
   ${PYTHON_LIBRARY}
   generator
-  # ${GLFW_LIBRARIES}
-  # ${OPENGL_gl_LIBRARY}
+  ${GLFW_LIBRARIES}
+  glfw
+  ${OPENGL_gl_LIBRARY}
   # ${TBB_LIBRARIES}
   # owl
   )
@@ -260,12 +260,17 @@ endif()
 # └──────────────────────────────────────────────────────────────────┘
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/glm_bindings)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/)
 
 # defines a global ${HDR} variable containing a list of all project headers
 add_subdirectory(include) 
 
 # defines a global ${SRC} variable containing a list of all .cpp files
 add_subdirectory(src)
+
+set(SRC ${SRC} ${GLAD_SRC})
+set(HDR ${HDR} ${Externals_HDR})
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  ViSII Library                                                   │
