@@ -8,7 +8,12 @@
 /**
    Initializes various backend systems required to render scene data.
 */
-void initialize();
+void initialize_interactive();
+
+/**
+   Initializes various backend systems required to render scene data.
+*/
+void initialize_headless();
 
 /**
    Cleans up any allocated resources, closes windows and shuts down any running backend systems.

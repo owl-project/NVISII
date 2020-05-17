@@ -16,7 +16,7 @@ static GLFWwindow* window = nullptr;
 void applyStyle();
 
 static bool close = true;
-void initialize()
+void initialize_interactive()
 {
     // don't initialize more than once
     if (close == false) return;
@@ -83,6 +83,28 @@ void initialize()
     };
 
     renderThread = thread(loop);
+}
+
+void initialize_headless()
+{
+    // don't initialize more than once
+    if (close == false) return;
+
+    close = false;
+    Camera::initializeFactory();
+    Entity::initializeFactory();
+    Transform::initializeFactory();
+    Material::initializeFactory();
+    Mesh::initializeFactory();
+
+    // auto loop = []() {
+    //     while (!close)
+    //     {
+    //         if (close) break;
+    //     }
+    // };
+
+    // renderThread = thread(loop);
 }
 
 void applyStyle()
