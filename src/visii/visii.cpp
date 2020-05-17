@@ -11,11 +11,11 @@
 
 std::promise<void> exitSignal;
 std::thread renderThread;
-GLFWwindow* window = nullptr;
+static GLFWwindow* window = nullptr;
 
 void applyStyle();
 
-bool close = true;
+static bool close = true;
 void initialize()
 {
     // don't initialize more than once
