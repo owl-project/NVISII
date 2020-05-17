@@ -170,28 +170,28 @@ find_package(OpenGL)
 # # tiny obj
 # include_directories(SYSTEM external/tinyobj)
 
-# # ImGUI
-# add_definitions(-D IMGUI_IMPL_OPENGL_LOADER_GLAD)
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/)
-# set(IMGUI_SRC 
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_demo.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_draw.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_impl_glfw.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_impl_opengl3.cpp
-#   # IMGUIZMO
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/ImCurveEdit.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/ImGradient.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/ImGuizmo.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/ImSequencer.cpp
-#   # TFN EDITOR
-#   # ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/gl_core_4_5.c
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/transfer_function_widget.cpp
-#   # More addons
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imguivariouscontrols.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_rangeslider.cpp
-#   )
+# ImGUI
+add_definitions(-D IMGUI_IMPL_OPENGL_LOADER_GLAD)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/)
+set(IMGUI_SRC 
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_demo.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_draw.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_widgets.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_impl_glfw.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_impl_opengl3.cpp
+  # IMGUIZMO
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/ImCurveEdit.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/ImGradient.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/ImGuizmo.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/ImSequencer.cpp
+  # TFN EDITOR
+  # ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/gl_core_4_5.c
+  # ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/transfer_function_widget.cpp
+  # More addons
+  # ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imguivariouscontrols.cpp
+  # ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_rangeslider.cpp
+)
 
 # # tbb
 # find_package(TBB REQUIRED)
@@ -269,7 +269,7 @@ add_subdirectory(include)
 # defines a global ${SRC} variable containing a list of all .cpp files
 add_subdirectory(src)
 
-set(SRC ${SRC} ${GLAD_SRC})
+set(SRC ${SRC} ${GLAD_SRC} ${IMGUI_SRC})
 set(HDR ${HDR} ${Externals_HDR})
 
 # ┌──────────────────────────────────────────────────────────────────┐
