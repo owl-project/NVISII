@@ -197,15 +197,15 @@ set(IMGUI_SRC
 # find_package(TBB REQUIRED)
 # include_directories(${TBB_INCLUDE_DIR})
 
-# # owl
-# set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
-# set(OWL_BUILD_TESTS OFF CACHE STRING "" FORCE)
-# add_subdirectory(external/owl)
-# include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/external/owl/owl/include)
-# list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/external/owl/owl/common/cmake)
-# include(configure_cuda)
-# include(configure_optix)
-# # include(configure_build_type)
+# owl
+set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
+set(OWL_BUILD_TESTS OFF CACHE STRING "" FORCE)
+add_subdirectory(externals/owl)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
+include(configure_cuda)
+include(configure_optix)
+# include(configure_build_type)
 
 # add libraries to a list for linking
 set (
@@ -216,7 +216,7 @@ set (
   glfw
   ${OPENGL_gl_LIBRARY}
   # ${TBB_LIBRARIES}
-  # owl
+  owl
   )
   
 if(NOT WIN32)
@@ -240,20 +240,20 @@ endif()
 # # │  Macros                                                          │
 # # └──────────────────────────────────────────────────────────────────┘
 
-# # For compiling cuda kernels and embedding them as ptx
-# macro(cuda_compile_and_embed output_var cuda_file)
-#   set(var_name ${output_var})
-#   cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
-#   list(GET ptx_files 0 ptx_file)
-#   set(embedded_file ${ptx_file}_embedded.c)
-#   add_custom_command(
-#     OUTPUT ${embedded_file}
-#     COMMAND ${BIN2C} -c --padd 0 --type char --name ${var_name} ${ptx_file}  > ${embedded_file}
-#     DEPENDS ${ptx_file}
-#     COMMENT "compiling (and embedding ptx from) ${cuda_file}"
-#     )
-#   set(${output_var} ${embedded_file})
-# endmacro()
+# For compiling cuda kernels and embedding them as ptx
+macro(cuda_compile_and_embed output_var cuda_file)
+  set(var_name ${output_var})
+  cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
+  list(GET ptx_files 0 ptx_file)
+  set(embedded_file ${ptx_file}_embedded.c)
+  add_custom_command(
+    OUTPUT ${embedded_file}
+    COMMAND ${BIN2C} -c --padd 0 --type char --name ${var_name} ${ptx_file}  > ${embedded_file}
+    DEPENDS ${ptx_file}
+    COMMENT "compiling (and embedding ptx from) ${cuda_file}"
+    )
+  set(${output_var} ${embedded_file})
+endmacro()
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Add source files                                                │
