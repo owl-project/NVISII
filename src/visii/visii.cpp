@@ -14,6 +14,7 @@
 std::promise<void> exitSignal;
 std::thread renderThread;
 static GLFWwindow* window = nullptr;
+static bool initialized = false;
 static bool close = true;
 
 static struct OptixData {
@@ -99,8 +100,9 @@ void initializeOptix()
 void initializeInteractive()
 {
     // don't initialize more than once
-    if (close == false) return;
+    if (initialized == true) return;
 
+    initialized = true;
     close = false;
     Camera::initializeFactory();
     Entity::initializeFactory();
@@ -168,9 +170,9 @@ void initializeInteractive()
 void initializeHeadless()
 {
     // don't initialize more than once
-    if (close == false) return;
+    if (initialized == true) return;
 
-    close = false;
+    initialized = true;
     Camera::initializeFactory();
     Entity::initializeFactory();
     Transform::initializeFactory();
@@ -189,8 +191,12 @@ void initializeHeadless()
 
 void cleanup()
 {
-    if (close == false) {
-        close = true;
-        renderThread.join();
+    if (initialized == true) {
+        /* cleanup window if open */
+        if (close == false) {
+            close = true;
+            renderThread.join();
+        }
     }
+    initialized = false;
 }
