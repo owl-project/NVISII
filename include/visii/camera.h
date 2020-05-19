@@ -19,7 +19,31 @@ class Camera : public StaticFactory
     // friend class Scene;
   public:
 	/* Creates a camera, which can be used to capture the scene. */
-	static Camera *create(std::string name, uint32_t width = 512, uint32_t height = 512, uint32_t samples_per_pixel = 1);
+	
+	/** Constructs a camera component from a field of view.
+	  *	The field of view controls the amount of zoom, i.e. the amount of the scene 
+	  * which is visible all at once. A smaller field of view results in a longer focal length (more zoom),
+	  * while larger field of view allow you to see more of the scene at once (shorter focal length, less zoom)
+	  * 
+	  * \returns a reference to a camera component
+      * \param name A unique name for this camera.
+      * \param field_of_view Specifies the field of view angle in the y direction. Expressed in radians.
+	  * \param aspect Specifies the aspect ratio that determines the field of view in the x direction. The aspect ratio is a ratio of x (width) to y (height)
+	  * \param near Specifies the distance from the viewer to the near clipping plane (always positive) */
+	static Camera *createPerspectiveFromFOV(std::string name, float field_of_view, float aspect, float near);
+
+	/** Constructs a camera component from a focal length.
+	  * The focal length controls the amount of zoom, i.e. the amount of the scene 
+	  * which is visible all at once. Longer focal lengths result in a smaller field of view (more zoom),
+	  * while short focal lengths allow you to see more of the scene at once (larger FOV, less zoom)
+	  * 
+	  * \returns a reference to a camera component
+      * \param name A unique name for this camera.
+      * \param focal_length Specifies the focal length of the camera lens (in millimeters).
+      * \param sensor_width Specifies the width of the camera sensor (in millimeters). 
+	  * \param sensor_height Specifies the height of the camera sensor (in millimeters). 
+	  * \param near Specifies the distance from the viewer to the near clipping plane (always positive) */
+	static Camera *createPerspectiveFromFocalLength(std::string name, float focal_length, float sensor_width, float sensor_height, float near);
 
 	/* Retrieves a camera component by name. */
 	static Camera *get(std::string name);
@@ -86,6 +110,10 @@ class Camera : public StaticFactory
 	// /* Constructs a reverse Z perspective projection for the given multiview. */
 	// void setPerspectiveProjection(float fov_in_radians, float width, float height, float near_pos, uint32_t multiview = 0);
 
+	void usePerspectiveFromFOV(float field_of_view, float aspect, float near);
+
+	void usePerspectiveFromFocalLength(float focal_length, float sensor_width, float sensor_height, float near);
+
 	// /* Uses an external projection matrix for the given multiview. 
 	// 	Note, the projection must be a reversed Z projection. */
 	// void setCustomProjection(glm::mat4 custom_projection, float near_pos, uint32_t multiview = 0);
@@ -101,7 +129,8 @@ class Camera : public StaticFactory
 	// /* Sets the entity transform to camera matrix for the given multiview. 
 	// 	This additional transform is applied on top of an entity transform during a renderpass
 	// 	to see a particular "view". */
-	// void setView(glm::mat4 view, uint32_t multiview = 0);
+
+	void setView(glm::mat4 view);
 
 	// /* Returns the camera to projection matrix for the given multiview.
 	// 	This transform can be used to achieve perspective (eg a vanishing point), or for scaling

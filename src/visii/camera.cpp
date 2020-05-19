@@ -21,8 +21,8 @@ Camera::Camera() {
 
 Camera::Camera(std::string name, uint32_t id) {
 	initialized = true;
-	name = name;
-	id = id;
+	this->name = name;
+	this->id = id;
 
 	// this->render_complete_mutex = std::make_shared<std::mutex>();
 	// this->cv = std::make_shared<std::condition_variable>();
@@ -146,10 +146,26 @@ void Camera::cleanUp()
 }
 
 /* Static Factory Implementations */
-Camera* Camera::create(std::string name, uint32_t tex_width, uint32_t tex_height, uint32_t spp)
+Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, float aspect, float near)
 {
 	auto camera = StaticFactory::create(creationMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	try {
+        camera->usePerspectiveFromFOV(fieldOfView, aspect, near);
+        camera->setView(glm::mat4(1.f));
+		// camera->setup(tex_width, tex_height, msaa_samples, max_views, use_depth_prepass, use_multiview);
+		return camera;
+	} catch (...) {
+		StaticFactory::removeIfExists(creationMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+		throw;
+	}
+}
+
+Camera* Camera::createPerspectiveFromFocalLength(std::string name, float focalLength, float sensorWidth, float sensorHeight, float near)
+{
+	auto camera = StaticFactory::create(creationMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	try {
+        camera->usePerspectiveFromFocalLength(focalLength, sensorWidth, sensorHeight, near);
+        camera->setView(glm::mat4(1.f));
 		// camera->setup(tex_width, tex_height, msaa_samples, max_views, use_depth_prepass, use_multiview);
 		return camera;
 	} catch (...) {
@@ -220,21 +236,21 @@ uint32_t Camera::getCount() {
 // // 	return true;
 // // };
 
-// glm::mat4 MakeInfReversedZProjRH(float fovY_radians, float aspectWbyH, float zNear)
-// {
-//     float f = 1.0f / tan(fovY_radians / 2.0f);
-//     return glm::mat4(
-//         f / aspectWbyH, 0.0f,  0.0f,  0.0f,
-//                   0.0f,    f,  0.0f,  0.0f,
-//                   0.0f, 0.0f,  0.0f, -1.0f,
-//                   0.0f, 0.0f, zNear,  0.0f);
-// }
+glm::mat4 makeInfReversedZProjRH(float fovY_radians, float aspectWbyH, float zNear)
+{
+    float f = 1.0f / tan(fovY_radians / 2.0f);
+    return glm::mat4(
+        f / aspectWbyH, 0.0f,  0.0f,  0.0f,
+                  0.0f,    f,  0.0f,  0.0f,
+                  0.0f, 0.0f,  0.0f, -1.0f,
+                  0.0f, 0.0f, zNear,  0.0f);
+}
 
-// glm::mat4 MakeProjRH(float fovY_radians, float aspectWbyH, float zNear)
-// {
-// 	auto proj = glm::perspectiveFov(fovY_radians, aspectWbyH, 1.0f, zNear, 1000.0f);
-// 	return proj;
-// }
+glm::mat4 makeProjRH(float fovY_radians, float aspectWbyH, float zNear)
+{
+	auto proj = glm::perspectiveFov(fovY_radians, aspectWbyH, 1.0f, zNear, 1000.0f);
+	return proj;
+}
 
 // void Camera::set_perspective_projection(float fov_in_radians, float width, float height, float near_pos, uint32_t multiview)
 // {
@@ -250,6 +266,24 @@ uint32_t Camera::getCount() {
 // 	camera_struct.multiviews[multiview].projinv = glm::inverse(camera_struct.multiviews[multiview].proj);
 // 	mark_dirty();
 // };
+
+void Camera::usePerspectiveFromFOV(float fieldOfView, float aspect, float near)
+{
+    cameraStructs[id].near_pos = near;
+    cameraStructs[id].proj = makeInfReversedZProjRH(fieldOfView, aspect, near);
+    cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
+    markDirty();
+}
+
+void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth, float sensorHeight, float near)
+{
+    float aspect = sensorWidth / sensorHeight;
+    float fovy = 2.f*atan(0.5f*sensorHeight / focalLength);
+    cameraStructs[id].near_pos = near;
+    cameraStructs[id].proj = makeInfReversedZProjRH(fovy, aspect, near);
+    cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
+    markDirty();
+}
 
 // void Camera::set_custom_projection(glm::mat4 custom_projection, float near_pos, uint32_t multiview)
 // {
@@ -270,14 +304,12 @@ uint32_t Camera::getCount() {
 // 	return camera_struct.multiviews[multiview].view; 
 // };
 
-// void Camera::set_view(glm::mat4 view, uint32_t multiview)
-// {
-// 	check_multiview_index(multiview);
-// 	update_used_views(multiview + 1);
-// 	camera_struct.multiviews[multiview].view = view;
-// 	camera_struct.multiviews[multiview].viewinv = glm::inverse(view);
-// 	mark_dirty();
-// };
+void Camera::setView(glm::mat4 view)
+{
+	cameraStructs[id].view = view;
+	cameraStructs[id].viewinv = glm::inverse(view);
+	markDirty();
+};
 
 // void Camera::set_render_order(int32_t order) {
 // 	renderOrder = order;

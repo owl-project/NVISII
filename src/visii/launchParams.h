@@ -6,6 +6,10 @@
 #include <glm/gtc/matrix_access.hpp>
 
 #include <visii/entity_struct.h>
+#include <visii/transform_struct.h>
+#include <visii/material_struct.h>
+#include <visii/camera_struct.h>
+#include <visii/mesh_struct.h>
 
 struct LaunchParams {
     glm::ivec2 frameSize;
@@ -13,5 +17,10 @@ struct LaunchParams {
     uint32_t *accumPtr;
     OptixTraversableHandle world;
 
-    EntityStruct cameraEntity;
+    EntityStruct    cameraEntity;
+    EntityStruct    *entities = nullptr;
+    TransformStruct *transforms = nullptr;
+    MaterialStruct  *materials = nullptr;
+    CameraStruct    *cameras = nullptr;
+    MeshStruct      *meshes = nullptr;
 };

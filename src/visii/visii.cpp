@@ -37,6 +37,13 @@ static struct OptixData {
     cudaGraphicsResource_t cudaResourceTex;
     OWLBuffer frameBuffer;
     OWLBuffer accumBuffer;
+
+    OWLBuffer entityBuffer;
+    OWLBuffer transformBuffer;
+    OWLBuffer cameraBuffer;
+    OWLBuffer materialBuffer;
+    OWLBuffer meshBuffer;
+
     OWLRayGen rayGen;
     OWLMissProg missProg;
     OWLGeomType trianglesGeomType;
@@ -172,10 +179,16 @@ void initializeOptix()
         { "accumPtr",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
         { "world",             OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
         { "cameraEntity",      OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
+        { "entities",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, entities)},
+        { "transforms",        OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, transforms)},
+        { "cameras",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, cameras)},
+        { "materials",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
+        { "meshes",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
     
+    /* Create AOV Buffers */
     initializeFrameBuffer(1024, 1024);
     OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),1024*1024, nullptr);
     OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_INT,1024*1024, nullptr);
@@ -184,6 +197,17 @@ void initializeOptix()
     owlLaunchParamsSetBuffer(OD.launchParams, "accumPtr", OD.accumBuffer);
     owlLaunchParamsSetRaw(OD.launchParams, "frameSize", &OD.LP.frameSize);
 
+    /* Create Component Buffers */
+    OD.entityBuffer    = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(EntityStruct),    MAX_ENTITIES,   nullptr);
+    OD.transformBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(TransformStruct), MAX_TRANSFORMS, nullptr);
+    OD.cameraBuffer    = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),    MAX_CAMERAS,    nullptr);
+    OD.materialBuffer  = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),  MAX_MATERIALS,  nullptr);
+    OD.meshBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),      MAX_MESHES,     nullptr);
+    owlLaunchParamsSetBuffer(OD.launchParams, "entities",   OD.entityBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "transforms", OD.transformBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "cameras",    OD.cameraBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "materials",  OD.materialBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "meshes",     OD.meshBuffer);
 
     /* Temporary test code */
     const int NUM_VERTICES = 8;
@@ -254,7 +278,18 @@ void initializeOptix()
 
 void updateComponents()
 {
+    // Entity::updateComponents();
+    Transform::updateComponents();
+    Camera::updateComponents();
+    Mesh::updateComponents();
+    Material::updateComponents();
 
+    // For now, just copy everything each frame. Later we can check if any components are dirty, and be more conservative in uploading data
+    owlBufferUpload(OptixData.entityBuffer,    Entity::getFrontStruct());
+    owlBufferUpload(OptixData.cameraBuffer,    Camera::getFrontStruct());
+    owlBufferUpload(OptixData.meshBuffer,      Mesh::getFrontStruct());
+    owlBufferUpload(OptixData.materialBuffer,  Material::getFrontStruct());
+    owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
 }
 
 void updateLaunchParams()
