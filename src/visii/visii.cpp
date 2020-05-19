@@ -7,6 +7,10 @@
 #include <ImGuizmo.h>
 #include <visii/utilities/colors.h>
 #include <owl/owl.h>
+#include <cuda_gl_interop.h>
+
+#include <launchParams.h>
+#include <deviceCode.h>
 
 #include <thread>
 #include <future>
@@ -17,9 +21,21 @@ static GLFWwindow* window = nullptr;
 static bool initialized = false;
 static bool close = true;
 
+/* Embedded via cmake */
+extern "C" char ptxCode[];
+
 static struct OptixData {
     OWLContext context;
     OWLModule module;
+    OWLLaunchParams launchParams;
+    LaunchParams LP;
+    GLuint imageTexID = -1;
+    cudaGraphicsResource_t cudaResourceTex;
+    OWLBuffer frameBuffer;
+    OWLBuffer accumBuffer;
+    OWLRayGen rayGen;
+    OWLMissProg missProg;
+    OWLGeomType trianglesGeomType;
 } OptixData;
 
 void applyStyle()
@@ -90,11 +106,294 @@ void applyStyle()
 	style->WindowRounding = 4.0f;
 }
 
+void initializeFrameBuffer(int fbWidth, int fbHeight) {
+    auto &OD = OptixData;
+    if (OD.imageTexID != -1) {
+        cudaGraphicsUnregisterResource(OD.cudaResourceTex);
+    }
+    
+    // Enable Texturing
+    glEnable(GL_TEXTURE_2D);
+    // Generate a Texture ID for the framebuffer
+    glGenTextures(1, &OD.imageTexID);
+    // Make this teh current texture
+    glBindTexture(GL_TEXTURE_2D, OD.imageTexID);
+    // Allocate the texture memory. The last parameter is NULL since we only 
+    // want to allocate memory, not initialize it.
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, fbWidth, fbHeight);
+    
+    // Must set the filter mode, GL_LINEAR enables interpolation when scaling
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    //Registration with CUDA
+    cudaGraphicsGLRegisterImage(&OD.cudaResourceTex, OD.imageTexID, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone);
+}
+
 void initializeOptix()
 {
-    OptixData.context = owlContextCreate(/*requested Device IDs*/ nullptr, /* Num Devices */ 0);
+    using namespace glm;
+    auto &OD = OptixData;
+    OD.context = owlContextCreate(/*requested Device IDs*/ nullptr, /* Num Devices */ 0);
     // owlContextSetRayTypeCount(context, 2); // for both "feeler" and query rays on the same accel.
-    // OptixData.module = owlModuleCreate(context, ptxCode);
+    OD.module = owlModuleCreate(OD.context, ptxCode);
+    
+    /* Setup Optix Launch Params */
+    OWLVarDecl launchParamVars[] = {
+        { "frameSize",        OWL_USER_TYPE(glm::ivec2),         OWL_OFFSETOF(LaunchParams, frameSize)},
+        { "fbPtr",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, fbPtr)},
+        { "accumPtr",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
+        { "world",             OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
+        { /* sentinel to mark end of list */ }
+    };
+    OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
+    
+    initializeFrameBuffer(854*2, 480*2);
+    OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),854*2*480*2, nullptr);
+    OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_INT,854*2*480*2, nullptr);
+    OD.LP.frameSize = glm::ivec2(854*2, 480*2);
+    owlLaunchParamsSetBuffer(OD.launchParams, "fbPtr", OD.frameBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "accumPtr", OD.accumBuffer);
+    owlLaunchParamsSetRaw(OD.launchParams, "frameSize", &OD.LP.frameSize);
+
+
+    /* Temporary test code */
+    const int NUM_VERTICES = 8;
+    vec3 vertices[NUM_VERTICES] =
+    {
+        { -1.f,-1.f,-.1f },
+        { +1.f,-1.f,-.1f },
+        { -1.f,+1.f,-.1f },
+        { +1.f,+1.f,-.1f },
+        { -1.f,-1.f,+.1f },
+        { +1.f,-1.f,+.1f },
+        { -1.f,+1.f,+.1f },
+        { +1.f,+1.f,+.1f }
+    };
+
+    const int NUM_INDICES = 12;
+    ivec3 indices[NUM_INDICES] =
+    {
+        { 0,1,3 }, { 2,3,0 },
+        { 5,7,6 }, { 5,6,4 },
+        { 0,4,5 }, { 0,5,1 },
+        { 2,3,7 }, { 2,7,6 },
+        { 1,5,7 }, { 1,7,3 },
+        { 4,0,2 }, { 4,2,6 }
+    };
+
+    OWLVarDecl trianglesGeomVars[] = {
+        { "index",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,index)},
+        { "vertex", OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,vertex)},
+        { "colors",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,colors)}
+        // { "color",  OWL_FLOAT3, OWL_OFFSETOF(TrianglesGeomData,color)}
+    };
+    OD.trianglesGeomType
+        = owlGeomTypeCreate(OD.context,
+                            OWL_GEOM_TRIANGLES,
+                            sizeof(TrianglesGeomData),
+                            trianglesGeomVars,3);
+    owlGeomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
+    
+    OWLBuffer vertexBuffer = owlDeviceBufferCreate(OD.context,OWL_FLOAT3,NUM_VERTICES,vertices);
+    OWLBuffer indexBuffer = owlDeviceBufferCreate(OD.context,OWL_INT3,NUM_INDICES,indices);
+    OWLGeom trianglesGeom = owlGeomCreate(OD.context,OD.trianglesGeomType);
+    owlTrianglesSetVertices(trianglesGeom,vertexBuffer,NUM_VERTICES,sizeof(vec3),0);
+    owlTrianglesSetIndices(trianglesGeom,indexBuffer, NUM_INDICES,sizeof(ivec3),0);
+    owlGeomSetBuffer(trianglesGeom,"vertex",vertexBuffer);
+    owlGeomSetBuffer(trianglesGeom,"index",indexBuffer);
+    owlGeomSetBuffer(trianglesGeom,"colors",nullptr);
+    OWLGroup trianglesGroup = owlTrianglesGeomGroupCreate(OD.context,1,&trianglesGeom);
+    owlGroupBuildAccel(trianglesGroup);
+    OWLGroup world = owlInstanceGroupCreate(OD.context, 1);
+    owlInstanceGroupSetChild(world, 0, trianglesGroup); 
+    owlGroupBuildAccel(world);
+    owlLaunchParamsSetGroup(OD.launchParams, "world", world);
+
+    // Setup miss prog 
+    OWLVarDecl missProgVars[] = {{ /* sentinel to mark end of list */ }};
+    OD.missProg = owlMissProgCreate(OD.context,OD.module,"miss",sizeof(MissProgData),missProgVars,-1);
+    
+    // Setup ray gen program
+    OWLVarDecl rayGenVars[] = {{ /* sentinel to mark end of list */ }};
+    OD.rayGen = owlRayGenCreate(OD.context,OD.module,"rayGen", sizeof(RayGenData), rayGenVars,-1);
+
+    // Build *SBT* required to trace the groups   
+    owlBuildPrograms(OD.context);
+    owlBuildPipeline(OD.context);
+    owlBuildSBT(OD.context);
+}
+
+void updateComponents()
+{
+
+}
+
+void updateLaunchParams()
+{
+    // glfwGetFramebufferSize(window, &curr_frame_size.x, &curr_frame_size.y);
+    // const vec3f lookFrom(-4.f,-3.f,-2.f);
+    // const vec3f lookAt(0.f,0.f,0.f);
+    // const vec3f lookUp(0.f,1.f,0.f);
+    // const float cosFovy = 0.66f;
+    // LP.view = camera_controls.transform();//glm::lookAt(glm::vec3(-4.f, -3.f, -2.f), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+    // LP.proj = glm::perspective(glm::radians(45.f), float(curr_frame_size.x) / float(curr_frame_size.y), 1.0f, 1000.0f);
+    // LP.viewinv = glm::inverse(LP.view);
+    // LP.projinv = glm::inverse(LP.proj);
+    // // owlBufferUpload(frameStateBuffer, &LP);
+
+    // auto cam = camera->get_struct();
+    // auto cam_transform = camera_transform->get_struct();
+    // owlLaunchParamsSetRaw(launchParams,"camera_entity",&cam);
+    // owlLaunchParamsSetRaw(launchParams,"camera_transform",&cam_transform);
+    // // owlLaunchParamsSetBuffer(launchParams,"entities",entitiesBuffer);
+    // // owlLaunchParamsSetBuffer(launchParams,"transforms",transformsBuffer);
+
+    // owlLaunchParamsSetRaw(launchParams,"view",&LP.view);
+    // owlLaunchParamsSetRaw(launchParams,"proj",&LP.proj);
+    // owlLaunchParamsSetRaw(launchParams,"viewinv",&LP.viewinv);
+    // owlLaunchParamsSetRaw(launchParams,"projinv",&LP.projinv);
+    // owlLaunchParamsSetRaw(launchParams,"frame_size",&LP.frame_size);
+    // owlLaunchParamsSetRaw(launchParams,"frame",&LP.frame); 
+    // owlLaunchParamsSetRaw(launchParams,"startFrame",&LP.startFrame); 
+    // owlLaunchParamsSetRaw(launchParams,"reset",&LP.reset); 
+    // owlLaunchParamsSetRaw(launchParams,"enable_pathtracer",&LP.enable_pathtracer); 
+    // owlLaunchParamsSetRaw(launchParams,"enable_space_skipping",&LP.enable_space_skipping); 
+    // owlLaunchParamsSetRaw(launchParams,"enable_adaptive_sampling",&LP.enable_adaptive_sampling); 
+    // owlLaunchParamsSetRaw(launchParams,"enable_id_colors",&LP.enable_id_colors); 
+    // owlLaunchParamsSetRaw(launchParams,"mirror",&LP.mirror); 
+    // owlLaunchParamsSetRaw(launchParams,"zoom",&LP.zoom); 
+    // owlLaunchParamsSetRaw(launchParams,"min_step_size",&LP.min_step_size); 
+    // owlLaunchParamsSetRaw(launchParams,"max_step_size",&LP.max_step_size); 
+    // owlLaunchParamsSetRaw(launchParams,"adaptive_power",&LP.adaptive_power); 
+    // owlLaunchParamsSetRaw(launchParams,"attenuation",&LP.attenuation); 
+    // owlLaunchParamsSetRaw(launchParams,"opacity",&LP.opacity); 
+    // owlLaunchParamsSetRaw(launchParams,"volume_type",&LP.volume_type); 
+    // owlLaunchParamsSetRaw(launchParams,"show_time_heatmap",&LP.show_time_heatmap); 
+    // owlLaunchParamsSetRaw(launchParams,"show_samples_heatmap",&LP.show_samples_heatmap); 
+    // owlLaunchParamsSetRaw(launchParams,"empty_threshold",&LP.empty_threshold);        
+    // owlLaunchParamsSetRaw(launchParams,"time_min",&LP.time_min);        
+    // owlLaunchParamsSetRaw(launchParams,"time_max",&LP.time_max);        
+    // owlLaunchParamsSetRaw(launchParams,"tri_mesh_color",&LP.tri_mesh_color);        
+    // owlLaunchParamsSetRaw(launchParams,"background_color",&LP.background_color);    
+    // owlLaunchParamsSetRaw(launchParams, "transferFunctionMin", &LP.transferFunctionMin);
+    // owlLaunchParamsSetRaw(launchParams, "transferFunctionMax", &LP.transferFunctionMax);
+    // owlLaunchParamsSetRaw(launchParams, "transferFunctionWidth", &LP.transferFunctionWidth);
+
+    // auto bumesh_transform_struct = bumesh_transform->get_struct();
+    // owlLaunchParamsSetRaw(launchParams,"bumesh_transform",&bumesh_transform_struct);
+
+    // auto tri_mesh_transform_struct = tri_mesh_transform->get_struct();
+    // owlLaunchParamsSetRaw(launchParams,"tri_mesh_transform",&tri_mesh_transform_struct);
+}
+
+void traceRays()
+{
+    auto &OD = OptixData;
+
+    // glfwGetFramebufferSize(window, &curr_frame_size.x, &curr_frame_size.y);
+
+    // if ((curr_frame_size.x != last_frame_size.x) || (curr_frame_size.y != last_frame_size.y))  {
+    //     last_frame_size.x = curr_frame_size.x; last_frame_size.y = curr_frame_size.y;
+    //     LP.frame_size = curr_frame_size;
+    //     RenderSystem::initialize_framebuffer(curr_frame_size.x, curr_frame_size.y);
+    //     owlBufferResize(frameBuffer, curr_frame_size.x*curr_frame_size.y);
+    //     owlBufferResize(accumBuffer, curr_frame_size.x*curr_frame_size.y);
+    // }
+    
+    static double start=0;
+    static double stop=0;
+
+    /* Trace Rays */
+    start = glfwGetTime();
+    owlParamsLaunch2D(OD.rayGen, OD.LP.frameSize.x, OD.LP.frameSize.y, OD.launchParams);
+    cudaGraphicsMapResources(1, &OD.cudaResourceTex);
+    const void* fbdevptr = owlBufferGetPointer(OD.frameBuffer,0);
+    cudaArray_t array;
+    cudaGraphicsSubResourceGetMappedArray(&array, OD.cudaResourceTex, 0, 0);
+    cudaMemcpyToArray(array, 0, 0, fbdevptr, OD.LP.frameSize.x *  OD.LP.frameSize.y  * sizeof(glm::vec4), cudaMemcpyDeviceToDevice);
+    cudaGraphicsUnmapResources(1, &OD.cudaResourceTex);
+
+    for (int i = 0; i < owlGetDeviceCount(OD.context); i++) {
+        cudaSetDevice(i);
+        cudaDeviceSynchronize();
+        cudaError_t err = cudaPeekAtLastError();
+        if (err != 0) {
+            std::cout<< "ERROR: " << cudaGetErrorString(err)<<std::endl;
+            throw std::runtime_error("ERROR");
+        }
+    }
+    stop = glfwGetTime();
+    glfwSetWindowTitle(window, std::to_string(1.f / (stop - start)).c_str());
+
+    // Draw pixels from optix frame buffer
+    glViewport(0, 0, OD.LP.frameSize.x, OD.LP.frameSize.y);
+    
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+        
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
+            
+    glDisable(GL_DEPTH_TEST);
+    
+    glBindTexture(GL_TEXTURE_2D, OD.imageTexID);
+
+    // This is incredibly slow, but does not require interop
+    // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, windowSize.x, windowSize.y, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
+    
+    // Draw texture to screen via immediate mode
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, OD.imageTexID);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f( 0.0f, 0.0f );
+    glVertex2f  ( 0.0f, 0.0f );
+
+    glTexCoord2f( 1.0f, 0.0f );
+    glVertex2f  ( 1.0f, 0.0f );
+
+    glTexCoord2f( 1.0f, 1.0f );
+    glVertex2f  ( 1.0f, 1.0f );
+
+    glTexCoord2f( 0.0f, 1.0f );
+    glVertex2f  ( 0.0f, 1.0f );
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+    // LP.frame = LP.frame % 1000;
+    // LP.frame++;
+    // LP.startFrame++;
+}
+
+void drawGUI()
+{
+    auto &io  = ImGui::GetIO();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::ShowDemoWindow();
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    // Update and Render additional Platform Windows
+    // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
+    //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        GLFWwindow* backup_current_context = glfwGetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(backup_current_context);
+    }
 }
 
 void initializeInteractive()
@@ -115,6 +414,8 @@ void initializeInteractive()
         window = glfw->create_window("ViSII", 1024, 1024, false, true, true);
         glfw->make_context_current("ViSII");
         glfw->poll_events();
+
+        initializeOptix();
 
         ImGui::CreateContext();
         auto &io  = ImGui::GetIO();
@@ -137,25 +438,10 @@ void initializeInteractive()
             glClearColor(newColor[0],newColor[1],newColor[2],1);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-
-            ImGui::ShowDemoWindow();
-
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-            // Update and Render additional Platform Windows
-            // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
-            //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
-            if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-            {
-                GLFWwindow* backup_current_context = glfwGetCurrentContext();
-                ImGui::UpdatePlatformWindows();
-                ImGui::RenderPlatformWindowsDefault();
-                glfwMakeContextCurrent(backup_current_context);
-            }
+            updateComponents();
+            updateLaunchParams();
+            traceRays();
+            drawGUI();
 
             if (close) break;
         }

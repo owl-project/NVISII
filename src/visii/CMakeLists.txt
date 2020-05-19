@@ -11,5 +11,6 @@ set (
 
 set (
     SRC_CU
+    ${CMAKE_CURRENT_SOURCE_DIR}/deviceCode.cu
     PARENT_SCOPE
 )

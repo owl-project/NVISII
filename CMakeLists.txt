@@ -263,6 +263,7 @@ include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/glm_bindings)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/visii/)
 
 # defines a global ${HDR} variable containing a list of all project headers
 add_subdirectory(include) 
@@ -272,6 +273,12 @@ add_subdirectory(src)
 
 set(SRC ${SRC} ${GLAD_SRC} ${IMGUI_SRC})
 set(HDR ${HDR} ${Externals_HDR})
+
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  CUDA PTX                                                        │
+# └──────────────────────────────────────────────────────────────────┘
+# OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored
+cuda_compile_and_embed(ptxCode ${SRC_CU})
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  ViSII Library                                                   │
