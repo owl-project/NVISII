@@ -420,6 +420,11 @@ bool Entity::isFactoryInitialized()
 	return factoryInitialized;
 }
 
+bool Entity::isInitialized()
+{
+	return initialized;
+}
+
 // void Entity::UpdateComponents()
 // {
 // 	/* TODO: remove this for loop */

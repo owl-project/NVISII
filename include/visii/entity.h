@@ -107,6 +107,9 @@ public:
     /** \return True if the tables used to store all Entity components have been allocated, and False otherwise */
 	static bool isFactoryInitialized();
 
+	/** \return True the current entity is a valid, initialized entity, and False if the entity was cleared or removed. */
+	bool isInitialized();
+
     // static void UpdateComponents(); // remove this... 
 
     // static void UploadSSBO(vk::CommandBuffer command_buffer);

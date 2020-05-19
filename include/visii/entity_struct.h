@@ -5,7 +5,7 @@
 #define MAX_ENTITIES 1024
 
 struct EntityStruct {
-	int32_t initialized = -1;
+	int32_t initialized = 0;
 	int32_t transform_id = -1;
 	int32_t camera_id = -1;
 	int32_t material_id = -1;

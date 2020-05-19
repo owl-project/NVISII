@@ -110,6 +110,14 @@ void applyStyle()
 	style->WindowRounding = 4.0f;
 }
 
+void setCameraEntity(Entity* camera_entity)
+{
+    if (!camera_entity) throw std::runtime_error("Error: camera entity was nullptr/None");
+    if (!camera_entity->isInitialized()) throw std::runtime_error("Error: camera entity is uninitialized");
+
+    OptixData.LP.cameraEntity = camera_entity->getStruct();
+}
+
 void initializeFrameBuffer(int fbWidth, int fbHeight) {
     auto &OD = OptixData;
     if (OD.imageTexID != -1) {
@@ -159,10 +167,11 @@ void initializeOptix()
     
     /* Setup Optix Launch Params */
     OWLVarDecl launchParamVars[] = {
-        { "frameSize",        OWL_USER_TYPE(glm::ivec2),         OWL_OFFSETOF(LaunchParams, frameSize)},
+        { "frameSize",         OWL_USER_TYPE(glm::ivec2),         OWL_OFFSETOF(LaunchParams, frameSize)},
         { "fbPtr",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, fbPtr)},
         { "accumPtr",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
         { "world",             OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
+        { "cameraEntity",      OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
@@ -299,6 +308,7 @@ void updateLaunchParams()
     // owlLaunchParamsSetRaw(launchParams, "transferFunctionMax", &LP.transferFunctionMax);
     // owlLaunchParamsSetRaw(launchParams, "transferFunctionWidth", &LP.transferFunctionWidth);
     owlLaunchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
+    owlLaunchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
 
     // auto bumesh_transform_struct = bumesh_transform->get_struct();
     // owlLaunchParamsSetRaw(launchParams,"bumesh_transform",&bumesh_transform_struct);
