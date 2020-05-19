@@ -17,9 +17,13 @@
 
 std::promise<void> exitSignal;
 std::thread renderThread;
-static GLFWwindow* window = nullptr;
 static bool initialized = false;
 static bool close = true;
+
+static struct WindowData {
+    GLFWwindow* window = nullptr;
+    ivec2 currentSize, lastSize;
+} WindowData;
 
 /* Embedded via cmake */
 extern "C" char ptxCode[];
@@ -132,6 +136,19 @@ void initializeFrameBuffer(int fbWidth, int fbHeight) {
     cudaGraphicsGLRegisterImage(&OD.cudaResourceTex, OD.imageTexID, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone);
 }
 
+void updateFrameBuffer()
+{
+    glfwGetFramebufferSize(WindowData.window, &WindowData.currentSize.x, &WindowData.currentSize.y);
+
+    if ((WindowData.currentSize.x != WindowData.lastSize.x) || (WindowData.currentSize.y != WindowData.lastSize.y))  {
+        WindowData.lastSize.x = WindowData.currentSize.x; WindowData.lastSize.y = WindowData.currentSize.y;
+        OptixData.LP.frameSize = WindowData.currentSize;
+        initializeFrameBuffer(WindowData.currentSize.x, WindowData.currentSize.y);
+        owlBufferResize(OptixData.frameBuffer, WindowData.currentSize.x*WindowData.currentSize.y);
+        owlBufferResize(OptixData.accumBuffer, WindowData.currentSize.x*WindowData.currentSize.y);
+    }
+}
+
 void initializeOptix()
 {
     using namespace glm;
@@ -150,10 +167,10 @@ void initializeOptix()
     };
     OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
     
-    initializeFrameBuffer(854*2, 480*2);
-    OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),854*2*480*2, nullptr);
-    OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_INT,854*2*480*2, nullptr);
-    OD.LP.frameSize = glm::ivec2(854*2, 480*2);
+    initializeFrameBuffer(1024, 1024);
+    OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),1024*1024, nullptr);
+    OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_INT,1024*1024, nullptr);
+    OD.LP.frameSize = glm::ivec2(1024, 1024);
     owlLaunchParamsSetBuffer(OD.launchParams, "fbPtr", OD.frameBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "accumPtr", OD.accumBuffer);
     owlLaunchParamsSetRaw(OD.launchParams, "frameSize", &OD.LP.frameSize);
@@ -281,6 +298,7 @@ void updateLaunchParams()
     // owlLaunchParamsSetRaw(launchParams, "transferFunctionMin", &LP.transferFunctionMin);
     // owlLaunchParamsSetRaw(launchParams, "transferFunctionMax", &LP.transferFunctionMax);
     // owlLaunchParamsSetRaw(launchParams, "transferFunctionWidth", &LP.transferFunctionWidth);
+    owlLaunchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
 
     // auto bumesh_transform_struct = bumesh_transform->get_struct();
     // owlLaunchParamsSetRaw(launchParams,"bumesh_transform",&bumesh_transform_struct);
@@ -292,16 +310,6 @@ void updateLaunchParams()
 void traceRays()
 {
     auto &OD = OptixData;
-
-    // glfwGetFramebufferSize(window, &curr_frame_size.x, &curr_frame_size.y);
-
-    // if ((curr_frame_size.x != last_frame_size.x) || (curr_frame_size.y != last_frame_size.y))  {
-    //     last_frame_size.x = curr_frame_size.x; last_frame_size.y = curr_frame_size.y;
-    //     LP.frame_size = curr_frame_size;
-    //     RenderSystem::initialize_framebuffer(curr_frame_size.x, curr_frame_size.y);
-    //     owlBufferResize(frameBuffer, curr_frame_size.x*curr_frame_size.y);
-    //     owlBufferResize(accumBuffer, curr_frame_size.x*curr_frame_size.y);
-    // }
     
     static double start=0;
     static double stop=0;
@@ -326,7 +334,7 @@ void traceRays()
         }
     }
     stop = glfwGetTime();
-    glfwSetWindowTitle(window, std::to_string(1.f / (stop - start)).c_str());
+    glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
 
     // Draw pixels from optix frame buffer
     glViewport(0, 0, OD.LP.frameSize.x, OD.LP.frameSize.y);
@@ -411,7 +419,8 @@ void initializeInteractive()
 
     auto loop = []() {
         auto glfw = Libraries::GLFW::Get();
-        window = glfw->create_window("ViSII", 1024, 1024, false, true, true);
+        WindowData.window = glfw->create_window("ViSII", 1024, 1024, false, true, true);
+        WindowData.currentSize = WindowData.lastSize = ivec2(1024, 1024);
         glfw->make_context_current("ViSII");
         glfw->poll_events();
 
@@ -424,7 +433,7 @@ void initializeInteractive()
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
         applyStyle();
-        ImGui_ImplGlfw_InitForOpenGL(window, true);
+        ImGui_ImplGlfw_InitForOpenGL(WindowData.window, true);
         const char* glsl_version = "#version 130";
         ImGui_ImplOpenGL3_Init(glsl_version);
 
@@ -438,6 +447,7 @@ void initializeInteractive()
             glClearColor(newColor[0],newColor[1],newColor[2],1);
             glClear(GL_COLOR_BUFFER_BIT);
 
+            updateFrameBuffer();
             updateComponents();
             updateLaunchParams();
             traceRays();

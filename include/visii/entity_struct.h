@@ -5,12 +5,12 @@
 #define MAX_ENTITIES 1024
 
 struct EntityStruct {
-	int32_t initialized;
-	int32_t transform_id;
-	int32_t camera_id;
-	int32_t material_id;
-	int32_t light_id;
-	int32_t mesh_id;
-	int32_t rigid_body_id;
-	int32_t collider_id;
+	int32_t initialized = -1;
+	int32_t transform_id = -1;
+	int32_t camera_id = -1;
+	int32_t material_id = -1;
+	int32_t light_id = -1;
+	int32_t mesh_id = -1;
+	int32_t rigid_body_id = -1;
+	int32_t collider_id = -1;
 };

@@ -1,6 +1,8 @@
 #include "deviceCode.h"
 #include "launchParams.h"
 #include <optix_device.h>
+#include <owl/common/math/random.h>
+typedef owl::common::LCG<4> Random;
 
 extern "C" __constant__ LaunchParams optixLaunchParams;
 
@@ -41,6 +43,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     auto pixelID = owl::getLaunchIndex();
     auto fbOfs = pixelID.x+optixLaunchParams.frameSize.x* ((optixLaunchParams.frameSize.y - 1) -  pixelID.y);
+    Random random; random.init(pixelID.x/* + offset*/, pixelID.y/* + offset*/);
+
+    EntityStruct cameraEntity = optixLaunchParams.cameraEntity;
+    if (!cameraEntity.initialized) {
+        optixLaunchParams.fbPtr[fbOfs] = glm::vec4(random(), random(), random(), 1.f);
+        return;
+    }
+    
+    /* Write AOVs */
     optixLaunchParams.fbPtr[fbOfs] = glm::vec4(1.0, 0.0, 1.0, 1.f);
 }
 
