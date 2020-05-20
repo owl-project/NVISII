@@ -28,6 +28,16 @@ static struct WindowData {
 /* Embedded via cmake */
 extern "C" char ptxCode[];
 
+struct MeshData {
+    OWLBuffer vertices;
+    OWLBuffer colors;
+    OWLBuffer normals;
+    OWLBuffer texCoords;
+    OWLBuffer indices;
+    OWLGeom geom;
+    OWLGroup blas;
+};
+
 static struct OptixData {
     OWLContext context;
     OWLModule module;
@@ -47,6 +57,7 @@ static struct OptixData {
     OWLRayGen rayGen;
     OWLMissProg missProg;
     OWLGeomType trianglesGeomType;
+    MeshData meshes[MAX_MESHES];
 } OptixData;
 
 void applyStyle()
@@ -278,6 +289,30 @@ void initializeOptix()
 
 void updateComponents()
 {
+    auto &OD = OptixData;
+
+    // Build / Rebuild BVH
+    if (Mesh::areAnyDirty()) {
+        Mesh* meshes = Mesh::getFront();
+        for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
+            if (!meshes[mid].isDirty()) continue;
+            if (!meshes[mid].isInitialized()) continue;
+            OD.meshes[mid].vertices  = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getVertices().size(), meshes[mid].getVertices().data());
+            OD.meshes[mid].colors    = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getColors().size(), meshes[mid].getColors().data());
+            OD.meshes[mid].normals   = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getNormals().size(), meshes[mid].getNormals().data());
+            OD.meshes[mid].texCoords = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec2), meshes[mid].getTexCoords().size(), meshes[mid].getTexCoords().data());
+            OD.meshes[mid].indices   = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t), meshes[mid].getTriangleIndices().size(), meshes[mid].getTriangleIndices().data());
+            OD.meshes[mid].geom = owlGeomCreate(OD.context, OD.trianglesGeomType);
+            owlTrianglesSetVertices(OD.meshes[mid].geom, OD.meshes[mid].vertices, meshes[mid].getVertices().size(), sizeof(vec4), 0);
+            owlTrianglesSetIndices(OD.meshes[mid].geom, OD.meshes[mid].indices, meshes[mid].getTriangleIndices().size() / 3, sizeof(ivec3), 0);
+            owlGeomSetBuffer(OD.meshes[mid].geom,"vertex", OD.meshes[mid].vertices);
+            owlGeomSetBuffer(OD.meshes[mid].geom,"index", OD.meshes[mid].indices);
+            owlGeomSetBuffer(OD.meshes[mid].geom,"colors", OD.meshes[mid].colors);
+            OD.meshes[mid].blas = owlTrianglesGeomGroupCreate(OD.context, 1, &OD.meshes[mid].geom);
+            owlGroupBuildAccel(OD.meshes[mid].blas);            
+        }
+    }
+    
     // Entity::updateComponents();
     Transform::updateComponents();
     Camera::updateComponents();

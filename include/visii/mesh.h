@@ -531,11 +531,16 @@ class Mesh : public StaticFactory
         /** \return True if the tables used to store all mesh components have been allocated, and False otherwise */
         static bool isFactoryInitialized();
 
+		/** \return True the current mesh is a valid, initialized mesh, and False if the mesh was cleared or removed. */
+		bool isInitialized();
+
         /** Iterates through all mesh components, computing mesh metadata for rendering purposes. */
         static void updateComponents();
 
         /** Frees any tables used to store mesh components */
         static void cleanUp();
+
+		static bool areAnyDirty();
 
         /** \return True if the mesh has been modified since the previous frame, and False otherwise */
         bool isDirty() { return dirty; }
@@ -585,25 +590,25 @@ class Mesh : public StaticFactory
 		/** Returns a json string representation of the current component */
 		std::string toString();
 		
-		// /* If editing is enabled, returns a list of per vertex positions */
-		// std::vector<glm::vec4> get_positions();
+		/* Returns a list of per vertex positions */
+		std::vector<glm::vec4> getVertices();
 
-		// /* If editing is enabled, returns a list of per vertex colors */
-		// std::vector<glm::vec4> get_colors();
+		/* Returns a list of per vertex colors */
+		std::vector<glm::vec4> getColors();
 
-		// /* If editing is enabled, returns a list of per vertex normals */
-		// std::vector<glm::vec4> get_normals();
+		/* Returns a list of per vertex normals */
+		std::vector<glm::vec4> getNormals();
 
-		// /* If editing is enabled, returns a list of per vertex texture coordinates */
-		// std::vector<glm::vec2> get_texcoords();
+		/* Returns a list of per vertex texture coordinates */
+		std::vector<glm::vec2> getTexCoords();
 
-		// /* If editing is enabled, returns a list of edge indices */
+		/* Returns a list of edge indices */
 		// std::vector<uint32_t> get_edge_indices();
 
-		// /* If editing is enabled, returns a list of triangle indices */
-		// std::vector<uint32_t> get_triangle_indices();
+		/* Returns a list of triangle indices */
+		std::vector<uint32_t> getTriangleIndices();
 
-		// /* If editing is enabled, returns a list of tetrahedra indices */
+		/* Returns a list of tetrahedra indices */
 		// std::vector<uint32_t> get_tetrahedra_indices();		
 
 		// /* Returns the handle to the position buffer */
