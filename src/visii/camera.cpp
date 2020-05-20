@@ -270,7 +270,7 @@ glm::mat4 makeProjRH(float fovY_radians, float aspectWbyH, float zNear)
 void Camera::usePerspectiveFromFOV(float fieldOfView, float aspect, float near)
 {
     cameraStructs[id].near_pos = near;
-    cameraStructs[id].proj = makeInfReversedZProjRH(fieldOfView, aspect, near);
+    cameraStructs[id].proj = glm::perspective(fieldOfView, aspect, near, 1000.f); //makeInfReversedZProjRH(fieldOfView, aspect, near);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
     markDirty();
 }
@@ -280,7 +280,8 @@ void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth,
     float aspect = sensorWidth / sensorHeight;
     float fovy = 2.f*atan(0.5f*sensorHeight / focalLength);
     cameraStructs[id].near_pos = near;
-    cameraStructs[id].proj = makeInfReversedZProjRH(fovy, aspect, near);
+    // cameraStructs[id].proj = makeInfReversedZProjRH(fovy, aspect, near);
+    cameraStructs[id].proj = glm::perspective(fovy, aspect, near, 1000.f);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
     markDirty();
 }

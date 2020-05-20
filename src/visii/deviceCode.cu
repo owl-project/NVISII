@@ -72,17 +72,19 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
 {
     /* Generate camera rays */    
     mat4 camWorldToLocal = transform.worldToLocal;
-    mat4 projinv = camera.projinv;
+    mat4 projinv = camera.projinv;//glm::inverse(glm::perspective(.785398, 1.0, .1, 1000));//camera.projinv;
     mat4 viewinv = camera.viewinv * camWorldToLocal;
     vec2 inUV = vec2(pixelID.x, pixelID.y) / vec2(optixLaunchParams.frameSize);
     // if (optixLaunchParams.zoom > 0.f) {
     //     inUV /= optixLaunchParams.zoom;
     //     inUV += (.5f - (.5f / optixLaunchParams.zoom));
     // }
-    vec2 dir = inUV * 2.f - 1.f; dir.y *= -1.f;
-    vec4 t = (projinv * vec4(dir.x, dir.y, 1.f, 1.f));
-    vec3 target = vec3(t) / float(t.w);
+
     vec3 origin = vec3(viewinv * vec4(0.f,0.f,0.f,1.f));
+
+    vec2 dir = inUV * 2.f - 1.f; dir.y *= -1.f;
+    vec4 t = (projinv * vec4(dir.x, dir.y, -1.f, 1.f));
+    vec3 target = vec3(t) / float(t.w);
     vec3 direction = vec3(viewinv * vec4(target, 0.f));
     direction = normalize(direction);
 
@@ -91,15 +93,40 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     ray.tmax = 1e38f;//10000.0f;
     ray.origin = owl::vec3f(origin.x, origin.y, origin.z);
     ray.direction = owl::vec3f(direction.x, direction.y, direction.z);
-    if ((pixelID.x == 0) && (pixelID.y == 0)) {
-        // printf("dir: %f %f %f\n", ray.direction.x, ray.direction.y, ray.direction.z);
-        printf("viewinv: %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
-            viewinv[0][0], viewinv[0][1], viewinv[0][2], viewinv[0][3],
-            viewinv[1][0], viewinv[1][1], viewinv[1][2], viewinv[1][3],
-            viewinv[2][0], viewinv[2][1], viewinv[2][2], viewinv[2][3],
-            viewinv[3][0], viewinv[3][1], viewinv[3][2], viewinv[3][3]
-        );
-    }
+    // ray.direction = owl::vec3f(0.0, 1.0, 0.0); // testing...
+    // if ((pixelID.x == 0) && (pixelID.y == 0)) {
+    //     // printf("dir: %f %f %f\n", ray.direction.x, ray.direction.y, ray.direction.z);
+    //     printf("viewinv: %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
+    //         viewinv[0][0], viewinv[0][1], viewinv[0][2], viewinv[0][3],
+    //         viewinv[1][0], viewinv[1][1], viewinv[1][2], viewinv[1][3],
+    //         viewinv[2][0], viewinv[2][1], viewinv[2][2], viewinv[2][3],
+    //         viewinv[3][0], viewinv[3][1], viewinv[3][2], viewinv[3][3]
+    //     );
+    // }
+
+    ray.direction = normalize(owl::vec3f(direction.x, direction.y, direction.z));
+    // ray.direction = normalize(owl::vec3f(target.x, target.y, target.z));
+
+    // vec3 lookFrom = origin;//(-4.f,-3.f,-2.f);
+    // vec3 lookAt(0.f,0.f,0.f);
+    // vec3 lookUp(0.f,0.f,1.f);
+    // float cosFovy = 0.66f;
+    // vec3 camera_pos = lookFrom;
+    // vec3 camera_d00
+    //   = normalize(lookAt-lookFrom);
+    // float aspect = frameSize.x / float(frameSize.y);
+    // vec3 camera_ddu
+    //   = cosFovy * aspect * normalize(cross(camera_d00,lookUp));
+    // vec3 camera_ddv
+    //   = cosFovy * normalize(cross(camera_ddu,camera_d00));
+    // camera_d00 -= 0.5f * camera_ddu;
+    // camera_d00 -= 0.5f * camera_ddv;
+
+    // direction 
+    // = normalize(camera_d00
+    //             + inUV.x * camera_ddu
+    //             + inUV.y * camera_ddv);
+    // ray.direction = owl::vec3f(direction.x, direction.y, direction.z);
     return ray;
 }
 
@@ -119,7 +146,19 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize);
 
+    vec3 finalColor = vec3(0.f);
+
+    /* Intersect mesh */
+    TriMeshPayload tprd;
+    owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
+                    /*the ray to trace*/ ray,
+                    /*prd*/ tprd);  
+    
+    if (tprd.tmax > 0.f) {
+        finalColor = vec3(tprd.r, tprd.g, tprd.b);
+    }
+    // finalColor = vec3(ray.direction.x, ray.direction.y, ray.direction.z);
     /* Write AOVs */
-    optixLaunchParams.fbPtr[fbOfs] = vec4(ray.direction.x, ray.direction.y, ray.direction.z, 1.f);
+    optixLaunchParams.fbPtr[fbOfs] = vec4(finalColor.r, finalColor.g, finalColor.b, 1.f);
 }
 
