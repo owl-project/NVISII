@@ -425,15 +425,20 @@ bool Entity::isInitialized()
 	return initialized;
 }
 
-// void Entity::UpdateComponents()
-// {
-// 	/* TODO: remove this for loop */
-// 	for (int i = 0; i < MAX_ENTITIES; ++i) {
-// 		if (!entities[i].isFactoryInitialized()) continue;
-// 		/* TODO: account for parent transforms */
-// 		entityStructs[i] = entities[i].entity_struct;
-// 	};
-// }
+bool Entity::areAnyDirty()
+{
+	return anyDirty;
+}
+
+void Entity::updateComponents()
+{
+	if (!areAnyDirty()) return;
+	
+	for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
+		if (entities[eid].isDirty()) 
+			entities[eid].markClean();
+	}
+}
 
 // void Entity::UploadSSBO(vk::CommandBuffer command_buffer)
 // {

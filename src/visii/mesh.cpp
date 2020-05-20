@@ -386,7 +386,10 @@ void Mesh::updateComponents()
 	if (!areAnyDirty()) return;
 	
 	for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
-		meshes[mid].markClean();
+		if (meshes[mid].isDirty()) {
+			meshes[mid].computeMetadata();
+			meshes[mid].markClean();
+		}
 	}
 } 
 

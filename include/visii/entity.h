@@ -110,7 +110,7 @@ public:
 	/** \return True the current entity is a valid, initialized entity, and False if the entity was cleared or removed. */
 	bool isInitialized();
 
-    // static void UpdateComponents(); // remove this... 
+    static void updateComponents();
 
     // static void UploadSSBO(vk::CommandBuffer command_buffer);
     // static vk::Buffer GetSSBO();
@@ -133,6 +133,9 @@ public:
 	// void clear_collider();
 	// int32_t get_collider_id();
 	// Collider* get_collider();
+
+	static bool areAnyDirty();
+
 
     /** \return True if the Entity has been modified since the previous frame, and False otherwise */
 	bool isDirty() { return dirty; }
