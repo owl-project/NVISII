@@ -53,6 +53,7 @@ static struct OptixData {
     OWLBuffer cameraBuffer;
     OWLBuffer materialBuffer;
     OWLBuffer meshBuffer;
+    OWLBuffer instanceToEntityMapBuffer;
 
     OWLRayGen rayGen;
     OWLMissProg missProg;
@@ -186,16 +187,17 @@ void initializeOptix()
     
     /* Setup Optix Launch Params */
     OWLVarDecl launchParamVars[] = {
-        { "frameSize",         OWL_USER_TYPE(glm::ivec2),         OWL_OFFSETOF(LaunchParams, frameSize)},
-        { "fbPtr",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, fbPtr)},
-        { "accumPtr",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
-        { "world",             OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
-        { "cameraEntity",      OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
-        { "entities",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, entities)},
-        { "transforms",        OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, transforms)},
-        { "cameras",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, cameras)},
-        { "materials",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
-        { "meshes",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
+        { "frameSize",           OWL_USER_TYPE(glm::ivec2),         OWL_OFFSETOF(LaunchParams, frameSize)},
+        { "fbPtr",               OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, fbPtr)},
+        { "accumPtr",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
+        { "world",               OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
+        { "cameraEntity",        OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
+        { "entities",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, entities)},
+        { "transforms",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, transforms)},
+        { "cameras",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, cameras)},
+        { "materials",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
+        { "meshes",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
+        { "instanceToEntityMap", OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
@@ -215,11 +217,13 @@ void initializeOptix()
     OD.cameraBuffer    = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),    MAX_CAMERAS,    nullptr);
     OD.materialBuffer  = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),  MAX_MATERIALS,  nullptr);
     OD.meshBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),      MAX_MESHES,     nullptr);
+    OD.instanceToEntityMapBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),        1,     nullptr);
     owlLaunchParamsSetBuffer(OD.launchParams, "entities",   OD.entityBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "transforms", OD.transformBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "cameras",    OD.cameraBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "materials",  OD.materialBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "meshes",     OD.meshBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "instanceToEntityMap", OD.instanceToEntityMapBuffer);
 
 
     OWLVarDecl trianglesGeomVars[] = {
@@ -245,8 +249,8 @@ void initializeOptix()
     OWLGeom trianglesGeom = owlGeomCreate(OD.context,OD.trianglesGeomType);
     owlTrianglesSetVertices(trianglesGeom,vertexBuffer,NUM_VERTICES,sizeof(vec3),0);
     owlTrianglesSetIndices(trianglesGeom,indexBuffer, NUM_INDICES,sizeof(ivec3),0);
-    owlGeomSetBuffer(trianglesGeom,"vertex",vertexBuffer);
-    owlGeomSetBuffer(trianglesGeom,"index",indexBuffer);
+    owlGeomSetBuffer(trianglesGeom,"vertex",nullptr);
+    owlGeomSetBuffer(trianglesGeom,"index",nullptr);
     owlGeomSetBuffer(trianglesGeom,"colors",nullptr);
     owlGeomSetBuffer(trianglesGeom,"normals",nullptr);
     owlGeomSetBuffer(trianglesGeom,"texcoords",nullptr);
@@ -303,17 +307,20 @@ void updateComponents()
     if (Entity::areAnyDirty()) {
         std::vector<OWLGroup> instances;
         std::vector<glm::mat4> instanceTransforms;
+        std::vector<uint32_t> instanceToEntityMap;
         Entity* entities = Entity::getFront();
         for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
             // if (!entities[eid].isDirty()) continue; // if any entities are dirty, need to rebuild entire TLAS
             if (!entities[eid].isInitialized()) continue;
             if (!entities[eid].getTransform()) continue;
             if (!entities[eid].getMesh()) continue;
+            if (!entities[eid].getMaterial()) continue;
 
             OWLGroup blas = OD.meshes[entities[eid].getMesh()->getId()].blas;
             glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix();
             instances.push_back(blas);
             instanceTransforms.push_back(localToWorld);            
+            instanceToEntityMap.push_back(eid);
         }
 
         OD.tlas = owlInstanceGroupCreate(OD.context, instances.size());
@@ -327,6 +334,8 @@ void updateComponents()
                 {m44xfm[3][0], m44xfm[3][1], m44xfm[3][2]}};
             owlInstanceGroupSetTransform(OD.tlas, iid, xfm);
         }
+        owlBufferResize(OD.instanceToEntityMapBuffer, instanceToEntityMap.size());
+        owlBufferUpload(OD.instanceToEntityMapBuffer, instanceToEntityMap.data());
         owlGroupBuildAccel(OD.tlas);
         owlLaunchParamsSetGroup(OD.launchParams, "world", OD.tlas);
         owlBuildSBT(OD.context);

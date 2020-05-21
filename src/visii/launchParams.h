@@ -23,4 +23,5 @@ struct LaunchParams {
     MaterialStruct  *materials = nullptr;
     CameraStruct    *cameras = nullptr;
     MeshStruct      *meshes = nullptr;
+    uint32_t        *instanceToEntityMap = nullptr;
 };

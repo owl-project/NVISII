@@ -33,14 +33,34 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     float2 bc = optixGetTriangleBarycentrics();
 
     // compute normal:
+    const int   instID = optixGetInstanceIndex();
     const int   primID = optixGetPrimitiveIndex();
     const ivec3 index  = self.index[primID];
     const vec3 &A     = self.vertex[index.x];
     const vec3 &B     = self.vertex[index.y];
     const vec3 &C     = self.vertex[index.z];
-    const vec3 &ACol = vec3(1.0, 0.0, 0.0); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.x];
-    const vec3 &BCol = vec3(1.0, 0.0, 0.0); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.y];
-    const vec3 &CCol = vec3(1.0, 0.0, 0.0); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.z];
+
+    vec3 vcol;
+
+    // temporary code...
+    uint32_t entityID =  optixLaunchParams.instanceToEntityMap[instID];
+
+    if (entityID >= MAX_ENTITIES) vcol = vec3(1.0f, 0.0f, 1.0f);
+    else {
+        EntityStruct entity = optixLaunchParams.entities[entityID];
+        
+        if ((entity.material_id < 0) || (entity.material_id >= MAX_MATERIALS)) {
+            vcol = vec3(0.f, 1.0f, 0.0f);
+        } else {
+            MaterialStruct material = optixLaunchParams.materials[entity.material_id];
+            vcol = vec3(material.base_color);
+        }
+    }
+
+
+    // const vec3 &ACol = vec3(material.base_color); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.x];
+    // const vec3 &BCol = vec3(material.base_color); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.y];
+    // const vec3 &CCol = vec3(material.base_color); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.z];
     vec3 Ng;
     if (self.normals) {
         const vec3 &NA = self.normals[index.x];
@@ -54,7 +74,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     auto rayDir = optixGetWorldRayDirection();
     vec3 dir = vec3(rayDir.x, rayDir.y, rayDir.z);
 
-    vec3 vcol = ACol * (1.f - (bc.x + bc.y)) + BCol * bc.x + CCol * bc.y;
+    // vec3 vcol = ACol * (1.f - (bc.x + bc.y)) + BCol * bc.x + CCol * bc.y;
 
     vec3 color = (.2f + .8f*fabs(dot(dir,Ng)))*vcol;
     prd.r = color.x;
