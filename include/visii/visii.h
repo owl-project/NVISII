@@ -8,7 +8,7 @@
 /**
    Initializes various backend systems required to render scene data.
 */
-void initializeInteractive();
+void initializeInteractive(bool window_on_top = false);
 
 /**
    Initializes various backend systems required to render scene data.

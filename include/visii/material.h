@@ -84,15 +84,14 @@ class Material : public StaticFactory
 
     /** \return True if the material has been modified since the previous frame, and False otherwise */
     bool isDirty() { return dirty; }
+    
+    static bool areAnyDirty();
 
     /** \return True if the material has not been modified since the previous frame, and False otherwise */
     bool isClean() { return !dirty; }
 
     /** Tags the current component as being modified since the previous frame. */
-    void markDirty() {
-        // Dirty = true;
-        dirty = true;
-    };
+    void markDirty();
 
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }

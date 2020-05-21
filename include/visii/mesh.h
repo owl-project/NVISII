@@ -549,10 +549,7 @@ class Mesh : public StaticFactory
         bool isClean() { return !dirty; }
 
         /** Tags the current component as being modified since the previous frame. */
-        void markDirty() {
-            // Dirty = true;
-            dirty = true;
-        };
+        void markDirty();
 
         /** Tags the current component as being unmodified since the previous frame. */
         void markClean() { dirty = false; }
