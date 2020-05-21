@@ -41,7 +41,15 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     const vec3 &ACol = vec3(1.0, 0.0, 0.0); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.x];
     const vec3 &BCol = vec3(1.0, 0.0, 0.0); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.y];
     const vec3 &CCol = vec3(1.0, 0.0, 0.0); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.z];
-    const vec3 Ng     = normalize(cross(B-A,C-A));
+    vec3 Ng;
+    if (self.normals) {
+        const vec3 &NA = self.normals[index.x];
+        const vec3 &NB = self.normals[index.y];
+        const vec3 &NC = self.normals[index.z];
+        Ng = NA * (1.f - (bc.x + bc.y)) + NB * bc.x + NC * bc.y;
+    } else {
+        Ng = normalize(cross(B-A,C-A));
+    }
 
     auto rayDir = optixGetWorldRayDirection();
     vec3 dir = vec3(rayDir.x, rayDir.y, rayDir.z);

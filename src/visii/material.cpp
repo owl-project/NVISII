@@ -83,6 +83,16 @@ bool Material::isFactoryInitialized()
 	return factoryInitialized;
 }
 
+bool Material::areAnyDirty()
+{
+	return anyDirty;
+}
+
+void Material::markDirty() {
+	dirty = true;
+	anyDirty = true;
+};
+
 void Material::updateComponents()
 {
 	if (!anyDirty) return;

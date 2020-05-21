@@ -58,6 +58,7 @@ static struct OptixData {
     OWLMissProg missProg;
     OWLGeomType trianglesGeomType;
     MeshData meshes[MAX_MESHES];
+    OWLGroup tlas;
 } OptixData;
 
 void applyStyle()
@@ -200,10 +201,10 @@ void initializeOptix()
     OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
     
     /* Create AOV Buffers */
-    initializeFrameBuffer(1024, 1024);
-    OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),1024*1024, nullptr);
-    OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_INT,1024*1024, nullptr);
-    OD.LP.frameSize = glm::ivec2(1024, 1024);
+    initializeFrameBuffer(512, 512);
+    OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_INT,512*512, nullptr);
+    OD.LP.frameSize = glm::ivec2(512, 512);
     owlLaunchParamsSetBuffer(OD.launchParams, "fbPtr", OD.frameBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "accumPtr", OD.accumBuffer);
     owlLaunchParamsSetRaw(OD.launchParams, "frameSize", &OD.LP.frameSize);
@@ -220,42 +221,23 @@ void initializeOptix()
     owlLaunchParamsSetBuffer(OD.launchParams, "materials",  OD.materialBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "meshes",     OD.meshBuffer);
 
-    /* Temporary test code */
-    const int NUM_VERTICES = 8;
-    vec3 vertices[NUM_VERTICES] =
-    {
-        { -1.f,-1.f,-.1f },
-        { +1.f,-1.f,-.1f },
-        { -1.f,+1.f,-.1f },
-        { +1.f,+1.f,-.1f },
-        { -1.f,-1.f,+.1f },
-        { +1.f,-1.f,+.1f },
-        { -1.f,+1.f,+.1f },
-        { +1.f,+1.f,+.1f }
-    };
-
-    const int NUM_INDICES = 12;
-    ivec3 indices[NUM_INDICES] =
-    {
-        { 0,1,3 }, { 2,3,0 },
-        { 5,7,6 }, { 5,6,4 },
-        { 0,4,5 }, { 0,5,1 },
-        { 2,3,7 }, { 2,7,6 },
-        { 1,5,7 }, { 1,7,3 },
-        { 4,0,2 }, { 4,2,6 }
-    };
 
     OWLVarDecl trianglesGeomVars[] = {
-        { "index",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,index)},
-        { "vertex", OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,vertex)},
-        { "colors",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,colors)}
-        // { "color",  OWL_FLOAT3, OWL_OFFSETOF(TrianglesGeomData,color)}
+        { "index",      OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,index)},
+        { "vertex",     OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,vertex)},
+        { "colors",     OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,colors)},
+        { "normals",    OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,normals)},
+        { "texcoords",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,texcoords)},
+        {/* sentinel to mark end of list */}
     };
     OD.trianglesGeomType
-        = owlGeomTypeCreate(OD.context,
-                            OWL_GEOM_TRIANGLES,
-                            sizeof(TrianglesGeomData),
-                            trianglesGeomVars,3);
+        = owlGeomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
+    
+    /* Temporary test code */
+    const int NUM_VERTICES = 1;
+    vec3 vertices[NUM_VERTICES] = {{ 0.f, 0.f, 0.f }};
+    const int NUM_INDICES = 1;
+    ivec3 indices[NUM_INDICES] = {{ 0, 0, 0 }};
     owlGeomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
     
     OWLBuffer vertexBuffer = owlDeviceBufferCreate(OD.context,OWL_FLOAT3,NUM_VERTICES,vertices);
@@ -266,6 +248,8 @@ void initializeOptix()
     owlGeomSetBuffer(trianglesGeom,"vertex",vertexBuffer);
     owlGeomSetBuffer(trianglesGeom,"index",indexBuffer);
     owlGeomSetBuffer(trianglesGeom,"colors",nullptr);
+    owlGeomSetBuffer(trianglesGeom,"normals",nullptr);
+    owlGeomSetBuffer(trianglesGeom,"texcoords",nullptr);
     OWLGroup trianglesGroup = owlTrianglesGeomGroupCreate(OD.context,1,&trianglesGeom);
     owlGroupBuildAccel(trianglesGroup);
     OWLGroup world = owlInstanceGroupCreate(OD.context, 1);
@@ -291,7 +275,7 @@ void updateComponents()
 {
     auto &OD = OptixData;
 
-    // Build / Rebuild BVH
+    // Build / Rebuild BLAS
     if (Mesh::areAnyDirty()) {
         Mesh* meshes = Mesh::getFront();
         for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
@@ -302,18 +286,53 @@ void updateComponents()
             OD.meshes[mid].normals   = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getNormals().size(), meshes[mid].getNormals().data());
             OD.meshes[mid].texCoords = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec2), meshes[mid].getTexCoords().size(), meshes[mid].getTexCoords().data());
             OD.meshes[mid].indices   = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t), meshes[mid].getTriangleIndices().size(), meshes[mid].getTriangleIndices().data());
-            OD.meshes[mid].geom = owlGeomCreate(OD.context, OD.trianglesGeomType);
+            OD.meshes[mid].geom      = owlGeomCreate(OD.context, OD.trianglesGeomType);
             owlTrianglesSetVertices(OD.meshes[mid].geom, OD.meshes[mid].vertices, meshes[mid].getVertices().size(), sizeof(vec4), 0);
             owlTrianglesSetIndices(OD.meshes[mid].geom, OD.meshes[mid].indices, meshes[mid].getTriangleIndices().size() / 3, sizeof(ivec3), 0);
             owlGeomSetBuffer(OD.meshes[mid].geom,"vertex", OD.meshes[mid].vertices);
             owlGeomSetBuffer(OD.meshes[mid].geom,"index", OD.meshes[mid].indices);
             owlGeomSetBuffer(OD.meshes[mid].geom,"colors", OD.meshes[mid].colors);
+            owlGeomSetBuffer(OD.meshes[mid].geom,"normals", OD.meshes[mid].normals);
+            owlGeomSetBuffer(OD.meshes[mid].geom,"texcoords", OD.meshes[mid].texCoords);
             OD.meshes[mid].blas = owlTrianglesGeomGroupCreate(OD.context, 1, &OD.meshes[mid].geom);
             owlGroupBuildAccel(OD.meshes[mid].blas);            
         }
     }
+
+    // Build / Rebuild TLAS
+    if (Entity::areAnyDirty()) {
+        std::vector<OWLGroup> instances;
+        std::vector<glm::mat4> instanceTransforms;
+        Entity* entities = Entity::getFront();
+        for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
+            // if (!entities[eid].isDirty()) continue; // if any entities are dirty, need to rebuild entire TLAS
+            if (!entities[eid].isInitialized()) continue;
+            if (!entities[eid].getTransform()) continue;
+            if (!entities[eid].getMesh()) continue;
+
+            OWLGroup blas = OD.meshes[entities[eid].getMesh()->getId()].blas;
+            glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix();
+            instances.push_back(blas);
+            instanceTransforms.push_back(localToWorld);            
+        }
+
+        OD.tlas = owlInstanceGroupCreate(OD.context, instances.size());
+        for (uint32_t iid = 0; iid < instances.size(); ++iid) {
+            owlInstanceGroupSetChild(OD.tlas, iid, instances[iid]); 
+            glm::mat4 m44xfm = instanceTransforms[iid];
+            owl4x3f xfm = {
+                {m44xfm[0][0], m44xfm[0][1], m44xfm[0][2]}, 
+                {m44xfm[1][0], m44xfm[1][1], m44xfm[1][2]}, 
+                {m44xfm[2][0], m44xfm[2][1], m44xfm[2][2]},
+                {m44xfm[3][0], m44xfm[3][1], m44xfm[3][2]}};
+            owlInstanceGroupSetTransform(OD.tlas, iid, xfm);
+        }
+        owlGroupBuildAccel(OD.tlas);
+        owlLaunchParamsSetGroup(OD.launchParams, "world", OD.tlas);
+        owlBuildSBT(OD.context);
+    }
     
-    // Entity::updateComponents();
+    Entity::updateComponents();
     Transform::updateComponents();
     Camera::updateComponents();
     Mesh::updateComponents();
@@ -484,7 +503,7 @@ void drawGUI()
     }
 }
 
-void initializeInteractive()
+void initializeInteractive(bool windowOnTop)
 {
     // don't initialize more than once
     if (initialized == true) return;
@@ -497,10 +516,10 @@ void initializeInteractive()
     Material::initializeFactory();
     Mesh::initializeFactory();
 
-    auto loop = []() {
+    auto loop = [windowOnTop]() {
         auto glfw = Libraries::GLFW::Get();
-        WindowData.window = glfw->create_window("ViSII", 1024, 1024, false, true, true);
-        WindowData.currentSize = WindowData.lastSize = ivec2(1024, 1024);
+        WindowData.window = glfw->create_window("ViSII", 512, 512, windowOnTop, true, true);
+        WindowData.currentSize = WindowData.lastSize = ivec2(512, 512);
         glfw->make_context_current("ViSII");
         glfw->poll_events();
 

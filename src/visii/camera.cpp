@@ -50,6 +50,15 @@ bool Camera::isFactoryInitialized()
     return factoryInitialized;
 }
 
+bool Camera::areAnyDirty() {
+    return anyDirty;
+}
+
+void Camera::markDirty() {
+    dirty = true;
+    anyDirty = true;
+};
+
 void Camera::updateComponents()
 {
 	// if (!anyDirty) return;

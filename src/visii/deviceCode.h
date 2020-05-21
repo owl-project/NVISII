@@ -9,11 +9,15 @@ using namespace glm;
 struct TrianglesGeomData
 {
   /*! base color we use for the entire mesh */
-  vec3 *colors = nullptr;
+  vec4 *colors = nullptr;
+  /*! array/buffer of vertex positions */
+  vec4 *vertex = nullptr;
+  /*! array/buffer of vertex positions */
+  vec4 *normals = nullptr;
+  /*! array/buffer of vertex positions */
+  vec2 *texcoords = nullptr;
   /*! array/buffer of vertex indices */
   ivec3 *index = nullptr;
-  /*! array/buffer of vertex positions */
-  vec3 *vertex = nullptr;
 };
 
 /* variables for the ray generation program */

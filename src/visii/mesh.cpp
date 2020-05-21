@@ -121,6 +121,11 @@ bool Mesh::areAnyDirty() {
 	return anyDirty; 
 }
 
+void Mesh::markDirty() {
+	dirty = true;
+	anyDirty = true;
+};
+
 std::vector<glm::vec4> Mesh::getVertices() {
 	return positions;
 }
@@ -387,10 +392,13 @@ void Mesh::updateComponents()
 	
 	for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
 		if (meshes[mid].isDirty()) {
-			meshes[mid].computeMetadata();
+			if (meshes[mid].isInitialized()) {
+				meshes[mid].computeMetadata();
+			}
 			meshes[mid].markClean();
 		}
 	}
+	anyDirty = false;
 } 
 
 // void Mesh::UploadSSBO(vk::CommandBuffer command_buffer)
