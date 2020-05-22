@@ -198,6 +198,15 @@ set(IMGUI_SRC
 # find_package(TBB REQUIRED)
 # include_directories(${TBB_INCLUDE_DIR})
 
+# cuda
+find_package(CUDA REQUIRED)
+include_directories(${CUDA_TOOLKIT_INCLUDE})
+
+# optix 7
+set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
+find_package(OptiX REQUIRED VERSION 7)
+include_directories(${OptiX_INCLUDE})
+
 # owl
 set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
 set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
@@ -206,7 +215,8 @@ add_subdirectory(externals/owl)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
 include(configure_cuda)
-include(configure_optix)
+
+# include(configure_optix)
 # include(configure_build_type)
 
 # add libraries to a list for linking
@@ -244,6 +254,7 @@ endif()
 
 # For compiling cuda kernels and embedding them as ptx
 if (NVCC_VERBOSE)
+set(VERBOSE 1)
 set (NVCC_VERBOSE_FLAG --verbose)
 endif()
 
