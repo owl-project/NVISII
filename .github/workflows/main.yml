@@ -57,8 +57,6 @@ jobs:
       run: |
         choco install cuda
     
-    # Runs a set of commands using the runners shell
-    - name: Run a multi-line script
+    - name: Configure cmake project
       run: |
-        echo Add other actions to build,
-        echo test, and deploy your project.
+        cmake .
