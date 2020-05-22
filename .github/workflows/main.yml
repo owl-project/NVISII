@@ -10,7 +10,7 @@ on:
   pull_request:
     branches: [master]
   watch:
-    [started]
+    types: [started]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
