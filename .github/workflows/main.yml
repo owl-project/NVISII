@@ -41,8 +41,8 @@ jobs:
       run: echo Hello, world!
     
     # Download external dependencies
-    - name: Download CUDA Toolkit
-    - if: matrix.os == 'ubuntu-18.04'
+    - name: Download Ubuntu CUDA Toolkit
+      if: matrix.os == 'ubuntu-18.04'
       run: |
           # Install CUDA
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
@@ -51,7 +51,9 @@ jobs:
           sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
           sudo apt-get update
           sudo apt-get --no-install-recommends -y install cuda-toolkit-10-2
-    - if: matrix.os == 'windows-latest'
+          
+    - name: Download Windows CUDA Toolkit
+      if: matrix.os == 'windows-latest'
       run: |
         choco install cuda
     
