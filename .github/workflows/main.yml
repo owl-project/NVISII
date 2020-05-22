@@ -15,12 +15,26 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
-    runs-on: ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-18.04
+          - windows-latest
+        python-version: [2.7, 3.6, 3.7, 3.8]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Display Python version
+      run: python -c "import sys; print(sys.version)"
 
     # Runs a single command using the runners shell
     - name: Run a one-line script
@@ -29,13 +43,17 @@ jobs:
     # Download external dependencies
     - name: Download CUDA Toolkit
       run: |
-        # Install CUDA
-        wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
-        sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
-        sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-        sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
-        sudo apt-get update
-        sudo apt-get --no-install-recommends -y install cuda-toolkit-10-2
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          # Install CUDA
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+          sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+          sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+          sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+          sudo apt-get update
+          sudo apt-get --no-install-recommends -y install cuda-toolkit-10-2
+        elif [ "$RUNNER_OS" == "Windows ]; then
+          choco install cuda
+        fi
     
     # Runs a set of commands using the runners shell
     - name: Run a multi-line script
