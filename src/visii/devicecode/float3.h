@@ -1,5 +1,5 @@
 #pragma once
-
+#include <glm/glm.hpp>
 #include "types.h"
 
 __device__ float4 make_float4(float c) {
