@@ -84,6 +84,6 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: visii-${{ matrix.os }}-${{ matrix.python-version }}
+        name: visii-${{ matrix.os }}-python${{ matrix.python-version }}
         path: install
         

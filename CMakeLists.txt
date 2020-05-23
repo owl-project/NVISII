@@ -202,7 +202,9 @@ set(IMGUI_SRC
 find_package(CUDA REQUIRED)
 include_directories(${CUDA_TOOLKIT_INCLUDE})
 find_program(BIN2C bin2c 
-  HINTS /usr/local/cuda/bin)
+  HINTS 
+  ${CUDA_TOOLKIT_INCLUDE}/bin/
+  /usr/local/cuda/bin)
 
 # optix 7
 set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
