@@ -1,4 +1,4 @@
-#include "deviceCode.h"
+#include "path_tracer.h"
 #include "launchParams.h"
 #include <optix_device.h>
 #include <owl/common/math/random.h>

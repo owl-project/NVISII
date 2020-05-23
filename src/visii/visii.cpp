@@ -10,7 +10,7 @@
 #include <cuda_gl_interop.h>
 
 #include <launchParams.h>
-#include <deviceCode.h>
+#include <path_tracer.h>
 
 #include <thread>
 #include <future>

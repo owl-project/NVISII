@@ -65,7 +65,7 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 # └──────────────────────────────────────────────────────────────────┘
 
 # Build options go here... Things like "Build Tests", or "Generate documentation"...
-option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" ON)
+option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" OFF)
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Definitions                                                     │
@@ -258,7 +258,6 @@ endif()
 
 # For compiling cuda kernels and embedding them as ptx
 if (NVCC_VERBOSE)
-set(VERBOSE 1)
 set (NVCC_VERBOSE_FLAG --verbose)
 endif()
 
