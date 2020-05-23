@@ -72,6 +72,12 @@ jobs:
         cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so
         cmake --build . --config Release --target install 
 
+    - name: Ubuntu configure/install cmake project
+      if: matrix.os == 'windows-latest'
+      run: |
+        cmake .
+        cmake --build . --config Release --target install 
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
