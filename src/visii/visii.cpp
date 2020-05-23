@@ -206,7 +206,7 @@ void initializeOptix()
     /* Create AOV Buffers */
     initializeFrameBuffer(512, 512);
     OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_INT,512*512, nullptr);
+    OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.LP.frameSize = glm::ivec2(512, 512);
     owlLaunchParamsSetBuffer(OD.launchParams, "fbPtr", OD.frameBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "accumPtr", OD.accumBuffer);
@@ -276,9 +276,19 @@ void initializeOptix()
     owlBuildSBT(OD.context);
 }
 
+void resetAccumulation() {
+    OptixData.LP.frameID = 0;
+}
+
 void updateComponents()
 {
     auto &OD = OptixData;
+
+    if (Mesh::areAnyDirty()) resetAccumulation();
+    if (Material::areAnyDirty()) resetAccumulation();
+    if (Camera::areAnyDirty()) resetAccumulation();
+    if (Transform::areAnyDirty()) resetAccumulation();
+    if (Entity::areAnyDirty()) resetAccumulation();
 
     // Build / Rebuild BLAS
     if (Mesh::areAnyDirty()) {
@@ -300,7 +310,7 @@ void updateComponents()
             owlGeomSetBuffer(OD.meshes[mid].geom,"normals", OD.meshes[mid].normals);
             owlGeomSetBuffer(OD.meshes[mid].geom,"texcoords", OD.meshes[mid].texCoords);
             OD.meshes[mid].blas = owlTrianglesGeomGroupCreate(OD.context, 1, &OD.meshes[mid].geom);
-            owlGroupBuildAccel(OD.meshes[mid].blas);            
+            owlGroupBuildAccel(OD.meshes[mid].blas);          
         }
     }
 

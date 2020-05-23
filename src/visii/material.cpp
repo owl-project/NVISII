@@ -96,6 +96,13 @@ void Material::markDirty() {
 void Material::updateComponents()
 {
 	if (!anyDirty) return;
+
+	for (int i = 0; i < MAX_MATERIALS; ++i) {
+		if (materials[i].isDirty()) {
+            materials[i].markClean();
+        }
+	};
+	anyDirty = false;
 } 
 
 void Material::cleanUp()

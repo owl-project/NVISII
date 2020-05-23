@@ -266,6 +266,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     // finalColor = vec3(ray.direction.x, ray.direction.y, ray.direction.z);
     /* Write AOVs */
-    optixLaunchParams.fbPtr[fbOfs] = vec4(illum.r, illum.g, illum.b, 1.f);
+    vec4 prev_color = optixLaunchParams.accumPtr[fbOfs];
+    vec4 accum_color = vec4((illum + float(optixLaunchParams.frameID) * vec3(prev_color)) / float(optixLaunchParams.frameID + 1), 1.0f);
+    optixLaunchParams.accumPtr[fbOfs] = accum_color;
+    optixLaunchParams.fbPtr[fbOfs] = vec4(
+        linear_to_srgb(accum_color.x),
+        linear_to_srgb(accum_color.y),
+        linear_to_srgb(accum_color.z),
+        1.0f
+    );
 }
 

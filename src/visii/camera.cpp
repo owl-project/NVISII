@@ -61,6 +61,14 @@ void Camera::markDirty() {
 
 void Camera::updateComponents()
 {
+    for (int i = 0; i < MAX_CAMERAS; ++i) {
+		if (cameras[i].isDirty()) {
+            cameras[i].markClean();
+        }
+	};
+	anyDirty = false;
+
+
 	// if (!anyDirty) return;
 	// anyDirty = false;
     // 	auto vulkan = Libraries::Vulkan::Get();
