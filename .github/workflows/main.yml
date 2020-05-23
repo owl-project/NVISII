@@ -62,3 +62,8 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         choco install cuda
+        
+    - name: Configure cmake project
+      run: |
+        cmake .
+        cmake --build . --target install
