@@ -203,7 +203,7 @@ find_package(CUDA REQUIRED)
 include_directories(${CUDA_TOOLKIT_INCLUDE})
 find_program(BIN2C bin2c 
   HINTS 
-  ${CUDA_TOOLKIT_INCLUDE}/bin/
+  ${CUDA_TOOLKIT_ROOT_DIR}/bin/
   /usr/local/cuda/bin)
 
 # optix 7
