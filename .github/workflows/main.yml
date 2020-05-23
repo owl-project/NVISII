@@ -69,6 +69,5 @@ jobs:
     - name: Ubuntu configure/install cmake project
       if: matrix.os == 'ubuntu-18.04'
       run: |
-        # /usr/local/cuda/lib64/stubs/libcuda.so
-        cmake .
-        cmake --build . --target install -DCUDA_CUDA_LIBRARY=/usr/local/cuda/targets/x86_64-linux/lib/stubs/libcuda.so
+        cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so
+        cmake --build . --target install 
