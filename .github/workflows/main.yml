@@ -70,4 +70,10 @@ jobs:
       if: matrix.os == 'ubuntu-18.04'
       run: |
         cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so
-        cmake --build . --target install 
+        cmake --build . --config Release --target install 
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        path: install
+        
