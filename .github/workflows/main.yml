@@ -47,7 +47,7 @@ jobs:
         echo test, and deploy your project.
 
     # Download external dependencies
-    - name: Download Ubuntu CUDA Toolkit
+    - name: Download Ubuntu Dependencies
       if: matrix.os == 'ubuntu-18.04'
       run: |
           # Install CUDA
@@ -57,8 +57,9 @@ jobs:
           sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
           sudo apt-get update
           sudo apt-get --no-install-recommends -y install cuda-toolkit-10-2
+          sudo apt-get --no-install-recommends -y install xorg-dev
           
-    - name: Download Windows CUDA Toolkit
+    - name: Download Windows Dependencies
       if: matrix.os == 'windows-latest'
       run: |
         choco install cuda
