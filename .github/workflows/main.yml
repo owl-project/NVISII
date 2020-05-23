@@ -76,7 +76,7 @@ jobs:
     - name: Ubuntu configure/install cmake project
       if: matrix.os == 'windows-latest'
       run: |
-        cmake .
+        cmake . -DCUDA_TOOLKIT_ROOT_DIR=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2
         cmake --build . --config Release --target install 
 
     - name: Upload artifacts
