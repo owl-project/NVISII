@@ -1,13 +1,20 @@
 #include "path_tracer.h"
-#include "launchParams.h"
+#include "disney_bsdf.h"
+#include "lights.h"
+#include "launch_params.h"
 #include <optix_device.h>
 #include <owl/common/math/random.h>
+
 typedef owl::common::LCG<4> Random;
 
 extern "C" __constant__ LaunchParams optixLaunchParams;
 
-struct TriMeshPayload {
-    float r = -1.f, g = -1.f, b = -1.f, tmax = -1.f;
+struct RayPayload {
+    vec2 uv;
+    float tHit;
+    uint32_t entityId;
+    vec3 normal;
+    // float pad;
 };
 
 inline __device__
@@ -27,60 +34,53 @@ OPTIX_MISS_PROGRAM(miss)()
 
 OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 {
-    TriMeshPayload &prd = owl::getPRD<TriMeshPayload>();
-
     const TrianglesGeomData &self = owl::getProgramData<TrianglesGeomData>();
-    float2 bc = optixGetTriangleBarycentrics();
+    
+    const float2 bc    = optixGetTriangleBarycentrics();
+    const int instID   = optixGetInstanceIndex();
+    const int primID   = optixGetPrimitiveIndex();
+    const int entityID = optixLaunchParams.instanceToEntityMap[instID];
+    const ivec3 index  = self.index[primID];
+    
+    // compute position: (actually not needed. implicit via tMax )
+    // vec3 V;
+    // {
+    //     const vec3 &A      = self.vertex[index.x];
+    //     const vec3 &B      = self.vertex[index.y];
+    //     const vec3 &C      = self.vertex[index.z];
+    //     V = A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y;
+    // }
 
     // compute normal:
-    const int   instID = optixGetInstanceIndex();
-    const int   primID = optixGetPrimitiveIndex();
-    const ivec3 index  = self.index[primID];
-    const vec3 &A     = self.vertex[index.x];
-    const vec3 &B     = self.vertex[index.y];
-    const vec3 &C     = self.vertex[index.z];
-
-    vec3 vcol;
-
-    // temporary code...
-    uint32_t entityID =  optixLaunchParams.instanceToEntityMap[instID];
-
-    if (entityID >= MAX_ENTITIES) vcol = vec3(1.0f, 0.0f, 1.0f);
-    else {
-        EntityStruct entity = optixLaunchParams.entities[entityID];
-        
-        if ((entity.material_id < 0) || (entity.material_id >= MAX_MATERIALS)) {
-            vcol = vec3(0.f, 1.0f, 0.0f);
-        } else {
-            MaterialStruct material = optixLaunchParams.materials[entity.material_id];
-            vcol = vec3(material.base_color);
-        }
-    }
-
-
-    // const vec3 &ACol = vec3(material.base_color); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.x];
-    // const vec3 &BCol = vec3(material.base_color); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.y];
-    // const vec3 &CCol = vec3(material.base_color); ///(self.colors == nullptr) ? vec3(optixLaunchParams.tri_mesh_color) : self.colors[index.z];
-    vec3 Ng;
+    vec3 N;
     if (self.normals) {
-        const vec3 &NA = self.normals[index.x];
-        const vec3 &NB = self.normals[index.y];
-        const vec3 &NC = self.normals[index.z];
-        Ng = NA * (1.f - (bc.x + bc.y)) + NB * bc.x + NC * bc.y;
+        const vec3 &A = self.normals[index.x];
+        const vec3 &B = self.normals[index.y];
+        const vec3 &C = self.normals[index.z];
+        N = A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y;
     } else {
-        Ng = normalize(cross(B-A,C-A));
+        const vec3 &A      = self.vertex[index.x];
+        const vec3 &B      = self.vertex[index.y];
+        const vec3 &C      = self.vertex[index.z];
+        N = normalize(cross(B-A,C-A));
     }
 
-    auto rayDir = optixGetWorldRayDirection();
-    vec3 dir = vec3(rayDir.x, rayDir.y, rayDir.z);
+    // compute uv:
+    vec2 UV;
+    if (self.texcoords) {
+        const vec2 A = self.texcoords[index.x];
+        const vec2 B = self.texcoords[index.y];
+        const vec2 C = self.texcoords[index.z];
+        UV = A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y;
+    } else {
+        UV = vec2(bc.x, bc.y);
+    }
 
-    // vec3 vcol = ACol * (1.f - (bc.x + bc.y)) + BCol * bc.x + CCol * bc.y;
-
-    vec3 color = (.2f + .8f*fabs(dot(dir,Ng)))*vcol;
-    prd.r = color.x;
-    prd.g = color.y;
-    prd.b = color.z;
-    prd.tmax = optixGetRayTmax();
+    // store data in payload
+    RayPayload &prd = owl::getPRD<RayPayload>();
+    prd.uv = UV;
+    prd.tHit = optixGetRayTmax();
+    prd.normal = N;
 }
 
 inline __device__
@@ -162,13 +162,13 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
     auto fbOfs = pixelID.x+optixLaunchParams.frameSize.x* ((optixLaunchParams.frameSize.y - 1) -  pixelID.y);
-    Random random; random.init(pixelID.x/* + offset*/, pixelID.y/* + offset*/);
+    LCGRand rng = get_rng(optixLaunchParams.frameID);
 
     EntityStruct    camera_entity;
     TransformStruct camera_transform;
     CameraStruct    camera;
     if (!loadCamera(camera_entity, camera, camera_transform)) {
-        optixLaunchParams.fbPtr[fbOfs] = vec4(random(), random(), random(), 1.f);
+        optixLaunchParams.fbPtr[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
         return;
     }
 
@@ -177,13 +177,13 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     vec3 finalColor = vec3(0.f);
 
     /* Intersect mesh */
-    TriMeshPayload tprd;
+    RayPayload tprd;
     owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
                     /*the ray to trace*/ ray,
                     /*prd*/ tprd);  
     
-    if (tprd.tmax > 0.f) {
-        finalColor = vec3(tprd.r, tprd.g, tprd.b);
+    if (tprd.tHit > 0.f) {
+        finalColor = vec3(tprd.normal.x, tprd.normal.y, tprd.normal.z);
     }
     // finalColor = vec3(ray.direction.x, ray.direction.y, ray.direction.z);
     /* Write AOVs */

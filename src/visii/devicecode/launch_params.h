@@ -13,6 +13,7 @@
 
 struct LaunchParams {
     glm::ivec2 frameSize;
+    uint64_t frameID = 0;
     glm::vec4 *fbPtr;
     uint32_t *accumPtr;
     OptixTraversableHandle world;

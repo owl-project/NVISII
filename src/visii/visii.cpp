@@ -9,8 +9,8 @@
 #include <owl/owl.h>
 #include <cuda_gl_interop.h>
 
-#include <launchParams.h>
-#include <path_tracer.h>
+#include <devicecode/launch_params.h>
+#include <devicecode/path_tracer.h>
 
 #include <thread>
 #include <future>
@@ -188,6 +188,7 @@ void initializeOptix()
     /* Setup Optix Launch Params */
     OWLVarDecl launchParamVars[] = {
         { "frameSize",           OWL_USER_TYPE(glm::ivec2),         OWL_OFFSETOF(LaunchParams, frameSize)},
+        { "frameID",             OWL_USER_TYPE(uint64_t),           OWL_OFFSETOF(LaunchParams, frameID)},
         { "fbPtr",               OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, fbPtr)},
         { "accumPtr",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
         { "world",               OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
@@ -405,6 +406,7 @@ void updateLaunchParams()
     // owlLaunchParamsSetRaw(launchParams, "transferFunctionMin", &LP.transferFunctionMin);
     // owlLaunchParamsSetRaw(launchParams, "transferFunctionMax", &LP.transferFunctionMax);
     // owlLaunchParamsSetRaw(launchParams, "transferFunctionWidth", &LP.transferFunctionWidth);
+    owlLaunchParamsSetRaw(OptixData.launchParams, "frameID", &OptixData.LP.frameID);
     owlLaunchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
     owlLaunchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
 
@@ -413,6 +415,8 @@ void updateLaunchParams()
 
     // auto tri_mesh_transform_struct = tri_mesh_transform->get_struct();
     // owlLaunchParamsSetRaw(launchParams,"tri_mesh_transform",&tri_mesh_transform_struct);
+    
+    OptixData.LP.frameID ++;
 }
 
 void traceRays()
