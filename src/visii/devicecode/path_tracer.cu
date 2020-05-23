@@ -15,6 +15,7 @@ struct RayPayload {
     float tHit;
     uint32_t entityID;
     vec3 normal;
+    vec3 gnormal;
     // float pad;
 };
 
@@ -58,17 +59,20 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     // }
 
     // compute normal:
-    vec3 N;
+    vec3 N, GN;
+
+    const vec3 &A      = self.vertex[index.x];
+    const vec3 &B      = self.vertex[index.y];
+    const vec3 &C      = self.vertex[index.z];
+    GN = normalize(cross(B-A,C-A));
+    
     if (self.normals) {
         const vec3 &A = self.normals[index.x];
         const vec3 &B = self.normals[index.y];
         const vec3 &C = self.normals[index.z];
         N = normalize(A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y);
     } else {
-        const vec3 &A      = self.vertex[index.x];
-        const vec3 &B      = self.vertex[index.y];
-        const vec3 &C      = self.vertex[index.z];
-        N = normalize(cross(B-A,C-A));
+        N = GN;
     }
 
     // compute uv:
@@ -88,6 +92,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     prd.uv = UV;
     prd.tHit = optixGetRayTmax();
     prd.normal = N;
+    prd.gnormal = GN;
 }
 
 inline __device__
@@ -233,6 +238,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         const float3 hit_p = ray.origin + payload.tHit * ray.direction;
         float3 v_x, v_y;
         float3 v_z = make_float3(payload.normal.x,payload.normal.y,payload.normal.z);
+        float3 v_gz = make_float3(payload.gnormal.x,payload.gnormal.y,payload.gnormal.z);
+        if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
+            v_z = reflect(-v_z, v_gz);
+        }
         if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
             v_z = -v_z;
         }
