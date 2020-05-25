@@ -60,6 +60,14 @@ set(CMAKE_INSTALL_NAME_DIR "${RPATHS}")
 SET(CMAKE_INSTALL_NAME_DIR @executable_path)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
+# set(MY_DEFINITION 
+#     $<$<CONFIG:Debug>:definition_for_debug>
+#     $<$<CONFIG:RelWithDebInfo>:definition_for_rel_with_debug>
+#     $<$<CONFIG:Release>:definition_for_release> 
+#     $<$<CONFIG:MinSizeRel>:definition_for_tight_release>
+#     )
+
+# message(WARN ${MY_DEFINITION})
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Build options                                                   │
 # └──────────────────────────────────────────────────────────────────┘
@@ -323,9 +331,7 @@ target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_l
 set(SWIG_DEFS 
   Python3_VERSION_MAJOR=${Python3_VERSION_MAJOR} 
   Python3_VERSION_MINOR=${Python3_VERSION_MINOR})
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-set(SWIG_DEFS ${SWIG_DEFS} Python3_DEBUG)
-endif()
+set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python3_DEBUG>)
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
 
 
@@ -334,27 +340,11 @@ set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINIT
 # └──────────────────────────────────────────────────────────────────┘
 
 # Install
-# install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${CMAKE_BINARY_DIR}/visii.py DESTINATION ${CMAKE_INSTALL_PREFIX})
-# install(FILES ${CMAKE_BINARY_DIR}/glm.py DESTINATION ${CMAKE_INSTALL_PREFIX})
-
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
-    # GLM debug module
-    if (WIN32) 
-    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX} RENAME _visii_d.pyd)
-    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb DESTINATION ${CMAKE_INSTALL_PREFIX} RENAME _visii_d.pdb OPTIONAL)
-    else()
-    install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX} RENAME _visii.so)
-    endif()
-ELSE(CMAKE_BUILD_TYPE MATCHES Debug)
-    # GLM module
-    if (WIN32) 
-    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX})
-    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
-    else()
-    install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX})
-    endif()
-ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL RENAME _visii_d.pyd)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL RENAME _visii_d.pdb)
 
 # # TBB DLL for windows
 # if (WIN32) 
