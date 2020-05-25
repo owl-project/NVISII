@@ -203,7 +203,7 @@ __device__ float gtr_2_transmission_pdf(const float3 &w_o, const float3 &w_i, co
 	float o_dot_h = dot(w_o, w_h);
 	float d = gtr_2(cos_theta_h, alpha);
 	float dwh_dwi = o_dot_h * pow2(eta_o) / pow2(eta_o * o_dot_h + eta_i * i_dot_h);
-	return /*d * */cos_theta_h * fabs(dwh_dwi);
+	return d * cos_theta_h * fabs(dwh_dwi);
 }
 
 __device__ float gtr_2_aniso_pdf(const float3 &w_o, const float3 &w_i, const float3 &n,
@@ -338,8 +338,9 @@ __device__ float3 disney_brdf(const DisneyMaterial &mat, const float3 &n,
 	if (!same_hemisphere(w_o, w_i, n)) {
 		// transmissive objects refract when back of surface is visible.
 		if (mat.specular_transmission > 0.f) {
-			return mat.base_color;
-			float3 spec_trans = mat.base_color;//disney_microfacet_transmission_isotropic(mat, n, w_o, w_i);
+			// return mat.base_color;
+			// float3 spec_trans = mat.base_color;//disney_microfacet_transmission_isotropic(mat, n, w_o, w_i);
+			float3 spec_trans = mat.base_color; // disney_microfacet_transmission_isotropic(mat, n, w_o, w_i); seems to get too bright / add energy as ior goes down to 1
 			return spec_trans * (1.f - mat.metallic) * mat.specular_transmission;
 		}
 
@@ -358,12 +359,13 @@ __device__ float3 disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		gloss = disney_microfacet_anisotropic(mat, n, w_o, w_i, v_x, v_y);
 	}
 
-	return fabs(dot(w_i, n)) * ((lerp(diffuse, subsurface, mat.flatness) + sheen) * (1.f - mat.metallic) * (1.f - mat.specular_transmission) + gloss + coat);
+	return ((lerp(diffuse, subsurface, mat.flatness) + sheen) * (1.f - mat.metallic) * (1.f - mat.specular_transmission) + gloss + coat);
 }
 
 __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
 	const float3 &w_o, const float3 &w_i, const float3 &v_x, const float3 &v_y)
 {
+	bool entering = dot(w_o, n) > 0.f;
 	bool sameHemisphere = same_hemisphere(w_o, w_i, n);
 	
 	float alpha = max(0.001f, mat.roughness * mat.roughness);
@@ -385,12 +387,14 @@ __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
 	}
 
 	n_comp -= mat.metallic; // not sure why, but energy being added from metallic
-	if (mat.specular_transmission > 0.f) {
-		n_comp = 4.f - mat.metallic;
-		if (!sameHemisphere) n_comp = 1; // only transmissive BRDF is valid and used for back faces
+	if ((mat.specular_transmission > 0.f) && (!same_hemisphere(w_o, w_i, n))) {
+		n_comp = 1;
+
+		// n_comp = 4.f - mat.metallic;
+		// if (!sameHemisphere) n_comp = 1; // only transmissive BRDF is valid and used for back faces
 
 		// microfacet_transmission = gtr_2_transmission_pdf(w_o, w_i, n, alpha, mat.ior);
-		microfacet_transmission = 1.f;
+		microfacet_transmission = 1.f; // this PDF doesn't seem to work. Just accepting biased results for now...
 	}
 
 	return (diffuse + microfacet + microfacet_transmission + clear_coat) / n_comp;
@@ -454,22 +458,24 @@ __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		}
 	} else {
 		// Sample microfacet transmission component
-		// float alpha = max(0.001f, mat.roughness * mat.roughness);
-		// float3 w_h = sample_gtr_2_h(n, v_x, v_y, alpha, samples);
+		float alpha = max(0.001f, mat.roughness * mat.roughness);
+		float3 w_h = sample_gtr_2_h(n, v_x, v_y, alpha, samples);
 		// if (dot(w_o, w_h) < 0.f) {
-			// w_h = -w_h;
+		// 	w_h = -w_h;
 		// }
 		
 		// float eta_o, eta_i;
 		// relative_ior(w_o, n, mat.ior, eta_o, eta_i);
 		// w_i = refract_ray(-w_o, w_h, eta_i / eta_o);
 
-		bool entering = dot(w_o, n) > 0.f;
+		// bool entering = dot(w_o, n) > 0.f;
+		bool entering = dot(w_o, w_h) > 0.f;
 		float eta_i = entering ? 1.f : mat.ior;
 		float eta_o = entering ? mat.ior : 1.f;
 		// w_i = refract(normalize(-w_o), normalize(n), eta_i / eta_o);
 
-		w_i = refract(-w_o, (entering) ? n : -n, eta_i / eta_o);
+		// w_i = refract(-w_o, (entering) ? n : -n, eta_i / eta_o);
+		w_i = refract(-w_o, (entering) ? w_h : -w_h, eta_i / eta_o);
 
 		// Invalid refraction, terminate ray
 		if (all_zero(w_i)) {
@@ -478,7 +484,7 @@ __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		}
 	}
 	pdf = disney_pdf(mat, n, w_o, w_i, v_x, v_y);
-	float3 brdf = disney_brdf(mat, n, w_o, w_i, v_x, v_y);
+	float3 brdf = disney_brdf(mat, n, w_o, w_i, v_x, v_y) * fabs(dot(w_i, n));
 	return brdf;
 }
 
