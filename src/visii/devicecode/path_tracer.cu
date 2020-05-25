@@ -130,6 +130,7 @@ void loadMaterial(const MaterialStruct &p, vec2 uv, DisneyMaterial &mat) {
     mat.clearcoat_gloss = /*textured_scalar_param(*/1.0 - p.clearcoat_roughness/*, uv)*/;
     mat.ior = /*textured_scalar_param(*/p.ior/*, uv)*/;
     mat.specular_transmission = /*textured_scalar_param(*/p.transmission/*, uv)*/;
+    mat.flatness = p.subsurface;
 }
 
 inline __device__

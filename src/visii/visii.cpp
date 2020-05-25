@@ -164,6 +164,10 @@ void initializeFrameBuffer(int fbWidth, int fbHeight) {
     cudaGraphicsGLRegisterImage(&OD.cudaResourceTex, OD.imageTexID, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone);
 }
 
+void resetAccumulation() {
+    OptixData.LP.frameID = 0;
+}
+
 void updateFrameBuffer()
 {
     glfwGetFramebufferSize(WindowData.window, &WindowData.currentSize.x, &WindowData.currentSize.y);
@@ -174,6 +178,7 @@ void updateFrameBuffer()
         initializeFrameBuffer(WindowData.currentSize.x, WindowData.currentSize.y);
         owlBufferResize(OptixData.frameBuffer, WindowData.currentSize.x*WindowData.currentSize.y);
         owlBufferResize(OptixData.accumBuffer, WindowData.currentSize.x*WindowData.currentSize.y);
+        resetAccumulation();
     }
 }
 
@@ -274,10 +279,6 @@ void initializeOptix()
     owlBuildPrograms(OD.context);
     owlBuildPipeline(OD.context);
     owlBuildSBT(OD.context);
-}
-
-void resetAccumulation() {
-    OptixData.LP.frameID = 0;
 }
 
 void updateComponents()

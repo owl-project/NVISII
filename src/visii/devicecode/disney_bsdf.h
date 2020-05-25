@@ -32,6 +32,7 @@ struct DisneyMaterial {
 
 	float ior;
 	float specular_transmission;
+	float flatness;
 };
 
 __device__ bool same_hemisphere(const float3 &w_o, const float3 &w_i, const float3 &n) {
@@ -224,6 +225,21 @@ __device__ float3 disney_diffuse(const DisneyMaterial &mat, const float3 &n,
 	return mat.base_color * M_1_PI * lerp(1.f, fd90, fi) * lerp(1.f, fd90, fo);
 }
 
+__device__ float3 disney_subsurface(const DisneyMaterial &mat, const float3 &n,
+	const float3 &w_o, const float3 &w_i) {
+	float3 w_h = normalize(w_i + w_o);
+    float n_dot_o = fabs(dot(w_o, n));
+	float n_dot_i = fabs(dot(w_i, n));
+	float i_dot_h = dot(w_i, w_h);
+
+    float FL = schlick_weight(n_dot_i), FV = schlick_weight(n_dot_o);
+    float Fss90 = i_dot_h*i_dot_h * mat.roughness;
+    float Fss = lerp(1.0, Fss90, FL) * lerp(1.0, Fss90, FV);
+    float ss = 1.25 * (Fss * (1. / (n_dot_i + n_dot_o) - .5) + .5);
+    
+    return (1./M_PI) * ss * mat.base_color;
+}
+
 __device__ float3 disney_microfacet_isotropic(const DisneyMaterial &mat, const float3 &n,
 	const float3 &w_o, const float3 &w_i)
 {
@@ -321,13 +337,14 @@ __device__ float3 disney_brdf(const DisneyMaterial &mat, const float3 &n,
 	float coat = disney_clear_coat(mat, n, w_o, w_i);
 	float3 sheen = disney_sheen(mat, n, w_o, w_i);
 	float3 diffuse = disney_diffuse(mat, n, w_o, w_i);
+	float3 subsurface = disney_subsurface(mat, n, w_o, w_i);
 	float3 gloss;
 	if (mat.anisotropy == 0.f) {
 		gloss = disney_microfacet_isotropic(mat, n, w_o, w_i);
 	} else {
 		gloss = disney_microfacet_anisotropic(mat, n, w_o, w_i, v_x, v_y);
 	}
-	return (diffuse + sheen) * (1.f - mat.metallic) * (1.f - mat.specular_transmission) + gloss + coat;
+	return (lerp(diffuse, subsurface, mat.flatness) + sheen) * (1.f - mat.metallic) * (1.f - mat.specular_transmission) + gloss + coat;
 }
 
 __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
