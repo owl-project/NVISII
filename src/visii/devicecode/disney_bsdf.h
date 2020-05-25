@@ -354,6 +354,8 @@ __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
 		n_comp = 4.f;
 		microfacet_transmission = gtr_2_transmission_pdf(w_o, w_i, n, alpha, mat.ior);
 	}
+
+	n_comp -= mat.metallic; // not sure why, but energy being added from metallic
 	return (diffuse + microfacet + microfacet_transmission + clear_coat) / n_comp;
 }
 

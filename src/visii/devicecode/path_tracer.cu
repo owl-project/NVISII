@@ -28,6 +28,7 @@ vec3 missColor(const owl::Ray &ray)
   float t = 0.5f*(rayDir.z + 1.0f);
   vec3 c = (1.0f - t) * vec3(1.0f, 1.0f, 1.0f) + t * vec3(0.5f, 0.7f, 1.0f);
   return c;
+//   return vec3(.5f);
 }
 
 OPTIX_MISS_PROGRAM(miss)()
@@ -132,30 +133,45 @@ void loadMaterial(const MaterialStruct &p, vec2 uv, DisneyMaterial &mat) {
 }
 
 inline __device__
-owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transform, ivec2 pixelID, ivec2 frameSize)
+owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transform, ivec2 pixelID, ivec2 frameSize, LCGRand &rng)
 {
     /* Generate camera rays */    
     mat4 camWorldToLocal = transform.worldToLocal;
     mat4 projinv = camera.projinv;//glm::inverse(glm::perspective(.785398, 1.0, .1, 1000));//camera.projinv;
     mat4 viewinv = camera.viewinv * camWorldToLocal;
     vec2 inUV = vec2(pixelID.x, pixelID.y) / vec2(optixLaunchParams.frameSize);
+    vec3 right = normalize(glm::vec3(viewinv[0]));
+    vec3 up = normalize(glm::vec3(viewinv[1]));
     // if (optixLaunchParams.zoom > 0.f) {
     //     inUV /= optixLaunchParams.zoom;
     //     inUV += (.5f - (.5f / optixLaunchParams.zoom));
     // }
 
-    vec3 origin = vec3(viewinv * vec4(0.f,0.f,0.f,1.f));
+    float cameraLensRadius = .0f;
+    cameraLensRadius = max(cameraLensRadius, 2.f * max(1.f / frameSize.x, 1.f / frameSize.y));
+    // float focalLength = 0.1f;
 
+    vec3 p(0.f);
+    if (cameraLensRadius > 0.0) {
+        do {
+            p = 2.0f*vec3(lcg_randomf(rng),lcg_randomf(rng),0.f) - vec3(1.f,1.f,0.f);
+        } while (dot(p,p) >= 1.0f);
+    }
+
+    vec3 rd = cameraLensRadius * p;
+    vec3 lens_offset = (right * rd.x) / float(frameSize.x) + (up * rd.y) / float(frameSize.y);
+
+    vec3 origin = vec3(viewinv * vec4(0.f,0.f,0.f,1.f)) + lens_offset;
     vec2 dir = inUV * 2.f - 1.f; dir.y *= -1.f;
     vec4 t = (projinv * vec4(dir.x, dir.y, -1.f, 1.f));
     vec3 target = vec3(t) / float(t.w);
     vec3 direction = vec3(viewinv * vec4(target, 0.f));
-    direction = normalize(direction);
+    direction = normalize(direction - lens_offset);
 
     owl::Ray ray;
     ray.tmin = .001f;
     ray.tmax = 1e20f;//10000.0f;
-    ray.origin = owl::vec3f(origin.x, origin.y, origin.z);
+    ray.origin = owl::vec3f(origin.x, origin.y, origin.z) ;
     ray.direction = owl::vec3f(direction.x, direction.y, direction.z);
     // ray.direction = owl::vec3f(0.0, 1.0, 0.0); // testing...
     // if ((pixelID.x == 0) && (pixelID.y == 0)) {
@@ -207,7 +223,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         optixLaunchParams.fbPtr[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
         return;
     }
-    owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize);
+    owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng);
 
     DisneyMaterial mat;
     int bounce = 0;
@@ -240,7 +256,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float3 v_z = make_float3(payload.normal.x,payload.normal.y,payload.normal.z);
         float3 v_gz = make_float3(payload.gnormal.x,payload.gnormal.y,payload.gnormal.z);
         if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
-            v_z = reflect(-v_z, v_gz);
+            // prevents differences from geometric and shading normal from creating black artifacts
+            v_z = reflect(-v_z, v_gz); 
         }
         if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
             v_z = -v_z;
