@@ -274,7 +274,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (pdf < EPSILON || all_zero(bsdf)) {
             break;
         }
-        path_throughput = path_throughput * vec3(bsdf.x, bsdf.y, bsdf.z) * fabs(dot(w_i, v_z)) / pdf;
+        path_throughput = path_throughput * vec3(bsdf.x, bsdf.y, bsdf.z) / pdf;
 
         if (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON) {
             break;

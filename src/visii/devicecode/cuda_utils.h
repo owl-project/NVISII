@@ -59,6 +59,18 @@ __device__ float3 reflect(const float3 &i, const float3 &n) {
 	return i - 2.f * n * dot(i, n);
 }
 
+__device__ float3 refract( float3 i, float3 n, float eta )
+{
+  if (eta == 1.f) return i;
+  if (eta <= 0.f) return make_float3(0.f);
+  if (isnan(eta)) return make_float3(0.f);
+  if (isinf(eta)) return make_float3(0.f);
+  float cosi = dot(-i, n);
+  float cost2 = 1.0f - eta * eta * (1.0f - cosi*cosi);
+  float3 t = eta*i + ((eta*cosi - sqrt(abs(cost2))) * n);
+  return t * ((cost2 > 0.f) ? make_float3(1.f) : make_float3(0.f));
+}
+
 __device__ float3 refract_ray(const float3 &i, const float3 &n, float eta) {
 	float n_dot_i = dot(n, i);
 	float k = 1.f - eta * eta * (1.f - n_dot_i * n_dot_i);
