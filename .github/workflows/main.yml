@@ -36,7 +36,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Display Python version
-      run: python -c "import sys; print(sys.version)"
+      run: |
+        python -c "import sys; print(sys.version)"
+        echo ${pythonLocation}
 
     # Runs a single command using the runners shell
     - name: Run a one-line script
@@ -70,7 +72,7 @@ jobs:
     - name: Ubuntu configure/install cmake project
       if: matrix.os == 'ubuntu-18.04'
       run: |
-        cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so
+        cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPython_ROOT_DIR=${pythonLocation}
         cmake --build . --config Release --target install 
 
     - name: Ubuntu configure/install cmake project
@@ -78,7 +80,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2"
+        cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPython_ROOT_DIR=${pythonLocation}
         cmake --build . --config Release --target install 
 
     - name: Upload artifacts
