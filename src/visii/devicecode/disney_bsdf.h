@@ -359,7 +359,9 @@ __device__ float3 disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		gloss = disney_microfacet_anisotropic(mat, n, w_o, w_i, v_x, v_y);
 	}
 
-	return ((lerp(diffuse, subsurface, mat.flatness) + sheen) * (1.f - mat.metallic) * (1.f - mat.specular_transmission) + gloss + coat);
+	return 
+		(lerp(diffuse, subsurface, mat.flatness) * (1.f - mat.metallic) * (1.f - mat.specular_transmission) 
+		+ sheen + gloss + coat) * fabs(dot(w_i, n));
 }
 
 __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
@@ -386,17 +388,22 @@ __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
 		microfacet = gtr_2_aniso_pdf(w_o, w_i, n, v_x, v_y, alpha_aniso);
 	}
 
-	n_comp -= mat.metallic; // not sure why, but energy being added from metallic
 	if ((mat.specular_transmission > 0.f) && (!same_hemisphere(w_o, w_i, n))) {
-		n_comp = 1;
-
-		// n_comp = 4.f - mat.metallic;
-		// if (!sameHemisphere) n_comp = 1; // only transmissive BRDF is valid and used for back faces
-
 		// microfacet_transmission = gtr_2_transmission_pdf(w_o, w_i, n, alpha, mat.ior);
 		microfacet_transmission = 1.f; // this PDF doesn't seem to work. Just accepting biased results for now...
 	}
 
+	// not sure why, but energy seems to be added from smooth metallic. By subtracting mat.metallic from n_comps,
+	// we decrease brightness and become almost perfectly conserving energy for shiny metallic. As metals get 
+	// rough, we lose energy from our single scattering microfacet model around .1 roughness, so we 
+	// remove the energy reduction kludge for metallic in the case of slightly rough metal. We still 
+	// seem to lose a lot of energy in that case, and could likely benefit from a multiple scattering microfacet
+	// model. 
+	// For transmission, so long as we subtract 1 from the components, we seem to preserve energy
+	// regardless if the transmission is rough or smooth.
+	float metallic_kludge = max(mat.metallic - mat.roughness * 10.f, 0.f);
+	float transmission_kludge = mat.specular_transmission;
+	n_comp -= lerp(transmission_kludge, metallic_kludge, mat.metallic); 
 	return (diffuse + microfacet + microfacet_transmission + clear_coat) / n_comp;
 }
 
@@ -410,10 +417,11 @@ __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 	bool entering = dot(w_o, n) > 0.f;
 
 	int component = 0;
-	if (mat.specular_transmission == 0.f) {
-		component = lcg_randomf(rng) * 3.f;
-		component = glm::clamp(component, 0, 2);
-	} else {
+	// if (mat.specular_transmission == 0.f) {
+	// 	component = lcg_randomf(rng) * 3.f;
+	// 	component = glm::clamp(component, 0, 2);
+	// } else 
+	{
 		if (entering) {
 			component = lcg_randomf(rng) * 4.f;
 			component = glm::clamp(component, 0, 3);
@@ -484,7 +492,7 @@ __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		}
 	}
 	pdf = disney_pdf(mat, n, w_o, w_i, v_x, v_y);
-	float3 brdf = disney_brdf(mat, n, w_o, w_i, v_x, v_y) * fabs(dot(w_i, n));
+	float3 brdf = disney_brdf(mat, n, w_o, w_i, v_x, v_y);
 	return brdf;
 }
 

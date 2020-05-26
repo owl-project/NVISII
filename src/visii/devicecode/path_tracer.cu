@@ -144,7 +144,8 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     mat4 camWorldToLocal = transform.worldToLocal;
     mat4 projinv = camera.projinv;//glm::inverse(glm::perspective(.785398, 1.0, .1, 1000));//camera.projinv;
     mat4 viewinv = camera.viewinv * camWorldToLocal;
-    vec2 inUV = vec2(pixelID.x, pixelID.y) / vec2(optixLaunchParams.frameSize);
+    vec2 aa = vec2(lcg_randomf(rng),lcg_randomf(rng)) - vec2(.5f,.5f);
+    vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(optixLaunchParams.frameSize);
     vec3 right = normalize(glm::vec3(viewinv[0]));
     vec3 up = normalize(glm::vec3(viewinv[1]));
     // if (optixLaunchParams.zoom > 0.f) {
@@ -153,7 +154,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     // }
 
     float cameraLensRadius = .0f;
-    cameraLensRadius = max(cameraLensRadius, 2.f * max(1.f / frameSize.x, 1.f / frameSize.y));
+    // cameraLensRadius = max(cameraLensRadius, max(1.f / frameSize.x, 1.f / frameSize.y));
     // float focalLength = 0.1f;
 
     vec3 p(0.f);
@@ -228,78 +229,88 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         optixLaunchParams.fbPtr[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
         return;
     }
-    owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng);
 
-    DisneyMaterial mat;
-    int bounce = 0;
-    float3 illum = make_float3(0.f);
-    float3 path_throughput = make_float3(1.f);
-    uint16_t ray_count = 0;
 
-    do {
-        RayPayload payload;
-        owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
-                        /*the ray to trace*/ ray,
-                        /*prd*/ payload);
-        #ifdef REPORT_RAY_STATS
-            ++ray_count;
-        #endif
+    float3 accum_illum = make_float3(0.f);
+    #define SPP 4
+    for (uint32_t rid = 0; rid < SPP; ++rid) {
 
-        // if ray misses, interpret normal as "miss color" assigned by miss program
-        if (payload.tHit <= 0.f) {
-            illum = illum + path_throughput * payload.normal;
-            break;
-        }
+        owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng);
 
-        EntityStruct entity = optixLaunchParams.entities[payload.entityID];
-        MaterialStruct entityMaterial = optixLaunchParams.materials[entity.material_id];
-        TransformStruct entityTransform = optixLaunchParams.transforms[entity.transform_id];
-        loadMaterial(entityMaterial, payload.uv, mat);
+        DisneyMaterial mat;
+        int bounce = 0;
+        float3 illum = make_float3(0.f);
+        float3 path_throughput = make_float3(1.f);
+        uint16_t ray_count = 0;
 
-        const float3 w_o = -ray.direction;
-        const float3 hit_p = ray.origin + payload.tHit * ray.direction;
-        float3 v_x, v_y;
-        float3 v_z = payload.normal;
-        float3 v_gz = payload.gnormal;
-        if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
-            // prevents differences from geometric and shading normal from creating black artifacts
-            v_z = reflect(-v_z, v_gz); 
-        }
-        if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
-            v_z = -v_z;
-        }
-        ortho_basis(v_x, v_y, v_z);
+        do {
+            RayPayload payload;
+            owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
+                            /*the ray to trace*/ ray,
+                            /*prd*/ payload);
+            #ifdef REPORT_RAY_STATS
+                ++ray_count;
+            #endif
 
-        // illum = illum + path_throughput * sample_direct_light(mat, hit_p, v_z, v_x, v_y, w_o,
-                // params.lights, params.num_lights, ray_count, rng);
+            // if ray misses, interpret normal as "miss color" assigned by miss program
+            if (payload.tHit <= 0.f) {
+                illum = illum + path_throughput * payload.normal;
+                break;
+            }
 
-        float3 w_i;
-        float pdf;
-        float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, pdf);
-        if (pdf < EPSILON || all_zero(bsdf)) {
-            break;
-        }
-        path_throughput = path_throughput * bsdf / pdf;
+            EntityStruct entity = optixLaunchParams.entities[payload.entityID];
+            MaterialStruct entityMaterial = optixLaunchParams.materials[entity.material_id];
+            TransformStruct entityTransform = optixLaunchParams.transforms[entity.transform_id];
+            loadMaterial(entityMaterial, payload.uv, mat);
 
-        if (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON) {
-            break;
-        }
+            const float3 w_o = -ray.direction;
+            const float3 hit_p = ray.origin + payload.tHit * ray.direction;
+            float3 v_x, v_y;
+            float3 v_z = payload.normal;
+            float3 v_gz = payload.gnormal;
+            if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
+                // prevents differences from geometric and shading normal from creating black artifacts
+                v_z = reflect(-v_z, v_gz); 
+            }
+            if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
+                v_z = -v_z;
+            }
+            ortho_basis(v_x, v_y, v_z);
 
-        // vec3 offset = payload.normal * .001f;
-        ray.origin = hit_p;// + make_float3(offset.x, offset.y, offset.z);
-        ray.direction = w_i;
+            // illum = illum + path_throughput * sample_direct_light(mat, hit_p, v_z, v_x, v_y, w_o,
+                    // params.lights, params.num_lights, ray_count, rng);
 
-        ++bounce;
+            float3 w_i;
+            float pdf;
+            float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, pdf);
+            if (pdf < EPSILON || all_zero(bsdf)) {
+                break;
+            }
+            path_throughput = path_throughput * bsdf / pdf;
 
-        // if (tprd.tHit > 0.f) {
-        //     finalColor = vec3(tprd.normal.x, tprd.normal.y, tprd.normal.z);
-        // }
-    } while (bounce < MAX_PATH_DEPTH);
+            if (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON) {
+                break;
+            }
+
+            // vec3 offset = payload.normal * .001f;
+            ray.origin = hit_p;// + make_float3(offset.x, offset.y, offset.z);
+            ray.direction = w_i;
+
+            ++bounce;
+
+            // if (tprd.tHit > 0.f) {
+            //     finalColor = vec3(tprd.normal.x, tprd.normal.y, tprd.normal.z);
+            // }
+        } while (bounce < MAX_PATH_DEPTH);
+        accum_illum = accum_illum + illum;
+    }
+    accum_illum = accum_illum / float(SPP);
+
 
     // finalColor = vec3(ray.direction.x, ray.direction.y, ray.direction.z);
     /* Write AOVs */
     float4 &prev_color = (float4&) optixLaunchParams.accumPtr[fbOfs];
-    float4 accum_color = make_float4((illum + float(optixLaunchParams.frameID) * make_float3(prev_color)) / float(optixLaunchParams.frameID + 1), 1.0f);
+    float4 accum_color = make_float4((accum_illum + float(optixLaunchParams.frameID) * make_float3(prev_color)) / float(optixLaunchParams.frameID + 1), 1.0f);
     optixLaunchParams.accumPtr[fbOfs] = vec4(
         accum_color.x, 
         accum_color.y, 
