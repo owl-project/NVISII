@@ -45,6 +45,12 @@ if hasattr(sys, 'gettotalrefcount'):
   }
 }
 
+/* STD Vectors */
+%include "std_vector.i"
+namespace std {
+  %template(FloatVector) vector<float>;
+}
+
 /* -------- GLM Vector Math Library --------------*/
 %feature("autodoc","2");
 %include "glm.i"

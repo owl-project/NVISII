@@ -31,3 +31,5 @@ void setCameraEntity(Entity* camera_entity);
    If using interactive mode, resizes the window to the specified dimentions.
 */
 void resizeWindow(uint32_t width, uint32_t height);
+
+std::vector<float> readFrameBuffer();

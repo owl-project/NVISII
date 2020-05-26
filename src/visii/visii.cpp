@@ -591,6 +591,34 @@ void resizeWindow(uint32_t width, uint32_t height)
     future.wait();
 }
 
+std::vector<float> readFrameBuffer() {
+    std::vector<float> frameBuffer(OptixData.LP.frameSize.x * OptixData.LP.frameSize.y * 4);
+
+    auto readFrameBuffer = [&frameBuffer] () {
+        int num_devices = owlGetDeviceCount(OptixData.context);
+        for (int i = 0; i < num_devices; ++i) {
+            cudaSetDevice(i);
+            cudaDeviceSynchronize();
+        }
+        cudaSetDevice(0);
+
+        const glm::vec4 *fb = (const glm::vec4*)owlBufferGetPointer(OptixData.frameBuffer,0);
+        for (uint32_t test = 0; test < frameBuffer.size(); test += 4) {
+            frameBuffer[test + 0] = fb[test / 4].r;
+            frameBuffer[test + 1] = fb[test / 4].g;
+            frameBuffer[test + 2] = fb[test / 4].b;
+            frameBuffer[test + 3] = fb[test / 4].a;
+        }
+
+        // memcpy(frameBuffer.data(), fb, frameBuffer.size() * sizeof(float));
+    };
+
+    auto future = enqueueCommand(readFrameBuffer);
+    future.wait();
+
+    return frameBuffer;
+}
+
 void initializeInteractive(bool windowOnTop)
 {
     // don't initialize more than once
