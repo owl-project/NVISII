@@ -14,6 +14,7 @@
 
 #include <thread>
 #include <future>
+#include <queue>
 
 std::promise<void> exitSignal;
 std::thread renderThread;
@@ -61,6 +62,19 @@ static struct OptixData {
     MeshData meshes[MAX_MESHES];
     OWLGroup tlas;
 } OptixData;
+
+static struct ViSII {
+    struct Command {
+        std::function<void()> function;
+        std::shared_ptr<std::promise<void>> promise;
+    };
+
+    std::thread::id render_thread_id;
+    std::condition_variable cv;
+    std::mutex qMutex;
+    std::queue<Command> commandQueue = {};
+    bool headlessMode;
+} ViSII;
 
 void applyStyle()
 {
@@ -530,6 +544,53 @@ void drawGUI()
     }
 }
 
+std::future<void> enqueueCommand(std::function<void()> function)
+{
+    if (ViSII.render_thread_id != std::this_thread::get_id()) 
+        std::lock_guard<std::mutex> lock(ViSII.qMutex);
+
+    ViSII::Command c;
+    c.function = function;
+    c.promise = std::make_shared<std::promise<void>>();
+    auto new_future = c.promise->get_future();
+    ViSII.commandQueue.push(c);
+    // cv.notify_one();
+    return new_future;
+}
+
+void processCommandQueue()
+{
+    std::lock_guard<std::mutex> lock(ViSII.qMutex);
+    while (!ViSII.commandQueue.empty()) {
+        auto item = ViSII.commandQueue.front();
+        item.function();
+        try {
+            item.promise->set_value();
+        }
+        catch (std::future_error& e) {
+            if (e.code() == std::make_error_condition(std::future_errc::promise_already_satisfied))
+                std::cout << "ViSII: [promise already satisfied]\n";
+            else
+                std::cout << "ViSII: [unknown exception]\n";
+        }
+        ViSII.commandQueue.pop();
+    }
+}
+
+void resizeWindow(uint32_t width, uint32_t height)
+{
+    if (ViSII.headlessMode) return;
+
+    auto resizeWindow = [width, height] () {
+        using namespace Libraries;
+        auto glfw = GLFW::Get();
+        glfw->resize_window("ViSII", width, height);
+    };
+
+    auto future = enqueueCommand(resizeWindow);
+    future.wait();
+}
+
 void initializeInteractive(bool windowOnTop)
 {
     // don't initialize more than once
@@ -544,6 +605,9 @@ void initializeInteractive(bool windowOnTop)
     Mesh::initializeFactory();
 
     auto loop = [windowOnTop]() {
+        ViSII.render_thread_id = std::this_thread::get_id();
+        ViSII.headlessMode = false;
+
         auto glfw = Libraries::GLFW::Get();
         WindowData.window = glfw->create_window("ViSII", 512, 512, windowOnTop, true, true);
         WindowData.currentSize = WindowData.lastSize = ivec2(512, 512);
@@ -582,6 +646,7 @@ void initializeInteractive(bool windowOnTop)
             glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
             drawGUI();
 
+            processCommandQueue();
             if (close) break;
         }
 
@@ -606,6 +671,8 @@ void initializeHeadless()
     Mesh::initializeFactory();
 
     auto loop = []() {
+        ViSII.render_thread_id = std::this_thread::get_id();
+        ViSII.headlessMode = true;
 
         initializeOptix(/*headless = */ true);
 
@@ -614,6 +681,7 @@ void initializeHeadless()
             updateComponents();
             updateLaunchParams();
             traceRays();
+            processCommandQueue();
             if (close) break;
         }
     };
