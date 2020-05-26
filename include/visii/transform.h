@@ -31,6 +31,7 @@ using namespace std;
 class Transform : public StaticFactory
 {
     friend class StaticFactory;
+    friend class Entity;
   private:
     /* Scene graph information */
     int32_t parent = -1;
@@ -163,14 +164,14 @@ class Transform : public StaticFactory
     /** \return True if the Transform has been modified since the previous frame, and False otherwise */
 	  bool isDirty() { return dirty; }
 
+	  static bool areAnyDirty();
+
+
     /** \return True if the Transform has not been modified since the previous frame, and False otherwise */
 	  bool isClean() { return !dirty; }
 
     /** Tags the current component as being modified since the previous frame. */
-	  void markDirty() {
-		  // Dirty = true;
-		  dirty = true;
-	  };
+	  void markDirty();
 
     /** Tags the current component as being unmodified since the previous frame. */
 	  void markClean() { dirty = false; }

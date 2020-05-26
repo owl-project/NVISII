@@ -156,6 +156,7 @@ void Entity::setTransform(int32_t transform_id)
 	if (transform_id >= MAX_TRANSFORMS)
 		throw std::runtime_error( std::string("Transform id must be less than max transforms"));
 	entityStructs[id].transform_id = transform_id;
+	Transform::get(transform_id)->entities.insert(id);
 	markDirty();
 }
 
@@ -166,11 +167,15 @@ void Entity::setTransform(Transform* transform)
 	if (!transform->isFactoryInitialized())
 		throw std::runtime_error("Error, transform not initialized");
 	entityStructs[id].transform_id = transform->getId();
+	transform->entities.insert(id);
 	markDirty();
 }
 
 void Entity::clearTransform()
 {
+	if (entityStructs[id].transform_id != -1) {
+		Transform::get(entityStructs[id].transform_id)->entities.erase(id);
+	}
 	entityStructs[id].transform_id = -1;
 	markDirty();
 }
@@ -420,15 +425,31 @@ bool Entity::isFactoryInitialized()
 	return factoryInitialized;
 }
 
-// void Entity::UpdateComponents()
-// {
-// 	/* TODO: remove this for loop */
-// 	for (int i = 0; i < MAX_ENTITIES; ++i) {
-// 		if (!entities[i].isFactoryInitialized()) continue;
-// 		/* TODO: account for parent transforms */
-// 		entityStructs[i] = entities[i].entity_struct;
-// 	};
-// }
+bool Entity::isInitialized()
+{
+	return initialized;
+}
+
+bool Entity::areAnyDirty()
+{
+	return anyDirty;
+}
+
+void Entity::markDirty() {
+	dirty = true;
+	anyDirty = true;
+};
+
+void Entity::updateComponents()
+{
+	if (!areAnyDirty()) return;
+	
+	for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
+		if (entities[eid].isDirty()) 
+			entities[eid].markClean();
+	}
+	anyDirty = false;
+}
 
 // void Entity::UploadSSBO(vk::CommandBuffer command_buffer)
 // {

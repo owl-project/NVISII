@@ -1,4 +1,5 @@
 #include <visii/transform.h>
+#include <visii/entity.h>
 
 Transform Transform::transforms[MAX_TRANSFORMS];
 TransformStruct Transform::transformStructs[MAX_TRANSFORMS];
@@ -20,6 +21,19 @@ bool Transform::isFactoryInitialized()
 	return factoryInitialized;
 }
 
+bool Transform::areAnyDirty()
+{
+	return anyDirty;
+}
+
+void Transform::markDirty() {
+	dirty = true;
+	anyDirty = true;
+	for (auto &eid : entities) {
+		Entity::get(eid)->markDirty();
+	}
+};
+
 void Transform::updateComponents() 
 {
 	for (int i = 0; i < MAX_TRANSFORMS; ++i) {
@@ -33,7 +47,9 @@ void Transform::updateComponents()
 		transformStructs[i].localToWorld = transforms[i].getLocalToWorldMatrix();
 		transformStructs[i].worldToLocalRotation = transforms[i].getWorldToLocalRotationMatrix();
 		transformStructs[i].worldToLocalTranslation = transforms[i].getWorldToLocalTranslationMatrix();
+		transforms[i].markClean();
 	};
+	anyDirty = false;
 }
 
 void Transform::cleanUp() 

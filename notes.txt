@@ -1,3 +1,5 @@
+add where optix is to your bashrc: 
+  export OptiX_INSTALL_DIR=/usr/local/NVIDIA-OptiX-SDK-7.0.0-linux64/
 pip install cmake
 cmake .
 make install

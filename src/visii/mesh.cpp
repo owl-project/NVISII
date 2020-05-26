@@ -117,30 +117,38 @@ std::string Mesh::toString() {
 	return output;
 }
 
+bool Mesh::areAnyDirty() { 
+	return anyDirty; 
+}
 
-// std::vector<glm::vec4> Mesh::get_positions() {
-// 	return positions;
-// }
+void Mesh::markDirty() {
+	dirty = true;
+	anyDirty = true;
+};
 
-// std::vector<glm::vec4> Mesh::get_colors() {
-// 	return colors;
-// }
+std::vector<glm::vec4> Mesh::getVertices() {
+	return positions;
+}
 
-// std::vector<glm::vec4> Mesh::get_normals() {
-// 	return normals;
-// }
+std::vector<glm::vec4> Mesh::getColors() {
+	return colors;
+}
 
-// std::vector<glm::vec2> Mesh::get_texcoords() {
-// 	return texcoords;
-// }
+std::vector<glm::vec4> Mesh::getNormals() {
+	return normals;
+}
+
+std::vector<glm::vec2> Mesh::getTexCoords() {
+	return texCoords;
+}
 
 // std::vector<uint32_t> Mesh::get_edge_indices() {
 // 	return edge_indices;
 // }
 
-// std::vector<uint32_t> Mesh::get_triangle_indices() {
-// 	return triangle_indices;
-// }
+std::vector<uint32_t> Mesh::getTriangleIndices() {
+	return triangleIndices;
+}
 
 // std::vector<uint32_t> Mesh::get_tetrahedra_indices() {
 // 	return tetrahedra_indices;
@@ -373,9 +381,24 @@ bool Mesh::isFactoryInitialized()
     return factoryInitialized;
 }
 
+bool Mesh::isInitialized()
+{
+    return initialized;
+}
+
 void Mesh::updateComponents()
 {
-
+	if (!areAnyDirty()) return;
+	
+	for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
+		if (meshes[mid].isDirty()) {
+			if (meshes[mid].isInitialized()) {
+				meshes[mid].computeMetadata();
+			}
+			meshes[mid].markClean();
+		}
+	}
+	anyDirty = false;
 } 
 
 // void Mesh::UploadSSBO(vk::CommandBuffer command_buffer)

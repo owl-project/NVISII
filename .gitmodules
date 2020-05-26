@@ -4,3 +4,9 @@
 [submodule "externals/generator"]
 	path = externals/generator
 	url = https://github.com/n8vm/generator.git
+[submodule "externals/glfw"]
+	path = externals/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "externals/owl"]
+	path = externals/owl
+	url = https://github.com/owl-project/owl.git

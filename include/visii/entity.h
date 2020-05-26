@@ -107,7 +107,10 @@ public:
     /** \return True if the tables used to store all Entity components have been allocated, and False otherwise */
 	static bool isFactoryInitialized();
 
-    // static void UpdateComponents(); // remove this... 
+	/** \return True the current entity is a valid, initialized entity, and False if the entity was cleared or removed. */
+	bool isInitialized();
+
+    static void updateComponents();
 
     // static void UploadSSBO(vk::CommandBuffer command_buffer);
     // static vk::Buffer GetSSBO();
@@ -131,6 +134,9 @@ public:
 	// int32_t get_collider_id();
 	// Collider* get_collider();
 
+	static bool areAnyDirty();
+
+
     /** \return True if the Entity has been modified since the previous frame, and False otherwise */
 	bool isDirty() { return dirty; }
 
@@ -138,10 +144,7 @@ public:
 	bool isClean() { return !dirty; }
 
     /** Tags the current component as being modified since the previous frame. */
-	void markDirty() {
-		// Dirty = true;
-		dirty = true;
-	};
+	void markDirty();
 
     /** Tags the current component as being unmodified since the previous frame. */
 	void markClean() { dirty = false; }

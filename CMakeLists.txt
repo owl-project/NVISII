@@ -65,6 +65,7 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 # └──────────────────────────────────────────────────────────────────┘
 
 # Build options go here... Things like "Build Tests", or "Generate documentation"...
+option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" ON)
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Definitions                                                     │
@@ -134,36 +135,35 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/externals/generator)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/generator/include)
 set_property(TARGET generator PROPERTY FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/externals/generator")
 
-# # glad
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include)
-# set(GLAD_SRC ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/src/glad.c)
+# glad
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/glad/include)
+set(GLAD_SRC ${CMAKE_CURRENT_SOURCE_DIR}/externals/glad/src/glad.c)
 
-# # glfw
-# #    note: on linux, xorg-dev might be required
-# if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw/CMakeLists.txt")
-#   message(FATAL_ERROR "The GLFW submodule directory is empty! "
-#     "You probably did not clone the project with --recursive. It is possible to recover "
-#     "by running \"git submodule update --init --recursive\"")
-# endif()
-# if (UNIX AND NOT APPLE)
-#   find_package(X11 REQUIRED)
-#   if (NOT X11_Xrandr_FOUND OR NOT X11_Xinerama_FOUND OR NOT X11_Xkb_FOUND OR NOT X11_Xcursor_FOUND)
-#     message(FATAL_ERROR "Some X11 development libraries are missing! "
-#       "You probably dont have xorg-dev installed on your system. It is possible to recover "
-#       "by running \"sudo apt install xorg-dev\" (or equivalent on your unix distro)")
-#   endif()  
-# endif()
-# set(GLFW_BUILD_DOCS OFF CACHE STRING "" FORCE)
-# set(GLFW_BUILD_EXAMPLES OFF CACHE STRING "" FORCE)
-# set(GLFW_BUILD_TESTS    OFF CACHE STRING "" FORCE)
-# set(GLFW_INSTALL        OFF CACHE STRING "" FORCE)
-# # set(GLFW_VULKAN_STATIC  ON CACHE STRING "" FORCE)
-# add_subdirectory(external/glfw)
-# include_directories(SYSTEM external/glfw/include)
-# set_property(TARGET glfw PROPERTY FOLDER "external/GLFW3" )
+# glfw
+#    note: on linux, xorg-dev might be required
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/externals/glfw/CMakeLists.txt")
+  message(FATAL_ERROR "The GLFW submodule directory is empty! "
+    "You probably did not clone the project with --recursive. It is possible to recover "
+    "by running \"git submodule update --init --recursive\"")
+endif()
+if (UNIX AND NOT APPLE)
+  find_package(X11 REQUIRED)
+  if (NOT X11_Xrandr_FOUND OR NOT X11_Xinerama_FOUND OR NOT X11_Xkb_FOUND OR NOT X11_Xcursor_FOUND)
+    message(FATAL_ERROR "Some X11 development libraries are missing! "
+      "You probably dont have xorg-dev installed on your system. It is possible to recover "
+      "by running \"sudo apt install xorg-dev\" (or equivalent on your unix distro)")
+  endif()  
+endif()
+set(GLFW_BUILD_DOCS OFF CACHE STRING "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE STRING "" FORCE)
+set(GLFW_BUILD_TESTS    OFF CACHE STRING "" FORCE)
+set(GLFW_INSTALL        OFF CACHE STRING "" FORCE)
+add_subdirectory(externals/glfw)
+include_directories(SYSTEM externals/glfw/include)
+set_property(TARGET glfw PROPERTY FOLDER "externals/GLFW3" )
 
-# # OpenGL
-# find_package(OpenGL)
+# OpenGL
+find_package(OpenGL)
 
 # # stb
 # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/stb/)
@@ -171,52 +171,68 @@ set_property(TARGET generator PROPERTY FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/exter
 # # tiny obj
 # include_directories(SYSTEM external/tinyobj)
 
-# # ImGUI
-# add_definitions(-D IMGUI_IMPL_OPENGL_LOADER_GLAD)
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/)
-# set(IMGUI_SRC 
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_demo.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_draw.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_impl_glfw.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_impl_opengl3.cpp
-#   # IMGUIZMO
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/ImCurveEdit.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/ImGradient.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/ImGuizmo.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/ImSequencer.cpp
-#   # TFN EDITOR
-#   # ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/gl_core_4_5.c
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/transfer_function_widget.cpp
-#   # More addons
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imguivariouscontrols.cpp
-#   ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/imgui_rangeslider.cpp
-#   )
+# ImGUI
+add_definitions(-D IMGUI_IMPL_OPENGL_LOADER_GLAD)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/)
+set(IMGUI_SRC 
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_demo.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_draw.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_widgets.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_impl_glfw.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_impl_opengl3.cpp
+  # IMGUIZMO
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/ImCurveEdit.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/ImGradient.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/ImGuizmo.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/ImSequencer.cpp
+  # TFN EDITOR
+  # ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/gl_core_4_5.c
+  # ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/transfer_function_widget.cpp
+  # More addons
+  # ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imguivariouscontrols.cpp
+  # ${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/imgui_rangeslider.cpp
+)
 
 # # tbb
 # find_package(TBB REQUIRED)
 # include_directories(${TBB_INCLUDE_DIR})
 
-# # owl
-# set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
-# set(OWL_BUILD_TESTS OFF CACHE STRING "" FORCE)
-# add_subdirectory(external/owl)
-# include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/external/owl/owl/include)
-# list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/external/owl/owl/common/cmake)
-# include(configure_cuda)
+# cuda
+find_package(CUDA REQUIRED)
+include_directories(${CUDA_TOOLKIT_INCLUDE})
+find_program(BIN2C bin2c 
+  HINTS 
+  ${CUDA_TOOLKIT_ROOT_DIR}/bin/
+  /usr/local/cuda/bin)
+
+# optix 7
+set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
+find_package(OptiX REQUIRED VERSION 7)
+include_directories(${OptiX_INCLUDE})
+
+# owl
+set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
+set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
+set(OWL_USE_TBB OFF CACHE STRING "" FORCE)
+add_subdirectory(externals/owl)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
+include(configure_cuda)
+
 # include(configure_optix)
-# # include(configure_build_type)
+# include(configure_build_type)
 
 # add libraries to a list for linking
 set (
   LIBRARIES
   ${PYTHON_LIBRARY}
   generator
-  # ${GLFW_LIBRARIES}
-  # ${OPENGL_gl_LIBRARY}
+  ${GLFW_LIBRARIES}
+  glfw
+  ${OPENGL_gl_LIBRARY}
   # ${TBB_LIBRARIES}
-  # owl
+  owl
   )
   
 if(NOT WIN32)
@@ -240,32 +256,49 @@ endif()
 # # │  Macros                                                          │
 # # └──────────────────────────────────────────────────────────────────┘
 
-# # For compiling cuda kernels and embedding them as ptx
-# macro(cuda_compile_and_embed output_var cuda_file)
-#   set(var_name ${output_var})
-#   cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
-#   list(GET ptx_files 0 ptx_file)
-#   set(embedded_file ${ptx_file}_embedded.c)
-#   add_custom_command(
-#     OUTPUT ${embedded_file}
-#     COMMAND ${BIN2C} -c --padd 0 --type char --name ${var_name} ${ptx_file}  > ${embedded_file}
-#     DEPENDS ${ptx_file}
-#     COMMENT "compiling (and embedding ptx from) ${cuda_file}"
-#     )
-#   set(${output_var} ${embedded_file})
-# endmacro()
+# For compiling cuda kernels and embedding them as ptx
+if (NVCC_VERBOSE)
+set(VERBOSE 1)
+set (NVCC_VERBOSE_FLAG --verbose)
+endif()
+
+macro(cuda_compile_and_embed output_var cuda_file)
+  set(var_name ${output_var})
+  cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --keep ${NVCC_VERBOSE_FLAG})
+  list(GET ptx_files 0 ptx_file)
+  set(embedded_file ${ptx_file}_embedded.c)
+  add_custom_command(
+    OUTPUT ${embedded_file}
+    COMMAND ${BIN2C} -c --padd 0 --type char --name ${var_name} ${ptx_file}  > ${embedded_file}
+    DEPENDS ${ptx_file}
+    COMMENT "compiling (and embedding ptx from) ${cuda_file}"
+    )
+  set(${output_var} ${embedded_file})
+endmacro()
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Add source files                                                │
 # └──────────────────────────────────────────────────────────────────┘
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/glm_bindings)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/visii/)
 
 # defines a global ${HDR} variable containing a list of all project headers
 add_subdirectory(include) 
 
 # defines a global ${SRC} variable containing a list of all .cpp files
 add_subdirectory(src)
+
+set(SRC ${SRC} ${GLAD_SRC} ${IMGUI_SRC})
+set(HDR ${HDR} ${Externals_HDR})
+
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  CUDA PTX                                                        │
+# └──────────────────────────────────────────────────────────────────┘
+# OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored
+cuda_compile_and_embed(ptxCode ${SRC_CU})
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  ViSII Library                                                   │

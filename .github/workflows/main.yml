@@ -1,0 +1,89 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # container: 
+    #   image: nvidia/cuda:10.2-ubuntu...
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+    strategy:	
+      matrix:	
+        os:	
+          - ubuntu-18.04	
+          - windows-latest	
+        python-version: [2.7, 3.6, 3.7, 3.8]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+      
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Display Python version
+      run: python -c "import sys; print(sys.version)"
+
+    # Runs a single command using the runners shell
+    - name: Run a one-line script
+      run: echo Hello, world!
+    
+    # Runs a set of commands using the runners shell
+    - name: Run a multi-line script
+      run: |
+        echo Add other actions to build,
+        echo test, and deploy your project.
+
+    # Download external dependencies
+    - name: Download Ubuntu Dependencies
+      if: matrix.os == 'ubuntu-18.04'
+      run: |
+          # Install CUDA
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+          sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+          sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+          sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+          sudo apt-get update
+          sudo apt-get --no-install-recommends -y install cuda-toolkit-10-2
+          sudo apt-get --no-install-recommends -y install xorg-dev
+          
+    - name: Download Windows Dependencies
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install cuda
+        refreshenv
+        
+    - name: Ubuntu configure/install cmake project
+      if: matrix.os == 'ubuntu-18.04'
+      run: |
+        cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so
+        cmake --build . --config Release --target install 
+
+    - name: Ubuntu configure/install cmake project
+      if: matrix.os == 'windows-latest'
+      run: |
+        mkdir build
+        cd build
+        cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2"
+        cmake --build . --config Release --target install 
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: visii-${{ matrix.os }}-python${{ matrix.python-version }}
+        path: install
+        
