@@ -11,24 +11,23 @@ typedef owl::common::LCG<4> Random;
 extern "C" __constant__ LaunchParams optixLaunchParams;
 
 struct RayPayload {
-    vec2 uv;
+    float2 uv;
     float tHit;
     uint32_t entityID;
-    vec3 normal;
-    vec3 gnormal;
+    float3 normal;
+    float3 gnormal;
     // float pad;
 };
 
 inline __device__
-vec3 missColor(const owl::Ray &ray)
+float3 missColor(const owl::Ray &ray)
 {
   auto pixelID = owl::getLaunchIndex();
 
-  vec3 rayDir = glm::normalize(glm::vec3(ray.direction.x, ray.direction.y, ray.direction.z));
+  float3 rayDir = normalize(ray.direction);
   float t = 0.5f*(rayDir.z + 1.0f);
-  vec3 c = (1.0f - t) * vec3(1.0f, 1.0f, 1.0f) + t * vec3(0.5f, 0.7f, 1.0f);
+  float3 c = (1.0f - t) * make_float3(1.0f, 1.0f, 1.0f) + t * make_float3(0.5f, 0.7f, 1.0f);
   return c;
-//   return vec3(.5f);
 }
 
 OPTIX_MISS_PROGRAM(miss)()
@@ -60,31 +59,36 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     // }
 
     // compute normal:
-    vec3 N, GN;
+    float3 N, GN;
 
-    const vec3 &A      = self.vertex[index.x];
-    const vec3 &B      = self.vertex[index.y];
-    const vec3 &C      = self.vertex[index.z];
+    const float3 &A      = (float3&) self.vertex[index.x];
+    const float3 &B      = (float3&) self.vertex[index.y];
+    const float3 &C      = (float3&) self.vertex[index.z];
     GN = normalize(cross(B-A,C-A));
     
     if (self.normals) {
-        const vec3 &A = self.normals[index.x];
-        const vec3 &B = self.normals[index.y];
-        const vec3 &C = self.normals[index.z];
+        const float3 &A = (float3&) self.normals[index.x];
+        const float3 &B = (float3&) self.normals[index.y];
+        const float3 &C = (float3&) self.normals[index.z];
         N = normalize(A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y);
     } else {
         N = GN;
     }
 
+    GN = normalize(optixTransformNormalFromObjectToWorldSpace(GN));
+    N = normalize(optixTransformNormalFromObjectToWorldSpace(N));
+    // normalize(transpose(mat3(gl_WorldToObjectNV)) * payload.m_n);
+    // N  = normalize(transpose(mat3(gl_WorldToObjectNV)) * payload.m_n);
+
     // compute uv:
-    vec2 UV;
+    float2 UV;
     if (self.texcoords) {
-        const vec2 A = self.texcoords[index.x];
-        const vec2 B = self.texcoords[index.y];
-        const vec2 C = self.texcoords[index.z];
+        const float2 &A = (float2&) self.texcoords[index.x];
+        const float2 &B = (float2&) self.texcoords[index.y];
+        const float2 &C = (float2&) self.texcoords[index.z];
         UV = A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y;
     } else {
-        UV = vec2(bc.x, bc.y);
+        UV = bc;
     }
 
     // store data in payload
@@ -109,7 +113,7 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
 }
 
 __device__ 
-void loadMaterial(const MaterialStruct &p, vec2 uv, DisneyMaterial &mat) {
+void loadMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat) {
 
     // uint32_t mask = __float_as_int(p.base_color.x);
     // if (IS_TEXTURED_PARAM(mask)) {
@@ -228,8 +232,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     DisneyMaterial mat;
     int bounce = 0;
-    vec3 illum = vec3(0.f);
-    vec3 path_throughput = vec3(1.f);
+    float3 illum = make_float3(0.f);
+    float3 path_throughput = make_float3(1.f);
     uint16_t ray_count = 0;
 
     do {
@@ -249,13 +253,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         EntityStruct entity = optixLaunchParams.entities[payload.entityID];
         MaterialStruct entityMaterial = optixLaunchParams.materials[entity.material_id];
+        TransformStruct entityTransform = optixLaunchParams.transforms[entity.transform_id];
         loadMaterial(entityMaterial, payload.uv, mat);
 
         const float3 w_o = -ray.direction;
         const float3 hit_p = ray.origin + payload.tHit * ray.direction;
         float3 v_x, v_y;
-        float3 v_z = make_float3(payload.normal.x,payload.normal.y,payload.normal.z);
-        float3 v_gz = make_float3(payload.gnormal.x,payload.gnormal.y,payload.gnormal.z);
+        float3 v_z = payload.normal;
+        float3 v_gz = payload.gnormal;
         if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
             // prevents differences from geometric and shading normal from creating black artifacts
             v_z = reflect(-v_z, v_gz); 
@@ -274,7 +279,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (pdf < EPSILON || all_zero(bsdf)) {
             break;
         }
-        path_throughput = path_throughput * vec3(bsdf.x, bsdf.y, bsdf.z) / pdf;
+        path_throughput = path_throughput * bsdf / pdf;
 
         if (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON) {
             break;
@@ -293,9 +298,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     // finalColor = vec3(ray.direction.x, ray.direction.y, ray.direction.z);
     /* Write AOVs */
-    vec4 prev_color = optixLaunchParams.accumPtr[fbOfs];
-    vec4 accum_color = vec4((illum + float(optixLaunchParams.frameID) * vec3(prev_color)) / float(optixLaunchParams.frameID + 1), 1.0f);
-    optixLaunchParams.accumPtr[fbOfs] = accum_color;
+    float4 &prev_color = (float4&) optixLaunchParams.accumPtr[fbOfs];
+    float4 accum_color = make_float4((illum + float(optixLaunchParams.frameID) * make_float3(prev_color)) / float(optixLaunchParams.frameID + 1), 1.0f);
+    optixLaunchParams.accumPtr[fbOfs] = vec4(
+        accum_color.x, 
+        accum_color.y, 
+        accum_color.z, 
+        accum_color.w
+    );
     optixLaunchParams.fbPtr[fbOfs] = vec4(
         linear_to_srgb(accum_color.x),
         linear_to_srgb(accum_color.y),
