@@ -18,9 +18,9 @@ struct CameraStruct
     mat4 viewinv;
     mat4 projinv;
     mat4 viewproj;
-    float near_pos;
     // float far_pos;
     float fov;
-    float pad2;
+    float focalDistance;
+    float apertureDiameter;
     int tex_id;
 };

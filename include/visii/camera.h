@@ -131,6 +131,10 @@ class Camera : public StaticFactory
 
 	void setView(glm::mat4 view);
 
+	void setFocalDistance(float distance);
+
+	void setApertureDiameter(float diameter);
+	
 	// /* Returns the camera to projection matrix for the given multiview.
 	// 	This transform can be used to achieve perspective (eg a vanishing point), or for scaling
 	// 	an orthographic view. */

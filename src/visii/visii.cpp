@@ -9,11 +9,12 @@
 #include <owl/owl.h>
 #include <cuda_gl_interop.h>
 
-#include <launchParams.h>
-#include <deviceCode.h>
+#include <devicecode/launch_params.h>
+#include <devicecode/path_tracer.h>
 
 #include <thread>
 #include <future>
+#include <queue>
 
 std::promise<void> exitSignal;
 std::thread renderThread;
@@ -61,6 +62,19 @@ static struct OptixData {
     MeshData meshes[MAX_MESHES];
     OWLGroup tlas;
 } OptixData;
+
+static struct ViSII {
+    struct Command {
+        std::function<void()> function;
+        std::shared_ptr<std::promise<void>> promise;
+    };
+
+    std::thread::id render_thread_id;
+    std::condition_variable cv;
+    std::mutex qMutex;
+    std::queue<Command> commandQueue = {};
+    bool headlessMode;
+} ViSII;
 
 void applyStyle()
 {
@@ -164,6 +178,10 @@ void initializeFrameBuffer(int fbWidth, int fbHeight) {
     cudaGraphicsGLRegisterImage(&OD.cudaResourceTex, OD.imageTexID, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone);
 }
 
+void resetAccumulation() {
+    OptixData.LP.frameID = 0;
+}
+
 void updateFrameBuffer()
 {
     glfwGetFramebufferSize(WindowData.window, &WindowData.currentSize.x, &WindowData.currentSize.y);
@@ -174,10 +192,11 @@ void updateFrameBuffer()
         initializeFrameBuffer(WindowData.currentSize.x, WindowData.currentSize.y);
         owlBufferResize(OptixData.frameBuffer, WindowData.currentSize.x*WindowData.currentSize.y);
         owlBufferResize(OptixData.accumBuffer, WindowData.currentSize.x*WindowData.currentSize.y);
+        resetAccumulation();
     }
 }
 
-void initializeOptix()
+void initializeOptix(bool headless)
 {
     using namespace glm;
     auto &OD = OptixData;
@@ -188,6 +207,7 @@ void initializeOptix()
     /* Setup Optix Launch Params */
     OWLVarDecl launchParamVars[] = {
         { "frameSize",           OWL_USER_TYPE(glm::ivec2),         OWL_OFFSETOF(LaunchParams, frameSize)},
+        { "frameID",             OWL_USER_TYPE(uint64_t),           OWL_OFFSETOF(LaunchParams, frameID)},
         { "fbPtr",               OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, fbPtr)},
         { "accumPtr",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
         { "world",               OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
@@ -203,9 +223,12 @@ void initializeOptix()
     OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
     
     /* Create AOV Buffers */
-    initializeFrameBuffer(512, 512);
+    if (!headless) {
+        initializeFrameBuffer(512, 512);
+    }
+
     OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_INT,512*512, nullptr);
+    OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.LP.frameSize = glm::ivec2(512, 512);
     owlLaunchParamsSetBuffer(OD.launchParams, "fbPtr", OD.frameBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "accumPtr", OD.accumBuffer);
@@ -279,6 +302,12 @@ void updateComponents()
 {
     auto &OD = OptixData;
 
+    if (Mesh::areAnyDirty()) resetAccumulation();
+    if (Material::areAnyDirty()) resetAccumulation();
+    if (Camera::areAnyDirty()) resetAccumulation();
+    if (Transform::areAnyDirty()) resetAccumulation();
+    if (Entity::areAnyDirty()) resetAccumulation();
+
     // Build / Rebuild BLAS
     if (Mesh::areAnyDirty()) {
         Mesh* meshes = Mesh::getFront();
@@ -299,7 +328,7 @@ void updateComponents()
             owlGeomSetBuffer(OD.meshes[mid].geom,"normals", OD.meshes[mid].normals);
             owlGeomSetBuffer(OD.meshes[mid].geom,"texcoords", OD.meshes[mid].texCoords);
             OD.meshes[mid].blas = owlTrianglesGeomGroupCreate(OD.context, 1, &OD.meshes[mid].geom);
-            owlGroupBuildAccel(OD.meshes[mid].blas);            
+            owlGroupBuildAccel(OD.meshes[mid].blas);          
         }
     }
 
@@ -405,6 +434,7 @@ void updateLaunchParams()
     // owlLaunchParamsSetRaw(launchParams, "transferFunctionMin", &LP.transferFunctionMin);
     // owlLaunchParamsSetRaw(launchParams, "transferFunctionMax", &LP.transferFunctionMax);
     // owlLaunchParamsSetRaw(launchParams, "transferFunctionWidth", &LP.transferFunctionWidth);
+    owlLaunchParamsSetRaw(OptixData.launchParams, "frameID", &OptixData.LP.frameID);
     owlLaunchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
     owlLaunchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
 
@@ -413,18 +443,22 @@ void updateLaunchParams()
 
     // auto tri_mesh_transform_struct = tri_mesh_transform->get_struct();
     // owlLaunchParamsSetRaw(launchParams,"tri_mesh_transform",&tri_mesh_transform_struct);
+    
+    OptixData.LP.frameID ++;
 }
 
 void traceRays()
 {
     auto &OD = OptixData;
     
-    static double start=0;
-    static double stop=0;
-
     /* Trace Rays */
-    start = glfwGetTime();
     owlParamsLaunch2D(OD.rayGen, OD.LP.frameSize.x, OD.LP.frameSize.y, OD.launchParams);
+}
+
+void drawFrameBufferToWindow()
+{
+    auto &OD = OptixData;
+
     cudaGraphicsMapResources(1, &OD.cudaResourceTex);
     const void* fbdevptr = owlBufferGetPointer(OD.frameBuffer,0);
     cudaArray_t array;
@@ -441,8 +475,6 @@ void traceRays()
             throw std::runtime_error("ERROR");
         }
     }
-    stop = glfwGetTime();
-    glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
 
     // Draw pixels from optix frame buffer
     glViewport(0, 0, OD.LP.frameSize.x, OD.LP.frameSize.y);
@@ -512,6 +544,81 @@ void drawGUI()
     }
 }
 
+std::future<void> enqueueCommand(std::function<void()> function)
+{
+    if (ViSII.render_thread_id != std::this_thread::get_id()) 
+        std::lock_guard<std::mutex> lock(ViSII.qMutex);
+
+    ViSII::Command c;
+    c.function = function;
+    c.promise = std::make_shared<std::promise<void>>();
+    auto new_future = c.promise->get_future();
+    ViSII.commandQueue.push(c);
+    // cv.notify_one();
+    return new_future;
+}
+
+void processCommandQueue()
+{
+    std::lock_guard<std::mutex> lock(ViSII.qMutex);
+    while (!ViSII.commandQueue.empty()) {
+        auto item = ViSII.commandQueue.front();
+        item.function();
+        try {
+            item.promise->set_value();
+        }
+        catch (std::future_error& e) {
+            if (e.code() == std::make_error_condition(std::future_errc::promise_already_satisfied))
+                std::cout << "ViSII: [promise already satisfied]\n";
+            else
+                std::cout << "ViSII: [unknown exception]\n";
+        }
+        ViSII.commandQueue.pop();
+    }
+}
+
+void resizeWindow(uint32_t width, uint32_t height)
+{
+    if (ViSII.headlessMode) return;
+
+    auto resizeWindow = [width, height] () {
+        using namespace Libraries;
+        auto glfw = GLFW::Get();
+        glfw->resize_window("ViSII", width, height);
+    };
+
+    auto future = enqueueCommand(resizeWindow);
+    future.wait();
+}
+
+std::vector<float> readFrameBuffer() {
+    std::vector<float> frameBuffer(OptixData.LP.frameSize.x * OptixData.LP.frameSize.y * 4);
+
+    auto readFrameBuffer = [&frameBuffer] () {
+        int num_devices = owlGetDeviceCount(OptixData.context);
+        for (int i = 0; i < num_devices; ++i) {
+            cudaSetDevice(i);
+            cudaDeviceSynchronize();
+        }
+        cudaSetDevice(0);
+
+        const glm::vec4 *fb = (const glm::vec4*)owlBufferGetPointer(OptixData.frameBuffer,0);
+        for (uint32_t test = 0; test < frameBuffer.size(); test += 4) {
+            frameBuffer[test + 0] = fb[test / 4].r;
+            frameBuffer[test + 1] = fb[test / 4].g;
+            frameBuffer[test + 2] = fb[test / 4].b;
+            frameBuffer[test + 3] = fb[test / 4].a;
+        }
+
+        // memcpy(frameBuffer.data(), fb, frameBuffer.size() * sizeof(float));
+    };
+
+    auto future = enqueueCommand(readFrameBuffer);
+    future.wait();
+
+    return frameBuffer;
+}
+
 void initializeInteractive(bool windowOnTop)
 {
     // don't initialize more than once
@@ -526,13 +633,16 @@ void initializeInteractive(bool windowOnTop)
     Mesh::initializeFactory();
 
     auto loop = [windowOnTop]() {
+        ViSII.render_thread_id = std::this_thread::get_id();
+        ViSII.headlessMode = false;
+
         auto glfw = Libraries::GLFW::Get();
         WindowData.window = glfw->create_window("ViSII", 512, 512, windowOnTop, true, true);
         WindowData.currentSize = WindowData.lastSize = ivec2(512, 512);
         glfw->make_context_current("ViSII");
         glfw->poll_events();
 
-        initializeOptix();
+        initializeOptix(/*headless = */ false);
 
         ImGui::CreateContext();
         auto &io  = ImGui::GetIO();
@@ -551,16 +661,20 @@ void initializeInteractive(bool windowOnTop)
             glfw->poll_events();
             glfw->swap_buffers("ViSII");
 
-            auto newColor = Colors::hsvToRgb({float(glfwGetTime() * .1f), 1.0f, 1.0f});
-            glClearColor(newColor[0],newColor[1],newColor[2],1);
-            glClear(GL_COLOR_BUFFER_BIT);
-
             updateFrameBuffer();
             updateComponents();
             updateLaunchParams();
+
+            static double start=0;
+            static double stop=0;
+            start = glfwGetTime();
             traceRays();
+            drawFrameBufferToWindow();
+            stop = glfwGetTime();
+            glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
             drawGUI();
 
+            processCommandQueue();
             if (close) break;
         }
 
@@ -577,20 +691,30 @@ void initializeHeadless()
     if (initialized == true) return;
 
     initialized = true;
+    close = false;
     Camera::initializeFactory();
     Entity::initializeFactory();
     Transform::initializeFactory();
     Material::initializeFactory();
     Mesh::initializeFactory();
 
-    // auto loop = []() {
-    //     while (!close)
-    //     {
-    //         if (close) break;
-    //     }
-    // };
+    auto loop = []() {
+        ViSII.render_thread_id = std::this_thread::get_id();
+        ViSII.headlessMode = true;
 
-    // renderThread = thread(loop);
+        initializeOptix(/*headless = */ true);
+
+        while (!close)
+        {
+            updateComponents();
+            updateLaunchParams();
+            traceRays();
+            processCommandQueue();
+            if (close) break;
+        }
+    };
+
+    renderThread = thread(loop);
 }
 
 void cleanup()

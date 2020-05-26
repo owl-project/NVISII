@@ -26,3 +26,10 @@ void cleanup();
  * field of view, the depth of field, and other "analog" camera properties.
  * \param camera_entity The entity containing a camera and transform component, to use for rendering. */
 void setCameraEntity(Entity* camera_entity);
+
+/**
+   If using interactive mode, resizes the window to the specified dimentions.
+*/
+void resizeWindow(uint32_t width, uint32_t height);
+
+std::vector<float> readFrameBuffer();

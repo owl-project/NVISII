@@ -24,6 +24,8 @@ Camera::Camera(std::string name, uint32_t id) {
 	this->name = name;
 	this->id = id;
 
+    cameraStructs[id].apertureDiameter = 0.0;
+    cameraStructs[id].focalDistance = 1.0;
 	// this->render_complete_mutex = std::make_shared<std::mutex>();
 	// this->cv = std::make_shared<std::condition_variable>();
 }
@@ -61,6 +63,14 @@ void Camera::markDirty() {
 
 void Camera::updateComponents()
 {
+    for (int i = 0; i < MAX_CAMERAS; ++i) {
+		if (cameras[i].isDirty()) {
+            cameras[i].markClean();
+        }
+	};
+	anyDirty = false;
+
+
 	// if (!anyDirty) return;
 	// anyDirty = false;
     // 	auto vulkan = Libraries::Vulkan::Get();
@@ -278,7 +288,6 @@ glm::mat4 makeProjRH(float fovY_radians, float aspectWbyH, float zNear)
 
 void Camera::usePerspectiveFromFOV(float fieldOfView, float aspect, float near)
 {
-    cameraStructs[id].near_pos = near;
     cameraStructs[id].proj = glm::perspective(fieldOfView, aspect, near, 1000.f); //makeInfReversedZProjRH(fieldOfView, aspect, near);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
     markDirty();
@@ -288,7 +297,6 @@ void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth,
 {
     float aspect = sensorWidth / sensorHeight;
     float fovy = 2.f*atan(0.5f*sensorHeight / focalLength);
-    cameraStructs[id].near_pos = near;
     // cameraStructs[id].proj = makeInfReversedZProjRH(fovy, aspect, near);
     cameraStructs[id].proj = glm::perspective(fovy, aspect, near, 1000.f);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
@@ -320,6 +328,18 @@ void Camera::setView(glm::mat4 view)
 	cameraStructs[id].viewinv = glm::inverse(view);
 	markDirty();
 };
+
+void Camera::setFocalDistance(float distance)
+{
+    cameraStructs[id].focalDistance = distance;
+    markDirty();
+}
+
+void Camera::setApertureDiameter(float diameter)
+{
+    cameraStructs[id].apertureDiameter = diameter;
+    markDirty();
+}
 
 // void Camera::set_render_order(int32_t order) {
 // 	renderOrder = order;
