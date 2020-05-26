@@ -182,19 +182,27 @@ void resetAccumulation() {
     OptixData.LP.frameID = 0;
 }
 
+void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
+{
+    OptixData.LP.frameSize.x = width;
+    OptixData.LP.frameSize.y = height;
+    owlBufferResize(OptixData.frameBuffer, width * height);
+    owlBufferResize(OptixData.accumBuffer, width * height);
+    resetAccumulation();
+}
+
 void updateFrameBuffer()
 {
     glfwGetFramebufferSize(WindowData.window, &WindowData.currentSize.x, &WindowData.currentSize.y);
 
     if ((WindowData.currentSize.x != WindowData.lastSize.x) || (WindowData.currentSize.y != WindowData.lastSize.y))  {
         WindowData.lastSize.x = WindowData.currentSize.x; WindowData.lastSize.y = WindowData.currentSize.y;
-        OptixData.LP.frameSize = WindowData.currentSize;
         initializeFrameBuffer(WindowData.currentSize.x, WindowData.currentSize.y);
-        owlBufferResize(OptixData.frameBuffer, WindowData.currentSize.x*WindowData.currentSize.y);
-        owlBufferResize(OptixData.accumBuffer, WindowData.currentSize.x*WindowData.currentSize.y);
+        resizeOptixFrameBuffer(WindowData.currentSize.x, WindowData.currentSize.y);
         resetAccumulation();
     }
 }
+
 
 void initializeOptix(bool headless)
 {
@@ -618,6 +626,54 @@ std::vector<float> readFrameBuffer() {
 
     return frameBuffer;
 }
+
+std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPixel) {
+    std::vector<float> frameBuffer(width * height * 4);
+
+    auto readFrameBuffer = [&frameBuffer, width, height, samplesPerPixel] () {
+        resizeOptixFrameBuffer(width, height);
+        resetAccumulation();
+        updateComponents();
+
+        for (uint32_t i = 0; i < samplesPerPixel; ++i) {
+            if (!ViSII.headlessMode) {
+                auto glfw = Libraries::GLFW::Get();
+                glfw->poll_events();
+                glfw->swap_buffers("ViSII");
+            }
+
+            updateLaunchParams();
+            traceRays();
+
+            if (!ViSII.headlessMode) {
+                drawFrameBufferToWindow();
+            }
+        }        
+
+        int num_devices = owlGetDeviceCount(OptixData.context);
+        for (int i = 0; i < num_devices; ++i) {
+            cudaSetDevice(i);
+            cudaDeviceSynchronize();
+        }
+        cudaSetDevice(0);
+
+        const glm::vec4 *fb = (const glm::vec4*)owlBufferGetPointer(OptixData.frameBuffer,0);
+        for (uint32_t test = 0; test < frameBuffer.size(); test += 4) {
+            frameBuffer[test + 0] = fb[test / 4].r;
+            frameBuffer[test + 1] = fb[test / 4].g;
+            frameBuffer[test + 2] = fb[test / 4].b;
+            frameBuffer[test + 3] = fb[test / 4].a;
+        }
+
+        // memcpy(frameBuffer.data(), fb, frameBuffer.size() * sizeof(float));
+    };
+
+    auto future = enqueueCommand(readFrameBuffer);
+    future.wait();
+
+    return frameBuffer;
+}
+
 
 void initializeInteractive(bool windowOnTop)
 {

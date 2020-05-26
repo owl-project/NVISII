@@ -33,3 +33,5 @@ void setCameraEntity(Entity* camera_entity);
 void resizeWindow(uint32_t width, uint32_t height);
 
 std::vector<float> readFrameBuffer();
+
+std::vector<float> render(uint32_t width, uint32_t height, uint32_t samples_per_pixel);
