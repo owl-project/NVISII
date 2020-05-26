@@ -11,6 +11,6 @@ set (
 
 set (
     SRC_CU
-    ${CMAKE_CURRENT_SOURCE_DIR}/deviceCode/path_tracer.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/devicecode/path_tracer.cu
     PARENT_SCOPE
 )
