@@ -153,7 +153,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     //     inUV += (.5f - (.5f / optixLaunchParams.zoom));
     // }
 
-    float cameraLensRadius = .0f;
+    float cameraLensRadius = camera.apertureDiameter;
     // cameraLensRadius = max(cameraLensRadius, max(1.f / frameSize.x, 1.f / frameSize.y));
     // float focalLength = 0.1f;
 
@@ -171,7 +171,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     vec2 dir = inUV * 2.f - 1.f; dir.y *= -1.f;
     vec4 t = (projinv * vec4(dir.x, dir.y, -1.f, 1.f));
     vec3 target = vec3(t) / float(t.w);
-    vec3 direction = vec3(viewinv * vec4(target, 0.f));
+    vec3 direction = normalize(vec3(viewinv * vec4(target, 0.f))) * camera.focalDistance;
     direction = normalize(direction - lens_offset);
 
     owl::Ray ray;
