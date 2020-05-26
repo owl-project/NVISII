@@ -120,7 +120,6 @@ find_package(SWIG 4.0.1)
 include(${SWIG_USE_FILE})
 
 # python
-find_package(PythonLibs)
 find_package(Python COMPONENTS Development REQUIRED)
 if (UNIX AND NOT Python_FOUND)
   message(FATAL_ERROR "Python development libraries missing!"
@@ -133,7 +132,7 @@ if (MSVC AND NOT Python_FOUND)
     "by downloading python from https://www.python.org/downloads/. NOTE: for debug builds, make sure to check \"Download debug binaries\" "
     "in the \"Advanced Options\" tab of the Python installation wizard, and to run with python_d.exe")
 endif()
-include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
+include_directories(SYSTEM ${Python_INCLUDE_DIRS})
 
 # glm
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
@@ -235,6 +234,7 @@ include(configure_cuda)
 set (
   LIBRARIES
   ${PYTHON_LIBRARY}
+  ${Python_LIBRARY_DEBUG}
   generator
   ${GLFW_LIBRARIES}
   glfw
@@ -324,14 +324,14 @@ install(TARGETS visii_lib
 set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY CPLUSPLUS ON)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen" "-py3") # -builtin seems to remove kwargs...
+set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen") # -builtin seems to remove kwargs...
 swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
 target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
 set(SWIG_DEFS 
-  Python3_VERSION_MAJOR=${Python3_VERSION_MAJOR} 
-  Python3_VERSION_MINOR=${Python3_VERSION_MINOR})
-set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python3_DEBUG>)
+  Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
+  Python_VERSION_MINOR=${Python_VERSION_MINOR})
+set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python_DEBUG>)
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
 
 
