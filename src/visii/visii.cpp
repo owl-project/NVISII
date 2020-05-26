@@ -182,7 +182,7 @@ void updateFrameBuffer()
     }
 }
 
-void initializeOptix()
+void initializeOptix(bool headless)
 {
     using namespace glm;
     auto &OD = OptixData;
@@ -209,7 +209,10 @@ void initializeOptix()
     OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
     
     /* Create AOV Buffers */
-    initializeFrameBuffer(512, 512);
+    if (!headless) {
+        initializeFrameBuffer(512, 512);
+    }
+
     OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.LP.frameSize = glm::ivec2(512, 512);
@@ -434,12 +437,14 @@ void traceRays()
 {
     auto &OD = OptixData;
     
-    static double start=0;
-    static double stop=0;
-
     /* Trace Rays */
-    start = glfwGetTime();
     owlParamsLaunch2D(OD.rayGen, OD.LP.frameSize.x, OD.LP.frameSize.y, OD.launchParams);
+}
+
+void drawFrameBufferToWindow()
+{
+    auto &OD = OptixData;
+
     cudaGraphicsMapResources(1, &OD.cudaResourceTex);
     const void* fbdevptr = owlBufferGetPointer(OD.frameBuffer,0);
     cudaArray_t array;
@@ -456,8 +461,6 @@ void traceRays()
             throw std::runtime_error("ERROR");
         }
     }
-    stop = glfwGetTime();
-    glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
 
     // Draw pixels from optix frame buffer
     glViewport(0, 0, OD.LP.frameSize.x, OD.LP.frameSize.y);
@@ -547,7 +550,7 @@ void initializeInteractive(bool windowOnTop)
         glfw->make_context_current("ViSII");
         glfw->poll_events();
 
-        initializeOptix();
+        initializeOptix(/*headless = */ false);
 
         ImGui::CreateContext();
         auto &io  = ImGui::GetIO();
@@ -566,14 +569,17 @@ void initializeInteractive(bool windowOnTop)
             glfw->poll_events();
             glfw->swap_buffers("ViSII");
 
-            auto newColor = Colors::hsvToRgb({float(glfwGetTime() * .1f), 1.0f, 1.0f});
-            glClearColor(newColor[0],newColor[1],newColor[2],1);
-            glClear(GL_COLOR_BUFFER_BIT);
-
             updateFrameBuffer();
             updateComponents();
             updateLaunchParams();
+
+            static double start=0;
+            static double stop=0;
+            start = glfwGetTime();
             traceRays();
+            drawFrameBufferToWindow();
+            stop = glfwGetTime();
+            glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
             drawGUI();
 
             if (close) break;
@@ -592,20 +598,27 @@ void initializeHeadless()
     if (initialized == true) return;
 
     initialized = true;
+    close = false;
     Camera::initializeFactory();
     Entity::initializeFactory();
     Transform::initializeFactory();
     Material::initializeFactory();
     Mesh::initializeFactory();
 
-    // auto loop = []() {
-    //     while (!close)
-    //     {
-    //         if (close) break;
-    //     }
-    // };
+    auto loop = []() {
 
-    // renderThread = thread(loop);
+        initializeOptix(/*headless = */ true);
+
+        while (!close)
+        {
+            updateComponents();
+            updateLaunchParams();
+            traceRays();
+            if (close) break;
+        }
+    };
+
+    renderThread = thread(loop);
 }
 
 void cleanup()
