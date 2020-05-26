@@ -121,15 +121,15 @@ include(${SWIG_USE_FILE})
 
 # python
 find_package(PythonLibs)
-find_package(Python3 3.6 COMPONENTS Development REQUIRED)
-if (UNIX AND NOT Python3_FOUND)
-  message(FATAL_ERROR "Python 3 development libraries missing!"
-    "You probably dont have python 3.6 or later development libraries installed on your system. It is possible to recover "
+find_package(Python COMPONENTS Development REQUIRED)
+if (UNIX AND NOT Python_FOUND)
+  message(FATAL_ERROR "Python development libraries missing!"
+    "You probably dont have python 2.7 or later development libraries installed on your system. It is possible to recover "
     "by running \"sudo apt install python3-dev\" (or equivalent on your unix distro)")
 endif()
-if (MSVC AND NOT Python3_FOUND)
-  message(FATAL_ERROR "Python 3 development libraries missing!"
-    "You probably dont have python 3.6 or later development libraries installed on your system. It is possible to recover "
+if (MSVC AND NOT Python_FOUND)
+  message(FATAL_ERROR "Python development libraries missing!"
+    "You probably dont have python 2.7 or later development libraries installed on your system. It is possible to recover "
     "by downloading python from https://www.python.org/downloads/. NOTE: for debug builds, make sure to check \"Download debug binaries\" "
     "in the \"Advanced Options\" tab of the Python installation wizard, and to run with python_d.exe")
 endif()
