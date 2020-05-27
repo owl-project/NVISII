@@ -69,7 +69,7 @@ jobs:
     - name: Download Windows Dependencies
       if: matrix.os == 'windows-latest'
       run: |
-        # choco install cuda
+        choco install cuda
         refreshenv
         
     - name: Ubuntu configure/install cmake project
