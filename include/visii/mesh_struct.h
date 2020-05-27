@@ -1,7 +1,7 @@
 /* File shared by both host and device */
 #pragma once
 
-#define MAX_MESHES 2048
+#define MAX_MESHES 100000
 #include <glm/glm.hpp>
 using namespace glm;
 

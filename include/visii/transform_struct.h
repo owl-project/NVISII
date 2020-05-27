@@ -1,7 +1,7 @@
 /* File shared by both host and device */
 #pragma once
 
-#define MAX_TRANSFORMS 1024
+#define MAX_TRANSFORMS 100000
 #include <glm/glm.hpp>
 using namespace glm;
 
