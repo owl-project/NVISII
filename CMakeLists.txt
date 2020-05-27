@@ -120,20 +120,30 @@ find_package(SWIG 4.0.1)
 include(${SWIG_USE_FILE})
 
 # python
-find_package(PythonLibs)
-find_package(Python3 3.6 COMPONENTS Development REQUIRED)
-if (UNIX AND NOT Python3_FOUND)
-  message(FATAL_ERROR "Python 3 development libraries missing!"
-    "You probably dont have python 3.6 or later development libraries installed on your system. It is possible to recover "
+if (EXISTS ${Python_ROOT_DIR})
+  set(Python_FIND_STRATEGY "LOCATION")
+  message(WARN "${Python_ROOT_DIR}") 
+endif()
+
+set(PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
+if(PYTHON_VERSION)
+  find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development REQUIRED)
+else()
+  find_package(Python  COMPONENTS Development REQUIRED)
+endif()
+
+if (UNIX AND NOT Python_FOUND)
+  message(FATAL_ERROR "Python development libraries missing!"
+    "You probably dont have python 2.7 or later development libraries installed on your system. It is possible to recover "
     "by running \"sudo apt install python3-dev\" (or equivalent on your unix distro)")
 endif()
-if (MSVC AND NOT Python3_FOUND)
-  message(FATAL_ERROR "Python 3 development libraries missing!"
-    "You probably dont have python 3.6 or later development libraries installed on your system. It is possible to recover "
+if (MSVC AND NOT Python_FOUND)
+  message(FATAL_ERROR "Python development libraries missing!"
+    "You probably dont have python 2.7 or later development libraries installed on your system. It is possible to recover "
     "by downloading python from https://www.python.org/downloads/. NOTE: for debug builds, make sure to check \"Download debug binaries\" "
     "in the \"Advanced Options\" tab of the Python installation wizard, and to run with python_d.exe")
 endif()
-include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
+include_directories(SYSTEM ${Python_INCLUDE_DIRS})
 
 # glm
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
@@ -228,9 +238,6 @@ include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
 include(configure_cuda)
 
-# include(configure_optix)
-# include(configure_build_type)
-
 # add libraries to a list for linking
 set (
   LIBRARIES
@@ -242,7 +249,17 @@ set (
   # ${TBB_LIBRARIES}
   owl
   )
+
+# If debug lib for python exists, add it to the list.
+if (${Python_LIBRARY_DEBUG})
+set (
+  LIBRARIES
+  ${LIBRARIES}
+  ${Python_LIBRARY_DEBUG}
+)
+endif()
   
+# If on linux, request support for atomics
 if(NOT WIN32)
   set (
     LIBRARIES
@@ -324,14 +341,14 @@ install(TARGETS visii_lib
 set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY CPLUSPLUS ON)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen" "-py3") # -builtin seems to remove kwargs...
+set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen") # -builtin seems to remove kwargs...
 swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
 target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
 set(SWIG_DEFS 
-  Python3_VERSION_MAJOR=${Python3_VERSION_MAJOR} 
-  Python3_VERSION_MINOR=${Python3_VERSION_MINOR})
-set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python3_DEBUG>)
+  Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
+  Python_VERSION_MINOR=${Python_VERSION_MINOR})
+set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python_DEBUG>)
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
 
 
