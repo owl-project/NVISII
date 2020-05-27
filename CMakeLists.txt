@@ -238,14 +238,10 @@ include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
 include(configure_cuda)
 
-# include(configure_optix)
-# include(configure_build_type)
-
 # add libraries to a list for linking
 set (
   LIBRARIES
   ${PYTHON_LIBRARY}
-  ${Python_LIBRARY_DEBUG}
   generator
   ${GLFW_LIBRARIES}
   glfw
@@ -253,7 +249,17 @@ set (
   # ${TBB_LIBRARIES}
   owl
   )
+
+# If debug lib for python exists, add it to the list.
+if (${Python_LIBRARY_DEBUG})
+set (
+  LIBRARIES
+  ${LIBRARIES}
+  ${Python_LIBRARY_DEBUG}
+)
+endif()
   
+# If on linux, request support for atomics
 if(NOT WIN32)
   set (
     LIBRARIES
