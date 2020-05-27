@@ -40,6 +40,7 @@ jobs:
       run: |
         python -c "import sys; print(sys.version)"
         echo ${pythonLocation}
+        echo %pythonLocation%
         ls ${pythonLocation}
 
     # Runs a single command using the runners shell
@@ -74,7 +75,7 @@ jobs:
     - name: Ubuntu configure/install cmake project
       if: matrix.os == 'ubuntu-18.04'
       run: |
-        cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPython_ROOT_DIR=${pythonLocation} -DPYTHON_VERSION=${{matrix.python-version}}
+        cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPython_ROOT_DIR=%pythonLocation% -DPYTHON_VERSION=${{matrix.python-version}}
         cmake --build . --config Release --target install 
 
     - name: Ubuntu configure/install cmake project
