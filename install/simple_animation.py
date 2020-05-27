@@ -167,10 +167,13 @@ for i in range(1000):
     for obj_id in range(NB_OBJS): 
         move_around(obj_id)
 
-    time.sleep(SLEEP_TIME)
+    # time.sleep(SLEEP_TIME)
     # a = [512*512*4]
     # visii.get_buffer_width(), visii.get_buffer_height()
-    x = np.array(visii.read_frame_buffer()).reshape(512,512,4)
+    # x = np.array(visii.read_frame_buffer()).reshape(512,512,4)
+    x = visii.render(width=512, height=512, samples_per_pixel=3)
+    x = np.array(x).reshape(512,512,4)
+
     img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
 
     img.save(f"outf/{str(i).zfill(4)}.png")
