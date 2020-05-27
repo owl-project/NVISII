@@ -127,6 +127,7 @@ def add_random_obj(name = "name"):
 
 def move_around(obj_id):
     trans = visii.transform.get(str(obj_id))
+    # trans = visii.entity.get(str(obj_id)).get_transform()
     # trans.add_position(
     #     np.random.uniform(-0.5,0.5),
     #     np.random.uniform(-0.5,0.5),
@@ -167,6 +168,8 @@ for i in range(1000):
         move_around(obj_id)
 
     time.sleep(SLEEP_TIME)
+    # a = [512*512*4]
+    # visii.get_buffer_width(), visii.get_buffer_height()
     x = np.array(visii.read_frame_buffer()).reshape(512,512,4)
     img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
 

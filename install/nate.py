@@ -6,14 +6,19 @@ import time
 from pyquaternion import Quaternion
 import randomcolor
 
+
+NB_OBJS = 1000
+SLEEP_TIME = 12
+
+
 visii.initialize_headless()
 
 # time to initialize this is a bug
 
 # Create a camera
 camera_entity = visii.entity.create(
-    name="my_camera_entity",
-    transform=visii.transform.create("my_camera_transform"),
+    name="my_camera",
+    transform=visii.transform.create("my_camera"),
     camera=visii.camera.create_perspective_from_fov(name = "my_camera",
         field_of_view = 0.785398,
         aspect = 1.,
@@ -84,9 +89,9 @@ def add_random_obj(name = "name"):
 
     obj.set_mesh(mesh)
     obj.get_transform().set_position(
-        np.random.uniform(-2,2),
-        np.random.uniform(-2,2),
-        np.random.uniform(-.5,0.5)
+        np.random.uniform(-5,5),
+        np.random.uniform(-5,5),
+        np.random.uniform(-10,0.5)
         )
     q = Quaternion.random()
     obj.get_transform().set_rotation(
@@ -120,15 +125,16 @@ def add_random_obj(name = "name"):
     obj.get_material().set_sheen(np.random.uniform(0,1))  # degault is 0     
 
 
+def move_around(obj_id):
 
 
-
-for i in range(1000):
+# create a random scene, the function defines the values
+for i in range(NB_OBJS):
     add_random_obj(str(i))
 
 ################################################################
 
-time.sleep(60)
+time.sleep(SLEEP_TIME)
 
 # Read and save the image 
 x = np.array(visii.read_frame_buffer()).reshape(512,512,4)
@@ -138,6 +144,3 @@ img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOT
 img.save("tmp.png")
 
 visii.cleanup()
-
-
-
