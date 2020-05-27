@@ -119,13 +119,19 @@ endif()
 find_package(SWIG 4.0.1)
 include(${SWIG_USE_FILE})
 
+# python
 if (EXISTS ${Python_ROOT_DIR})
   set(Python_FIND_STRATEGY "LOCATION")
   message(WARN "${Python_ROOT_DIR}") 
 endif()
 
-# python
-find_package(Python COMPONENTS Development REQUIRED)
+set(PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
+if(PYTHON_VERSION)
+  find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development REQUIRED)
+else()
+  find_package(Python  COMPONENTS Development REQUIRED)
+endif()
+
 if (UNIX AND NOT Python_FOUND)
   message(FATAL_ERROR "Python development libraries missing!"
     "You probably dont have python 2.7 or later development libraries installed on your system. It is possible to recover "
