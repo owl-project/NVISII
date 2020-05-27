@@ -2,7 +2,7 @@
 #pragma once
 
 #include <stdint.h>
-#define MAX_ENTITIES 1024
+#define MAX_ENTITIES 100000
 
 struct EntityStruct {
 	int32_t initialized = 0;

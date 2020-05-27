@@ -21,9 +21,10 @@ jobs:
     strategy:	
       matrix:	
         os:	
-          - ubuntu-18.04	
-          - windows-latest	
-        python-version: [2.7, 3.6, 3.7, 3.8]
+          - ubuntu-18.04
+          # - windows-latest
+        # python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
+        python-version: [2.7]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -36,7 +37,11 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Display Python version
-      run: python -c "import sys; print(sys.version)"
+      run: |
+        python -c "import sys; print(sys.version)"
+        echo ${pythonLocation}
+        echo %pythonLocation%
+        ls ${pythonLocation}
 
     # Runs a single command using the runners shell
     - name: Run a one-line script
@@ -70,15 +75,13 @@ jobs:
     - name: Ubuntu configure/install cmake project
       if: matrix.os == 'ubuntu-18.04'
       run: |
-        cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so
+        cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="${{matrix.python-version}}"
         cmake --build . --config Release --target install 
 
-    - name: Ubuntu configure/install cmake project
+    - name: Windows configure/install cmake project
       if: matrix.os == 'windows-latest'
       run: |
-        mkdir build
-        cd build
-        cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2"
+        cmake . -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
         cmake --build . --config Release --target install 
 
     - name: Upload artifacts
