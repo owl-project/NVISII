@@ -238,140 +238,140 @@ include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
 include(configure_cuda)
 
-# # add libraries to a list for linking
-# set (
-#   LIBRARIES
-#   ${PYTHON_LIBRARIES}
-#   generator
-#   ${GLFW_LIBRARIES}
-#   glfw
-#   ${OPENGL_gl_LIBRARY}
-#   # ${TBB_LIBRARIES}
-#   owl
-#   )
+# add libraries to a list for linking
+set (
+  LIBRARIES
+  ${PYTHON_LIBRARIES}
+  generator
+  ${GLFW_LIBRARIES}
+  glfw
+  ${OPENGL_gl_LIBRARY}
+  # ${TBB_LIBRARIES}
+  owl
+  )
 
-# # If debug lib for python exists, add it to the list.
-# if (${Python_LIBRARY_DEBUG})
-# set (
-#   LIBRARIES
-#   ${LIBRARIES}
-#   ${Python_LIBRARY_DEBUG}
-# )
-# endif()
-# if (${Python_LIBRARY_RELEASE})
-# set (
-#   LIBRARIES
-#   ${LIBRARIES}
-#   ${Python_LIBRARY_RELEASE}
-# )
-# endif()
+# If debug lib for python exists, add it to the list.
+if (${Python_LIBRARY_DEBUG})
+set (
+  LIBRARIES
+  ${LIBRARIES}
+  ${Python_LIBRARY_DEBUG}
+)
+endif()
+if (${Python_LIBRARY_RELEASE})
+set (
+  LIBRARIES
+  ${LIBRARIES}
+  ${Python_LIBRARY_RELEASE}
+)
+endif()
 
-# # If on linux, request support for atomics
-# if(NOT WIN32)
-#   set (
-#     LIBRARIES
-#     ${LIBRARIES}
-#     -latomic
-#   )
-# endif()
+# If on linux, request support for atomics
+if(NOT WIN32)
+  set (
+    LIBRARIES
+    ${LIBRARIES}
+    -latomic
+  )
+endif()
 
-# # ┌──────────────────────────────────────────────────────────────────┐
-# # │  Definitions                                                     │
-# # └──────────────────────────────────────────────────────────────────┘
-# # message(WARN ${Python3_VERSION_MAJOR})
-# # add_definitions(-DPython3_VERSION_MAJOR=${Python3_VERSION_MAJOR})
-# # add_definitions(-DPython3_VERSION_MINOR=${Python3_VERSION_MINOR})
-# # add_definitions(-DPython3_VERSION_PATCH=${Python3_VERSION_PATCH})
-
-
-# # # ┌──────────────────────────────────────────────────────────────────┐
-# # # │  Macros                                                          │
-# # # └──────────────────────────────────────────────────────────────────┘
-
-# # For compiling cuda kernels and embedding them as ptx
-# if (NVCC_VERBOSE)
-# set (NVCC_VERBOSE_FLAG --verbose)
-# endif()
-
-# macro(cuda_compile_and_embed output_var cuda_file)
-#   set(var_name ${output_var})
-#   cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --keep ${NVCC_VERBOSE_FLAG})
-#   list(GET ptx_files 0 ptx_file)
-#   set(embedded_file ${ptx_file}_embedded.c)
-#   add_custom_command(
-#     OUTPUT ${embedded_file}
-#     COMMAND ${BIN2C} -c --padd 0 --type char --name ${var_name} ${ptx_file}  > ${embedded_file}
-#     DEPENDS ${ptx_file}
-#     COMMENT "compiling (and embedding ptx from) ${cuda_file}"
-#     )
-#   set(${output_var} ${embedded_file})
-# endmacro()
-
-# # ┌──────────────────────────────────────────────────────────────────┐
-# # │  Add source files                                                │
-# # └──────────────────────────────────────────────────────────────────┘
-# include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals)
-# include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/include)
-# include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/glm_bindings)
-# include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/)
-# include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/visii/)
-
-# # defines a global ${HDR} variable containing a list of all project headers
-# add_subdirectory(include) 
-
-# # defines a global ${SRC} variable containing a list of all .cpp files
-# add_subdirectory(src)
-
-# set(SRC ${SRC} ${GLAD_SRC} ${IMGUI_SRC})
-# set(HDR ${HDR} ${Externals_HDR})
-
-# # ┌──────────────────────────────────────────────────────────────────┐
-# # │  CUDA PTX                                                        │
-# # └──────────────────────────────────────────────────────────────────┘
-# # OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored
-# cuda_compile_and_embed(ptxCode ${SRC_CU})
-
-# # ┌──────────────────────────────────────────────────────────────────┐
-# # │  ViSII Library                                                   │
-# # └──────────────────────────────────────────────────────────────────┘
-# add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode})
-# target_link_libraries(visii_lib PUBLIC ${LIBRARIES})
-# set_target_properties(visii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
-# install(TARGETS visii_lib 
-#     DESTINATION ${CMAKE_INSTALL_PREFIX}
-#     RENAME "visii_lib"
-# )
-
-# # ┌──────────────────────────────────────────────────────────────────┐
-# # │  Setup Targets                                                   │
-# # └──────────────────────────────────────────────────────────────────┘
-# set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
-# set_property(SOURCE ${VISII_INTERFACE} PROPERTY CPLUSPLUS ON)
-# set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-# set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen") # -builtin seems to remove kwargs...
-# swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
-# set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
-# target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
-# set(SWIG_DEFS 
-#   Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
-#   Python_VERSION_MINOR=${Python_VERSION_MINOR})
-# set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python_DEBUG>)
-# set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  Definitions                                                     │
+# └──────────────────────────────────────────────────────────────────┘
+# message(WARN ${Python3_VERSION_MAJOR})
+# add_definitions(-DPython3_VERSION_MAJOR=${Python3_VERSION_MAJOR})
+# add_definitions(-DPython3_VERSION_MINOR=${Python3_VERSION_MINOR})
+# add_definitions(-DPython3_VERSION_PATCH=${Python3_VERSION_PATCH})
 
 
 # # ┌──────────────────────────────────────────────────────────────────┐
-# # │  Install                                                         │
+# # │  Macros                                                          │
 # # └──────────────────────────────────────────────────────────────────┘
 
-# # Install
-# install(FILES ${CMAKE_BINARY_DIR}/visii.py DESTINATION ${CMAKE_INSTALL_PREFIX})
-# install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
-# install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
-# install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL RENAME _visii_d.pyd)
-# install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL RENAME _visii_d.pdb)
+# For compiling cuda kernels and embedding them as ptx
+if (NVCC_VERBOSE)
+set (NVCC_VERBOSE_FLAG --verbose)
+endif()
 
-# # # TBB DLL for windows
-# # if (WIN32) 
-# # install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
-# # install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb_debug.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
-# # endif(WIN32)
+macro(cuda_compile_and_embed output_var cuda_file)
+  set(var_name ${output_var})
+  cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --keep ${NVCC_VERBOSE_FLAG})
+  list(GET ptx_files 0 ptx_file)
+  set(embedded_file ${ptx_file}_embedded.c)
+  add_custom_command(
+    OUTPUT ${embedded_file}
+    COMMAND ${BIN2C} -c --padd 0 --type char --name ${var_name} ${ptx_file}  > ${embedded_file}
+    DEPENDS ${ptx_file}
+    COMMENT "compiling (and embedding ptx from) ${cuda_file}"
+    )
+  set(${output_var} ${embedded_file})
+endmacro()
+
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  Add source files                                                │
+# └──────────────────────────────────────────────────────────────────┘
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/glm_bindings)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/visii/)
+
+# defines a global ${HDR} variable containing a list of all project headers
+add_subdirectory(include) 
+
+# defines a global ${SRC} variable containing a list of all .cpp files
+add_subdirectory(src)
+
+set(SRC ${SRC} ${GLAD_SRC} ${IMGUI_SRC})
+set(HDR ${HDR} ${Externals_HDR})
+
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  CUDA PTX                                                        │
+# └──────────────────────────────────────────────────────────────────┘
+# OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored
+cuda_compile_and_embed(ptxCode ${SRC_CU})
+
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  ViSII Library                                                   │
+# └──────────────────────────────────────────────────────────────────┘
+add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode})
+target_link_libraries(visii_lib PUBLIC ${LIBRARIES})
+set_target_properties(visii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+install(TARGETS visii_lib 
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    RENAME "visii_lib"
+)
+
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  Setup Targets                                                   │
+# └──────────────────────────────────────────────────────────────────┘
+set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
+set_property(SOURCE ${VISII_INTERFACE} PROPERTY CPLUSPLUS ON)
+set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
+set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen") # -builtin seems to remove kwargs...
+swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
+set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
+target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
+set(SWIG_DEFS 
+  Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
+  Python_VERSION_MINOR=${Python_VERSION_MINOR})
+set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python_DEBUG>)
+set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
+
+
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  Install                                                         │
+# └──────────────────────────────────────────────────────────────────┘
+
+# Install
+install(FILES ${CMAKE_BINARY_DIR}/visii.py DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
+install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL RENAME _visii_d.pyd)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL RENAME _visii_d.pdb)
+
+# # TBB DLL for windows
+# if (WIN32) 
+# install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
+# install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb_debug.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
+# endif(WIN32)
