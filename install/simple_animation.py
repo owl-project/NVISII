@@ -7,8 +7,8 @@ from pyquaternion import Quaternion
 import randomcolor
 import subprocess
 
-NB_OBJS = 5000
-NB_TRACE_PER_PIXEL = 200
+NB_OBJS = 1000
+NB_TRACE_PER_PIXEL = 300
 NB_FRAMES = 300
 
 visii.initialize_headless()
@@ -179,31 +179,32 @@ def move_around(obj_id):
         trans.set_rotation(q)
 
     # color
-    if not str(obj_id) in move_around.destination['color'].keys() :
-        c = eval(str(rcolor.generate(format_='rgb')[0])[3:])
-        move_around.destination['color'][str(obj_id)] = np.array(c)/255.0
+    # if not str(obj_id) in move_around.destination['color'].keys() :
+    #     c = eval(str(rcolor.generate(format_='rgb')[0])[3:])
+    #     move_around.destination['color'][str(obj_id)] = np.array(c)/255.0
 
-    else:
-        goal = move_around.destination['color'][str(obj_id)]
-        current = visii.material.get(str(obj_id)).get_base_color()
-        current = np.array([current[0],current[1],current[2]])
+    # else:
+    #     goal = move_around.destination['color'][str(obj_id)]
+    #     current = visii.material.get(str(obj_id)).get_base_color()
+    #     current = np.array([current[0],current[1],current[2]])
 
-        if np.linalg.norm(goal - current) < 0.01:
-            c = eval(str(rcolor.generate(format_='rgb')[0])[3:])
-            move_around.destination['color'][str(obj_id)] = np.array(c)/255
-            goal = move_around.destination['color'][str(obj_id)]
+    #     if np.linalg.norm(goal - current) < 0.01:
+    #         c = eval(str(rcolor.generate(format_='rgb')[0])[3:])
+    #         move_around.destination['color'][str(obj_id)] = np.array(c)/255
+    #         goal = move_around.destination['color'][str(obj_id)]
 
 
-        dir_vec = normalized(np.array(goal) - current)[0] * 0.05
-        color = current + dir_vec
-        color[color>1]=1
-        color[color<0]=0
+    #     dir_vec = normalized(np.array(goal) - current)[0] * 0.05
+    #     color = current + dir_vec
+    #     color[color>1]=1
+    #     color[color<0]=0
 
-        visii.material.get(str(obj_id)).set_base_color(
-            color[0],
-            color[1],
-            color[2]
-        )
+    #     visii.material.get(str(obj_id)).set_base_color(
+    #         color[0],
+    #         color[1],
+    #         color[2]
+    #     )
+
     # Materials - roughness
     if not str(obj_id) in move_around.destination['roughness'].keys() :
         move_around.destination['roughness'][str(obj_id)] = np.random.uniform(0,1)
@@ -216,9 +217,12 @@ def move_around(obj_id):
             move_around.destination['roughness'][str(obj_id)] = np.random.uniform(0,1)
             goal = move_around.destination['roughness'][str(obj_id)]
 
-
-        dir_vec = (goal - current) * 0.05
-        to_set = current + dir_vec
+        interval = 0.01
+        dir_vec = (goal - current)
+        if dir_vec > 0:
+            to_set = current + interval
+        else:
+            to_set = current - interval
         if to_set>1:
             to_set = 1
         if to_set<0:
@@ -238,9 +242,12 @@ def move_around(obj_id):
             move_around.destination['metallic'][str(obj_id)] = np.random.uniform(0,1)
             goal = move_around.destination['metallic'][str(obj_id)]
 
-
-        dir_vec = (goal - current) * 0.05
-        to_set = current + dir_vec
+        interval = 0.01
+        dir_vec = (goal - current)
+        if dir_vec > 0:
+            to_set = current + interval
+        else:
+            to_set = current - interval
         if to_set>1:
             to_set = 1
         if to_set<0:
@@ -260,9 +267,12 @@ def move_around(obj_id):
             move_around.destination['transmission'][str(obj_id)] = np.random.uniform(0,1)
             goal = move_around.destination['transmission'][str(obj_id)]
 
-
-        dir_vec = (goal - current) * 0.05
-        to_set = current + dir_vec
+        interval = 0.01
+        dir_vec = (goal - current)
+        if dir_vec > 0:
+            to_set = current + interval
+        else:
+            to_set = current - interval
         if to_set>1:
             to_set = 1
         if to_set<0:
@@ -282,9 +292,12 @@ def move_around(obj_id):
             move_around.destination['sheen'][str(obj_id)] = np.random.uniform(0,1)
             goal = move_around.destination['sheen'][str(obj_id)]
 
-
-        dir_vec = (goal - current) * 0.05
-        to_set = current + dir_vec
+        interval = 0.01
+        dir_vec = (goal - current)
+        if dir_vec > 0:
+            to_set = current + interval
+        else:
+            to_set = current - interval
         if to_set>1:
             to_set = 1
         if to_set<0:
@@ -304,9 +317,12 @@ def move_around(obj_id):
             move_around.destination['clearcoat'][str(obj_id)] = np.random.uniform(0,1)
             goal = move_around.destination['clearcoat'][str(obj_id)]
 
-
-        dir_vec = (goal - current) * 0.05
-        to_set = current + dir_vec
+        interval = 0.01
+        dir_vec = (goal - current)
+        if dir_vec > 0:
+            to_set = current + interval
+        else:
+            to_set = current - interval
         if to_set>1:
             to_set = 1
         if to_set<0:
@@ -326,9 +342,12 @@ def move_around(obj_id):
             move_around.destination['specular'][str(obj_id)] = np.random.uniform(0,1)
             goal = move_around.destination['specular'][str(obj_id)]
 
-
-        dir_vec = (goal - current) * 0.05
-        to_set = current + dir_vec
+        interval = 0.01
+        dir_vec = (goal - current)
+        if dir_vec > 0:
+            to_set = current + interval
+        else:
+            to_set = current - interval
         if to_set>1:
             to_set = 1
         if to_set<0:
@@ -349,9 +368,12 @@ def move_around(obj_id):
             move_around.destination['anisotropic'][str(obj_id)] = np.random.uniform(0,1)
             goal = move_around.destination['anisotropic'][str(obj_id)]
 
-
-        dir_vec = (goal - current) * 0.05
-        to_set = current + dir_vec
+        interval = 0.01
+        dir_vec = (goal - current)
+        if dir_vec > 0:
+            to_set = current + interval
+        else:
+            to_set = current - interval
         if to_set>1:
             to_set = 1
         if to_set<0:
@@ -403,4 +425,4 @@ visii.cleanup()
 # ffmpeg -y -framerate 15 -pattern_type glob -i "outf/*.png" output.mp4
 subprocess.call(['ffmpeg', '-y',\
     '-framerate', '15', '-pattern_type', 'glob', '-i',\
-    "outf/*.png".format(opt.outf), 'output.mp4'.format(opt.outf)])
+    "outf/*.png", 'output.mp4'])
