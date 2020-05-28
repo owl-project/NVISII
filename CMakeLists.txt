@@ -128,10 +128,8 @@ endif()
 set(PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
 if(PYTHON_VERSION)
   find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development REQUIRED)
-  find_package(PythonLibs ${PYTHON_VERSION} EXACT)
 else()
   find_package(Python  COMPONENTS Development REQUIRED)
-  find_package(PythonLibs)
 endif()
 
 if (UNIX AND NOT Python_FOUND)
@@ -240,11 +238,10 @@ include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
 include(configure_cuda)
 
-message(WARN ${PYTHON_LIBRARY})
 # add libraries to a list for linking
 set (
   LIBRARIES
-  ${PYTHON_LIBRARY}
+  ${PYTHON_LIBRARIES}
   generator
   ${GLFW_LIBRARIES}
   glfw
@@ -261,7 +258,14 @@ set (
   ${Python_LIBRARY_DEBUG}
 )
 endif()
-  
+if (${Python_LIBRARY_RELEASE})
+set (
+  LIBRARIES
+  ${LIBRARIES}
+  ${Python_LIBRARY_RELEASE}
+)
+endif()
+
 # If on linux, request support for atomics
 if(NOT WIN32)
   set (
