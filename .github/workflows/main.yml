@@ -23,8 +23,7 @@ jobs:
         os:	
           - ubuntu-18.04
           - windows-latest
-        # python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
-        python-version: [2.7]
+        python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -42,16 +41,6 @@ jobs:
         echo ${pythonLocation}
         echo %pythonLocation%
         ls ${pythonLocation}
-
-    # Runs a single command using the runners shell
-    - name: Run a one-line script
-      run: echo Hello, world!
-    
-    # Runs a set of commands using the runners shell
-    - name: Run a multi-line script
-      run: |
-        echo Add other actions to build,
-        echo test, and deploy your project.
 
     # Download external dependencies
     - name: Download Ubuntu Dependencies
