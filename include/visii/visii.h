@@ -28,6 +28,12 @@ void cleanup();
  * \param camera_entity The entity containing a camera and transform component, to use for rendering. */
 void setCameraEntity(Entity* camera_entity);
 
+
+/** Sets the intensity, or brightness, that the dome light (aka environment light) will emit it's color.
+ * \param intensity How powerful the dome light is in emitting light
+ */ 
+void setDomeLightIntensity(float intensity);
+
 /**
    If using interactive mode, resizes the window to the specified dimentions.
 */

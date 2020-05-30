@@ -107,7 +107,7 @@ public:
     */
     void setTemperature(float kelvin);
 
-    /** Sets the intensity, or brightness, that this light component will emit its color. 
+    /** Sets the intensity, or brightness, that this light component will emit it's color. 
      * \param intensity How powerful the light source is in emitting light 
     */
     void setIntensity(float intensity);
