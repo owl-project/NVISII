@@ -54,6 +54,8 @@ static struct OptixData {
     OWLBuffer cameraBuffer;
     OWLBuffer materialBuffer;
     OWLBuffer meshBuffer;
+    OWLBuffer lightBuffer;
+    OWLBuffer lightEntitiesBuffer;
     OWLBuffer instanceToEntityMapBuffer;
 
     OWLRayGen rayGen;
@@ -225,6 +227,8 @@ void initializeOptix(bool headless)
         { "cameras",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, cameras)},
         { "materials",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
         { "meshes",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
+        { "lights",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lights)},
+        { "lightEntities",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
         { "instanceToEntityMap", OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
         { /* sentinel to mark end of list */ }
     };
@@ -248,12 +252,16 @@ void initializeOptix(bool headless)
     OD.cameraBuffer    = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),    MAX_CAMERAS,    nullptr);
     OD.materialBuffer  = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),  MAX_MATERIALS,  nullptr);
     OD.meshBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),      MAX_MESHES,     nullptr);
+    OD.lightBuffer     = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),     MAX_LIGHTS,     nullptr);
+    OD.lightEntitiesBuffer            = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),        1,     nullptr);
     OD.instanceToEntityMapBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),        1,     nullptr);
     owlLaunchParamsSetBuffer(OD.launchParams, "entities",   OD.entityBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "transforms", OD.transformBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "cameras",    OD.cameraBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "materials",  OD.materialBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "meshes",     OD.meshBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "lights",     OD.lightBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "lightEntities", OD.lightEntitiesBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "instanceToEntityMap", OD.instanceToEntityMapBuffer);
 
 
@@ -315,6 +323,7 @@ void updateComponents()
     if (Camera::areAnyDirty()) resetAccumulation();
     if (Transform::areAnyDirty()) resetAccumulation();
     if (Entity::areAnyDirty()) resetAccumulation();
+    if (Light::areAnyDirty()) resetAccumulation();
 
     // Build / Rebuild BLAS
     if (Mesh::areAnyDirty()) {
@@ -377,12 +386,26 @@ void updateComponents()
         owlLaunchParamsSetGroup(OD.launchParams, "world", OD.tlas);
         owlBuildSBT(OD.context);
     }
+
+    if (Entity::areAnyDirty()) {
+        Entity* entities = Entity::getFront();
+        std::vector<uint32_t> lightEntities;
+        for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
+            if (!entities[eid].isInitialized()) continue;
+            if (!entities[eid].getTransform()) continue;
+            if (!entities[eid].getLight()) continue;
+            lightEntities.push_back(eid);
+        }
+        owlBufferResize(OptixData.lightEntitiesBuffer, lightEntities.size());
+        owlBufferUpload(OptixData.lightEntitiesBuffer, lightEntities.data());
+    }
     
     Entity::updateComponents();
     Transform::updateComponents();
     Camera::updateComponents();
     Mesh::updateComponents();
     Material::updateComponents();
+    Light::updateComponents();
 
     // For now, just copy everything each frame. Later we can check if any components are dirty, and be more conservative in uploading data
     owlBufferUpload(OptixData.entityBuffer,    Entity::getFrontStruct());
@@ -390,6 +413,7 @@ void updateComponents()
     owlBufferUpload(OptixData.meshBuffer,      Mesh::getFrontStruct());
     owlBufferUpload(OptixData.materialBuffer,  Material::getFrontStruct());
     owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
+    owlBufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());
 }
 
 void updateLaunchParams()

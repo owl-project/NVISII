@@ -10,6 +10,7 @@
 #include <visii/material_struct.h>
 #include <visii/camera_struct.h>
 #include <visii/mesh_struct.h>
+#include <visii/light_struct.h>
 
 struct LaunchParams {
     glm::ivec2 frameSize;
@@ -24,5 +25,7 @@ struct LaunchParams {
     MaterialStruct  *materials = nullptr;
     CameraStruct    *cameras = nullptr;
     MeshStruct      *meshes = nullptr;
+    LightStruct     *lights = nullptr;
+    uint32_t        *lightEntities = nullptr;
     uint32_t        *instanceToEntityMap = nullptr;
 };

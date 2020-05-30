@@ -21,7 +21,7 @@ public:
     /** Constructs a light component which emits a plausible light color based on standard temperature measurement. 
      * \returns a reference to a light component
      * \param name A unique name for this light
-     * \param kelvin The temperature of the black body light. Typical values range from 1000K (very warm) to 9000K (very cold).
+     * \param kelvin The temperature of the black body light. Typical values range from 1000K (very warm) to 12000K (very cold).
      * \param intensity How powerful the light source is in emitting light
     */
     static Light* createFromTemperature(std::string name, float kelvin, float intensity);
@@ -103,7 +103,7 @@ public:
     void setColor(glm::vec3 color);
 
     /** Sets a realistic emission color via a temperature.
-     * \param kelvin The temperature of the black body light. Typical values range from 1000K (very warm) to 9000K (very cold).
+     * \param kelvin The temperature of the black body light. Typical values range from 1000K (very warm) to 12000K (very cold).
     */
     void setTemperature(float kelvin);
 
