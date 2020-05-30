@@ -21,7 +21,7 @@ public:
     /** Constructs a light component which emits a plausible light color based on standard temperature measurement. 
      * \returns a reference to a light component
      * \param name A unique name for this light
-     * \param kelvin The temperature of the black body light. Typical values range from 1000K (very warm) to 1000K (very cold).
+     * \param kelvin The temperature of the black body light. Typical values range from 1000K (very warm) to 9000K (very cold).
      * \param intensity How powerful the light source is in emitting light
     */
     static Light* createFromTemperature(std::string name, float kelvin, float intensity);
@@ -47,7 +47,7 @@ public:
     static LightStruct* getFrontStruct();
 
     /** \returns a pointer to the table of light components */
-    static Material* getFront();
+    static Light* getFront();
 
     /** \returns the number of allocated lights */
     static uint32_t getCount();
@@ -62,9 +62,6 @@ public:
 
     /** Allocates the tables used to store all light components */
     static void initializeFactory();
-
-    /* Returns true only if static resources are initialized */
-    static bool IsInitialized();
 
     /** \return True if the tables used to store all light components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
@@ -84,6 +81,12 @@ public:
     /** \return True if the light has not been modified since the previous frame, and False otherwise */
     bool isClean() { return !dirty; }
 
+    /** Tags the current component as being modified since the previous frame. */
+    void markDirty();
+
+    /** Tags the current component as being unmodified since the previous frame. */
+    void markClean() { dirty = false; }
+
     /** Returns a json string representation of the current component */
     std::string toString();
 
@@ -100,7 +103,7 @@ public:
     void setColor(glm::vec3 color);
 
     /** Sets a realistic emission color via a temperature.
-     * \param kelvin The temperature of the black body light. Typical values range from 1000K (very warm) to 1000K (very cold).
+     * \param kelvin The temperature of the black body light. Typical values range from 1000K (very warm) to 9000K (very cold).
     */
     void setTemperature(float kelvin);
 
@@ -109,20 +112,20 @@ public:
     */
     void setIntensity(float intensity);
     
-    /** In the case of disk and quad area lights, enables or disables light from emitting from one or both sides. 
-     * \param double_sided If True, emits light from both front and back sides. Otherwise, light will only emit in the forward direction.
-    */
-    void doubleSided(bool double_sided);
+    // /** In the case of disk and quad area lights, enables or disables light from emitting from one or both sides. 
+    //  * \param double_sided If True, emits light from both front and back sides. Otherwise, light will only emit in the forward direction.
+    // */
+    // void doubleSided(bool double_sided);
     
-    /** In the case of rod area lights, enables or disables light from coming from the ends of the rod. 
-     * \param show_end_caps If True, emits light from the end caps of a rod area light. Otherwise, end caps do not emit light.
-    */
-    void showEndCaps(bool show_end_caps);
+    // /** In the case of rod area lights, enables or disables light from coming from the ends of the rod. 
+    //  * \param show_end_caps If True, emits light from the end caps of a rod area light. Otherwise, end caps do not emit light.
+    // */
+    // void showEndCaps(bool show_end_caps);
 
     /** Enables or disables casting shadows from the current light.
      * \aram cast_shadows If True, the light can be occluded, and will cast shadows. Otherwise, light cannot be occluded, and shadows will not be cast.
     */
-    void castShadows(bool cast_shadows);
+    // void castShadows(bool cast_shadows);
 
     // /** Toggles the light on or off 
     //  * \param disabled If True, disables the current light component from emitting light. Otherwise, the light will illuminate objects like normal.
@@ -138,19 +141,19 @@ public:
     // void setConeSoftness(float softness);
 
     /** Make the light act as a point light */
-    void usePoint();
+    // void usePoint();
 
-    /** Make the light act as a plane (or rectangle) area light */
-    void usePlane();
+    // /** Make the light act as a plane (or rectangle) area light */
+    // void usePlane();
 
-    /** Make the light act as a disk area light */
-    void useDisk();
+    // /** Make the light act as a disk area light */
+    // void useDisk();
 
-    /** Make the light act as a rod area light */
-    void useRod();
+    // /** Make the light act as a rod area light */
+    // void useRod();
 
-    /** Make the light act as a sphere area light */
-    void useSphere();
+    // /** Make the light act as a sphere area light */
+    // void useSphere();
 
 
 private:

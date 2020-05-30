@@ -238,14 +238,6 @@ include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
 include(configure_cuda)
 
-message(WARN "python library variable state")
-message(WARN ${Python_Development_FOUND})
-message(WARN ${Python_LIBRARY_DIRS})
-message(WARN ${Python_LIBRARIES})
-message(WARN ${Python_LIBRARY_RELEASE})
-message(WARN ${Python_LIBRARY_DEBUG})
-
-
 # add libraries to a list for linking
 set (
   LIBRARIES

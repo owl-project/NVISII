@@ -82,7 +82,7 @@ class Material : public StaticFactory
     /** Frees any tables used to store material components */
     static void cleanUp();
 
-    /** \return True if the material has been modified since the previous frame, and False otherwise */
+    /** \return True if this material has been modified since the previous frame, and False otherwise */
     bool isDirty() { return dirty; }
     
     /** \return True if any the material has been modified since the previous frame, and False otherwise */

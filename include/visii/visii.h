@@ -4,6 +4,7 @@
 #include <visii/material.h>
 #include <visii/mesh.h>
 #include <visii/camera.h>
+#include <visii/light.h>
 
 /**
    Initializes various backend systems required to render scene data.

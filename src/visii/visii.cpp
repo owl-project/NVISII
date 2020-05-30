@@ -687,6 +687,7 @@ void initializeInteractive(bool windowOnTop)
     Transform::initializeFactory();
     Material::initializeFactory();
     Mesh::initializeFactory();
+    Light::initializeFactory();
 
     auto loop = [windowOnTop]() {
         ViSII.render_thread_id = std::this_thread::get_id();
@@ -753,6 +754,7 @@ void initializeHeadless()
     Transform::initializeFactory();
     Material::initializeFactory();
     Mesh::initializeFactory();
+    Light::initializeFactory();
 
     auto loop = []() {
         ViSII.render_thread_id = std::this_thread::get_id();
