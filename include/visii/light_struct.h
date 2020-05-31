@@ -21,9 +21,9 @@ using namespace glm;
 // #endif
 
 struct LightStruct {
-    float r;
-    float g;
-    float b;
-    float intensity;
-    uint32_t flags;
+    float r = 0.f;
+    float g = 0.f;
+    float b = 0.f;
+    float intensity = 0.f;
+    uint32_t flags = 0;
 };

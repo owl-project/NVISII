@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
+#include <glm/gtx/norm.hpp>
 
 #include <visii/entity_struct.h>
 #include <visii/transform_struct.h>

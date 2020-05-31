@@ -181,7 +181,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
 
 __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &hit_p,
     const float3 &n, const float3 &v_x, const float3 &v_y, const float3 &w_o,
-    const LightStruct *lights, const EntityStruct *entities, const TransformStruct *transforms,
+    const LightStruct *lights, const EntityStruct *entities, const TransformStruct *transforms, const MeshStruct *meshes,
     const uint32_t* light_entities, const uint32_t num_lights, 
     uint16_t &ray_count, LCGRand &rng)
 {
@@ -200,20 +200,26 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
     
     LightStruct light = lights[light_entity.light_id];
     TransformStruct transform = transforms[light_entity.transform_id];
+    MeshStruct mesh;
+    bool is_area_light = false;
+    if ((light_entity.mesh_id >= 0) && (light_entity.mesh_id < MAX_MESHES)) {
+        mesh = meshes[light_entity.mesh_id];
+        is_area_light = true;
+    };
+
     float3 light_emission = make_float3(light.r, light.g, light.b) * light.intensity;
 
-    const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT
-        | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT
-        | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT;
+    const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
+        // | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
+        // | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT;
 
+    if (!is_area_light)
     // Sample the light to compute an incident light ray to this point
     {
         float3 light_pos = make_float3(
             transform.localToWorld[3][0], 
             transform.localToWorld[3][1], 
             transform.localToWorld[3][2]);
-                // sample_quad_light_position(light,
-                // make_float2(lcg_randomf(rng), lcg_randomf(rng)));
         float3 light_dir = light_pos - hit_p;
         float light_dist = length(light_dir);
         light_dir = normalize(light_dir);
@@ -223,10 +229,10 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
 
         // uint32_t shadow_hit = 1;
         RayPayload payload;
-        payload.entityID = light_entity_id;
+        payload.entityID = -1;
         owl::Ray ray;
         ray.tmin = EPSILON * 10.f;
-        ray.tmax = light_dist;
+        ray.tmax = light_dist + 1.f;
         ray.origin = owl::vec3f(hit_p.x, hit_p.y, hit_p.z) ;
         ray.direction = owl::vec3f(light_dir.x, light_dir.y, light_dir.z);
         owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
@@ -234,44 +240,154 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
                         /*prd*/ payload,
                         occlusion_flags);
                             
-    //     optixTrace(launch_params.scene, hit_p, light_dir, EPSILON, light_dist, 0.f,
-    //             0xff, occlusion_flags, PRIMARY_RAY, 1, OCCLUSION_RAY,
-    //             shadow_hit);
     // #ifdef REPORT_RAY_STATS
     //     ++ray_count;
     // #endif
-        if (light_pdf >= EPSILON && bsdf_pdf >= EPSILON && payload.entityID != light_entity_id) {
+        if (light_pdf >= EPSILON && bsdf_pdf >= EPSILON && payload.entityID == light_entity_id) {
             float3 bsdf = disney_brdf(mat, n, w_o, light_dir, v_x, v_y);
-            float w = 1.f; // power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf); // NOTE: TEMPORARILY DIABLING POWER HEURISTIC SINCE FOR NOW ONLY DOING POINT LIGHTS
+            // note, MIS only applies to area lights. Temporarily disabled for now.
+            float w = 1.0f;
             illum = bsdf * light_emission * fabs(dot(light_dir, n)) * w / light_pdf;
         }
     }
+    else 
+    {
+        // this is terribly unoptimized. 
+        vec4 bbmin = mesh.bbmin;
+        vec4 bbmax = mesh.bbmax;
+        vec4 p[8] = {
+            transform.localToWorld * vec4(bbmin.x, bbmin.y, bbmin.z, 1.0f),
+            transform.localToWorld * vec4(bbmax.x, bbmin.y, bbmin.z, 1.0f),
+            transform.localToWorld * vec4(bbmin.x, bbmax.y, bbmin.z, 1.0f),
+            transform.localToWorld * vec4(bbmax.x, bbmax.y, bbmin.z, 1.0f),
+            transform.localToWorld * vec4(bbmin.x, bbmin.y, bbmax.z, 1.0f),
+            transform.localToWorld * vec4(bbmax.x, bbmin.y, bbmax.z, 1.0f),
+            transform.localToWorld * vec4(bbmin.x, bbmax.y, bbmax.z, 1.0f),
+            transform.localToWorld * vec4(bbmax.x, bbmax.y, bbmax.z, 1.0f)
+        };
 
-    // Sample the BRDF to compute a light sample as well
-    // {
-    //     float3 w_i;
-    //     float bsdf_pdf;
-    //     float3 bsdf = sample_disney_brdf(mat, n, w_o, v_x, v_y, rng, w_i, bsdf_pdf);
+        ivec4 q[6] = {
+            ivec4(0,2,6,4), // X -
+            ivec4(1,5,7,3), // X +
+            
+            ivec4(0,2,3,1), // Y -
+            ivec4(4,5,7,6), // Y +
 
-    //     float light_dist;
-    //     float3 light_pos;
-    //     if (!all_zero(bsdf) && bsdf_pdf >= EPSILON && quad_intersect(light, hit_p, w_i, light_dist, light_pos)) {
-    //         float light_pdf = quad_light_pdf(light, light_pos, hit_p, w_i);
-    //         if (light_pdf >= EPSILON) {
-    //             float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
-    //             uint32_t shadow_hit = 1;
-    //             optixTrace(launch_params.scene, hit_p, w_i, EPSILON, light_dist, 0.f,
-    //                     0xff, occlusion_flags, PRIMARY_RAY, 1, OCCLUSION_RAY,
-    //                     shadow_hit);
-    // // #ifdef REPORT_RAY_STATS
-    // //             ++ray_count;
-    // // #endif
-    //             if (!shadow_hit) {
-    //                 illum = illum + bsdf * light_emission * fabs(dot(w_i, n)) * w / bsdf_pdf;
-    //             }
-    //         }
-    //     }
-    // }
+            ivec4(0,4,5,1), // Z -
+            ivec4(2,3,7,6), // Z +
+        };
+
+        float maxDist = 0.f;
+        uint32_t farPt = 0;
+        for (uint32_t i = 0; i < 8; ++i) {
+            float dist = glm::distance(vec3(p[i]), vec3(hit_p.x, hit_p.y, hit_p.z));
+            if (maxDist < dist) {
+                maxDist = dist;
+                farPt = i;
+            }
+        }
+
+        ivec4 farQ[3];
+        int temp = 0;
+        for (uint32_t i = 0; i < 6; ++i) {
+            if ( (q[i].x == farPt) ||
+                 (q[i].y == farPt) ||
+                 (q[i].z == farPt) ||
+                 (q[i].w == farPt) ) {
+                    farQ[temp] = q[i];
+                    temp += 1;
+                }
+        }
+
+        float areas[3];
+        float sum = 0;
+        for (uint32_t i = 0; i < 3; ++i) {
+            float width = glm::distance(p[farQ[i][0]], p[farQ[i][1]]);
+	        float height = glm::distance(p[farQ[i][0]], p[farQ[i][3]]);
+            areas[i] = width * height;
+            sum += areas[i];
+        }
+
+        // ivec4 q_;
+        // float qpdf;
+        // float area;
+        // float random = lcg_randomf(rng);
+        // if (random < (areas[0] / sum)) {
+        //     q_ = farQ[0];
+        //     qpdf = (1.f / 3.f) * (areas[0] / sum);
+        //     area = areas[0];
+        // } else if (random < ((areas[0] + areas[1]) / sum)) {
+        //     q_ = farQ[1];
+        //     qpdf = (1.f / 3.f) * (areas[1] / sum);
+        //     area = areas[1];
+        // } else {
+        //     q_ = farQ[2];
+        //     qpdf = (1.f / 3.f) * (areas[2] / sum);
+        //     area = areas[2];
+        // }
+
+        int random = 5;//int(min(lcg_randomf(rng) * 3.f, 2.f));
+        ivec4 q_ = farQ[random]; 
+        float qpdf = 1.0f;//1.0f / 3.0f;
+        float area = areas[random];
+        
+        float light_pdf;
+
+        // Sample the light to compute an incident light ray to this point
+        {    
+            vec3 pos = glm::vec3(hit_p.x, hit_p.y, hit_p.z);
+            vec3 normal = glm::vec3(n.x, n.y, n.z);
+            vec3 dir; 
+            sampleDirectLight(pos, normal, lcg_randomf(rng), lcg_randomf(rng), 
+            transform.localToWorld, transform.worldToLocal, bbmin, bbmax, dir, light_pdf);
+            float dotNWi = fabs(dot( dir, normal ));
+
+            if ((light_pdf > EPSILON) && (dotNWi > EPSILON)){
+                float3 light_dir = make_float3(dir.x, dir.y, dir.z);//light_pos - hit_p;
+                light_dir = normalize(light_dir);
+                float bsdf_pdf = disney_pdf(mat, n, w_o, light_dir, v_x, v_y);
+                if (bsdf_pdf > EPSILON) {
+                    RayPayload payload;
+                    payload.entityID = -1;
+                    owl::Ray ray;
+                    ray.tmin = EPSILON * 10.f;
+                    ray.tmax = 1e20f;
+                    ray.origin = hit_p;
+                    ray.direction = light_dir;
+                    owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
+                    bool visible = (payload.entityID == light_entity_id);
+                    if (visible) {
+                        float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
+                        float3 bsdf = disney_brdf(mat, n, w_o, light_dir, v_x, v_y);
+						float3 Li = light_emission / light_pdf;
+                        illum = (bsdf * Li * fabs(dotNWi));
+                    }
+                }
+            }
+        }
+
+        // Sample the BRDF to compute a light sample as well
+        {
+            float3 w_i;
+            float bsdf_pdf;
+            float3 bsdf = sample_disney_brdf(mat, n, w_o, v_x, v_y, rng, w_i, bsdf_pdf);
+            if ((light_pdf > EPSILON) && !all_zero(bsdf) && bsdf_pdf >= EPSILON) {        
+                RayPayload payload;
+                payload.entityID = -1;
+                owl::Ray ray;
+                ray.tmin = EPSILON * 10.f;
+                ray.tmax = 1e20f;
+                ray.origin = owl::vec3f(hit_p.x, hit_p.y, hit_p.z) ;
+                ray.direction = owl::vec3f(w_i.x, w_i.y, w_i.z);
+                owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
+                bool visible = (payload.entityID == light_entity_id);
+                if (visible) {
+                    float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
+                    illum = illum + bsdf * light_emission * fabs(dot(w_i, n)) * w / ((payload.tHit * payload.tHit) * bsdf_pdf * qpdf);
+                }
+            }
+        }
+    }
     return illum;
 }
 
@@ -291,7 +407,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
 
     float3 accum_illum = make_float3(0.f);
-    #define SPP 4
+    #define SPP 1
     for (uint32_t rid = 0; rid < SPP; ++rid) {
 
         owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng);
@@ -318,7 +434,21 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
 
             EntityStruct entity = optixLaunchParams.entities[payload.entityID];
-            MaterialStruct entityMaterial = optixLaunchParams.materials[entity.material_id];
+            MaterialStruct entityMaterial;
+            LightStruct entityLight;
+            if (entity.material_id >= 0 && entity.material_id < MAX_MATERIALS) {
+                entityMaterial = optixLaunchParams.materials[entity.material_id];
+            }
+            if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
+                // Don't double count lights, since we're doing NEE
+                // Area lights are only visible outside of NEE sampling when hit on first bounce.
+                // TODO: shade light sources, adding on emission later.
+                if (bounce == 0) {
+                    entityLight = optixLaunchParams.lights[entity.light_id];
+                    illum = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
+                } 
+                break;
+            }
             TransformStruct entityTransform = optixLaunchParams.transforms[entity.transform_id];
             loadMaterial(entityMaterial, payload.uv, mat);
 
@@ -341,6 +471,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     optixLaunchParams.lights, 
                     optixLaunchParams.entities, 
                     optixLaunchParams.transforms, 
+                    optixLaunchParams.meshes, 
                     optixLaunchParams.lightEntities,
                     optixLaunchParams.numLightEntities, 
                     ray_count, rng);

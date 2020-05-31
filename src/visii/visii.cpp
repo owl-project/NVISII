@@ -377,7 +377,7 @@ void updateComponents()
             if (!entities[eid].isInitialized()) continue;
             if (!entities[eid].getTransform()) continue;
             if (!entities[eid].getMesh()) continue;
-            if (!entities[eid].getMaterial()) continue;
+            if (!entities[eid].getMaterial() && !entities[eid.getLight()]) continue;
 
             OWLGroup blas = OD.meshes[entities[eid].getMesh()->getId()].blas;
             glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix();
