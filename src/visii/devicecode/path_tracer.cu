@@ -266,7 +266,7 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
             glm::mat4 tfmInv = glm::inverse(tfm);
             for (int ittr = 0; ittr < 6; ++ittr) {
                 sampleDirectLight(pos, normal, 
-                    lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng),
+                    lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng),
                     tfm, tfmInv, 
                     bbmin * transform.scale, bbmax * transform.scale, dir, light_pdf);
                 if ((dot(dir, normal) < EPSILON) && (light_pdf > EPSILON)) {

@@ -27,7 +27,7 @@ __device__ vec4 sample_quad_light_position(vec4 q0, vec4 q1, vec4 q2, vec4 q3, f
 	return mix(t0, t1, samples.y);
 	
 	// return samples.x * light.v_x * light.width
-		// + samples.y * light.v_y * light.height + light.position;
+	// + samples.y * light.v_y * light.height + light.position;
 }
 
 /* Compute the PDF of sampling the sampled point p light with the ray specified by orig and dir,
@@ -91,7 +91,7 @@ void SphQuadInit(vec3 s, vec3 ex, vec3 ey, vec3 o, SphQuad &squad) {
     squad.y = ey / eyl;
     squad.z = cross(squad.x, squad.y);
     // compute rectangle coords in local reference system
-    vec3 d = s - o;
+    vec3 d = (s - o);
     squad.z0 = dot(d, squad.z);
     // flip ’z’ to make it point against ’Q’
     if (squad.z0 > 0.) {
@@ -157,6 +157,7 @@ void sampleDirectLight( vec3 pos,
                         float rand1,
                         float rand2, 
                         float rand3, 
+                        float rand4, 
 						mat4 lightTransform,
 						mat4 lightTransformInv,
 						vec3 bbmin,
@@ -178,86 +179,46 @@ void sampleDirectLight( vec3 pos,
 	// 	vec3(bbmin.x, bbmax.y, bbmax.z),
 	// 	vec3(bbmax.x, bbmax.y, bbmax.z)
 	// };
+	// {
+	// 	vec3 n = cross(normalize(e1), normalize(e2));
+	// 	if (abs(dot(n, pos - s)) < EPSILON) {
+	// 		return;
+	// 	}
+	// }
 
 	pos = vec3( lightTransformInv * vec4(pos, 1.0) );
+	normal = vec3( lightTransformInv * vec4(normal, 0.0) );
 	bool minCloser = (distance(bbmin , pos) < distance(bbmax , pos));
 
 	float nPlanes = 6;
 
 	vec3 e1, e2;
 	rand3 *= nPlanes;
-	vec3 s;
+	vec3 s1, s2, s, c1, c2;
+	float dist1, dist2;
 	if (0.f <= rand3 && rand3 < 1.f) 
 	{
 		e1 = vec3(0., bbmax.y - bbmin.y, 0.);
 		e2 = vec3(0., 0., bbmax.z - bbmin.z);
-		s = bbmin;
-		{
-			vec3 n = cross(normalize(e1), normalize(e2));
-			if (abs(dot(n, pos - s)) < EPSILON) {
-				return;
-			}
-		}
+		s1 = bbmin;
+		s2 = bbmin + vec3(bbmax.x - bbmin.x, 0.0, 0.0);
+		s = (rand4 < .5) ? s1 : s2;
 	}
 	if (1.f <= rand3 && rand3 < 2.f) 
 	{
 		e1 = vec3(bbmax.x - bbmin.x, 0., 0.);
 		e2 = vec3(0., 0., bbmax.z - bbmin.z);
-		s = bbmin;
-		{
-			vec3 n = cross(normalize(e1), normalize(e2));
-			if (abs(dot(n, pos - s)) < EPSILON) {
-				return;
-			}
-		}
+		s1 = bbmin;
+		s2 = bbmin + vec3(0.0, bbmax.y - bbmin.y, 0.0);
+		s = (rand4 < .5) ? s1 : s2;
 	}
 	if (2.f <= rand3 && rand3 < 3.f) 
 	{
 		e1 = vec3(bbmax.x - bbmin.x, 0., 0.);
 		e2 = vec3(0., bbmax.y - bbmin.y, 0.);
-		s = bbmin;
-		{
-			vec3 n = cross(normalize(e1), normalize(e2));
-			if (abs(dot(n, pos - s)) < EPSILON) {
-				return;
-			}
-		}
-	}
-	if (3.f <= rand3 && rand3 < 4.f) 
-	{
-		e1 = -vec3(0., bbmax.y - bbmin.y, 0.);
-		e2 = -vec3(0., 0., bbmax.z - bbmin.z);
-		s = bbmax;
-		{
-			vec3 n = cross(normalize(e1), normalize(e2));
-			if (abs(dot(n, pos - s)) < EPSILON) {
-				return;
-			}
-		}
-	}
-	if (4.f <= rand3 && rand3 < 5.f) 
-	{
-		e1 = -vec3(bbmax.x - bbmin.x, 0., 0.);
-		e2 = -vec3(0., 0., bbmax.z - bbmin.z);
-		s = bbmax;
-		{
-			vec3 n = cross(normalize(e1), normalize(e2));
-			if (abs(dot(n, pos - s)) < EPSILON) {
-				return;
-			}
-		}
-	}
-	if (5.f <= rand3 && rand3 < 6.f) 
-	{
-		e1 = -vec3(bbmax.x - bbmin.x, 0., 0.);
-		e2 = -vec3(0., bbmax.y - bbmin.y, 0.);
-		s = bbmax;
-		{
-			vec3 n = cross(normalize(e1), normalize(e2));
-			if (abs(dot(n, pos - s)) < EPSILON) {
-				return;
-			}
-		}
+		s1 = bbmin;
+		s2 = bbmin + vec3(0.0, 0.0, bbmax.z - bbmin.z);
+		s = (rand4 < .5) ? s1 : s2;
 	}
 
 	SphQuad squad;
