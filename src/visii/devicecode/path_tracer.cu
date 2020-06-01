@@ -253,84 +253,8 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
     else 
     {
         // this is terribly unoptimized. 
-        vec4 bbmin = mesh.bbmin;
-        vec4 bbmax = mesh.bbmax;
-        vec4 p[8] = {
-            transform.localToWorld * vec4(bbmin.x, bbmin.y, bbmin.z, 1.0f),
-            transform.localToWorld * vec4(bbmax.x, bbmin.y, bbmin.z, 1.0f),
-            transform.localToWorld * vec4(bbmin.x, bbmax.y, bbmin.z, 1.0f),
-            transform.localToWorld * vec4(bbmax.x, bbmax.y, bbmin.z, 1.0f),
-            transform.localToWorld * vec4(bbmin.x, bbmin.y, bbmax.z, 1.0f),
-            transform.localToWorld * vec4(bbmax.x, bbmin.y, bbmax.z, 1.0f),
-            transform.localToWorld * vec4(bbmin.x, bbmax.y, bbmax.z, 1.0f),
-            transform.localToWorld * vec4(bbmax.x, bbmax.y, bbmax.z, 1.0f)
-        };
-
-        ivec4 q[6] = {
-            ivec4(0,2,6,4), // X -
-            ivec4(1,5,7,3), // X +
-            
-            ivec4(0,2,3,1), // Y -
-            ivec4(4,5,7,6), // Y +
-
-            ivec4(0,4,5,1), // Z -
-            ivec4(2,3,7,6), // Z +
-        };
-
-        float maxDist = 0.f;
-        uint32_t farPt = 0;
-        for (uint32_t i = 0; i < 8; ++i) {
-            float dist = glm::distance(vec3(p[i]), vec3(hit_p.x, hit_p.y, hit_p.z));
-            if (maxDist < dist) {
-                maxDist = dist;
-                farPt = i;
-            }
-        }
-
-        ivec4 farQ[3];
-        int temp = 0;
-        for (uint32_t i = 0; i < 6; ++i) {
-            if ( (q[i].x == farPt) ||
-                 (q[i].y == farPt) ||
-                 (q[i].z == farPt) ||
-                 (q[i].w == farPt) ) {
-                    farQ[temp] = q[i];
-                    temp += 1;
-                }
-        }
-
-        float areas[3];
-        float sum = 0;
-        for (uint32_t i = 0; i < 3; ++i) {
-            float width = glm::distance(p[farQ[i][0]], p[farQ[i][1]]);
-	        float height = glm::distance(p[farQ[i][0]], p[farQ[i][3]]);
-            areas[i] = width * height;
-            sum += areas[i];
-        }
-
-        // ivec4 q_;
-        // float qpdf;
-        // float area;
-        // float random = lcg_randomf(rng);
-        // if (random < (areas[0] / sum)) {
-        //     q_ = farQ[0];
-        //     qpdf = (1.f / 3.f) * (areas[0] / sum);
-        //     area = areas[0];
-        // } else if (random < ((areas[0] + areas[1]) / sum)) {
-        //     q_ = farQ[1];
-        //     qpdf = (1.f / 3.f) * (areas[1] / sum);
-        //     area = areas[1];
-        // } else {
-        //     q_ = farQ[2];
-        //     qpdf = (1.f / 3.f) * (areas[2] / sum);
-        //     area = areas[2];
-        // }
-
-        int random = 5;//int(min(lcg_randomf(rng) * 3.f, 2.f));
-        ivec4 q_ = farQ[random]; 
-        float qpdf = 1.0f;//1.0f / 3.0f;
-        float area = areas[random];
-        
+        vec3 bbmin = vec3(mesh.bbmin);
+        vec3 bbmax = vec3(mesh.bbmax);       
         float light_pdf;
 
         // Sample the light to compute an incident light ray to this point
@@ -338,9 +262,18 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
             vec3 pos = glm::vec3(hit_p.x, hit_p.y, hit_p.z);
             vec3 normal = glm::vec3(n.x, n.y, n.z);
             vec3 dir; 
-            sampleDirectLight(pos, normal, lcg_randomf(rng), lcg_randomf(rng), 
-            transform.localToWorld, transform.worldToLocal, bbmin, bbmax, dir, light_pdf);
-            float dotNWi = fabs(dot( dir, normal ));
+            glm::mat4 tfm =  glm::translate(glm::mat4(1.0f), transform.translation) * glm::toMat4(transform.rotation);
+            glm::mat4 tfmInv = glm::inverse(tfm);
+            for (int ittr = 0; ittr < 6; ++ittr) {
+                sampleDirectLight(pos, normal, 
+                    lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng),
+                    tfm, 
+                    tfmInv, 
+                    bbmin * transform.scale, bbmax * transform.scale, dir, light_pdf);
+                if (light_pdf > 0.0) break;
+            }
+            
+            float dotNWi = dot(dir, normal);
 
             if ((light_pdf > EPSILON) && (dotNWi > EPSILON)){
                 float3 light_dir = make_float3(dir.x, dir.y, dir.z);//light_pos - hit_p;
@@ -383,7 +316,7 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
                 bool visible = (payload.entityID == light_entity_id);
                 if (visible) {
                     float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
-                    illum = illum + bsdf * light_emission * fabs(dot(w_i, n)) * w / ((payload.tHit * payload.tHit) * bsdf_pdf * qpdf);
+                    illum = illum + bsdf * light_emission * fabs(dot(w_i, n)) * w / ((payload.tHit * payload.tHit) * bsdf_pdf);
                 }
             }
         }

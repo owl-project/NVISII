@@ -71,6 +71,7 @@ __device__ bool quad_intersect(const QuadLight &light, const float3 &orig, const
 }
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 using namespace glm;
 struct SphQuad {
     vec3 o, x, y, z; // local reference system ’R’
@@ -145,7 +146,6 @@ void SphQuadSample(vec3 x, SphQuad squad, float u, float v, vec3 &w, float &pdf)
     float hv = h0 + v * (h1-h0), hv2 = hv*hv;
     float yv = (hv2 < 1.-EPSILON) ? (hv*d)/sqrt(1.-hv2) : squad.y1;
     // 4. transform (xu,yv,z0) to world coords
-    
     vec3 p = (squad.o + xu*squad.x + yv*squad.y + squad.z0*squad.z);
     w = normalize(p - x);
     pdf = 1. / squad.S;
@@ -154,46 +154,119 @@ void SphQuadSample(vec3 x, SphQuad squad, float u, float v, vec3 &w, float &pdf)
 __device__
 void sampleDirectLight( vec3 pos,
                        	vec3 normal,
-                        float Xi1,
-                        float Xi2, 
-						mat4 ZQuadTransform,
-						mat4 ZQuadTransformInv,
+                        float rand1,
+                        float rand2, 
+                        float rand3, 
+						mat4 lightTransform,
+						mat4 lightTransformInv,
 						vec3 bbmin,
 						vec3 bbmax,
                        	vec3 &dir,
                        	float &pdf ) 
-{
-    float pdfA;
-    float d2;
-    float aCosThere;
-    float theta;
-    float thetaPdf;
-    float h;
-    float hPdf;
-    
-    //convert position to object space
-    pos = vec3( ZQuadTransformInv * vec4(pos, 1.0) );
-    normal = vec3( ZQuadTransformInv * vec4(normal, 0.0) );
-    
-    { 
-        vec2 pmin = vec2(bbmin.x /* min x */, bbmin.y /* min y */);
-        vec2 pmax = vec2(bbmax.x /* max x */, bbmax.y /* max y */);
-        vec3 w;
-        float ww;
-        {
-            vec3 s = vec3(pmin, 0.0);
-            vec3 ex = vec3(pmax.x - pmin.x, 0., 0.);
-            vec3 ey = vec3(0., pmax.y - pmin.y, 0.);
-            SphQuad squad;
-            SphQuadInit(s, ex, ey, pos, squad);
-			SphQuadSample(pos, squad, Xi1, Xi2, w, pdf);
-        }
-        
-		dir = w;
-    } 
+{	
+	// pick one of the three AABB orientations to sample from.
+	// glm::mat4 rotation, rotationInv;
+	// ivec4 q[2];
 	
-    //convert dir to world space
-    dir = vec3(ZQuadTransform*vec4(dir,0.0) );
+	// vec3 p[8] = {
+	// 	vec3(bbmin.x, bbmin.y, bbmin.z),
+	// 	vec3(bbmax.x, bbmin.y, bbmin.z),
+	// 	vec3(bbmin.x, bbmax.y, bbmin.z),
+	// 	vec3(bbmax.x, bbmax.y, bbmin.z),
+	// 	vec3(bbmin.x, bbmin.y, bbmax.z),
+	// 	vec3(bbmax.x, bbmin.y, bbmax.z),
+	// 	vec3(bbmin.x, bbmax.y, bbmax.z),
+	// 	vec3(bbmax.x, bbmax.y, bbmax.z)
+	// };
+
+	pos = vec3( lightTransformInv * vec4(pos, 1.0) );
+	bool minCloser = (distance(bbmin , pos) < distance(bbmax , pos));
+
+	float nPlanes = 6;
+
+	vec3 e1, e2;
+	rand3 *= nPlanes;
+	vec3 s;
+	if (0.f <= rand3 && rand3 < 1.f) 
+	{
+		e1 = vec3(0., bbmax.y - bbmin.y, 0.);
+		e2 = vec3(0., 0., bbmax.z - bbmin.z);
+		s = bbmin;
+		{
+			vec3 n = cross(normalize(e1), normalize(e2));
+			if (abs(dot(n, pos - s)) < EPSILON) {
+				return;
+			}
+		}
+	}
+	if (1.f <= rand3 && rand3 < 2.f) 
+	{
+		e1 = vec3(bbmax.x - bbmin.x, 0., 0.);
+		e2 = vec3(0., 0., bbmax.z - bbmin.z);
+		s = bbmin;
+		{
+			vec3 n = cross(normalize(e1), normalize(e2));
+			if (abs(dot(n, pos - s)) < EPSILON) {
+				return;
+			}
+		}
+	}
+	if (2.f <= rand3 && rand3 < 3.f) 
+	{
+		e1 = vec3(bbmax.x - bbmin.x, 0., 0.);
+		e2 = vec3(0., bbmax.y - bbmin.y, 0.);
+		s = bbmin;
+		{
+			vec3 n = cross(normalize(e1), normalize(e2));
+			if (abs(dot(n, pos - s)) < EPSILON) {
+				return;
+			}
+		}
+	}
+	if (3.f <= rand3 && rand3 < 4.f) 
+	{
+		e1 = -vec3(0., bbmax.y - bbmin.y, 0.);
+		e2 = -vec3(0., 0., bbmax.z - bbmin.z);
+		s = bbmax;
+		{
+			vec3 n = cross(normalize(e1), normalize(e2));
+			if (abs(dot(n, pos - s)) < EPSILON) {
+				return;
+			}
+		}
+	}
+	if (4.f <= rand3 && rand3 < 5.f) 
+	{
+		e1 = -vec3(bbmax.x - bbmin.x, 0., 0.);
+		e2 = -vec3(0., 0., bbmax.z - bbmin.z);
+		s = bbmax;
+		{
+			vec3 n = cross(normalize(e1), normalize(e2));
+			if (abs(dot(n, pos - s)) < EPSILON) {
+				return;
+			}
+		}
+	}
+	if (5.f <= rand3 && rand3 < 6.f) 
+	{
+		e1 = -vec3(bbmax.x - bbmin.x, 0., 0.);
+		e2 = -vec3(0., bbmax.y - bbmin.y, 0.);
+		s = bbmax;
+		{
+			vec3 n = cross(normalize(e1), normalize(e2));
+			if (abs(dot(n, pos - s)) < EPSILON) {
+				return;
+			}
+		}
+	}
+
+	SphQuad squad;
+	SphQuadInit(s, e1, e2, pos, squad);
+	SphQuadSample(pos, squad, rand1, rand2, dir, pdf);
+	pdf /= float(nPlanes);
+
+	//convert dir to world space
+    dir = normalize(vec3(lightTransform * vec4(dir,0.0) ));
 }
 
 __device__
