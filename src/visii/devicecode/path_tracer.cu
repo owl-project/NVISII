@@ -267,15 +267,18 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
             for (int ittr = 0; ittr < 6; ++ittr) {
                 sampleDirectLight(pos, normal, 
                     lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng),
-                    tfm, 
-                    tfmInv, 
+                    tfm, tfmInv, 
                     bbmin * transform.scale, bbmax * transform.scale, dir, light_pdf);
-                if (light_pdf > 0.0) break;
+                if ((dot(dir, normal) < EPSILON) && (light_pdf > EPSILON)) {
+                    break;
+                }
+                // light_pdf += 1.0f / 6.0f;
+                // light_pdf
             }
             
-            float dotNWi = dot(dir, normal);
+            float dotNWi = abs(dot(dir, normal));
 
-            if ((light_pdf > EPSILON) && (dotNWi > EPSILON)){
+            if ((light_pdf > EPSILON) && (dotNWi > EPSILON)) {
                 float3 light_dir = make_float3(dir.x, dir.y, dir.z);//light_pos - hit_p;
                 light_dir = normalize(light_dir);
                 float bsdf_pdf = disney_pdf(mat, n, w_o, light_dir, v_x, v_y);
