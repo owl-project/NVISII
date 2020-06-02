@@ -1,3 +1,7 @@
+import sys, os
+os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
+sys.path.append(os.path.join(os.getcwd(), "..", "install"))
+
 import visii 
 import numpy as np 
 from PIL import Image 
@@ -8,8 +12,6 @@ import randomcolor
 
 
 NB_OBJS = 10000
-NB_LIGHTS = 20
-
 SAMPLES_PER_PIXEL = 256
 
 # WIDTH = 1920 
@@ -40,7 +42,7 @@ camera_entity = visii.entity.create(
 # camera_entity.get_camera().set_focal_distance(3.5)
 
 # Change the dome light intensity
-visii.set_dome_light_intensity(0.1)
+visii.set_dome_light_intensity(1)
 
 # set the view camera transform
 camera_entity.get_camera().set_view(
@@ -57,42 +59,12 @@ meshes = []
 
 rcolor = randomcolor.RandomColor()
 
-def add_random_light(name = 'name'):
-    global rcolor
-    obj= visii.entity.create(
-        name = name,
-        transform = visii.transform.create(name),
-        mesh = visii.mesh.create_sphere(name),
-        light = visii.light.create(name)
-    )
-    obj.get_transform().set_scale(0.5)
-
-
-    obj.get_light().set_intensity(1000000000000000)
-    obj.get_light().set_temperature(5000)
-
-    # obj.get_transform().set_position(
-    #     np.random.uniform(-1,1),
-    #     np.random.uniform(-1,1),
-    #     np.random.uniform(6,7)
-    #     )
-    # obj.get_transform().set_position(
-    #     0,
-    #     0,
-    #     2.5
-    #     )
-
-    obj.get_transform().set_position(
-        np.random.uniform(-5,5),
-        np.random.uniform(-5,5),
-        np.random.uniform(-10,3)
-        )
 def add_random_obj(name = "name"):
     global rcolor
     obj= visii.entity.create(
         name = name,
         transform = visii.transform.create(name),
-        material = visii.material.create(name),
+        material = visii.material.create(name)
     )
 
     obj_id = np.random.randint(0,16)
@@ -163,9 +135,6 @@ def add_random_obj(name = "name"):
 # create a random scene, the function defines the values
 for i in range(NB_OBJS):
     add_random_obj(str(i))
-
-for i in range(NB_LIGHTS):
-    add_random_light("l"+str(i))
 
 ################################################################
 
