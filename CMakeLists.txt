@@ -60,14 +60,13 @@ set(CMAKE_INSTALL_NAME_DIR "${RPATHS}")
 SET(CMAKE_INSTALL_NAME_DIR @executable_path)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
-# set(MY_DEFINITION 
-#     $<$<CONFIG:Debug>:definition_for_debug>
-#     $<$<CONFIG:RelWithDebInfo>:definition_for_rel_with_debug>
-#     $<$<CONFIG:Release>:definition_for_release> 
-#     $<$<CONFIG:MinSizeRel>:definition_for_tight_release>
-#     )
+set(MY_DEFINITION 
+    $<$<CONFIG:Debug>:definition_for_debug>
+    $<$<CONFIG:RelWithDebInfo>:definition_for_rel_with_debug>
+    $<$<CONFIG:Release>:definition_for_release> 
+    $<$<CONFIG:MinSizeRel>:definition_for_tight_release>
+    )
 
-# message(WARN ${MY_DEFINITION})
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Build options                                                   │
 # └──────────────────────────────────────────────────────────────────┘
@@ -145,7 +144,7 @@ if (MSVC AND NOT Python_FOUND)
 endif()
 include_directories(SYSTEM ${Python_INCLUDE_DIRS})
 
-# glm
+# # glm
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
 
 # geometry generator
@@ -229,7 +228,8 @@ set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
 find_package(OptiX REQUIRED VERSION 7)
 include_directories(${OptiX_INCLUDE})
 
-# owl
+# # owl
+set(SET_UP_CONFIGURATIONS_DONE 1)
 set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
 set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
 set(OWL_USE_TBB OFF CACHE STRING "" FORCE)
@@ -241,7 +241,7 @@ include(configure_cuda)
 # add libraries to a list for linking
 set (
   LIBRARIES
-  ${PYTHON_LIBRARY}
+  ${Python_LIBRARIES}
   generator
   ${GLFW_LIBRARIES}
   glfw
@@ -258,7 +258,14 @@ set (
   ${Python_LIBRARY_DEBUG}
 )
 endif()
-  
+if (${Python_LIBRARY_RELEASE})
+set (
+  LIBRARIES
+  ${LIBRARIES}
+  ${Python_LIBRARY_RELEASE}
+)
+endif()
+
 # If on linux, request support for atomics
 if(NOT WIN32)
   set (

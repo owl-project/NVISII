@@ -71,6 +71,7 @@ namespace std {
 
 #include "visii/camera.h"
 #include "visii/entity.h"
+#include "visii/light.h"
 #include "visii/transform.h"
 #include "visii/material.h"
 #include "visii/mesh.h"
@@ -81,6 +82,7 @@ namespace std {
 
 %feature("kwargs") camera;
 %feature("kwargs") entity;
+%feature("kwargs") light;
 %feature("kwargs") transform;
 %feature("kwargs") material;
 %feature("kwargs") mesh;
@@ -89,6 +91,7 @@ namespace std {
 %include "visii/utilities/static_factory.h"
 %include "visii/camera.h"
 %include "visii/entity.h"
+%include "visii/light.h"
 %include "visii/transform.h"
 %include "visii/material.h"
 %include "visii/mesh.h"

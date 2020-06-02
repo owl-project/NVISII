@@ -54,13 +54,21 @@ static struct OptixData {
     OWLBuffer cameraBuffer;
     OWLBuffer materialBuffer;
     OWLBuffer meshBuffer;
+    OWLBuffer lightBuffer;
+    OWLBuffer lightEntitiesBuffer;
     OWLBuffer instanceToEntityMapBuffer;
+    OWLBuffer vertexListsBuffer;
+    OWLBuffer indexListsBuffer;
+
+    uint32_t numLightEntities;
 
     OWLRayGen rayGen;
     OWLMissProg missProg;
     OWLGeomType trianglesGeomType;
     MeshData meshes[MAX_MESHES];
     OWLGroup tlas;
+
+    std::vector<uint32_t> lightEntities;
 } OptixData;
 
 static struct ViSII {
@@ -144,12 +152,24 @@ void applyStyle()
 	style->WindowRounding = 4.0f;
 }
 
+void resetAccumulation() {
+    OptixData.LP.frameID = 0;
+}
+
 void setCameraEntity(Entity* camera_entity)
 {
     if (!camera_entity) throw std::runtime_error("Error: camera entity was nullptr/None");
     if (!camera_entity->isInitialized()) throw std::runtime_error("Error: camera entity is uninitialized");
 
     OptixData.LP.cameraEntity = camera_entity->getStruct();
+    resetAccumulation();
+}
+
+void setDomeLightIntensity(float intensity)
+{
+    intensity = std::max(float(intensity), float(0.f));
+    OptixData.LP.domeLightIntensity = intensity;
+    resetAccumulation();
 }
 
 void initializeFrameBuffer(int fbWidth, int fbHeight) {
@@ -176,10 +196,6 @@ void initializeFrameBuffer(int fbWidth, int fbHeight) {
 
     //Registration with CUDA
     cudaGraphicsGLRegisterImage(&OD.cudaResourceTex, OD.imageTexID, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone);
-}
-
-void resetAccumulation() {
-    OptixData.LP.frameID = 0;
 }
 
 void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
@@ -225,7 +241,13 @@ void initializeOptix(bool headless)
         { "cameras",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, cameras)},
         { "materials",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
         { "meshes",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
+        { "lights",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lights)},
+        { "lightEntities",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
+        { "vertexLists",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
+        { "indexLists",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, indexLists)},
+        { "numLightEntities",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
         { "instanceToEntityMap", OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
+        { "domeLightIntensity",  OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
@@ -248,14 +270,25 @@ void initializeOptix(bool headless)
     OD.cameraBuffer    = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),    MAX_CAMERAS,    nullptr);
     OD.materialBuffer  = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),  MAX_MATERIALS,  nullptr);
     OD.meshBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),      MAX_MESHES,     nullptr);
+    OD.lightBuffer     = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),     MAX_LIGHTS,     nullptr);
+    OD.lightEntitiesBuffer            = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),        1,     nullptr);
     OD.instanceToEntityMapBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),        1,     nullptr);
+    OD.vertexListsBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*), MAX_MESHES, nullptr);
+    OD.indexListsBuffer =  owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(ivec3*), MAX_MESHES, nullptr);
     owlLaunchParamsSetBuffer(OD.launchParams, "entities",   OD.entityBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "transforms", OD.transformBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "cameras",    OD.cameraBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "materials",  OD.materialBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "meshes",     OD.meshBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "lights",     OD.lightBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "lightEntities", OD.lightEntitiesBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "instanceToEntityMap", OD.instanceToEntityMapBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "vertexLists", OD.vertexListsBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "indexLists", OD.indexListsBuffer);
 
+    OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
+    owlLaunchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
+    owlLaunchParamsSetRaw(OD.launchParams, "domeLightIntensity", &OD.LP.domeLightIntensity);
 
     OWLVarDecl trianglesGeomVars[] = {
         { "index",      OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,index)},
@@ -315,6 +348,7 @@ void updateComponents()
     if (Camera::areAnyDirty()) resetAccumulation();
     if (Transform::areAnyDirty()) resetAccumulation();
     if (Entity::areAnyDirty()) resetAccumulation();
+    if (Light::areAnyDirty()) resetAccumulation();
 
     // Build / Rebuild BLAS
     if (Mesh::areAnyDirty()) {
@@ -338,6 +372,16 @@ void updateComponents()
             OD.meshes[mid].blas = owlTrianglesGeomGroupCreate(OD.context, 1, &OD.meshes[mid].geom);
             owlGroupBuildAccel(OD.meshes[mid].blas);          
         }
+
+        std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
+        std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
+        for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
+            if (!meshes[mid].isInitialized()) continue;
+            vertexLists[mid] = ((vec4*) owlBufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
+            indexLists[mid] = ((ivec3*) owlBufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
+        }
+        owlBufferUpload(OD.vertexListsBuffer, vertexLists.data());
+        owlBufferUpload(OD.indexListsBuffer, indexLists.data());
     }
 
     // Build / Rebuild TLAS
@@ -351,9 +395,10 @@ void updateComponents()
             if (!entities[eid].isInitialized()) continue;
             if (!entities[eid].getTransform()) continue;
             if (!entities[eid].getMesh()) continue;
-            if (!entities[eid].getMaterial()) continue;
+            if (!entities[eid].getMaterial() && !entities[eid].getLight()) continue;
 
             OWLGroup blas = OD.meshes[entities[eid].getMesh()->getId()].blas;
+            if (!blas) return;
             glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix();
             instances.push_back(blas);
             instanceTransforms.push_back(localToWorld);            
@@ -377,12 +422,28 @@ void updateComponents()
         owlLaunchParamsSetGroup(OD.launchParams, "world", OD.tlas);
         owlBuildSBT(OD.context);
     }
+
+    if (Entity::areAnyDirty()) {
+        Entity* entities = Entity::getFront();
+        OD.lightEntities.resize(0);
+        for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
+            if (!entities[eid].isInitialized()) continue;
+            if (!entities[eid].getTransform()) continue;
+            if (!entities[eid].getLight()) continue;
+            OD.lightEntities.push_back(eid);
+        }
+        owlBufferResize(OptixData.lightEntitiesBuffer, OD.lightEntities.size());
+        owlBufferUpload(OptixData.lightEntitiesBuffer, OD.lightEntities.data());
+        OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
+        owlLaunchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
+    }
     
     Entity::updateComponents();
     Transform::updateComponents();
     Camera::updateComponents();
     Mesh::updateComponents();
     Material::updateComponents();
+    Light::updateComponents();
 
     // For now, just copy everything each frame. Later we can check if any components are dirty, and be more conservative in uploading data
     owlBufferUpload(OptixData.entityBuffer,    Entity::getFrontStruct());
@@ -390,6 +451,7 @@ void updateComponents()
     owlBufferUpload(OptixData.meshBuffer,      Mesh::getFrontStruct());
     owlBufferUpload(OptixData.materialBuffer,  Material::getFrontStruct());
     owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
+    owlBufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());
 }
 
 void updateLaunchParams()
@@ -445,7 +507,7 @@ void updateLaunchParams()
     owlLaunchParamsSetRaw(OptixData.launchParams, "frameID", &OptixData.LP.frameID);
     owlLaunchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
     owlLaunchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
-
+    owlLaunchParamsSetRaw(OptixData.launchParams, "domeLightIntensity", &OptixData.LP.domeLightIntensity);
     // auto bumesh_transform_struct = bumesh_transform->get_struct();
     // owlLaunchParamsSetRaw(launchParams,"bumesh_transform",&bumesh_transform_struct);
 
@@ -687,6 +749,7 @@ void initializeInteractive(bool windowOnTop)
     Transform::initializeFactory();
     Material::initializeFactory();
     Mesh::initializeFactory();
+    Light::initializeFactory();
 
     auto loop = [windowOnTop]() {
         ViSII.render_thread_id = std::this_thread::get_id();
@@ -753,6 +816,7 @@ void initializeHeadless()
     Transform::initializeFactory();
     Material::initializeFactory();
     Mesh::initializeFactory();
+    Light::initializeFactory();
 
     auto loop = []() {
         ViSII.render_thread_id = std::this_thread::get_id();
