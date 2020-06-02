@@ -1,3 +1,7 @@
+import sys, os
+os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
+sys.path.append(os.path.join(os.getcwd(), "..", "install"))
+
 import visii 
 import numpy as np 
 from PIL import Image 
@@ -10,12 +14,8 @@ import randomcolor
 NB_OBJS = 10000
 SAMPLES_PER_PIXEL = 256
 
-# WIDTH = 1920 
-# HEIGHT = 1080
-
 WIDTH = 1000 
-HEIGHT = 500
-
+HEIGHT = 1000
 
 visii.initialize_headless()
 
@@ -27,13 +27,11 @@ camera_entity = visii.entity.create(
     transform=visii.transform.create("my_camera"),
     camera=visii.camera.create_perspective_from_fov(name = "my_camera",
         field_of_view = 0.785398,
-        # aspect = 1.,
-        aspect = WIDTH/HEIGHT,
+        aspect = 1.,
         near = .1
         )
     )
-camera_entity.get_camera().set_aperture_diameter(20)
-camera_entity.get_camera().set_focal_distance(3.5)
+
 # set the view camera transform
 camera_entity.get_camera().set_view(
     visii.lookAt(
@@ -107,7 +105,7 @@ def add_random_obj(name = "name"):
         )
     obj.get_transform().set_scale(np.random.uniform(0.01,0.2))
     
-    c = eval(str(rcolor.generate(luminosity='bright',format_='rgb')[0])[3:])
+    c = eval(str(rcolor.generate(format_='rgb')[0])[3:])
     obj.get_material().set_base_color(
         c[0]/255.0,
         c[1]/255.0,
@@ -130,10 +128,11 @@ for i in range(NB_OBJS):
 
 # Read and save the image 
 x = visii.render(width=WIDTH, height=HEIGHT, samples_per_pixel=SAMPLES_PER_PIXEL)
-# x = np.array(x).reshape(WIDTH,HEIGHT,4)
-x = np.array(x).reshape(HEIGHT,WIDTH,4)
+x = np.array(x).reshape(WIDTH,HEIGHT,4)
 
 img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+
+# You should see a noise image, like gaussian noise. 
 img.save("tmp.png")
 
 visii.cleanup()
