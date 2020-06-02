@@ -32,8 +32,14 @@ camera_entity = visii.entity.create(
         near = .1
         )
     )
-camera_entity.get_camera().set_aperture_diameter(20)
-camera_entity.get_camera().set_focal_distance(3.5)
+
+# This is to set the camera internal parameters
+# camera_entity.get_camera().set_aperture_diameter(20)
+# camera_entity.get_camera().set_focal_distance(3.5)
+
+# Change the dome light intensity
+visii.set_dome_light_intensity(1)
+
 # set the view camera transform
 camera_entity.get_camera().set_view(
     visii.lookAt(
@@ -132,6 +138,10 @@ for i in range(NB_OBJS):
 x = visii.render(width=WIDTH, height=HEIGHT, samples_per_pixel=SAMPLES_PER_PIXEL)
 # x = np.array(x).reshape(WIDTH,HEIGHT,4)
 x = np.array(x).reshape(HEIGHT,WIDTH,4)
+
+# make sure the image is clamped 
+x[x>1.0] = 1.0
+x[x<0] = 0
 
 img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
 img.save("tmp.png")

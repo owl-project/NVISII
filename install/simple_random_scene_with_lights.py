@@ -170,7 +170,6 @@ for i in range(NB_LIGHTS):
 ################################################################
 
 # Read and save the image 
-time.sleep(3)
 x = visii.render(width=WIDTH, height=HEIGHT, samples_per_pixel=SAMPLES_PER_PIXEL)
 # x = np.array(x).reshape(WIDTH,HEIGHT,4)
 x = np.array(x).reshape(HEIGHT,WIDTH,4)
