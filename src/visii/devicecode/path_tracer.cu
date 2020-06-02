@@ -11,9 +11,9 @@ typedef owl::common::LCG<4> Random;
 extern "C" __constant__ LaunchParams optixLaunchParams;
 
 struct RayPayload {
+    uint32_t entityID;
     float2 uv;
     float tHit;
-    uint32_t entityID;
     float3 normal;
     float3 gnormal;
     // float pad;
@@ -34,9 +34,10 @@ OPTIX_MISS_PROGRAM(miss)()
 {
     RayPayload &payload = get_payload<RayPayload>();
     payload.tHit = -1.f;
+    payload.entityID = -1;
     owl::Ray ray;
     ray.direction = optixGetWorldRayDirection();
-    payload.normal = missColor(ray);
+    payload.normal = missColor(ray) * optixLaunchParams.domeLightIntensity;
 }
 
 OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
@@ -148,14 +149,8 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(optixLaunchParams.frameSize);
     vec3 right = normalize(glm::vec3(viewinv[0]));
     vec3 up = normalize(glm::vec3(viewinv[1]));
-    // if (optixLaunchParams.zoom > 0.f) {
-    //     inUV /= optixLaunchParams.zoom;
-    //     inUV += (.5f - (.5f / optixLaunchParams.zoom));
-    // }
-
+    
     float cameraLensRadius = camera.apertureDiameter;
-    // cameraLensRadius = max(cameraLensRadius, max(1.f / frameSize.x, 1.f / frameSize.y));
-    // float focalLength = 0.1f;
 
     vec3 p(0.f);
     if (cameraLensRadius > 0.0) {
@@ -179,41 +174,174 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     ray.tmax = 1e20f;//10000.0f;
     ray.origin = owl::vec3f(origin.x, origin.y, origin.z) ;
     ray.direction = owl::vec3f(direction.x, direction.y, direction.z);
-    // ray.direction = owl::vec3f(0.0, 1.0, 0.0); // testing...
-    // if ((pixelID.x == 0) && (pixelID.y == 0)) {
-    //     // printf("dir: %f %f %f\n", ray.direction.x, ray.direction.y, ray.direction.z);
-    //     printf("viewinv: %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
-    //         viewinv[0][0], viewinv[0][1], viewinv[0][2], viewinv[0][3],
-    //         viewinv[1][0], viewinv[1][1], viewinv[1][2], viewinv[1][3],
-    //         viewinv[2][0], viewinv[2][1], viewinv[2][2], viewinv[2][3],
-    //         viewinv[3][0], viewinv[3][1], viewinv[3][2], viewinv[3][3]
-    //     );
-    // }
-
     ray.direction = normalize(owl::vec3f(direction.x, direction.y, direction.z));
-    // ray.direction = normalize(owl::vec3f(target.x, target.y, target.z));
-
-    // vec3 lookFrom = origin;//(-4.f,-3.f,-2.f);
-    // vec3 lookAt(0.f,0.f,0.f);
-    // vec3 lookUp(0.f,0.f,1.f);
-    // float cosFovy = 0.66f;
-    // vec3 camera_pos = lookFrom;
-    // vec3 camera_d00
-    //   = normalize(lookAt-lookFrom);
-    // float aspect = frameSize.x / float(frameSize.y);
-    // vec3 camera_ddu
-    //   = cosFovy * aspect * normalize(cross(camera_d00,lookUp));
-    // vec3 camera_ddv
-    //   = cosFovy * normalize(cross(camera_ddu,camera_d00));
-    // camera_d00 -= 0.5f * camera_ddu;
-    // camera_d00 -= 0.5f * camera_ddv;
-
-    // direction 
-    // = normalize(camera_d00
-    //             + inUV.x * camera_ddu
-    //             + inUV.y * camera_ddv);
-    // ray.direction = owl::vec3f(direction.x, direction.y, direction.z);
+    
     return ray;
+}
+
+__device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &hit_p,
+    const float3 &n, const float3 &v_x, const float3 &v_y, const float3 &w_o,
+    const LightStruct *lights, const EntityStruct *entities, const TransformStruct *transforms, const MeshStruct *meshes,
+    const uint32_t* light_entities, const uint32_t num_lights, 
+    uint16_t &ray_count, LCGRand &rng)
+{
+    float3 illum = make_float3(0.f);
+    
+    if (num_lights == 0) return illum;
+
+    uint32_t random_id = lcg_randomf(rng) * num_lights;
+    random_id = min(random_id, num_lights - 1);
+    uint32_t light_entity_id = light_entities[random_id];
+    EntityStruct light_entity = entities[light_entity_id];
+    
+    // shouldn't happen, but just in case...
+    if ((light_entity.light_id < 0) || (light_entity.light_id > MAX_LIGHTS)) return illum;
+    if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_LIGHTS)) return illum;
+    
+    LightStruct light = lights[light_entity.light_id];
+    TransformStruct transform = transforms[light_entity.transform_id];
+    MeshStruct mesh;
+    bool is_area_light = false;
+    if ((light_entity.mesh_id >= 0) && (light_entity.mesh_id < MAX_MESHES)) {
+        mesh = meshes[light_entity.mesh_id];
+        is_area_light = true;
+    };
+
+    float3 light_emission = make_float3(light.r, light.g, light.b) * light.intensity;
+
+    const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
+        // | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
+        // | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT;
+
+    if (!is_area_light)
+    // Sample the light to compute an incident light ray to this point
+    {
+        float3 light_pos = make_float3(
+            transform.localToWorld[3][0], 
+            transform.localToWorld[3][1], 
+            transform.localToWorld[3][2]);
+        float3 light_dir = light_pos - hit_p;
+        float light_dist = length(light_dir);
+        light_dir = normalize(light_dir);
+
+        float light_pdf = 1.f; //quad_light_pdf(light, light_pos, hit_p, light_dir);
+        float bsdf_pdf = disney_pdf(mat, n, w_o, light_dir, v_x, v_y);
+
+        // uint32_t shadow_hit = 1;
+        RayPayload payload;
+        payload.entityID = -1;
+        owl::Ray ray;
+        ray.tmin = EPSILON * 10.f;
+        ray.tmax = light_dist + 1.f;
+        ray.origin = owl::vec3f(hit_p.x, hit_p.y, hit_p.z) ;
+        ray.direction = owl::vec3f(light_dir.x, light_dir.y, light_dir.z);
+        owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
+                        /*the ray to trace*/ ray,
+                        /*prd*/ payload,
+                        occlusion_flags);
+                            
+    // #ifdef REPORT_RAY_STATS
+    //     ++ray_count;
+    // #endif
+        if (light_pdf >= EPSILON && bsdf_pdf >= EPSILON && payload.entityID == light_entity_id) {
+            float3 bsdf = disney_brdf(mat, n, w_o, light_dir, v_x, v_y);
+            // note, MIS only applies to area lights. Temporarily disabled for now.
+            float w = 1.0f;
+            illum = bsdf * light_emission * fabs(dot(light_dir, n)) * w / light_pdf;
+        }
+    }
+    else 
+    {
+        uint32_t random_tri_id = lcg_randomf(rng) * mesh.numTris;
+        ivec3* triIndices = optixLaunchParams.indexLists[light_entity.mesh_id]; 
+        ivec3 triIndex = triIndices[random_tri_id];
+        
+        // this is terribly unoptimized. 
+        // vec3 bbmin = min(min(v1,v2),v3);
+        // vec3 bbmax = max(max(v1,v2),v3);//vec3(mesh.bbmax);       
+        float light_pdf;
+        
+        // Sample the light to compute an incident light ray to this point
+        {    
+            glm::mat4 tfm =  glm::translate(glm::mat4(1.0f), transform.translation) * glm::toMat4(transform.rotation);
+            glm::mat4 tfmInv = glm::inverse(tfm);
+            // for (int ittr = 0; ittr < 6; ++ittr) {
+                //     sampleDirectLight(pos, normal, 
+                    //         lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng),
+                    //         tfm, tfmInv, 
+                    //         bbmin * transform.scale, bbmax * transform.scale, dir, light_pdf);
+                    //     if ((dot(dir, normal) < EPSILON) && (light_pdf > EPSILON)) {
+                        //         break;
+                        //     }
+                        //     // light_pdf += 1.0f / 6.0f;
+                        //     // light_pdf
+                        // }
+            vec3 dir; 
+            vec3 pos = glm::vec3(tfmInv * glm::vec4(hit_p.x, hit_p.y, hit_p.z, 1.f));
+            vec3 v1 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.x];
+            vec3 v2 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.y];
+            vec3 v3 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.z];
+            vec3 A = normalize(v1 - pos);
+            vec3 B = normalize(v2 - pos);
+            vec3 C = normalize(v3 - pos);
+            sampleSphericalTriangle(A, B, C, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf);
+            dir = normalize(dir);
+            dir = vec3(tfm * vec4(dir, 0.f));
+            vec3 normal = glm::vec3(n.x, n.y, n.z);
+            float dotNWi = abs(dot(dir, normal));
+            // if(dot(-dir,normal) < 0.0){
+            //     light_pdf = 0.0;
+            // }
+            // light_pdf = 1.f;
+            // light_pdf = abs(light_pdf);            
+
+            if ((light_pdf > EPSILON) && (dotNWi > EPSILON)) {
+                float3 light_dir = make_float3(dir.x, dir.y, dir.z);//light_pos - hit_p;
+                light_dir = normalize(light_dir);
+                float bsdf_pdf = disney_pdf(mat, n, w_o, light_dir, v_x, v_y);
+                if (bsdf_pdf > EPSILON) {
+                    RayPayload payload;
+                    payload.entityID = -1;
+                    owl::Ray ray;
+                    ray.tmin = EPSILON * 10.f;
+                    ray.tmax = 1e20f;
+                    ray.origin = hit_p;
+                    ray.direction = light_dir;
+                    owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
+                    bool visible = (payload.entityID == light_entity_id);
+                    if (visible) {
+                        float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
+                        float3 bsdf = disney_brdf(mat, n, w_o, light_dir, v_x, v_y);
+						float3 Li = light_emission / light_pdf;
+                        illum = (bsdf * Li * fabs(dotNWi));
+                    }
+                }
+            }
+        }
+
+        // Sample the BRDF to compute a light sample as well
+        {
+            float3 w_i;
+            float bsdf_pdf;
+            float3 bsdf = sample_disney_brdf(mat, n, w_o, v_x, v_y, rng, w_i, bsdf_pdf);
+            if ((light_pdf > EPSILON) && !all_zero(bsdf) && bsdf_pdf >= EPSILON) {        
+                RayPayload payload;
+                payload.entityID = -1;
+                owl::Ray ray;
+                ray.tmin = EPSILON * 10.f;
+                ray.tmax = 1e20f;
+                ray.origin = owl::vec3f(hit_p.x, hit_p.y, hit_p.z) ;
+                ray.direction = owl::vec3f(w_i.x, w_i.y, w_i.z);
+                owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
+                bool visible = (payload.entityID == light_entity_id);
+                if (visible) {
+                    float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
+                    illum = illum + bsdf * light_emission * fabs(dot(w_i, n)) * w / ((payload.tHit * payload.tHit) * bsdf_pdf);
+                }
+            }
+        }
+    }
+    return illum;
 }
 
 OPTIX_RAYGEN_PROGRAM(rayGen)()
@@ -232,7 +360,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
 
     float3 accum_illum = make_float3(0.f);
-    #define SPP 4
+    #define SPP 1
     for (uint32_t rid = 0; rid < SPP; ++rid) {
 
         owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng);
@@ -259,7 +387,21 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
 
             EntityStruct entity = optixLaunchParams.entities[payload.entityID];
-            MaterialStruct entityMaterial = optixLaunchParams.materials[entity.material_id];
+            MaterialStruct entityMaterial;
+            LightStruct entityLight;
+            if (entity.material_id >= 0 && entity.material_id < MAX_MATERIALS) {
+                entityMaterial = optixLaunchParams.materials[entity.material_id];
+            }
+            if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
+                // Don't double count lights, since we're doing NEE
+                // Area lights are only visible outside of NEE sampling when hit on first bounce.
+                // TODO: shade light sources, adding on emission later.
+                if (bounce == 0) {
+                    entityLight = optixLaunchParams.lights[entity.light_id];
+                    illum = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
+                } 
+                break;
+            }
             TransformStruct entityTransform = optixLaunchParams.transforms[entity.transform_id];
             loadMaterial(entityMaterial, payload.uv, mat);
 
@@ -277,8 +419,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
             ortho_basis(v_x, v_y, v_z);
 
-            // illum = illum + path_throughput * sample_direct_light(mat, hit_p, v_z, v_x, v_y, w_o,
-                    // params.lights, params.num_lights, ray_count, rng);
+            illum = illum + path_throughput * 
+                sample_direct_light(mat, hit_p, v_z, v_x, v_y, w_o,
+                    optixLaunchParams.lights, 
+                    optixLaunchParams.entities, 
+                    optixLaunchParams.transforms, 
+                    optixLaunchParams.meshes, 
+                    optixLaunchParams.lightEntities,
+                    optixLaunchParams.numLightEntities, 
+                    ray_count, rng);
 
             float3 w_i;
             float pdf;

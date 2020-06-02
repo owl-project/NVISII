@@ -102,6 +102,7 @@ Mesh::Mesh(std::string name, uint32_t id)
 	this->id = id;
 	this->meshStructs[id].show_bounding_box = 0;
 	this->meshStructs[id].bb_local_to_parent = glm::mat4(1.0);
+	this->meshStructs[id].numTris = 0;
 }
 
 std::string Mesh::toString() {
@@ -229,6 +230,7 @@ void Mesh::computeMetadata()
 	// if (vulkan->is_ray_tracing_enabled()) {
 	// 	build_low_level_bvh(submit_immediately);
 	// }
+	this->meshStructs[id].numTris = triangleIndices.size() / 3;
 	markDirty();
 }
 

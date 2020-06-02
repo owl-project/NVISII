@@ -438,6 +438,10 @@ class Transform : public StaticFactory
       * parent transforms into account. */
 	glm::mat4 getLocalToWorldMatrix();
 
+  /** \returns a (possibly approximate) scale scaling the current transform from 
+      * local space to world space, taking all parent transforms into account */
+  glm::vec3 getWorldScale();
+
     /** \returns a (possibly approximate) rotation rotating the current transform from 
       * local space to world space, taking all parent transforms into account */
 	glm::quat getWorldRotation();

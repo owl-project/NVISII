@@ -4,12 +4,14 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
+#include <glm/gtx/norm.hpp>
 
 #include <visii/entity_struct.h>
 #include <visii/transform_struct.h>
 #include <visii/material_struct.h>
 #include <visii/camera_struct.h>
 #include <visii/mesh_struct.h>
+#include <visii/light_struct.h>
 
 struct LaunchParams {
     glm::ivec2 frameSize;
@@ -17,6 +19,7 @@ struct LaunchParams {
     glm::vec4 *fbPtr;
     glm::vec4 *accumPtr;
     OptixTraversableHandle world;
+    float domeLightIntensity = 1.f;
 
     EntityStruct    cameraEntity;
     EntityStruct    *entities = nullptr;
@@ -24,5 +27,11 @@ struct LaunchParams {
     MaterialStruct  *materials = nullptr;
     CameraStruct    *cameras = nullptr;
     MeshStruct      *meshes = nullptr;
+    LightStruct     *lights = nullptr;
+    uint32_t        *lightEntities = nullptr;
     uint32_t        *instanceToEntityMap = nullptr;
+    uint32_t         numLightEntities = 0;
+
+    vec4 **vertexLists = nullptr;
+    ivec3 **indexLists = nullptr;
 };

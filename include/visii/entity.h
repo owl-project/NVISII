@@ -4,6 +4,7 @@
 #include <visii/entity_struct.h>
 
 class Camera;
+class Light;
 class Transform;
 class Material;
 class Mesh;
@@ -72,8 +73,8 @@ public:
 		Transform* transform = nullptr, 
 		Material* material = nullptr,
 		Mesh* mesh = nullptr,
+		Light* light = nullptr,
 		Camera* camera = nullptr//,
-		// Light* light = nullptr,
 		// RigidBody* rigid_body = nullptr,
 		// Collider* collider = nullptr
 	);
@@ -197,12 +198,20 @@ public:
 	/** \return a reference to the connected material component, or None/nullptr if no component is connected. */
     Material* getMaterial();
 
+	/** Connects a light component to the current entity by primary id key */
+	void setLight(int32_t light_id);
+	
+	/** Connects a light component to the current entity */
+	void setLight(Light* light);
+	
+	/** Disconnects any light component from the current entity */
+	void clearLight();
+	
+	/** \return the primary id key of the connected light component, or -1 if no component is connected. */
+	int32_t getLightId();
 
-	// void set_light(int32_t light_id);
-	// void set_light(Light* light);
-	// void clear_light();
-	// int32_t get_light_id();
-	// Light* get_light();
+	/** \return a reference to the connected light component, or None/nullptr if no component is connected. */
+	Light* getLight();
 	
 	/** Connects a mesh component to the current entity by primary id key */
 	void setMesh(int32_t mesh_id);

@@ -1,5 +1,6 @@
 #include <visii/camera.h>
 #include <visii/entity.h>
+#include <visii/light.h>
 #include <visii/transform.h>
 #include <visii/material.h>
 #include <visii/mesh.h>
@@ -276,46 +277,46 @@ Material* Entity::getMaterial()
 	return material;
 }
 
-// void Entity::set_light(int32_t light_id) 
-// {
-// 	if (light_id < -1) 
-// 		throw std::runtime_error( std::string("Light id must be greater than or equal to -1"));
-// 	if (light_id >= MAX_LIGHTS)
-// 		throw std::runtime_error( std::string("Light id must be less than max lights"));
-// 	this->entity_struct.light_id = light_id;
-// 	markDirty();
-// }
+void Entity::setLight(int32_t light_id) 
+{
+	if (light_id < -1) 
+		throw std::runtime_error( std::string("Light id must be greater than or equal to -1"));
+	if (light_id >= MAX_LIGHTS)
+		throw std::runtime_error( std::string("Light id must be less than max lights"));
+	entityStructs[id].light_id = light_id;
+	markDirty();
+}
 
-// void Entity::set_light(Light* light) 
-// {
-// 	if (!light) 
-// 		throw std::runtime_error( std::string("Invalid light handle."));
-// 	if (!light->isFactoryInitialized())
-// 		throw std::runtime_error("Error, light not initialized");
-// 	this->entity_struct.light_id = light->getId();
-// 	markDirty();
-// }
+void Entity::setLight(Light* light) 
+{
+	if (!light) 
+		throw std::runtime_error( std::string("Invalid light handle."));
+	if (!light->isFactoryInitialized())
+		throw std::runtime_error("Error, light not initialized");
+	entityStructs[id].light_id = light->getId();
+	markDirty();
+}
 
-// void Entity::clear_light()
-// {
-// 	this->entity_struct.light_id = -1;
-// 	markDirty();
-// }
+void Entity::clearLight()
+{
+	entityStructs[id].light_id = -1;
+	markDirty();
+}
 
-// int32_t Entity::get_light_id() 
-// {
-// 	return this->entity_struct.light_id;
-// }
+int32_t Entity::getLightId() 
+{
+	return entityStructs[id].light_id;
+}
 
-// Light* Entity::get_light()
-// {
-// 	if ((this->entity_struct.light_id < 0) || (this->entity_struct.light_id >= MAX_LIGHTS)) 
-// 		return nullptr;
-// 	auto light = Light::get(this->entity_struct.light_id); 
-// 	if (!light->isFactoryInitialized())
-// 		return nullptr;
-// 	return light;
-// }
+Light* Entity::getLight()
+{
+	if ((entityStructs[id].light_id < 0) || (entityStructs[id].light_id >= MAX_LIGHTS)) 
+		return nullptr;
+	auto light = Light::get(entityStructs[id].light_id); 
+	if (!light->isFactoryInitialized())
+		return nullptr;
+	return light;
+}
 
 void Entity::setMesh(int32_t mesh_id) 
 {
@@ -535,8 +536,8 @@ Entity* Entity::create(
 	Transform* transform, 
 	Material* material, 
 	Mesh* mesh, 
+	Light* light, 
 	Camera* camera//, 
-	// Light* light, 
 	// RigidBody* rigid_body,
 	// Collider* collider
     )
@@ -547,7 +548,7 @@ Entity* Entity::create(
 		if (material) entity->setMaterial(material);
 		if (camera) entity->setCamera(camera);
 		if (mesh) entity->setMesh(mesh);
-		// if (light) entity->setLight(light);
+		if (light) entity->setLight(light);
 		// if (rigid_body) entity->setRigidBody(rigidBody);
 		// if (collider) entity->setCollider(collider);
 		return entity;
