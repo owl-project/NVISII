@@ -69,6 +69,10 @@ static struct OptixData {
     OWLGroup tlas;
 
     std::vector<uint32_t> lightEntities;
+
+    OptixDenoiser denoiser;
+    OWLBuffer denoiserScratchBuffer;
+    OWLBuffer denoiserStateBuffer;
 } OptixData;
 
 static struct ViSII {
@@ -337,6 +341,33 @@ void initializeOptix(bool headless)
     owlBuildPrograms(OD.context);
     owlBuildPipeline(OD.context);
     owlBuildSBT(OD.context);
+
+    // Setup denoiser
+    OptixDenoiserOptions options;
+    options.inputKind = OPTIX_DENOISER_INPUT_RGB; // TODO, add albedo and normal
+    options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
+    optixDenoiserCreate(OD.context.optixContext, &options, &OD.denoiser);
+    OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_HDR;
+    optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0);
+
+    // TODO, reallocate resources on window size change
+    OptixDenoiserSizes denoiserSizes;
+    optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &denoiserSizes);
+    OD.denoiserScratchBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
+        denoiserSizes.recommendedScratchSizeInBytes, nullptr);
+    OD.denoiserStateBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
+        denoiserSizes.stateSizeInBytes, nullptr);
+    optixDenoiserSetup (
+        // OD.denoiser, 
+        (cudaStream_t) OD.context.stream//, 
+        // (unsigned int) OD.LP.frameSize.x, 
+        // (unsigned int) OD.LP.frameSize.y, 
+        // (CUdeviceptr) owlBufferGetPointer(OD.denoiserStateBuffer, 0), 
+        // denoiserSizes.stateSizeInBytes,
+        // (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0), 
+        // denoiserSizes.recommendedScratchSizeInBytes
+    );
+
 }
 
 void updateComponents()
@@ -845,6 +876,7 @@ void cleanup()
             close = true;
             renderThread.join();
         }
+        optixDenoiserDestroy(OptixData.denoiser);
     }
     initialized = false;
 }
