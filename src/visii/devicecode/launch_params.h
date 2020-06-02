@@ -31,4 +31,7 @@ struct LaunchParams {
     uint32_t        *lightEntities = nullptr;
     uint32_t        *instanceToEntityMap = nullptr;
     uint32_t         numLightEntities = 0;
+
+    vec4 **vertexLists = nullptr;
+    ivec3 **indexLists = nullptr;
 };

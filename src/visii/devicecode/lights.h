@@ -247,3 +247,82 @@ void sampleDirectLightPDF( vec3 pos,
 	// pdf is 1 over solid angle of spherical quad
 	pdf = 1.0f / squad.S;
 }
+
+
+
+//Gram-Schmidt method
+__device__
+vec3 orthogonalize(const vec3 &a, const vec3 &b) {
+    //we assume that a is normalized
+	return normalize(b - dot(a,b)*a);
+}
+
+__device__
+vec3 slerp(vec3 start, vec3 end, float percent)
+{
+	// Dot product - the cosine of the angle between 2 vectors.
+	float cosTheta = dot(start, end);
+	// Clamp it to be in the range of Acos()
+	// This may be unnecessary, but floating point
+	// precision can be a fickle mistress.
+	cosTheta = glm::clamp(cosTheta, -1.0f, 1.0f);
+	// Acos(dot) returns the angle between start and end,
+	// And multiplying that by percent returns the angle between
+	// start and the final result.
+	float theta = acos(cosTheta)*percent;
+	vec3 RelativeVec = normalize(end - start*cosTheta);
+     // Orthonormal basis
+								 // The final result.
+	return ((start*cos(theta)) + (RelativeVec*sin(theta)));
+}
+
+//Function which does triangle sampling proportional to their solid angle.
+//You can find more information and pseudocode here:
+// * Stratified Sampling of Spherical Triangles. J Arvo - ‎1995
+// * Stratified sampling of 2d manifolds. J Arvo - ‎2001
+__device__
+void sampleSphericalTriangle(const vec3 &A, const vec3 &B, const vec3 &C, float rand1, float rand2, vec3 &w, float &wPdf) {
+	//calculate internal angles of spherical triangle: alpha, beta and gamma
+	vec3 BA = orthogonalize(A, B-A);
+	vec3 CA = orthogonalize(A, C-A);
+	vec3 AB = orthogonalize(B, A-B);
+	vec3 CB = orthogonalize(B, C-B);
+	vec3 BC = orthogonalize(C, B-C);
+	vec3 AC = orthogonalize(C, A-C);
+	float alpha = acos(glm::clamp(dot(BA, CA), -1.0f, 1.0f));
+	float beta = acos(glm::clamp(dot(AB, CB), -1.0f, 1.0f));
+	float gamma = acos(glm::clamp(dot(BC, AC), -1.0f, 1.0f));
+
+	//calculate arc lengths for edges of spherical triangle
+	float a = acos(glm::clamp(dot(B, C), -1.0f, 1.0f));
+	float b = acos(glm::clamp(dot(C, A), -1.0f, 1.0f));
+	float c = acos(glm::clamp(dot(A, B), -1.0f, 1.0f));
+
+	float area = alpha + beta + gamma - M_PI;
+
+	//Use one random variable to select the new area.
+	float area_S = rand1*area;
+
+	//Save the sine and cosine of the angle delta
+	float p = sin(area_S - alpha);
+	float q = cos(area_S - alpha);
+
+	// Compute the pair(u; v) that determines sin(beta_s) and cos(beta_s)
+	float u = q - cos(alpha);
+	float v = p + sin(alpha)*cos(c);
+
+	//Compute the s coordinate as normalized arc length from A to C_s.
+	float s = (1.0 / b)*acos(glm::clamp(((v*q - u*p)*cos(alpha) - v) / ((v*p + u*q)*sin(alpha)), -1.0f, 1.0f));
+
+	//Compute the third vertex of the sub - triangle.
+	vec3 C_s = slerp(A, C, s);
+
+	//Compute the t coordinate using C_s and rand2
+	float t = acos(1.0 - rand2*(1.0f - dot(C_s, B))) / acos(dot(C_s, B));
+
+	//Construct the corresponding point on the sphere.
+	vec3 P = slerp(B, C_s, t);
+
+	w = P;
+	wPdf = 1.0 / area;
+}

@@ -57,6 +57,8 @@ static struct OptixData {
     OWLBuffer lightBuffer;
     OWLBuffer lightEntitiesBuffer;
     OWLBuffer instanceToEntityMapBuffer;
+    OWLBuffer vertexListsBuffer;
+    OWLBuffer indexListsBuffer;
 
     uint32_t numLightEntities;
 
@@ -241,6 +243,8 @@ void initializeOptix(bool headless)
         { "meshes",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
         { "lights",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lights)},
         { "lightEntities",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
+        { "vertexLists",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
+        { "indexLists",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, indexLists)},
         { "numLightEntities",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
         { "instanceToEntityMap", OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
         { "domeLightIntensity",  OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
@@ -269,6 +273,8 @@ void initializeOptix(bool headless)
     OD.lightBuffer     = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),     MAX_LIGHTS,     nullptr);
     OD.lightEntitiesBuffer            = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),        1,     nullptr);
     OD.instanceToEntityMapBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),        1,     nullptr);
+    OD.vertexListsBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*), MAX_MESHES, nullptr);
+    OD.indexListsBuffer =  owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(ivec3*), MAX_MESHES, nullptr);
     owlLaunchParamsSetBuffer(OD.launchParams, "entities",   OD.entityBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "transforms", OD.transformBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "cameras",    OD.cameraBuffer);
@@ -277,6 +283,8 @@ void initializeOptix(bool headless)
     owlLaunchParamsSetBuffer(OD.launchParams, "lights",     OD.lightBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "lightEntities", OD.lightEntitiesBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "instanceToEntityMap", OD.instanceToEntityMapBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "vertexLists", OD.vertexListsBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "indexLists", OD.indexListsBuffer);
 
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
     owlLaunchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
@@ -364,6 +372,16 @@ void updateComponents()
             OD.meshes[mid].blas = owlTrianglesGeomGroupCreate(OD.context, 1, &OD.meshes[mid].geom);
             owlGroupBuildAccel(OD.meshes[mid].blas);          
         }
+
+        std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
+        std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
+        for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
+            if (!meshes[mid].isInitialized()) continue;
+            vertexLists[mid] = ((vec4*) owlBufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
+            indexLists[mid] = ((ivec3*) owlBufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
+        }
+        owlBufferUpload(OD.vertexListsBuffer, vertexLists.data());
+        owlBufferUpload(OD.indexListsBuffer, indexLists.data());
     }
 
     // Build / Rebuild TLAS
@@ -380,6 +398,7 @@ void updateComponents()
             if (!entities[eid].getMaterial() && !entities[eid.getLight()]) continue;
 
             OWLGroup blas = OD.meshes[entities[eid].getMesh()->getId()].blas;
+            if (!blas) return;
             glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix();
             instances.push_back(blas);
             instanceTransforms.push_back(localToWorld);            

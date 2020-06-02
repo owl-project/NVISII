@@ -252,31 +252,48 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
     }
     else 
     {
+        uint32_t random_tri_id = lcg_randomf(rng) * mesh.numTris;
+        ivec3* triIndices = optixLaunchParams.indexLists[light_entity.mesh_id]; 
+        ivec3 triIndex = triIndices[random_tri_id];
+        
         // this is terribly unoptimized. 
-        vec3 bbmin = vec3(mesh.bbmin);
-        vec3 bbmax = vec3(mesh.bbmax);       
+        // vec3 bbmin = min(min(v1,v2),v3);
+        // vec3 bbmax = max(max(v1,v2),v3);//vec3(mesh.bbmax);       
         float light_pdf;
-
+        
         // Sample the light to compute an incident light ray to this point
         {    
-            vec3 pos = glm::vec3(hit_p.x, hit_p.y, hit_p.z);
-            vec3 normal = glm::vec3(n.x, n.y, n.z);
-            vec3 dir; 
             glm::mat4 tfm =  glm::translate(glm::mat4(1.0f), transform.translation) * glm::toMat4(transform.rotation);
             glm::mat4 tfmInv = glm::inverse(tfm);
-            for (int ittr = 0; ittr < 6; ++ittr) {
-                sampleDirectLight(pos, normal, 
-                    lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng),
-                    tfm, tfmInv, 
-                    bbmin * transform.scale, bbmax * transform.scale, dir, light_pdf);
-                if ((dot(dir, normal) < EPSILON) && (light_pdf > EPSILON)) {
-                    break;
-                }
-                // light_pdf += 1.0f / 6.0f;
-                // light_pdf
-            }
-            
+            // for (int ittr = 0; ittr < 6; ++ittr) {
+                //     sampleDirectLight(pos, normal, 
+                    //         lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng),
+                    //         tfm, tfmInv, 
+                    //         bbmin * transform.scale, bbmax * transform.scale, dir, light_pdf);
+                    //     if ((dot(dir, normal) < EPSILON) && (light_pdf > EPSILON)) {
+                        //         break;
+                        //     }
+                        //     // light_pdf += 1.0f / 6.0f;
+                        //     // light_pdf
+                        // }
+            vec3 dir; 
+            vec3 pos = glm::vec3(tfmInv * glm::vec4(hit_p.x, hit_p.y, hit_p.z, 1.f));
+            vec3 v1 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.x];
+            vec3 v2 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.y];
+            vec3 v3 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.z];
+            vec3 A = normalize(v1 - pos);
+            vec3 B = normalize(v2 - pos);
+            vec3 C = normalize(v3 - pos);
+            sampleSphericalTriangle(A, B, C, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf);
+            dir = normalize(dir);
+            dir = vec3(tfm * vec4(dir, 0.f));
+            vec3 normal = glm::vec3(n.x, n.y, n.z);
             float dotNWi = abs(dot(dir, normal));
+            // if(dot(-dir,normal) < 0.0){
+            //     light_pdf = 0.0;
+            // }
+            // light_pdf = 1.f;
+            // light_pdf = abs(light_pdf);            
 
             if ((light_pdf > EPSILON) && (dotNWi > EPSILON)) {
                 float3 light_dir = make_float3(dir.x, dir.y, dir.z);//light_pos - hit_p;
