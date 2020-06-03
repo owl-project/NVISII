@@ -4,16 +4,16 @@ os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
 sys.path.append(os.path.join(os.getcwd(), "..", "install"))
 
 import visii
-import numpy as np 
-from PIL import Image 
-import PIL
 
-SAMPLES_PER_PIXEL = 512
+SAMPLES_PER_PIXEL = 1024
 WIDTH = 1024 
 HEIGHT = 1024
 
+# input()
+
 #%%
 visii.initialize_headless()
+# visii.initialize_interactive()
 camera_entity = visii.entity.create(
     name="my_camera_entity",
     transform=visii.transform.create("my_camera_transform"),
@@ -56,17 +56,18 @@ def create_sphere_light(name, position, intensity):
     L.get_light().set_temperature(4000)
 
 
-for i in range(0, 20):
-    create_sphere_light("l" + str(i), visii.vec3(-100, -100, 0) + visii.vec3(i * 10, i * 10, i * 10), (100 * i) ** 2)
+for i in range(0, 10):
+    create_sphere_light("l" + str(i), visii.vec3(-50, -50, 0) + visii.vec3(i * 10, i * 10, 20*20), 1000000)
 
 # %%
 # Read and save the image 
-x = visii.render(width=WIDTH, height=HEIGHT, samples_per_pixel=SAMPLES_PER_PIXEL)
-x = np.array(x).reshape(HEIGHT,WIDTH,4)
+for i in range(0, 10):
+    floor.get_transform().set_position(0, 0, i * 20)
+    visii.render_to_png(width=WIDTH, height=HEIGHT, samples_per_pixel=SAMPLES_PER_PIXEL, image_path="test_area_light" + str(i) +".png")
 
-# make sure the image is clamped 
-x[x>1.0] = 1.0
-x[x<0] = 0
+# # make sure the image is clamped 
+# x[x>1.0] = 1.0
+# x[x<0] = 0
 
-img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
-img.save("test_area_light.png")
+# img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+# img.save("test_area_light.png")
