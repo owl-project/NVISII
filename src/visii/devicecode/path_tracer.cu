@@ -114,7 +114,7 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
 }
 
 __device__ 
-void loadMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat) {
+void loadMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float roughnessMinimum) {
 
     // uint32_t mask = __float_as_int(p.base_color.x);
     // if (IS_TEXTURED_PARAM(mask)) {
@@ -126,13 +126,13 @@ void loadMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat) {
 
     mat.metallic = /*textured_scalar_param(*/p.metallic/*, uv)*/;
     mat.specular = /*textured_scalar_param(*/p.specular/*, uv)*/;
-    mat.roughness = /*textured_scalar_param(*/p.roughness/*, uv)*/;
+    mat.roughness = max(/*textured_scalar_param(*/p.roughness/*, uv)*/, roughnessMinimum);
     mat.specular_tint = /*textured_scalar_param(*/p.specular_tint/*, uv)*/;
     mat.anisotropy = /*textured_scalar_param(*/p.anisotropic/*, uv)*/;
     mat.sheen = /*textured_scalar_param(*/p.sheen/*, uv)*/;
     mat.sheen_tint = /*textured_scalar_param(*/p.sheen_tint/*, uv)*/;
     mat.clearcoat = /*textured_scalar_param(*/p.clearcoat/*, uv)*/;
-    mat.clearcoat_gloss = /*textured_scalar_param(*/1.0 - p.clearcoat_roughness/*, uv)*/;
+    mat.clearcoat_gloss = /*textured_scalar_param(*/1.0 - max(p.clearcoat_roughness, roughnessMinimum)/*, uv)*/;
     mat.ior = /*textured_scalar_param(*/p.ior/*, uv)*/;
     mat.specular_transmission = /*textured_scalar_param(*/p.transmission/*, uv)*/;
     mat.flatness = p.subsurface;
@@ -183,20 +183,21 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
     const float3 &n, const float3 &v_x, const float3 &v_y, const float3 &w_o,
     const LightStruct *lights, const EntityStruct *entities, const TransformStruct *transforms, const MeshStruct *meshes,
     const uint32_t* light_entities, const uint32_t num_lights, 
-    uint16_t &ray_count, LCGRand &rng)
+    uint16_t &ray_count, LCGRand &rng, bool &sampledSpecular)
 {
+    sampledSpecular = false;
     float3 illum = make_float3(0.f);
     
     if (num_lights == 0) return illum;
 
-    uint32_t random_id = lcg_randomf(rng) * num_lights;
+    uint32_t random_id = uint32_t(min(lcg_randomf(rng) * num_lights, float(num_lights - 1)));
     random_id = min(random_id, num_lights - 1);
     uint32_t light_entity_id = light_entities[random_id];
     EntityStruct light_entity = entities[light_entity_id];
     
     // shouldn't happen, but just in case...
     if ((light_entity.light_id < 0) || (light_entity.light_id > MAX_LIGHTS)) return illum;
-    if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_LIGHTS)) return illum;
+    if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_TRANSFORMS)) return illum;
     
     LightStruct light = lights[light_entity.light_id];
     TransformStruct transform = transforms[light_entity.transform_id];
@@ -252,7 +253,7 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
     }
     else 
     {
-        uint32_t random_tri_id = lcg_randomf(rng) * mesh.numTris;
+        uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
         ivec3* triIndices = optixLaunchParams.indexLists[light_entity.mesh_id]; 
         ivec3 triIndex = triIndices[random_tri_id];
         
@@ -323,7 +324,7 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
         {
             float3 w_i;
             float bsdf_pdf;
-            float3 bsdf = sample_disney_brdf(mat, n, w_o, v_x, v_y, rng, w_i, bsdf_pdf);
+            float3 bsdf = sample_disney_brdf(mat, n, w_o, v_x, v_y, rng, w_i, bsdf_pdf, sampledSpecular);
             if ((light_pdf > EPSILON) && !all_zero(bsdf) && bsdf_pdf >= EPSILON) {        
                 RayPayload payload;
                 payload.entityID = -1;
@@ -370,6 +371,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float3 illum = make_float3(0.f);
         float3 path_throughput = make_float3(1.f);
         uint16_t ray_count = 0;
+        float roughnessMinimum = 0.f;
 
         do {
             RayPayload payload;
@@ -403,7 +405,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 break;
             }
             TransformStruct entityTransform = optixLaunchParams.transforms[entity.transform_id];
-            loadMaterial(entityMaterial, payload.uv, mat);
+            loadMaterial(entityMaterial, payload.uv, mat, roughnessMinimum);
 
             const float3 w_o = -ray.direction;
             const float3 hit_p = ray.origin + payload.tHit * ray.direction;
@@ -418,7 +420,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 v_z = -v_z;
             }
             ortho_basis(v_x, v_y, v_z);
-
+            
+            bool sampledSpecularLight;
             illum = illum + path_throughput * 
                 sample_direct_light(mat, hit_p, v_z, v_x, v_y, w_o,
                     optixLaunchParams.lights, 
@@ -427,11 +430,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     optixLaunchParams.meshes, 
                     optixLaunchParams.lightEntities,
                     optixLaunchParams.numLightEntities, 
-                    ray_count, rng);
+                    ray_count, rng, sampledSpecularLight);
 
             float3 w_i;
             float pdf;
-            float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, pdf);
+            bool sampledSpecular;
+            float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, pdf, sampledSpecular);
             if (pdf < EPSILON || all_zero(bsdf)) {
                 break;
             }
@@ -439,6 +443,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
             if (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON) {
                 break;
+            }
+
+            // path regularization to reduce fireflies
+            if (sampledSpecular || sampledSpecularLight) {
+                roughnessMinimum = min((roughnessMinimum + .35f), 1.f);
             }
 
             // vec3 offset = payload.normal * .001f;
@@ -451,6 +460,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             //     finalColor = vec3(tprd.normal.x, tprd.normal.y, tprd.normal.z);
             // }
         } while (bounce < MAX_PATH_DEPTH);
+        // clamp out fireflies
+        glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
+        gillum = clamp(gillum, vec3(0.f), vec3(500.f));
+        illum = make_float3(gillum.r, gillum.g, gillum.b);
+
         accum_illum = accum_illum + illum;
     }
     accum_illum = accum_illum / float(SPP);

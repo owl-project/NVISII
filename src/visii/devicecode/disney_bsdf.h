@@ -412,7 +412,7 @@ __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
  */
 __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 	const float3 &w_o, const float3 &v_x, const float3 &v_y, LCGRand &rng,
-	float3 &w_i, float &pdf)
+	float3 &w_i, float &pdf, bool &is_specular)
 {
 	bool entering = dot(w_o, n) > 0.f;
 
@@ -429,6 +429,8 @@ __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		// temporary, forcing only refractive brdf when entering surface 
 		else component = 3; 
 	}
+
+	is_specular = (component != 0);
 
 	float2 samples = make_float2(lcg_randomf(rng), lcg_randomf(rng));
 	if (component == 0) {

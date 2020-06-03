@@ -12,9 +12,9 @@ import randomcolor
 
 
 NB_OBJS = 10000
-NB_LIGHTS = 1
+NB_LIGHTS = 10
 
-SAMPLES_PER_PIXEL = 256
+SAMPLES_PER_PIXEL = 4000
 
 # WIDTH = 1920 
 # HEIGHT = 1080
@@ -23,7 +23,8 @@ WIDTH = 1000
 HEIGHT = 500
 
 
-visii.initialize_headless()
+# visii.initialize_headless()
+visii.initialize_interactive()
 
 # time to initialize this is a bug
 
@@ -44,7 +45,7 @@ camera_entity = visii.entity.create(
 # camera_entity.get_camera().set_focal_distance(3.5)
 
 # Change the dome light intensity
-visii.set_dome_light_intensity(0.1)
+visii.set_dome_light_intensity(0.01)
 
 # set the view camera transform
 camera_entity.get_camera().set_view(
@@ -69,11 +70,11 @@ def add_random_light(name = 'name'):
         mesh = visii.mesh.create_sphere(name),
         light = visii.light.create(name)
     )
-    obj.get_transform().set_scale(0.5)
+    obj.get_transform().set_scale(0)
 
 
-    obj.get_light().set_intensity(1000000000000000)
-    obj.get_light().set_temperature(5000)
+    obj.get_light().set_intensity(np.random.randint(50000,100000))
+    obj.get_light().set_temperature(np.random.randint(1000,9000))
 
     # obj.get_transform().set_position(
     #     np.random.uniform(-1,1),
@@ -87,9 +88,9 @@ def add_random_light(name = 'name'):
     #     )
 
     obj.get_transform().set_position(
-        np.random.uniform(-5,5),
-        np.random.uniform(-5,5),
-        np.random.uniform(-10,3)
+        np.random.uniform(-2,2),
+        np.random.uniform(-2,2),
+        np.random.uniform(3,5)
         )
 def add_random_obj(name = "name"):
     global rcolor
@@ -187,4 +188,5 @@ x[x<0] = 0
 img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
 img.save("tmp.png")
 
+input()
 visii.cleanup()
