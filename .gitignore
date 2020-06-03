@@ -4,3 +4,4 @@ install
 imgui.ini
 include\visii\utilities\version.h
 include/visii/utilities/version.h
+*.png

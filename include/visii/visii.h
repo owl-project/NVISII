@@ -42,3 +42,6 @@ void resizeWindow(uint32_t width, uint32_t height);
 std::vector<float> readFrameBuffer();
 
 std::vector<float> render(uint32_t width, uint32_t height, uint32_t samples_per_pixel);
+
+void renderToHDR(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);
+void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);

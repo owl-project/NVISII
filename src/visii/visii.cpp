@@ -16,6 +16,11 @@
 #include <future>
 #include <queue>
 
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image.h>
+#include <stb_image_write.h>
+
 std::promise<void> exitSignal;
 std::thread renderThread;
 static bool initialized = false;
@@ -528,6 +533,15 @@ void traceRays()
 void drawFrameBufferToWindow()
 {
     auto &OD = OptixData;
+    for (int i = 0; i < owlGetDeviceCount(OD.context); i++) {
+        cudaSetDevice(i);
+        cudaDeviceSynchronize();
+        cudaError_t err = cudaPeekAtLastError();
+        if (err != 0) {
+            std::cout<< "ERROR: " << cudaGetErrorString(err)<<std::endl;
+            throw std::runtime_error("ERROR");
+        }
+    }
 
     cudaGraphicsMapResources(1, &OD.cudaResourceTex);
     const void* fbdevptr = owlBufferGetPointer(OD.frameBuffer,0);
@@ -693,6 +707,13 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
     std::vector<float> frameBuffer(width * height * 4);
 
     auto readFrameBuffer = [&frameBuffer, width, height, samplesPerPixel] () {
+        if (!ViSII.headlessMode) {
+            using namespace Libraries;
+            auto glfw = GLFW::Get();
+            glfw->resize_window("ViSII", width, height);
+            initializeFrameBuffer(width, height);
+        }
+        
         resizeOptixFrameBuffer(width, height);
         resetAccumulation();
         updateComponents();
@@ -719,15 +740,13 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
         }
         cudaSetDevice(0);
 
-        const glm::vec4 *fb = (const glm::vec4*)owlBufferGetPointer(OptixData.frameBuffer,0);
+        const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
         for (uint32_t test = 0; test < frameBuffer.size(); test += 4) {
             frameBuffer[test + 0] = fb[test / 4].r;
             frameBuffer[test + 1] = fb[test / 4].g;
             frameBuffer[test + 2] = fb[test / 4].b;
             frameBuffer[test + 3] = fb[test / 4].a;
         }
-
-        // memcpy(frameBuffer.data(), fb, frameBuffer.size() * sizeof(float));
     };
 
     auto future = enqueueCommand(readFrameBuffer);
@@ -736,6 +755,28 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
     return frameBuffer;
 }
 
+void renderToHDR(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath)
+{
+    std::vector<float> framebuffer = render(width, height, samplesPerPixel);
+    stbi_flip_vertically_on_write(true);
+    stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, framebuffer.data());
+    // stbi_write_png(path.c_str(), curr_frame_size.x, curr_frame_size.y, /* num channels*/ 4, frameBuffer.data(), /* stride in bytes */ curr_frame_size.x * 4);
+    // memcpy(frameBuffer.data(), fb, frameBuffer.size() * sizeof(float));
+}
+
+void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath)
+{
+    std::vector<float> fb = render(width, height, samplesPerPixel);
+    std::vector<uint8_t> colors(4 * width * height);
+    for (size_t i = 0; i < (width * height); ++i) {       
+        colors[i * 4 + 0] = uint8_t(glm::clamp(fb[i * 4 + 0] * 255.f, 0.f, 255.f));
+        colors[i * 4 + 1] = uint8_t(glm::clamp(fb[i * 4 + 1] * 255.f, 0.f, 255.f));
+        colors[i * 4 + 2] = uint8_t(glm::clamp(fb[i * 4 + 2] * 255.f, 0.f, 255.f));
+        colors[i * 4 + 3] = uint8_t(glm::clamp(fb[i * 4 + 3] * 255.f, 0.f, 255.f));
+    }
+    stbi_flip_vertically_on_write(true);
+    stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
+}
 
 void initializeInteractive(bool windowOnTop)
 {
