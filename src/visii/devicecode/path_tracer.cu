@@ -451,6 +451,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             //     finalColor = vec3(tprd.normal.x, tprd.normal.y, tprd.normal.z);
             // }
         } while (bounce < MAX_PATH_DEPTH);
+        // clamp out fireflies
+        glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
+        gillum = clamp(gillum, vec3(0.f), vec3(10.f));
+        illum = make_float3(gillum.r, gillum.b, gillum.b);
+
         accum_illum = accum_illum + illum;
     }
     accum_illum = accum_illum / float(SPP);
