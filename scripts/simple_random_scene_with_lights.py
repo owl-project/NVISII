@@ -1,6 +1,6 @@
-import sys, os
-os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
-sys.path.append(os.path.join(os.getcwd(), "..", "install"))
+# import sys, os
+# os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
+# sys.path.append(os.path.join(os.getcwd(), "..", "install"))
 
 import visii 
 import numpy as np 
@@ -12,7 +12,7 @@ import randomcolor
 
 
 NB_OBJS = 10000
-NB_LIGHTS = 20
+NB_LIGHTS = 1
 
 SAMPLES_PER_PIXEL = 256
 
@@ -165,11 +165,13 @@ def add_random_obj(name = "name"):
 
 
 # create a random scene, the function defines the values
+for i in range(NB_LIGHTS):
+    add_random_light("l"+str(i))
+
 for i in range(NB_OBJS):
     add_random_obj(str(i))
 
-for i in range(NB_LIGHTS):
-    add_random_light("l"+str(i))
+
 
 ################################################################
 
