@@ -80,10 +80,11 @@ static struct OptixData {
 
     std::vector<uint32_t> lightEntities;
 
-    cudaStream_t stream;
+    OptixDenoiserSizes denoiserSizes;
     OptixDenoiser denoiser;
     OWLBuffer denoiserScratchBuffer;
     OWLBuffer denoiserStateBuffer;
+    OWLBuffer hdrIntensityBuffer;
 } OptixData;
 
 static struct ViSII {
@@ -365,22 +366,23 @@ void initializeOptix(bool headless)
     optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0);
 
     // TODO, reallocate resources on window size change
-    OptixDenoiserSizes denoiserSizes;
-    optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &denoiserSizes);
+    optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes);
     OD.denoiserScratchBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
-        denoiserSizes.recommendedScratchSizeInBytes, nullptr);
+        OD.denoiserSizes.recommendedScratchSizeInBytes, nullptr);
     OD.denoiserStateBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
-        denoiserSizes.stateSizeInBytes, nullptr);
-    
+        OD.denoiserSizes.stateSizeInBytes, nullptr);
+    OD.hdrIntensityBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(float),
+        1, nullptr);
+
     optixDenoiserSetup (
         OD.denoiser, 
         (cudaStream_t) cudaStream, 
         (unsigned int) OD.LP.frameSize.x, 
         (unsigned int) OD.LP.frameSize.y, 
         (CUdeviceptr) owlBufferGetPointer(OD.denoiserStateBuffer, 0), 
-        denoiserSizes.stateSizeInBytes,
+        OD.denoiserSizes.stateSizeInBytes,
         (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0), 
-        denoiserSizes.recommendedScratchSizeInBytes
+        OD.denoiserSizes.recommendedScratchSizeInBytes
     );
 
 }
@@ -569,6 +571,52 @@ void traceRays()
     
     /* Trace Rays */
     owlParamsLaunch2D(OD.rayGen, OD.LP.frameSize.x, OD.LP.frameSize.y, OD.launchParams);
+}
+
+void denoiseImage() {
+    auto &OD = OptixData;
+    auto cudaStream = owlContextGetStream(OD.context, 0);
+
+    std::vector<OptixImage2D> inputLayers;
+    OptixImage2D colorLayer;
+    colorLayer.width = OD.LP.frameSize.x;
+    colorLayer.height = OD.LP.frameSize.y;
+    colorLayer.format = OPTIX_PIXEL_FORMAT_FLOAT4;
+    colorLayer.pixelStrideInBytes = 4 * sizeof(float);
+    colorLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
+    colorLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.frameBuffer, 0);
+    inputLayers.push_back(colorLayer);
+
+    OptixImage2D outputLayer = colorLayer; // can I get away with this?
+
+    // compute average pixel intensity for hdr denoising
+    optixDenoiserComputeIntensity(
+        OD.denoiser, 
+        cudaStream, 
+        &inputLayers[0], 
+        (CUdeviceptr) owlBufferGetPointer(OD.hdrIntensityBuffer, 0),
+        (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0),
+        OD.denoiserSizes.recommendedScratchSizeInBytes);
+
+    OptixDenoiserParams params;
+    params.denoiseAlpha = 0;    // Don't touch alpha.
+    params.blendFactor  = 0.0f; // Show the denoised image only.
+    params.hdrIntensity = (CUdeviceptr) owlBufferGetPointer(OD.hdrIntensityBuffer, 0);
+    
+    optixDenoiserInvoke(
+        OD.denoiser,
+        cudaStream,
+        &params,
+        (CUdeviceptr) owlBufferGetPointer(OD.denoiserStateBuffer, 0),
+        OD.denoiserSizes.stateSizeInBytes,
+        inputLayers.data(),
+        inputLayers.size(),
+        /* inputOffsetX */ 0,
+        /* inputOffsetY */ 0,
+        &outputLayer,
+        (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0),
+        OD.denoiserSizes.recommendedScratchSizeInBytes
+    );    
 }
 
 void drawFrameBufferToWindow()
@@ -870,6 +918,7 @@ void initializeInteractive(bool windowOnTop)
             static double stop=0;
             start = glfwGetTime();
             traceRays();
+            denoiseImage();
             drawFrameBufferToWindow();
             stop = glfwGetTime();
             glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
