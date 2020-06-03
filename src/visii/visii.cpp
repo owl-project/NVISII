@@ -6,8 +6,6 @@
 #include <imgui_impl_opengl3.h>
 #include <ImGuizmo.h>
 #include <visii/utilities/colors.h>
-#include <owl/llowl.h>
-#include <owl/api/APIContext.h>
 #include <owl/owl.h>
 #include <cuda_gl_interop.h>
 
