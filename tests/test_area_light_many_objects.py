@@ -14,7 +14,8 @@ NUM_LIGHTS = 20
 L_DIST = 10
 O_DIST = 5
 
-visii.initialize_headless()
+visii.initialize_interactive()
+# visii.initialize_headless()
 camera_entity = visii.entity.create(
     name="my_camera_entity",
     transform=visii.transform.create("my_camera_transform"),
@@ -67,11 +68,14 @@ def create_sphere_light(name, position, intensity):
     )
     L.get_light().set_intensity(intensity)
     L.get_transform().set_position(position)
+    L.get_transform().set_scale(.2)
     L.get_light().set_temperature(4000)
 
 
 for i in range(0, NUM_LIGHTS):
     twopi = math.pi * 2
-    create_sphere_light("l" + str(i), visii.vec3(L_DIST * math.sin((i / NUM_LIGHTS) * twopi), L_DIST * math.cos((i / NUM_LIGHTS) * twopi), 1), 10000)
+    create_sphere_light("l" + str(i), visii.vec3(L_DIST * math.sin((i / NUM_LIGHTS) * twopi), L_DIST * math.cos((i / NUM_LIGHTS) * twopi), 1), 100000)
 
 visii.render_to_png(width=WIDTH, height=HEIGHT, samples_per_pixel=SAMPLES_PER_PIXEL, image_path="test_area_light_many_objects.png")
+
+input()
