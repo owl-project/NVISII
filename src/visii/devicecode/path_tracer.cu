@@ -196,7 +196,7 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
     
     // shouldn't happen, but just in case...
     if ((light_entity.light_id < 0) || (light_entity.light_id > MAX_LIGHTS)) return illum;
-    if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_LIGHTS)) return illum;
+    if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_TRANSFORMS)) return illum;
     
     LightStruct light = lights[light_entity.light_id];
     TransformStruct transform = transforms[light_entity.transform_id];
