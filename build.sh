@@ -1,3 +1,4 @@
 cmake .
 make install
-mv visii.py install/
+cp install/* visii/
+pip install -e .
