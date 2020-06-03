@@ -454,7 +454,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // clamp out fireflies
         glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
         gillum = clamp(gillum, vec3(0.f), vec3(10.f));
-        illum = make_float3(gillum.r, gillum.b, gillum.b);
+        illum = make_float3(gillum.r, gillum.g, gillum.b);
 
         accum_illum = accum_illum + illum;
     }
