@@ -353,36 +353,35 @@ void initializeOptix(bool headless)
     owlBuildPipeline(OD.context);
     owlBuildSBT(OD.context);
 
-    // // Setup denoiser
-    // OptixDenoiserOptions options;
-    // options.inputKind = OPTIX_DENOISER_INPUT_RGB; // TODO, add albedo and normal
-    // options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
-    // auto spcontext = dynamic_cast<owl::APIContext::SP&>(OD.context);//->optixContext;
-    // optixDenoiserCreate(OD.context.optixContext, &options, &OD.denoiser);
-    // OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_HDR;
-    // if (!OD.denoiser) throw std::runtime_error("ERROR: denoiser unavailable!");
+    // Setup denoiser
+    OptixDenoiserOptions options;
+    options.inputKind = OPTIX_DENOISER_INPUT_RGB; // TODO, add albedo and normal
+    options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
+    auto optixContext = owlContextGetOptixContext(OD.context, 0);
+    auto cudaStream = owlContextGetStream(OD.context, 0);
+    optixDenoiserCreate(optixContext, &options, &OD.denoiser);
+    OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_HDR;
     
-    // optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0);
+    optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0);
 
-    // // TODO, reallocate resources on window size change
-    // OptixDenoiserSizes denoiserSizes;
-    // optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &denoiserSizes);
-    // OD.denoiserScratchBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
-    //     denoiserSizes.recommendedScratchSizeInBytes, nullptr);
-    // OD.denoiserStateBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
-    //     denoiserSizes.stateSizeInBytes, nullptr);
+    // TODO, reallocate resources on window size change
+    OptixDenoiserSizes denoiserSizes;
+    optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &denoiserSizes);
+    OD.denoiserScratchBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
+        denoiserSizes.recommendedScratchSizeInBytes, nullptr);
+    OD.denoiserStateBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
+        denoiserSizes.stateSizeInBytes, nullptr);
     
-    // cudaStreamCreate(&OD.stream);
-    // optixDenoiserSetup (
-    //     OD.denoiser, 
-    //     (cudaStream_t) OD.stream, 
-    //     (unsigned int) OD.LP.frameSize.x, 
-    //     (unsigned int) OD.LP.frameSize.y, 
-    //     (CUdeviceptr) owlBufferGetPointer(OD.denoiserStateBuffer, 0), 
-    //     denoiserSizes.stateSizeInBytes,
-    //     (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0), 
-    //     denoiserSizes.recommendedScratchSizeInBytes
-    // );
+    optixDenoiserSetup (
+        OD.denoiser, 
+        (cudaStream_t) cudaStream, 
+        (unsigned int) OD.LP.frameSize.x, 
+        (unsigned int) OD.LP.frameSize.y, 
+        (CUdeviceptr) owlBufferGetPointer(OD.denoiserStateBuffer, 0), 
+        denoiserSizes.stateSizeInBytes,
+        (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0), 
+        denoiserSizes.recommendedScratchSizeInBytes
+    );
 
 }
 
@@ -928,7 +927,7 @@ void cleanup()
             close = true;
             renderThread.join();
         }
-        // optixDenoiserDestroy(OptixData.denoiser);
+        optixDenoiserDestroy(OptixData.denoiser);
     }
     initialized = false;
 }
