@@ -189,14 +189,14 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
     
     if (num_lights == 0) return illum;
 
-    uint32_t random_id = lcg_randomf(rng) * num_lights;
+    uint32_t random_id = uint32_t(min(lcg_randomf(rng) * num_lights, float(num_lights - 1)));
     random_id = min(random_id, num_lights - 1);
     uint32_t light_entity_id = light_entities[random_id];
     EntityStruct light_entity = entities[light_entity_id];
     
     // shouldn't happen, but just in case...
     if ((light_entity.light_id < 0) || (light_entity.light_id > MAX_LIGHTS)) return illum;
-    if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_LIGHTS)) return illum;
+    if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_TRANSFORMS)) return illum;
     
     LightStruct light = lights[light_entity.light_id];
     TransformStruct transform = transforms[light_entity.transform_id];
@@ -252,7 +252,7 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
     }
     else 
     {
-        uint32_t random_tri_id = lcg_randomf(rng) * mesh.numTris;
+        uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
         ivec3* triIndices = optixLaunchParams.indexLists[light_entity.mesh_id]; 
         ivec3 triIndex = triIndices[random_tri_id];
         

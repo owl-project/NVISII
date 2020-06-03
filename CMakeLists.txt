@@ -182,8 +182,8 @@ set_property(TARGET glfw PROPERTY FOLDER "externals/GLFW3" )
 # OpenGL
 find_package(OpenGL)
 
-# # stb
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/stb/)
+# stb
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/stb/)
 
 # # tiny obj
 # include_directories(SYSTEM external/tinyobj)
