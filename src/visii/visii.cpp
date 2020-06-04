@@ -216,10 +216,30 @@ void initializeFrameBuffer(int fbWidth, int fbHeight) {
 
 void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
 {
-    OptixData.LP.frameSize.x = width;
-    OptixData.LP.frameSize.y = height;
-    owlBufferResize(OptixData.frameBuffer, width * height);
-    owlBufferResize(OptixData.accumBuffer, width * height);
+    auto &OD = OptixData;
+
+    OD.LP.frameSize.x = width;
+    OD.LP.frameSize.y = height;
+    owlBufferResize(OD.frameBuffer, width * height);
+    owlBufferResize(OD.accumBuffer, width * height);
+
+    // Reconfigure denoiser
+    optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes);
+    owlBufferResize(OD.denoiserScratchBuffer, OD.denoiserSizes.recommendedScratchSizeInBytes);
+    owlBufferResize(OD.denoiserStateBuffer, OD.denoiserSizes.stateSizeInBytes);
+    
+    auto cudaStream = owlContextGetStream(OD.context, 0);
+    optixDenoiserSetup (
+        OD.denoiser, 
+        (cudaStream_t) cudaStream, 
+        (unsigned int) OD.LP.frameSize.x, 
+        (unsigned int) OD.LP.frameSize.y, 
+        (CUdeviceptr) owlBufferGetPointer(OD.denoiserStateBuffer, 0), 
+        OD.denoiserSizes.stateSizeInBytes,
+        (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0), 
+        OD.denoiserSizes.recommendedScratchSizeInBytes
+    );
+
     resetAccumulation();
 }
 
@@ -365,7 +385,6 @@ void initializeOptix(bool headless)
     
     optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0);
 
-    // TODO, reallocate resources on window size change
     optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes);
     OD.denoiserScratchBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
         OD.denoiserSizes.recommendedScratchSizeInBytes, nullptr);
