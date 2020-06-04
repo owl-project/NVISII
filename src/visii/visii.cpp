@@ -57,6 +57,8 @@ static struct OptixData {
     GLuint imageTexID = -1;
     cudaGraphicsResource_t cudaResourceTex;
     OWLBuffer frameBuffer;
+    OWLBuffer normalBuffer;
+    OWLBuffer albedoBuffer;
     OWLBuffer accumBuffer;
 
     OWLBuffer entityBuffer;
@@ -80,6 +82,7 @@ static struct OptixData {
 
     std::vector<uint32_t> lightEntities;
 
+    bool enableDenoiser = false;
     OptixDenoiserSizes denoiserSizes;
     OptixDenoiser denoiser;
     OWLBuffer denoiserScratchBuffer;
@@ -221,6 +224,8 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
     OD.LP.frameSize.x = width;
     OD.LP.frameSize.y = height;
     owlBufferResize(OD.frameBuffer, width * height);
+    owlBufferResize(OD.normalBuffer, width * height);
+    owlBufferResize(OD.albedoBuffer, width * height);
     owlBufferResize(OD.accumBuffer, width * height);
 
     // Reconfigure denoiser
@@ -268,7 +273,9 @@ void initializeOptix(bool headless)
     OWLVarDecl launchParamVars[] = {
         { "frameSize",           OWL_USER_TYPE(glm::ivec2),         OWL_OFFSETOF(LaunchParams, frameSize)},
         { "frameID",             OWL_USER_TYPE(uint64_t),           OWL_OFFSETOF(LaunchParams, frameID)},
-        { "fbPtr",               OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, fbPtr)},
+        { "frameBuffer",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, frameBuffer)},
+        { "normalBuffer",        OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, normalBuffer)},
+        { "albedoBuffer",        OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, albedoBuffer)},
         { "accumPtr",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
         { "world",               OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
         { "cameraEntity",        OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
@@ -295,8 +302,12 @@ void initializeOptix(bool headless)
 
     OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.normalBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.albedoBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.LP.frameSize = glm::ivec2(512, 512);
-    owlLaunchParamsSetBuffer(OD.launchParams, "fbPtr", OD.frameBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "frameBuffer", OD.frameBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "normalBuffer", OD.normalBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "albedoBuffer", OD.albedoBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "accumPtr", OD.accumBuffer);
     owlLaunchParamsSetRaw(OD.launchParams, "frameSize", &OD.LP.frameSize);
 
@@ -376,7 +387,7 @@ void initializeOptix(bool headless)
 
     // Setup denoiser
     OptixDenoiserOptions options;
-    options.inputKind = OPTIX_DENOISER_INPUT_RGB; // TODO, add albedo and normal
+    options.inputKind = OPTIX_DENOISER_INPUT_RGB;//_ALBEDO_NORMAL;
     options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
     auto optixContext = owlContextGetOptixContext(OD.context, 0);
     auto cudaStream = owlContextGetStream(OD.context, 0);
@@ -606,6 +617,24 @@ void denoiseImage() {
     colorLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.frameBuffer, 0);
     inputLayers.push_back(colorLayer);
 
+    OptixImage2D albedoLayer;
+    albedoLayer.width = OD.LP.frameSize.x;
+    albedoLayer.height = OD.LP.frameSize.y;
+    albedoLayer.format = OPTIX_PIXEL_FORMAT_FLOAT4;
+    albedoLayer.pixelStrideInBytes = 4 * sizeof(float);
+    albedoLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
+    albedoLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.albedoBuffer, 0);
+    // inputLayers.push_back(albedoLayer);
+
+    OptixImage2D normalLayer;
+    normalLayer.width = OD.LP.frameSize.x;
+    normalLayer.height = OD.LP.frameSize.y;
+    normalLayer.format = OPTIX_PIXEL_FORMAT_FLOAT4;
+    normalLayer.pixelStrideInBytes = 4 * sizeof(float);
+    normalLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
+    normalLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.normalBuffer, 0);
+    // inputLayers.push_back(normalLayer);
+
     OptixImage2D outputLayer = colorLayer; // can I get away with this?
 
     // compute average pixel intensity for hdr denoising
@@ -783,6 +812,24 @@ void resizeWindow(uint32_t width, uint32_t height)
     future.wait();
 }
 
+void enableDenoiser() 
+{
+    auto enableDenoiser = [] () {
+        OptixData.enableDenoiser = true;
+        // resetAccumulation(); // reset not required, just effects final framebuffer
+    };
+    enqueueCommand(enableDenoiser).wait();
+}
+
+void disableDenoiser()
+{
+    auto disableDenoiser = [] () {
+        OptixData.enableDenoiser = false;
+        // resetAccumulation(); // reset not required, just effects final framebuffer
+    };
+    enqueueCommand(disableDenoiser).wait();
+}
+
 std::vector<float> readFrameBuffer() {
     std::vector<float> frameBuffer(OptixData.LP.frameSize.x * OptixData.LP.frameSize.y * 4);
 
@@ -835,6 +882,10 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
 
             updateLaunchParams();
             traceRays();
+            if (OptixData.enableDenoiser)
+            {
+                denoiseImage();
+            }
 
             if (!ViSII.headlessMode) {
                 drawFrameBufferToWindow();
@@ -937,7 +988,10 @@ void initializeInteractive(bool windowOnTop)
             static double stop=0;
             start = glfwGetTime();
             traceRays();
-            denoiseImage();
+            if (OptixData.enableDenoiser)
+            {
+                denoiseImage();
+            }
             drawFrameBufferToWindow();
             stop = glfwGetTime();
             glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
@@ -979,6 +1033,10 @@ void initializeHeadless()
             updateComponents();
             updateLaunchParams();
             traceRays();
+            if (OptixData.enableDenoiser)
+            {
+                denoiseImage();
+            }
             processCommandQueue();
             if (close) break;
         }

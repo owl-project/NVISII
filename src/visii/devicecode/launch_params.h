@@ -16,7 +16,9 @@
 struct LaunchParams {
     glm::ivec2 frameSize;
     uint64_t frameID = 0;
-    glm::vec4 *fbPtr;
+    glm::vec4 *frameBuffer;
+    glm::vec4 *albedoBuffer;
+    glm::vec4 *normalBuffer;
     glm::vec4 *accumPtr;
     OptixTraversableHandle world;
     float domeLightIntensity = 1.f;
