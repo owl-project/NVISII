@@ -14,7 +14,7 @@ import randomcolor
 NB_OBJS = 20000
 NB_LIGHTS = 10
 
-SAMPLES_PER_PIXEL = 2000
+SAMPLES_PER_PIXEL = 1000
 
 # WIDTH = 1920 
 # HEIGHT = 1080
@@ -207,11 +207,16 @@ print('rendering')
 
 # img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
 # img.save("tmp.png")
-
+visii.enable_denoiser()
 visii.render_to_png(width=WIDTH, 
                     height=HEIGHT, 
                     samples_per_pixel=SAMPLES_PER_PIXEL,
-                    image_path="tmp2.png")
+                    image_path="denoise.png")
+visii.disable_denoiser()
+visii.render_to_png(width=WIDTH, 
+                    height=HEIGHT, 
+                    samples_per_pixel=SAMPLES_PER_PIXEL,
+                    image_path="noise.png")
 
 visii.cleanup()
 
