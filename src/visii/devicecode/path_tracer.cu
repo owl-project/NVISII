@@ -264,8 +264,8 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
         
         // Sample the light to compute an incident light ray to this point
         {    
-            glm::mat4 tfm =  glm::translate(glm::mat4(1.0f), transform.translation) * glm::toMat4(transform.rotation);
-            glm::mat4 tfmInv = glm::inverse(tfm);
+            glm::mat4 tfm =  transform.localToWorld;//glm::translate(glm::mat4(1.0f), transform.translation) * glm::toMat4(transform.rotation);
+            glm::mat4 tfmInv = transform.worldToLocal;//glm::inverse(tfm);
             // for (int ittr = 0; ittr < 6; ++ittr) {
                 //     sampleDirectLight(pos, normal, 
                     //         lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng),
@@ -278,18 +278,22 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
                         //     // light_pdf
                         // }
             vec3 dir; 
-            vec3 pos = glm::vec3(tfmInv * glm::vec4(hit_p.x, hit_p.y, hit_p.z, 1.f));
-            vec3 v1 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.x];
-            vec3 v2 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.y];
-            vec3 v3 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.z];
-            vec3 A = normalize(v1 - pos);
-            vec3 B = normalize(v2 - pos);
-            vec3 C = normalize(v3 - pos);
-            sampleSphericalTriangle(A, B, C, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf);
-            dir = normalize(dir);
-            dir = vec3(tfm * vec4(dir, 0.f));
+            vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
+            vec3 v1 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.x];
+            vec3 v2 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.y];
+            vec3 v3 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.z];
+            vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
+            sampleTriangle(pos, N, v1, v2, v3, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf);
             vec3 normal = glm::vec3(n.x, n.y, n.z);
             float dotNWi = abs(dot(dir, normal));
+
+            // vec3 A = normalize(v1 - pos);
+            // vec3 B = normalize(v2 - pos);
+            // vec3 C = normalize(v3 - pos);
+            // sampleSphericalTriangle(A, B, C, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf);
+            // dir = normalize( glm::vec3(glm::scale(glm::mat4(1.f), transform.scale) * vec4(dir, 0.0)));
+            // dir = vec3(tfm * vec4(dir, 0.f));
+
             // if(dot(-dir,normal) < 0.0){
             //     light_pdf = 0.0;
             // }
@@ -309,11 +313,11 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
                     ray.origin = hit_p;
                     ray.direction = light_dir;
                     owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
-                    bool visible = (payload.entityID == light_entity_id);
+                    bool visible = ((payload.entityID == light_entity_id) || (payload.entityID == -1));
                     if (visible) {
                         float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
                         float3 bsdf = disney_brdf(mat, n, w_o, light_dir, v_x, v_y);
-						float3 Li = light_emission / light_pdf;
+						float3 Li = light_emission * w / light_pdf;
                         illum = (bsdf * Li * fabs(dotNWi));
                     }
                 }
@@ -471,7 +475,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         } while (bounce < MAX_PATH_DEPTH);
         // clamp out fireflies
         glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
-        gillum = clamp(gillum, vec3(0.f), vec3(500.f));
+        gillum = clamp(gillum, vec3(0.f), vec3(5000.f));
+
+        // just in case we get inf's or nans, remove them.
+        if (glm::any(glm::isnan(gillum))) gillum = vec3(0.f);
+        if (glm::any(glm::isinf(gillum))) gillum = vec3(0.f);
         illum = make_float3(gillum.r, gillum.g, gillum.b);
 
         accum_illum = accum_illum + illum;
