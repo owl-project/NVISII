@@ -91,6 +91,7 @@ floor.get_material().set_roughness(1.0)
 
 
 #%%
+# visii.enable_denoiser()
 
 # Read and save the image 
 x = visii.render(width=WIDTH, height=HEIGHT, samples_per_pixel=SAMPLES_PER_PIXEL)

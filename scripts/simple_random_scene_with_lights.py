@@ -11,8 +11,8 @@ from pyquaternion import Quaternion
 import randomcolor
 
 
-NB_OBJS = 20000
-NB_LIGHTS = 10
+NB_OBJS = 25000
+NB_LIGHTS = 20
 
 SAMPLES_PER_PIXEL = 1000
 
@@ -45,7 +45,7 @@ camera_entity = visii.entity.create(
 # camera_entity.get_camera().set_focal_distance(3.5)
 
 # Change the dome light intensity
-visii.set_dome_light_intensity(0.1)
+visii.set_dome_light_intensity(0.2)
 
 # set the view camera transform
 camera_entity.get_camera().set_view(
@@ -105,7 +105,7 @@ def add_random_light(name = 'name'):
         np.random.uniform(-10,10),
 
 
-        np.random.uniform(5,10)
+        np.random.uniform(5,30)
         # np.random.uniform(2,3)
         )
 def add_random_obj(name = "name"):
@@ -205,8 +205,8 @@ print('rendering')
 # x[x>1.0] = 1.0
 # x[x<0] = 0
 
-# img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
-# img.save("tmp.png")
+img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save("tmp.png")
 visii.enable_denoiser()
 visii.render_to_png(width=WIDTH, 
                     height=HEIGHT, 
