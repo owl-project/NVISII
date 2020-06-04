@@ -1,6 +1,6 @@
 import sys, os
-os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
-sys.path.append(os.path.join(os.getcwd(), "..", "install"))
+# os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
+# sys.path.append(os.path.join(os.getcwd(), "..", "install"))
 
 import visii 
 import numpy as np 
