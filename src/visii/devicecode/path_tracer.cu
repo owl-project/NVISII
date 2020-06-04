@@ -355,12 +355,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     TransformStruct camera_transform;
     CameraStruct    camera;
     if (!loadCamera(camera_entity, camera, camera_transform)) {
-        optixLaunchParams.fbPtr[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
+        optixLaunchParams.frameBuffer[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
         return;
     }
 
 
     float3 accum_illum = make_float3(0.f);
+    float3 primaryAlbedo = make_float3(0.f);
+    float3 primaryNormal = make_float3(0.f);
     #define SPP 1
     for (uint32_t rid = 0; rid < SPP; ++rid) {
 
@@ -401,6 +403,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if (bounce == 0) {
                     entityLight = optixLaunchParams.lights[entity.light_id];
                     illum = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
+                    primaryNormal = payload.normal;
+                    primaryAlbedo = mat.base_color;
                 } 
                 break;
             }
@@ -441,6 +445,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
             path_throughput = path_throughput * bsdf / pdf;
 
+            if (bounce == 0) {
+                primaryNormal = payload.normal;
+                primaryAlbedo = mat.base_color;
+            }
+
             if (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON) {
                 break;
             }
@@ -480,11 +489,20 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         accum_color.z, 
         accum_color.w
     );
-    optixLaunchParams.fbPtr[fbOfs] = vec4(
+    optixLaunchParams.frameBuffer[fbOfs] = vec4(
         linear_to_srgb(accum_color.x),
         linear_to_srgb(accum_color.y),
         linear_to_srgb(accum_color.z),
         1.0f
     );
+
+    vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
+    vec4 oldNormal = optixLaunchParams.normalBuffer[fbOfs];
+    vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
+    vec4 newNormal = normalize(camera_transform.worldToLocal * vec4(primaryNormal.x, primaryNormal.y, primaryNormal.z, 0.f));
+    vec4 accumAlbedo = (newAlbedo + float(optixLaunchParams.frameID) * oldAlbedo) / float(optixLaunchParams.frameID + 1);
+    vec4 accumNormal = (newNormal + float(optixLaunchParams.frameID) * oldNormal) / float(optixLaunchParams.frameID + 1);
+    optixLaunchParams.albedoBuffer[fbOfs] = accumAlbedo;
+    optixLaunchParams.normalBuffer[fbOfs] = accumNormal;
 }
 
