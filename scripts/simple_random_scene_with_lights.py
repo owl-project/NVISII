@@ -205,8 +205,10 @@ print('rendering')
 # x[x>1.0] = 1.0
 # x[x<0] = 0
 
-img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
-img.save("tmp.png")
+# img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+# img.save("tmp.png")
+
+
 visii.enable_denoiser()
 visii.render_to_png(width=WIDTH, 
                     height=HEIGHT, 
