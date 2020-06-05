@@ -7,6 +7,7 @@
 #include <ImGuizmo.h>
 #include <visii/utilities/colors.h>
 #include <owl/owl.h>
+#include <owl/ll/helper/optix.h>
 #include <cuda_gl_interop.h>
 
 #include <devicecode/launch_params.h>
@@ -298,6 +299,7 @@ void initializeOptix(bool headless)
     /* Create AOV Buffers */
     if (!headless) {
         initializeFrameBuffer(512, 512);
+        
     }
 
     OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
@@ -391,12 +393,12 @@ void initializeOptix(bool headless)
     options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
     auto optixContext = owlContextGetOptixContext(OD.context, 0);
     auto cudaStream = owlContextGetStream(OD.context, 0);
-    optixDenoiserCreate(optixContext, &options, &OD.denoiser);
+    OPTIX_CHECK(optixDenoiserCreate(optixContext, &options, &OD.denoiser));
     OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_HDR;
     
-    optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0);
+    OPTIX_CHECK(optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0));
 
-    optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes);
+    OPTIX_CHECK(optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes));
     OD.denoiserScratchBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
         OD.denoiserSizes.recommendedScratchSizeInBytes, nullptr);
     OD.denoiserStateBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
@@ -404,7 +406,7 @@ void initializeOptix(bool headless)
     OD.hdrIntensityBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(float),
         1, nullptr);
 
-    optixDenoiserSetup (
+    OPTIX_CHECK(optixDenoiserSetup (
         OD.denoiser, 
         (cudaStream_t) cudaStream, 
         (unsigned int) OD.LP.frameSize.x, 
@@ -413,8 +415,7 @@ void initializeOptix(bool headless)
         OD.denoiserSizes.stateSizeInBytes,
         (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0), 
         OD.denoiserSizes.recommendedScratchSizeInBytes
-    );
-
+    ));
 }
 
 void updateComponents()
@@ -604,6 +605,13 @@ void traceRays()
 }
 
 void denoiseImage() {
+    int num_devices = owlGetDeviceCount(OptixData.context);
+    for (int i = 0; i < num_devices; ++i) {
+        cudaSetDevice(i);
+        cudaDeviceSynchronize();
+    }
+    cudaSetDevice(0);
+    
     auto &OD = OptixData;
     auto cudaStream = owlContextGetStream(OD.context, 0);
 
@@ -638,20 +646,20 @@ void denoiseImage() {
     OptixImage2D outputLayer = colorLayer; // can I get away with this?
 
     // compute average pixel intensity for hdr denoising
-    optixDenoiserComputeIntensity(
+    OPTIX_CHECK(optixDenoiserComputeIntensity(
         OD.denoiser, 
         cudaStream, 
         &inputLayers[0], 
         (CUdeviceptr) owlBufferGetPointer(OD.hdrIntensityBuffer, 0),
         (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0),
-        OD.denoiserSizes.recommendedScratchSizeInBytes);
+        OD.denoiserSizes.recommendedScratchSizeInBytes));
 
     OptixDenoiserParams params;
     params.denoiseAlpha = 0;    // Don't touch alpha.
     params.blendFactor  = 0.0f; // Show the denoised image only.
     params.hdrIntensity = (CUdeviceptr) owlBufferGetPointer(OD.hdrIntensityBuffer, 0);
     
-    optixDenoiserInvoke(
+    OPTIX_CHECK(optixDenoiserInvoke(
         OD.denoiser,
         cudaStream,
         &params,
@@ -664,7 +672,7 @@ void denoiseImage() {
         &outputLayer,
         (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0),
         OD.denoiserSizes.recommendedScratchSizeInBytes
-    );    
+    ));
 }
 
 void drawFrameBufferToWindow()
@@ -806,6 +814,8 @@ void resizeWindow(uint32_t width, uint32_t height)
         using namespace Libraries;
         auto glfw = GLFW::Get();
         glfw->resize_window("ViSII", width, height);
+
+        glViewport(0,0,width,height);
     };
 
     auto future = enqueueCommand(resizeWindow);
@@ -878,6 +888,8 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
                 auto glfw = Libraries::GLFW::Get();
                 glfw->poll_events();
                 glfw->swap_buffers("ViSII");
+                glClearColor(1,1,1,1);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
 
             updateLaunchParams();
@@ -979,6 +991,8 @@ void initializeInteractive(bool windowOnTop)
             /* Poll events from the window */
             glfw->poll_events();
             glfw->swap_buffers("ViSII");
+            glClearColor(1,1,1,1);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             updateFrameBuffer();
             updateComponents();
@@ -1053,7 +1067,7 @@ void cleanup()
             close = true;
             renderThread.join();
         }
-        optixDenoiserDestroy(OptixData.denoiser);
+        OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
     }
     initialized = false;
 }

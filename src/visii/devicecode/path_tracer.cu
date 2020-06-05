@@ -363,7 +363,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         return;
     }
 
-
     float3 accum_illum = make_float3(0.f);
     float3 primaryAlbedo = make_float3(0.f);
     float3 primaryNormal = make_float3(0.f);
