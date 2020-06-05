@@ -45,7 +45,7 @@ camera_entity = visii.entity.create(
 # camera_entity.get_camera().set_focal_distance(3.5)
 
 # Change the dome light intensity
-visii.set_dome_light_intensity(0.2)
+visii.set_dome_light_intensity(0.4)
 
 # set the view camera transform
 camera_entity.get_camera().set_view(
@@ -208,12 +208,14 @@ print('rendering')
 # img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
 # img.save("tmp.png")
 
-
+print('denoiser')
 visii.enable_denoiser()
 visii.render_to_png(width=WIDTH, 
                     height=HEIGHT, 
-                    samples_per_pixel=SAMPLES_PER_PIXEL,
+                    samples_per_pixel=10,
                     image_path="denoise.png")
+
+print('noise')
 visii.disable_denoiser()
 visii.render_to_png(width=WIDTH, 
                     height=HEIGHT, 
