@@ -326,3 +326,32 @@ void sampleSphericalTriangle(const vec3 &A, const vec3 &B, const vec3 &C, float 
 	w = P;
 	wPdf = 1.0 / area;
 }
+
+// Converting PDF between from Area to Solid angle
+inline __device__
+float PdfAtoW( float aPdfA, float aDist2, float aCosThere ){
+    float absCosTheta = abs(aCosThere);
+    if( absCosTheta < EPSILON )
+        return 0.0;
+    
+    return aPdfA * aDist2 / absCosTheta;
+}
+
+inline __device__
+vec3 uniformPointWithinTriangle( const vec3 &v1, const vec3 &v2, const vec3 &v3, float rand1, float rand2 ) {
+    rand1 = sqrt(rand1);
+    return (1.0f - rand1)* v1 + rand1 * (1.0f-rand2) * v2 + rand1 * rand2 * v3;
+}
+
+inline __device__
+void sampleTriangle(const vec3 &pos, const vec3 &n, const vec3 &v1, const vec3 &v2, const vec3 &v3, float rand1, float rand2, vec3 &dir, float &pdf)
+{
+	vec3 p = uniformPointWithinTriangle( v1, v2, v3, rand1, rand2 );
+	float triangleArea = length(cross(v1-v2, v3-v2)) * 0.5;
+	float pdfA = 1.0 / triangleArea;
+	dir = p - pos;
+	float d2 = dot(dir, dir);
+	dir /= sqrt(d2);
+	float aCosThere = max(0.0, dot(-dir,n));
+	pdf = PdfAtoW( pdfA, d2, aCosThere );
+}
