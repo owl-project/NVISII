@@ -431,6 +431,8 @@ void updateComponents()
 
     // Build / Rebuild BLAS
     if (Mesh::areAnyDirty()) {
+        auto mutex = Mesh::getEditMutex();
+        std::lock_guard<std::mutex>(*mutex.get());
         Mesh* meshes = Mesh::getFront();
         for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
             if (!meshes[mid].isDirty()) continue;
@@ -452,15 +454,26 @@ void updateComponents()
             owlGroupBuildAccel(OD.meshes[mid].blas);          
         }
 
-        std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
-        std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
-        for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
-            if (!meshes[mid].isInitialized()) continue;
-            vertexLists[mid] = ((vec4*) owlBufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
-            indexLists[mid] = ((ivec3*) owlBufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
+        if (Mesh::areAnyDirty()) {
+            std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
+            std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
+            for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
+                // If a mesh is initialized, vertex and index buffers should already be created, and so 
+                if (!meshes[mid].isInitialized()) continue;
+                if ((!OD.meshes[mid].vertices) || (!OD.meshes[mid].indices)) {
+                    std::cout<<"Mesh ID"<< mid << " is dirty?" << meshes[mid].isDirty() << std::endl;
+                    std::cout<<"nverts : " << meshes[mid].getVertices().size() << std::endl;
+                    std::cout<<"nindices : " << meshes[mid].getTriangleIndices().size() << std::endl;
+                    throw std::runtime_error("ERROR: vertices/indices is nullptr");
+                }
+                vertexLists[mid] = ((vec4*) owlBufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
+                indexLists[mid] = ((ivec3*) owlBufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
+            }
+            owlBufferUpload(OD.vertexListsBuffer, vertexLists.data());
+            owlBufferUpload(OD.indexListsBuffer, indexLists.data());
         }
-        owlBufferUpload(OD.vertexListsBuffer, vertexLists.data());
-        owlBufferUpload(OD.indexListsBuffer, indexLists.data());
+
+        Mesh::updateComponents();
     }
 
     // Build / Rebuild TLAS
@@ -520,7 +533,6 @@ void updateComponents()
     Entity::updateComponents();
     Transform::updateComponents();
     Camera::updateComponents();
-    Mesh::updateComponents();
     Material::updateComponents();
     Light::updateComponents();
 
