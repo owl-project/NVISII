@@ -701,6 +701,13 @@ void denoiseImage() {
         (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0),
         OD.denoiserSizes.recommendedScratchSizeInBytes
     ));
+
+    // I seem to need this afterwards, else the denoiser gives nans...
+    for (int i = 0; i < num_devices; ++i) {
+        cudaSetDevice(i);
+        cudaDeviceSynchronize();
+    }
+    cudaSetDevice(0);
 }
 
 void drawFrameBufferToWindow()
@@ -912,6 +919,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
         updateComponents();
 
         for (uint32_t i = 0; i < samplesPerPixel; ++i) {
+            // std::cout<<i<<std::endl;
             if (!ViSII.headlessMode) {
                 auto glfw = Libraries::GLFW::Get();
                 glfw->poll_events();
