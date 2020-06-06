@@ -120,15 +120,15 @@ std::string Transform::toString()
 	output += "{\n";
 	output += "\ttype: \"Transform\",\n";
 	output += "\tname: \"" + name + "\",\n";
-	output += "\tid: \"" + std::to_string(id) + "\",\n";
-	output += "\tscale: " + glm::to_string(getScale()) + "\n";
-	output += "\tposition: " + glm::to_string(getPosition()) + "\n";
-	output += "\trotation: " + glm::to_string(getRotation()) + "\n";
-	output += "\tright: " + glm::to_string(right) + "\n";
-	output += "\tup: " + glm::to_string(up) + "\n";
-	output += "\tforward: " + glm::to_string(forward) + "\n";
-	output += "\tlocal_to_parent_matrix: " + glm::to_string(getLocalToParentMatrix()) + "\n";
-	output += "\tparent_to_local_matrix: " + glm::to_string(getParentToLocalMatrix()) + "\n";
+	// output += "\tid: \"" + std::to_string(id) + "\",\n";
+	// output += "\tscale: " + glm::to_string(getScale()) + "\n";
+	// output += "\tposition: " + glm::to_string(getPosition()) + "\n";
+	// output += "\trotation: " + glm::to_string(getRotation()) + "\n";
+	// output += "\tright: " + glm::to_string(right) + "\n";
+	// output += "\tup: " + glm::to_string(up) + "\n";
+	// output += "\tforward: " + glm::to_string(forward) + "\n";
+	// output += "\tlocal_to_parent_matrix: " + glm::to_string(getLocalToParentMatrix()) + "\n";
+	// output += "\tparent_to_local_matrix: " + glm::to_string(getParentToLocalMatrix()) + "\n";
 	output += "}";
 	return output;
 }

@@ -74,6 +74,10 @@ set(MY_DEFINITION
 # Build options go here... Things like "Build Tests", or "Generate documentation"...
 option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" OFF)
 
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+	# Enable c++11 and hide symbols which shouldn't be visible
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+endif()
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Definitions                                                     │
 # └──────────────────────────────────────────────────────────────────┘
@@ -335,8 +339,8 @@ cuda_compile_and_embed(ptxCode ${SRC_CU})
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  ViSII Library                                                   │
 # └──────────────────────────────────────────────────────────────────┘
-add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode})
-target_link_libraries(visii_lib PUBLIC ${LIBRARIES})
+cuda_add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
+target_link_libraries(visii_lib ${LIBRARIES})
 set_target_properties(visii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 install(TARGETS visii_lib 
     DESTINATION ${CMAKE_INSTALL_PREFIX}
