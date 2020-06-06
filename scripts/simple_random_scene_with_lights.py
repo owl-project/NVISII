@@ -14,13 +14,13 @@ import randomcolor
 NB_OBJS = 1000
 NB_LIGHTS = 20
 
-SAMPLES_PER_PIXEL = 1000
+SAMPLES_PER_PIXEL = 500
 
 # WIDTH = 1920 
 # HEIGHT = 1080
 
-WIDTH =  500
-HEIGHT = 500
+WIDTH =  1024	
+HEIGHT = 1024
 
 
 visii.initialize_headless()
@@ -225,19 +225,25 @@ for i in range(NB_LIGHTS):
 ################################################################
 print('rendering')
 
-print(' denoiser')
-visii.enable_denoiser()
-visii.render_to_png(width=WIDTH, 
-                    height=HEIGHT, 
-                    samples_per_pixel=SAMPLES_PER_PIXEL,
-                    image_path="denoise.png")
+
+
+for i in range(0,2000,50):
+	if i is 0: 
+		i = 1
+	print(f' denoiser {i}')
+	visii.enable_denoiser()
+	visii.render_to_png(width=WIDTH, 
+	                    height=HEIGHT, 
+	                    samples_per_pixel=i,
+	                    image_path=f"denoise/out_denoise_{str(i).zfill(3)}.png")
+	visii.disable_denoiser()
 
 print(' noise')
 visii.disable_denoiser()
 visii.render_to_png(width=WIDTH, 
                     height=HEIGHT, 
                     samples_per_pixel=SAMPLES_PER_PIXEL,
-                    image_path="noise.png")
+                    image_path="out_noise.png")
 
 visii.cleanup()
 
