@@ -821,6 +821,8 @@ class Mesh : public StaticFactory
 		template <class Generator>
 		void generateProcedural(Generator &mesh, bool flip_z)
 		{
+			std::lock_guard<std::mutex>lock(*editMutex.get());
+
 			std::vector<Vertex> vertices;
 
 			auto genVerts = mesh.vertices();

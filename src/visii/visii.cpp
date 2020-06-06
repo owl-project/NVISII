@@ -418,6 +418,20 @@ void initializeOptix(bool headless)
     ));
 }
 
+void initializeImgui()
+{
+    ImGui::CreateContext();
+    auto &io  = ImGui::GetIO();
+    // ImGui::StyleColorsDark()
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+    applyStyle();
+    ImGui_ImplGlfw_InitForOpenGL(WindowData.window, true);
+    const char* glsl_version = "#version 130";
+    ImGui_ImplOpenGL3_Init(glsl_version);
+}
+
 void updateComponents()
 {
     auto &OD = OptixData;
@@ -432,11 +446,12 @@ void updateComponents()
     // Build / Rebuild BLAS
     if (Mesh::areAnyDirty()) {
         auto mutex = Mesh::getEditMutex();
-        std::lock_guard<std::mutex>(*mutex.get());
+        std::lock_guard<std::mutex> lock(*mutex.get());
         Mesh* meshes = Mesh::getFront();
         for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
             if (!meshes[mid].isDirty()) continue;
             if (!meshes[mid].isInitialized()) continue;
+            if (meshes[mid].getTriangleIndices().size() == 0) continue;
             OD.meshes[mid].vertices  = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getVertices().size(), meshes[mid].getVertices().data());
             OD.meshes[mid].colors    = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getColors().size(), meshes[mid].getColors().data());
             OD.meshes[mid].normals   = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getNormals().size(), meshes[mid].getNormals().data());
@@ -460,6 +475,7 @@ void updateComponents()
             for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
                 // If a mesh is initialized, vertex and index buffers should already be created, and so 
                 if (!meshes[mid].isInitialized()) continue;
+                if (meshes[mid].getTriangleIndices().size() == 0) continue;
                 if ((!OD.meshes[mid].vertices) || (!OD.meshes[mid].indices)) {
                     std::cout<<"Mesh ID"<< mid << " is dirty?" << meshes[mid].isDirty() << std::endl;
                     std::cout<<"nverts : " << meshes[mid].getVertices().size() << std::endl;
@@ -987,16 +1003,7 @@ void initializeInteractive(bool windowOnTop)
 
         initializeOptix(/*headless = */ false);
 
-        ImGui::CreateContext();
-        auto &io  = ImGui::GetIO();
-        // ImGui::StyleColorsDark()
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls;
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
-        applyStyle();
-        ImGui_ImplGlfw_InitForOpenGL(WindowData.window, true);
-        const char* glsl_version = "#version 130";
-        ImGui_ImplOpenGL3_Init(glsl_version);
+        initializeImgui();
 
         while (!close)
         {
@@ -1079,7 +1086,8 @@ void cleanup()
             close = true;
             renderThread.join();
         }
-        OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
+        if (OptixData.denoiser)
+            OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
     }
     initialized = false;
 }
