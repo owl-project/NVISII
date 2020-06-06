@@ -268,7 +268,7 @@ void initializeOptix(bool headless)
 {
     using namespace glm;
     auto &OD = OptixData;
-    OD.context = owlContextCreate(/*requested Device IDs*/ nullptr, /* Num Devices */ 0);
+    OD.context = owlContextCreate(/*requested Device IDs*/ nullptr, /* Num Devices */  1); // running into multi-gpu issues. Forcing 1 for now to avoid crashing...
     // owlContextSetRayTypeCount(context, 2); // for both "feeler" and query rays on the same accel.
     OD.module = owlModuleCreate(OD.context, ptxCode);
     
