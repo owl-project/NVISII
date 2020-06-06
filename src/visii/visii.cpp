@@ -26,6 +26,11 @@
 #include <optix_stubs.h>
 // OptixFunctionTable g_optixFunctionTable;
 
+// #include <thrust/reduce.h>
+// #include <thrust/execution_policy.h>
+// #include <thrust/device_vector.h>
+// #include <thrust/device_ptr.h>
+
 // extern optixDenoiserSetModel;
 std::promise<void> exitSignal;
 std::thread renderThread;
@@ -60,7 +65,6 @@ static struct OptixData {
     OWLBuffer frameBuffer;
     OWLBuffer normalBuffer;
     OWLBuffer albedoBuffer;
-    OWLBuffer denoiseBuffer;
     OWLBuffer accumBuffer;
 
     OWLBuffer entityBuffer;
@@ -177,6 +181,20 @@ void resetAccumulation() {
     OptixData.LP.frameID = 0;
 }
 
+void synchronizeDevices()
+{
+    for (int i = 0; i < owlGetDeviceCount(OptixData.context); i++) {
+        cudaSetDevice(i);
+        cudaDeviceSynchronize();
+        cudaError_t err = cudaPeekAtLastError();
+        if (err != 0) {
+            std::cout<< "ERROR: " << cudaGetErrorString(err)<<std::endl;
+            throw std::runtime_error("ERROR");
+        }
+    }
+    cudaSetDevice(0);
+}
+
 void setCameraEntity(Entity* camera_entity)
 {
     if (!camera_entity) throw std::runtime_error("Error: camera entity was nullptr/None");
@@ -194,6 +212,8 @@ void setDomeLightIntensity(float intensity)
 }
 
 void initializeFrameBuffer(int fbWidth, int fbHeight) {
+    synchronizeDevices();
+
     auto &OD = OptixData;
     if (OD.imageTexID != -1) {
         cudaGraphicsUnregisterResource(OD.cudaResourceTex);
@@ -217,6 +237,8 @@ void initializeFrameBuffer(int fbWidth, int fbHeight) {
 
     //Registration with CUDA
     cudaGraphicsGLRegisterImage(&OD.cudaResourceTex, OD.imageTexID, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone);
+    
+    synchronizeDevices();
 }
 
 void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
@@ -229,8 +251,7 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
     owlBufferResize(OD.normalBuffer, width * height);
     owlBufferResize(OD.albedoBuffer, width * height);
     owlBufferResize(OD.accumBuffer, width * height);
-    owlBufferResize(OD.denoiseBuffer, width * height);
-
+    
     // Reconfigure denoiser
     optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes);
     owlBufferResize(OD.denoiserScratchBuffer, OD.denoiserSizes.recommendedScratchSizeInBytes);
@@ -268,8 +289,9 @@ void initializeOptix(bool headless)
 {
     using namespace glm;
     auto &OD = OptixData;
-    OD.context = owlContextCreate(/*requested Device IDs*/ nullptr, /* Num Devices */  1); // running into multi-gpu issues. Forcing 1 for now to avoid crashing...
-    // owlContextSetRayTypeCount(context, 2); // for both "feeler" and query rays on the same accel.
+    OD.context = owlContextCreate(/*requested Device IDs*/ nullptr, /* Num Devices */  0); 
+    cudaSetDevice(0); // OWL leaves the device as num_devices - 1 after the context is created. set it back to 0.
+    
     OD.module = owlModuleCreate(OD.context, ptxCode);
     
     /* Setup Optix Launch Params */
@@ -307,7 +329,6 @@ void initializeOptix(bool headless)
     OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.normalBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.albedoBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.denoiseBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.LP.frameSize = glm::ivec2(512, 512);
     owlLaunchParamsSetBuffer(OD.launchParams, "frameBuffer", OD.frameBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "normalBuffer", OD.normalBuffer);
@@ -635,19 +656,12 @@ void traceRays()
 }
 
 void denoiseImage() {
-    int num_devices = owlGetDeviceCount(OptixData.context);
-    for (int i = 0; i < num_devices; ++i) {
-        cudaSetDevice(i);
-        cudaDeviceSynchronize();
-    }
-    cudaSetDevice(0);
-    
+    synchronizeDevices();
+
     auto &OD = OptixData;
     auto cudaStream = owlContextGetStream(OD.context, 0);
 
     CUdeviceptr frameBuffer = (CUdeviceptr) owlBufferGetPointer(OD.frameBuffer, 0);
-    CUdeviceptr denoiseBuffer = (CUdeviceptr) owlBufferGetPointer(OD.denoiseBuffer, 0);
-    cuMemcpy(denoiseBuffer, frameBuffer, OD.LP.frameSize.x * OD.LP.frameSize.y * 4 * sizeof(float));
 
     std::vector<OptixImage2D> inputLayers;
     OptixImage2D colorLayer;
@@ -656,7 +670,7 @@ void denoiseImage() {
     colorLayer.format = OPTIX_PIXEL_FORMAT_FLOAT4;
     colorLayer.pixelStrideInBytes = 4 * sizeof(float);
     colorLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
-    colorLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.denoiseBuffer, 0);
+    colorLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.frameBuffer, 0);
     inputLayers.push_back(colorLayer);
 
     OptixImage2D albedoLayer;
@@ -708,28 +722,13 @@ void denoiseImage() {
         OD.denoiserSizes.recommendedScratchSizeInBytes
     ));
 
-    // I seem to need this afterwards, else the denoiser gives nans...
-    for (int i = 0; i < num_devices; ++i) {
-        cudaSetDevice(i);
-        cudaDeviceSynchronize();
-    }
-    cudaSetDevice(0);
-
-    cuMemcpy(frameBuffer, denoiseBuffer, OD.LP.frameSize.x * OD.LP.frameSize.y * 4 * sizeof(float));
+    synchronizeDevices();
 }
 
 void drawFrameBufferToWindow()
 {
     auto &OD = OptixData;
-    for (int i = 0; i < owlGetDeviceCount(OD.context); i++) {
-        cudaSetDevice(i);
-        cudaDeviceSynchronize();
-        cudaError_t err = cudaPeekAtLastError();
-        if (err != 0) {
-            std::cout<< "ERROR: " << cudaGetErrorString(err)<<std::endl;
-            throw std::runtime_error("ERROR");
-        }
-    }
+    synchronizeDevices();
 
     cudaGraphicsMapResources(1, &OD.cudaResourceTex);
     const void* fbdevptr = owlBufferGetPointer(OD.frameBuffer,0);
@@ -737,16 +736,6 @@ void drawFrameBufferToWindow()
     cudaGraphicsSubResourceGetMappedArray(&array, OD.cudaResourceTex, 0, 0);
     cudaMemcpyToArray(array, 0, 0, fbdevptr, OD.LP.frameSize.x *  OD.LP.frameSize.y  * sizeof(glm::vec4), cudaMemcpyDeviceToDevice);
     cudaGraphicsUnmapResources(1, &OD.cudaResourceTex);
-
-    for (int i = 0; i < owlGetDeviceCount(OD.context); i++) {
-        cudaSetDevice(i);
-        cudaDeviceSynchronize();
-        cudaError_t err = cudaPeekAtLastError();
-        if (err != 0) {
-            std::cout<< "ERROR: " << cudaGetErrorString(err)<<std::endl;
-            throw std::runtime_error("ERROR");
-        }
-    }
 
     // Draw pixels from optix frame buffer
     glViewport(0, 0, OD.LP.frameSize.x, OD.LP.frameSize.y);
@@ -758,12 +747,8 @@ void drawFrameBufferToWindow()
     glLoadIdentity();
     glOrtho(0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
             
-    glDisable(GL_DEPTH_TEST);
-    
+    glDisable(GL_DEPTH_TEST);    
     glBindTexture(GL_TEXTURE_2D, OD.imageTexID);
-
-    // This is incredibly slow, but does not require interop
-    // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, windowSize.x, windowSize.y, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
     
     // Draw texture to screen via immediate mode
     glEnable(GL_TEXTURE_2D);
@@ -786,10 +771,6 @@ void drawFrameBufferToWindow()
     glDisable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-
-    // LP.frame = LP.frame % 1000;
-    // LP.frame++;
-    // LP.startFrame++;
 }
 
 void drawGUI()
@@ -893,11 +874,7 @@ std::vector<float> readFrameBuffer() {
 
     auto readFrameBuffer = [&frameBuffer] () {
         int num_devices = owlGetDeviceCount(OptixData.context);
-        for (int i = 0; i < num_devices; ++i) {
-            cudaSetDevice(i);
-            cudaDeviceSynchronize();
-        }
-        cudaSetDevice(0);
+        synchronizeDevices();
 
         const glm::vec4 *fb = (const glm::vec4*)owlBufferGetPointer(OptixData.frameBuffer,0);
         for (uint32_t test = 0; test < frameBuffer.size(); test += 4) {
@@ -953,12 +930,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
             }
         }        
 
-        int num_devices = owlGetDeviceCount(OptixData.context);
-        for (int i = 0; i < num_devices; ++i) {
-            cudaSetDevice(i);
-            cudaDeviceSynchronize();
-        }
-        cudaSetDevice(0);
+        synchronizeDevices();
 
         const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
         for (uint32_t test = 0; test < frameBuffer.size(); test += 4) {
@@ -967,6 +939,8 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
             frameBuffer[test + 2] = fb[test / 4].b;
             frameBuffer[test + 3] = fb[test / 4].a;
         }
+
+        synchronizeDevices();
     };
 
     auto future = enqueueCommand(readFrameBuffer);
