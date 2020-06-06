@@ -919,7 +919,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
         updateComponents();
 
         for (uint32_t i = 0; i < samplesPerPixel; ++i) {
-            std::cout<<i<<std::endl;
+            // std::cout<<i<<std::endl;
             if (!ViSII.headlessMode) {
                 auto glfw = Libraries::GLFW::Get();
                 glfw->poll_events();
