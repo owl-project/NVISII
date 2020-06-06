@@ -2,16 +2,15 @@
 # os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
 # sys.path.append(os.path.join(os.getcwd(), "..", "install"))
 
+# input()
+
+import random
 import visii 
-import numpy as np 
-from PIL import Image 
-import PIL
 import time 
-from pyquaternion import Quaternion
 import randomcolor
 
 
-NB_OBJS = 25000
+NB_OBJS = 1
 NB_LIGHTS = 20
 
 SAMPLES_PER_PIXEL = 1000
@@ -70,10 +69,10 @@ def add_random_light(name = 'name'):
         mesh = visii.mesh.create_sphere(name),
         light = visii.light.create(name)
     )
-    obj.get_transform().set_scale(1)
+    obj.get_transform().set_scale(2)
 
 
-    obj.get_light().set_intensity(np.random.randint(50000,100000))
+    obj.get_light().set_intensity(random.uniform(50000,100000))
     # obj.get_light().set_temperature(np.random.randint(100,9000))
 
     c = eval(str(rcolor.generate(luminosity='bright',format_='rgb')[0])[3:])
@@ -82,31 +81,13 @@ def add_random_light(name = 'name'):
         c[1]/255.0,
         c[2]/255.0)  
  
-    # obj.get_light().set_temperature(4000)
+    obj.get_light().set_temperature(4000)
     # obj.get_light().set_intensity(10000.)
 
-
-    # obj.get_transform().set_position(
-    #     np.random.uniform(-1,1),
-    #     np.random.uniform(-1,1),
-    #     np.random.uniform(6,7)
-    #     )
-    # obj.get_transform().set_position(
-    #     0,
-    #     0,
-    #     2.5
-    #     )
-
     obj.get_transform().set_position(
-        # np.random.uniform(-2,2),
-        # np.random.uniform(-2,2),
-
-        np.random.uniform(-10,10),
-        np.random.uniform(-10,10),
-
-
-        np.random.uniform(5,30)
-        # np.random.uniform(2,3)
+            random.uniform(-10,10),
+            random.uniform(-10,10),
+            random.uniform(5,30)
         )
 def add_random_obj(name = "name"):
     global rcolor
@@ -116,15 +97,15 @@ def add_random_obj(name = "name"):
         material = visii.material.create(name),
     )
 
-    obj_id = np.random.randint(0,16)
+    obj_id = random.randint(0,15)
 
     mesh = None
     if obj_id == 0:
         mesh = visii.mesh.create_sphere(name)
     if obj_id == 1:
         mesh = visii.mesh.create_torus_knot(name, 
-            np.random.randint(2,6), 
-            np.random.randint(4,10))
+            random.randint(2,6),
+            random.randint(4,10))
     if obj_id == 2:
         mesh = visii.mesh.create_teapotahedron(name)
     if obj_id == 3:
@@ -156,15 +137,14 @@ def add_random_obj(name = "name"):
 
     obj.set_mesh(mesh)
     obj.get_transform().set_position(
-        np.random.uniform(-5,5),
-        np.random.uniform(-5,5),
-        np.random.uniform(-10,3)
+        random.uniform(-5,5),
+        random.uniform(-5,5),
+        random.uniform(-10,3)
         )
-    q = Quaternion.random()
     obj.get_transform().set_rotation(
-        visii.quat(q.w,q.x,q.y,q.z)
+        visii.quat(1.0 ,random.random(), random.random(), random.random()) 
         )
-    obj.get_transform().set_scale(np.random.uniform(0.01,0.2))
+    obj.get_transform().set_scale(random.uniform(0.01,0.2))
     
     c = eval(str(rcolor.generate(luminosity='bright',format_='rgb')[0])[3:])
     obj.get_material().set_base_color(
@@ -172,13 +152,13 @@ def add_random_obj(name = "name"):
         c[1]/255.0,
         c[2]/255.0)  
 
-    obj.get_material().set_roughness(np.random.uniform(0,1)) # default is 1  
-    obj.get_material().set_metallic(np.random.uniform(0,1))  # degault is 0     
-    obj.get_material().set_transmission(np.random.uniform(0,1))  # degault is 0     
-    obj.get_material().set_sheen(np.random.uniform(0,1))  # degault is 0     
-    obj.get_material().set_clearcoat(np.random.uniform(0,1))  # degault is 0     
-    obj.get_material().set_specular(np.random.uniform(0,1))  # degault is 0     
-    obj.get_material().set_anisotropic(np.random.uniform(0,1))  # degault is 0     
+    obj.get_material().set_roughness(random.uniform(0,1)) # default is 1  
+    obj.get_material().set_metallic(random.uniform(0,1))  # degault is 0     
+    obj.get_material().set_transmission(random.uniform(0,1))  # degault is 0     
+    obj.get_material().set_sheen(random.uniform(0,1))  # degault is 0     
+    obj.get_material().set_clearcoat(random.uniform(0,1))  # degault is 0     
+    obj.get_material().set_specular(random.uniform(0,1))  # degault is 0     
+    obj.get_material().set_anisotropic(random.uniform(0,1))  # degault is 0     
 
 
 # create a random scene, the function defines the values
@@ -193,26 +173,13 @@ for i in range(NB_LIGHTS):
 
 
 ################################################################
-# time.sleep(3)
 print('rendering')
-# Read and save the image 
-# x = visii.render(width=WIDTH, height=HEIGHT, samples_per_pixel=SAMPLES_PER_PIXEL)
-
-# # x = np.array(x).reshape(WIDTH,HEIGHT,4)
-# x = np.array(x).reshape(HEIGHT,WIDTH,4)
-
-# # make sure the image is clamped 
-# x[x>1.0] = 1.0
-# x[x<0] = 0
-
-# img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
-# img.save("tmp.png")
 
 print('denoiser')
 visii.enable_denoiser()
 visii.render_to_png(width=WIDTH, 
                     height=HEIGHT, 
-                    samples_per_pixel=10,
+                    samples_per_pixel=SAMPLES_PER_PIXEL,
                     image_path="denoise.png")
 
 print('noise')
@@ -222,5 +189,5 @@ visii.render_to_png(width=WIDTH,
                     samples_per_pixel=SAMPLES_PER_PIXEL,
                     image_path="noise.png")
 
-visii.cleanup()
+# visii.cleanup()
 
