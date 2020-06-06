@@ -60,6 +60,7 @@ static struct OptixData {
     OWLBuffer frameBuffer;
     OWLBuffer normalBuffer;
     OWLBuffer albedoBuffer;
+    OWLBuffer denoiseBuffer;
     OWLBuffer accumBuffer;
 
     OWLBuffer entityBuffer;
@@ -228,6 +229,7 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
     owlBufferResize(OD.normalBuffer, width * height);
     owlBufferResize(OD.albedoBuffer, width * height);
     owlBufferResize(OD.accumBuffer, width * height);
+    owlBufferResize(OD.denoiseBuffer, width * height);
 
     // Reconfigure denoiser
     optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes);
@@ -298,14 +300,14 @@ void initializeOptix(bool headless)
     
     /* Create AOV Buffers */
     if (!headless) {
-        initializeFrameBuffer(512, 512);
-        
+        initializeFrameBuffer(512, 512);        
     }
 
     OD.frameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.normalBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.albedoBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.denoiseBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.LP.frameSize = glm::ivec2(512, 512);
     owlLaunchParamsSetBuffer(OD.launchParams, "frameBuffer", OD.frameBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "normalBuffer", OD.normalBuffer);
@@ -643,6 +645,10 @@ void denoiseImage() {
     auto &OD = OptixData;
     auto cudaStream = owlContextGetStream(OD.context, 0);
 
+    CUdeviceptr frameBuffer = (CUdeviceptr) owlBufferGetPointer(OD.frameBuffer, 0);
+    CUdeviceptr denoiseBuffer = (CUdeviceptr) owlBufferGetPointer(OD.denoiseBuffer, 0);
+    cuMemcpy(denoiseBuffer, frameBuffer, OD.LP.frameSize.x * OD.LP.frameSize.y * 4 * sizeof(float));
+
     std::vector<OptixImage2D> inputLayers;
     OptixImage2D colorLayer;
     colorLayer.width = OD.LP.frameSize.x;
@@ -650,7 +656,7 @@ void denoiseImage() {
     colorLayer.format = OPTIX_PIXEL_FORMAT_FLOAT4;
     colorLayer.pixelStrideInBytes = 4 * sizeof(float);
     colorLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
-    colorLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.frameBuffer, 0);
+    colorLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.denoiseBuffer, 0);
     inputLayers.push_back(colorLayer);
 
     OptixImage2D albedoLayer;
@@ -708,6 +714,8 @@ void denoiseImage() {
         cudaDeviceSynchronize();
     }
     cudaSetDevice(0);
+
+    cuMemcpy(frameBuffer, denoiseBuffer, OD.LP.frameSize.x * OD.LP.frameSize.y * 4 * sizeof(float));
 }
 
 void drawFrameBufferToWindow()
@@ -859,7 +867,12 @@ void resizeWindow(uint32_t width, uint32_t height)
 
 void enableDenoiser() 
 {
+
     auto enableDenoiser = [] () {
+        // int num_devices = owlGetDeviceCount(OptixData.context);
+        // if (num_devices > 1) {
+        //     throw std::runtime_error("ERROR: OptiX denoiser currently only supported for single GPU OptiX contexts");
+        // }
         OptixData.enableDenoiser = true;
         // resetAccumulation(); // reset not required, just effects final framebuffer
     };
