@@ -13,6 +13,15 @@ import subprocess
 import random 
 from utils import * 
 
+import os
+
+try:
+    os.mkdir("outf")
+    print('created outf/ folder')
+except:
+    print('outf/ exists')
+
+
 NB_OBJS = 1000
 NB_LIGHTS = 20
 
