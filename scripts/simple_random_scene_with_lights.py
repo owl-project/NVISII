@@ -10,17 +10,18 @@ import time
 import randomcolor
 
 
-# NB_OBJS = 25000
-NB_OBJS = 1000
+# NB_OBJS = 16999
+NB_OBJS = 10999
+# NB_OBJS = 1000
 NB_LIGHTS = 20
 
-SAMPLES_PER_PIXEL = 500
+SAMPLES_PER_PIXEL = 200
 
 # WIDTH = 1920 
 # HEIGHT = 1080
 
-WIDTH =  1024	
-HEIGHT = 1024
+WIDTH =  1000	
+HEIGHT = 500
 
 
 visii.initialize_headless()
@@ -90,6 +91,7 @@ def add_random_light(name = 'name'):
             random.uniform(-10,10),
             random.uniform(5,30)
         )
+    
 def add_random_obj(name = "name"):
     global rcolor
     obj= visii.entity.create(
@@ -227,16 +229,24 @@ print('rendering')
 
 
 
-for i in range(0,2000,50):
-	if i is 0: 
-		i = 1
-	print(f' denoiser {i}')
-	visii.enable_denoiser()
-	visii.render_to_png(width=WIDTH, 
-	                    height=HEIGHT, 
-	                    samples_per_pixel=i,
-	                    image_path=f"denoise/out_denoise_{str(i).zfill(3)}.png")
-	visii.disable_denoiser()
+# for i in range(0,2000,50):
+# 	if i is 0: 
+# 		i = 1
+# 	print(f' denoiser {i}')
+# 	visii.enable_denoiser()
+# 	visii.render_to_png(width=WIDTH, 
+# 	                    height=HEIGHT, 
+# 	                    samples_per_pixel=i,
+# 	                    image_path=f"denoise/out_denoise_{str(i).zfill(3)}.png")
+# 	visii.disable_denoiser()
+
+print(' denoise')
+visii.enable_denoiser()
+visii.render_to_png(width=WIDTH, 
+                    height=HEIGHT, 
+                    samples_per_pixel=SAMPLES_PER_PIXEL,
+                    image_path="out_denoise.png")
+
 
 print(' noise')
 visii.disable_denoiser()
