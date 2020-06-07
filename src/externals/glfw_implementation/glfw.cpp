@@ -92,8 +92,9 @@ namespace Libraries {
 
         // For Vulkan, if we were using it...
         // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
         glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_FALSE);
         glfwWindowHint(GLFW_DECORATED, (decorated) ? GLFW_TRUE : GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, (resizable) ? GLFW_TRUE : GLFW_FALSE);
@@ -101,7 +102,7 @@ namespace Libraries {
         Window window = {};
         auto ptr = glfwCreateWindow(width, height, key.c_str(), NULL, NULL);
         if (!ptr)
-            throw std::runtime_error( std::string("Error: Failed to create GLFW window."));
+            throw std::runtime_error( std::string("Error: Failed to create OpenGL window. Minimum OpenGL version is 4.3."));
 
         glfwSetWindowSizeCallback(ptr, &resize_window_callback);
         glfwSetScrollCallback(ptr, &scroll_callback);

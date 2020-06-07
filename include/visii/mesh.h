@@ -700,6 +700,8 @@ class Mesh : public StaticFactory
 		// /* TODO */
 		// bool should_show_bounding_box();
 
+		static std::shared_ptr<std::mutex> getEditMutex();
+
 	private:
 		/* Creates an uninitialized mesh. Useful for preallocation. */
 		Mesh();
@@ -708,7 +710,7 @@ class Mesh : public StaticFactory
 		Mesh(std::string name, uint32_t id);
 
 		/* TODO */
-		static std::shared_ptr<std::mutex> creationMutex;
+		static std::shared_ptr<std::mutex> editMutex;
 		
 		/* TODO */
 		static bool factoryInitialized;
@@ -819,6 +821,8 @@ class Mesh : public StaticFactory
 		template <class Generator>
 		void generateProcedural(Generator &mesh, bool flip_z)
 		{
+			std::lock_guard<std::mutex>lock(*editMutex.get());
+
 			std::vector<Vertex> vertices;
 
 			auto genVerts = mesh.vertices();
