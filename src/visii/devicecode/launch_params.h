@@ -36,4 +36,7 @@ struct LaunchParams {
 
     vec4 **vertexLists = nullptr;
     ivec3 **indexLists = nullptr;
+
+    bool environmentMapSet = false;
+    cudaTextureObject_t environmentMap;
 };

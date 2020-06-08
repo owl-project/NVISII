@@ -316,6 +316,8 @@ void initializeOptix(bool headless)
         { "numLightEntities",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
         { "instanceToEntityMap", OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
         { "domeLightIntensity",  OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
+        { "environmentMapSet",   OWL_USER_TYPE(bool),               OWL_OFFSETOF(LaunchParams, environmentMapSet)},
+        { "environmentMap",      OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, environmentMap)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
@@ -357,6 +359,28 @@ void initializeOptix(bool headless)
     owlLaunchParamsSetBuffer(OD.launchParams, "instanceToEntityMap", OD.instanceToEntityMapBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "vertexLists", OD.vertexListsBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "indexLists", OD.indexListsBuffer);
+
+    // ------------------------------------------------------------------
+    // create a 4x4 checkerboard texture
+    // ------------------------------------------------------------------
+    glm::ivec2 texSize = glm::ivec2(4);
+    std::vector<u8vec4> texels;
+    for (int iy=0;iy<texSize.y;iy++)
+        for (int ix=0;ix<texSize.x;ix++) {
+        texels.push_back(((ix ^ iy)&1) ?
+                        u8vec4(0,255,0,0) :
+                        u8vec4(255));
+        }
+    OWLTexture cbTexture
+        = owlTexture2DCreate(OD.context,
+                         OWL_TEXEL_FORMAT_RGBA8,
+                         texSize.x,texSize.y,
+                         texels.data(),
+                         OWL_TEXTURE_NEAREST);
+    owlLaunchParamsSetTexture(OD.launchParams, "environmentMap", cbTexture);
+    OD.LP.environmentMapSet = true;
+    owlLaunchParamsSetRaw(OD.launchParams, "environmentMapSet", &OD.LP.environmentMapSet);
+    
 
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
     owlLaunchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
