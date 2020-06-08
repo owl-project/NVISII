@@ -39,4 +39,7 @@ struct LaunchParams {
 
     bool environmentMapSet = false;
     cudaTextureObject_t environmentMap;
+
+    cudaTextureObject_t GGX_E_AVG_LOOKUP;
+    cudaTextureObject_t GGX_E_LOOKUP;
 };

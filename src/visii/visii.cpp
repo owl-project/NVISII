@@ -13,6 +13,8 @@
 #include <devicecode/launch_params.h>
 #include <devicecode/path_tracer.h>
 
+#include <visii/utilities/ggx_lookup_tables.h>
+
 #include <thread>
 #include <future>
 #include <queue>
@@ -318,6 +320,8 @@ void initializeOptix(bool headless)
         { "domeLightIntensity",  OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
         { "environmentMapSet",   OWL_USER_TYPE(bool),               OWL_OFFSETOF(LaunchParams, environmentMapSet)},
         { "environmentMap",      OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, environmentMap)},
+        { "GGX_E_AVG_LOOKUP",    OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_AVG_LOOKUP)},
+        { "GGX_E_LOOKUP",        OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_LOOKUP)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
@@ -371,15 +375,27 @@ void initializeOptix(bool headless)
                         u8vec4(0,255,0,0) :
                         u8vec4(255));
         }
-    OWLTexture cbTexture
-        = owlTexture2DCreate(OD.context,
-                         OWL_TEXEL_FORMAT_RGBA8,
-                         texSize.x,texSize.y,
-                         texels.data(),
-                         OWL_TEXTURE_NEAREST);
-    owlLaunchParamsSetTexture(OD.launchParams, "environmentMap", cbTexture);
+    OWLTexture envTexture = owlTexture2DCreate(OD.context,
+                            OWL_TEXEL_FORMAT_RGBA8,
+                            texSize.x,texSize.y,
+                            texels.data(),
+                            OWL_TEXTURE_LINEAR);
     OD.LP.environmentMapSet = true;
+    owlLaunchParamsSetTexture(OD.launchParams, "environmentMap", envTexture);
     owlLaunchParamsSetRaw(OD.launchParams, "environmentMapSet", &OD.LP.environmentMapSet);
+                            
+    OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
+                            OWL_TEXEL_FORMAT_R32F,
+                            32,1,
+                            GGX_E_avg,
+                            OWL_TEXTURE_LINEAR);
+    OWLTexture GGX_E_LOOKUP = owlTexture2DCreate(OD.context,
+                            OWL_TEXEL_FORMAT_R32F,
+                            32,32,
+                            GGX_E,
+                            OWL_TEXTURE_LINEAR);
+    owlLaunchParamsSetTexture(OD.launchParams, "GGX_E_AVG_LOOKUP", GGX_E_AVG_LOOKUP);
+    owlLaunchParamsSetTexture(OD.launchParams, "GGX_E_LOOKUP",     GGX_E_LOOKUP);
     
 
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
