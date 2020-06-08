@@ -120,10 +120,10 @@ class Camera : public StaticFactory
 	// /* Returns the near position of the given multiview */
 	// float getNearPos(uint32_t multiview = 0);
 
-	// /* Returns the entity transform to camera matrix for the given multiview. 
-	// 	This additional transform is applied on top of an entity transform during a renderpass
-	// 	to see a particular "view". */
-	// glm::mat4 getView(uint32_t multiview = 0);
+	/** \returns the entity transform to camera matrix.
+		This additional transform is applied on top of an entity transform during rendering
+		to see a particular "view". */
+	glm::mat4 getView();
 
 	// /* Sets the entity transform to camera matrix for the given multiview. 
 	// 	This additional transform is applied on top of an entity transform during a renderpass
@@ -135,10 +135,10 @@ class Camera : public StaticFactory
 
 	void setApertureDiameter(float diameter);
 	
-	// /* Returns the camera to projection matrix for the given multiview.
-	// 	This transform can be used to achieve perspective (eg a vanishing point), or for scaling
-	// 	an orthographic view. */
-	// glm::mat4 getProjection(uint32_t multiview = 0);
+	/** \returns the camera to projection matrix.
+		This transform can be used to achieve perspective (eg a vanishing point), or for scaling
+		an orthographic view. */
+	glm::mat4 getProjection();
 
 	// // /* Returns the texture component being rendered to. 
 	// // 	Otherwise, returns None/nullptr. */

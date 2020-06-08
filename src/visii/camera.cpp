@@ -317,10 +317,9 @@ void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth,
 // 	return camera_struct.multiviews[multiview].near_pos; 
 // }
 
-// glm::mat4 Camera::get_view(uint32_t multiview) { 
-// 	check_multiview_index(multiview);
-// 	return camera_struct.multiviews[multiview].view; 
-// };
+glm::mat4 Camera::getView() { 
+	return cameraStructs[id].view; 
+};
 
 void Camera::setView(glm::mat4 view)
 {
@@ -375,10 +374,9 @@ void Camera::setApertureDiameter(float diameter)
 // 	return maxRenderOrder;
 // }
 
-// glm::mat4 Camera::get_projection(uint32_t multiview) { 
-// 	check_multiview_index(multiview);
-// 	return camera_struct.multiviews[multiview].proj; 
-// };
+glm::mat4 Camera::getProjection() { 
+	return cameraStructs[id].proj; 
+};
 
 
 // Texture* Camera::get_texture()
