@@ -1,7 +1,7 @@
 /* File shared by both host and device */
 #pragma once
 
-#define MAX_MESHES 2048
+#define MAX_MESHES 100000
 #include <glm/glm.hpp>
 using namespace glm;
 
@@ -19,6 +19,6 @@ struct MeshStruct {
     /* The radius of a sphere centered at the centroid which contains the mesh */
     float bounding_sphere_radius; // 52
     int32_t show_bounding_box; // 56
-    int32_t ph2; // 60
+    int32_t numTris; // 60
     int32_t ph3; // 64
 };

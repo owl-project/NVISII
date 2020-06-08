@@ -1,7 +1,7 @@
 /* File shared by both host and device */
 #pragma once
 
-#define MAX_CAMERAS 1024
+#define MAX_CAMERAS 100
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_DEPTH_ZERO_TO_ONE
@@ -18,9 +18,9 @@ struct CameraStruct
     mat4 viewinv;
     mat4 projinv;
     mat4 viewproj;
-    float near_pos;
     // float far_pos;
     float fov;
-    float pad2;
+    float focalDistance;
+    float apertureDiameter;
     int tex_id;
 };

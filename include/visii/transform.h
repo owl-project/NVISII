@@ -8,7 +8,7 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/string_cast.hpp>
+// #include <glm/gtx/string_cast.hpp>
 #include <glm/common.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -437,6 +437,10 @@ class Transform : public StaticFactory
     /** \returns a matrix transforming this component from its local space to world space, taking all 
       * parent transforms into account. */
 	glm::mat4 getLocalToWorldMatrix();
+
+  /** \returns a (possibly approximate) scale scaling the current transform from 
+      * local space to world space, taking all parent transforms into account */
+  glm::vec3 getWorldScale();
 
     /** \returns a (possibly approximate) rotation rotating the current transform from 
       * local space to world space, taking all parent transforms into account */

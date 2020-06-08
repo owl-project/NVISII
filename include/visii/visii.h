@@ -4,6 +4,7 @@
 #include <visii/material.h>
 #include <visii/mesh.h>
 #include <visii/camera.h>
+#include <visii/light.h>
 
 /**
    Initializes various backend systems required to render scene data.
@@ -26,3 +27,23 @@ void cleanup();
  * field of view, the depth of field, and other "analog" camera properties.
  * \param camera_entity The entity containing a camera and transform component, to use for rendering. */
 void setCameraEntity(Entity* camera_entity);
+
+
+/** Sets the intensity, or brightness, that the dome light (aka environment light) will emit it's color.
+ * \param intensity How powerful the dome light is in emitting light
+ */ 
+void setDomeLightIntensity(float intensity);
+
+/**
+   If using interactive mode, resizes the window to the specified dimentions.
+*/
+void resizeWindow(uint32_t width, uint32_t height);
+
+std::vector<float> readFrameBuffer();
+
+std::vector<float> render(uint32_t width, uint32_t height, uint32_t samples_per_pixel);
+
+void enableDenoiser();
+void disableDenoiser();
+void renderToHDR(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);
+void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);

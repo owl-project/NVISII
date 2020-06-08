@@ -38,7 +38,7 @@
 Mesh Mesh::meshes[MAX_MESHES];
 MeshStruct Mesh::meshStructs[MAX_MESHES];
 std::map<std::string, uint32_t> Mesh::lookupTable;
-std::shared_ptr<std::mutex> Mesh::creationMutex;
+std::shared_ptr<std::mutex> Mesh::editMutex;
 bool Mesh::factoryInitialized = false;
 bool Mesh::anyDirty = true;
 
@@ -102,6 +102,7 @@ Mesh::Mesh(std::string name, uint32_t id)
 	this->id = id;
 	this->meshStructs[id].show_bounding_box = 0;
 	this->meshStructs[id].bb_local_to_parent = glm::mat4(1.0);
+	this->meshStructs[id].numTris = 0;
 }
 
 std::string Mesh::toString() {
@@ -229,6 +230,7 @@ void Mesh::computeMetadata()
 	// if (vulkan->is_ray_tracing_enabled()) {
 	// 	build_low_level_bvh(submit_immediately);
 	// }
+	this->meshStructs[id].numTris = triangleIndices.size() / 3;
 	markDirty();
 }
 
@@ -305,25 +307,30 @@ void Mesh::computeMetadata()
 // 	}
 // }
 
-// glm::vec3 Mesh::get_centroid()
-// {
-// 	return vec3(mesh_struct.center);
-// }
+glm::vec3 Mesh::get_centroid()
+{
+	return vec3(meshStructs[id].center);
+}
 
-// float Mesh::get_bounding_sphere_radius()
-// {
-// 	return mesh_struct.bounding_sphere_radius;
-// }
+float Mesh::get_bounding_sphere_radius()
+{
+	return meshStructs[id].bounding_sphere_radius;
+}
 
-// glm::vec3 Mesh::get_min_aabb_corner()
-// {
-// 	return mesh_struct.bbmin;
-// }
+glm::vec3 Mesh::get_min_aabb_corner()
+{
+	return meshStructs[id].bbmin;
+}
 
-// glm::vec3 Mesh::get_max_aabb_corner()
-// {
-// 	return mesh_struct.bbmax;
-// }
+glm::vec3 Mesh::get_max_aabb_corner()
+{
+	return meshStructs[id].bbmax;
+}
+
+glm::vec3 Mesh::get_aabb_center()
+{
+	return meshStructs[id].bbmin + (meshStructs[id].bbmax - meshStructs[id].bbmin) * .5f;
+}
 
 
 // void Mesh::cleanup()
@@ -372,7 +379,7 @@ void Mesh::cleanUp()
 
 void Mesh::initializeFactory() {
 	if (isFactoryInitialized()) return;
-	creationMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::mutex>();
 	factoryInitialized = true;
 }
 
@@ -1511,116 +1518,121 @@ void Mesh::updateComponents()
 // 	return geometry;
 // }
 
+std::shared_ptr<std::mutex> Mesh::getEditMutex()
+{
+	return editMutex;
+}
+
 /* Static Factory Implementations */
 Mesh* Mesh::get(std::string name) {
-	return StaticFactory::get(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	return StaticFactory::get(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 }
 
 Mesh* Mesh::get(uint32_t id) {
-	return StaticFactory::get(creationMutex, id, "Mesh", lookupTable, meshes, MAX_MESHES);
+	return StaticFactory::get(editMutex, id, "Mesh", lookupTable, meshes, MAX_MESHES);
 }
 
 Mesh* Mesh::createBox(std::string name, glm::vec3 size, glm::ivec3 segments)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::BoxMesh gen_mesh{size, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createCappedCone(std::string name, float radius, float size, int slices, int segments, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::CappedConeMesh gen_mesh{radius, size, slices, segments, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createCappedCylinder(std::string name, float radius, float size, int slices, int segments, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {		
 		generator::CappedCylinderMesh gen_mesh{radius, size, slices, segments, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createCappedTube(std::string name, float radius, float innerRadius, float size, int slices, int segments, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::CappedTubeMesh gen_mesh{radius, innerRadius, size, slices, segments, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createCapsule(std::string name, float radius, float size, int slices, int segments, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::CapsuleMesh gen_mesh{radius, size, slices, segments, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 } 
 
 Mesh* Mesh::createCone(std::string name, float radius, float size, int slices, int segments, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::ConeMesh gen_mesh{radius, size, slices, segments, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
  
 Mesh* Mesh::createConvexPolygonFromCircle(std::string name, float radius, int sides, int segments, int rings)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::ConvexPolygonMesh gen_mesh{radius, sides, segments, rings};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createConvexPolygon(std::string name, std::vector<glm::vec2> vertices, int segments, int rings)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		std::vector<dvec2> verts;
 		for (uint32_t i = 0; i < vertices.size(); ++i) verts.push_back(dvec2(vertices[i]));
@@ -1629,91 +1641,91 @@ Mesh* Mesh::createConvexPolygon(std::string name, std::vector<glm::vec2> vertice
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createCylinder(std::string name, float radius, float size, int slices, int segments, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::CylinderMesh gen_mesh{radius, size, slices, segments, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createDisk(std::string name, float radius, float innerRadius, int slices, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::DiskMesh gen_mesh{radius, innerRadius, slices, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createDodecahedron(std::string name, float radius, int segments, int rings)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::DodecahedronMesh gen_mesh{radius, segments, rings};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createPlane(std::string name, vec2 size, ivec2 segments)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::PlaneMesh gen_mesh{size, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createIcosahedron(std::string name, float radius, int segments)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::IcosahedronMesh gen_mesh{radius, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createIcosphere(std::string name, float radius, int segments)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::IcoSphereMesh gen_mesh{radius, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
@@ -1721,7 +1733,7 @@ Mesh* Mesh::createIcosphere(std::string name, float radius, int segments)
 /* Might add this later. Requires a callback which defines a function mapping R2->R */
 // Mesh* Mesh::createParametricMesh(std::string name, uint32_t x_segments = 16, uint32_t y_segments = 16)
 // {
-//     auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+//     auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 //     if (!mesh) return nullptr;
 //     auto gen_mesh = generator::ParametricMesh( , glm::ivec2(x_segments, y_segments));
 //     mesh->generateProcedural(gen_mesh, /* flip z = */ false);
@@ -1730,7 +1742,7 @@ Mesh* Mesh::createIcosphere(std::string name, float radius, int segments)
 
 Mesh* Mesh::createRoundedBox(std::string name, float radius, vec3 size, int slices, ivec3 segments)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::RoundedBoxMesh gen_mesh{
 			radius, size, slices, segments
@@ -1739,161 +1751,161 @@ Mesh* Mesh::createRoundedBox(std::string name, float radius, vec3 size, int slic
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createSphere(std::string name, float radius, int slices, int segments, float sliceStart, float sliceSweep, float segmentStart, float segmentSweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::SphereMesh gen_mesh{radius, slices, segments, sliceStart, sliceSweep, segmentStart, segmentSweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createSphericalCone(std::string name, float radius, float size, int slices, int segments, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::SphericalConeMesh gen_mesh{radius, size, slices, segments, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createSphericalTriangleFromSphere(std::string name, float radius, int segments)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::SphericalTriangleMesh gen_mesh{radius, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createSphericalTriangleFromTriangle(std::string name, vec3 v0, vec3 v1, vec3 v2, int segments)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::SphericalTriangleMesh gen_mesh{v0, v1, v2, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createSpring(std::string name, float minor, float major, float size, int slices, int segments, float minorStart, float minorSweep, float majorStart, float majorSweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::SpringMesh gen_mesh{minor, major, size, slices, segments, minorStart, minorSweep, majorStart, majorSweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createTeapotahedron(std::string name, int segments)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::TeapotMesh gen_mesh(segments);
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createTorus(std::string name, float minor, float major, int slices, int segments, float minorStart, float minorSweep, float majorStart, float majorSweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::TorusMesh gen_mesh{minor, major, slices, segments, minorStart, minorSweep, majorStart, majorSweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createTorusKnot(std::string name, int p, int q, int slices, int segments)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::TorusKnotMesh gen_mesh{p, q, slices, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createTriangleFromCircumscribedCircle(std::string name, float radius, int segments)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::TriangleMesh gen_mesh{radius, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createTriangle(std::string name, vec3 v0, vec3 v1, vec3 v2, int segments)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::TriangleMesh gen_mesh{v0, v1, v2, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
 Mesh* Mesh::createTube(std::string name, float radius, float innerRadius, float size, int slices, int segments, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::TubeMesh gen_mesh{radius, innerRadius, size, slices, segments, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
@@ -1904,7 +1916,7 @@ Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> posi
 		throw std::runtime_error("Error: positions must be greater than 1!");
 	
 	using namespace generator;
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {		
 		ParametricPath parametricPath {
 			[positions](double t) {
@@ -1938,12 +1950,12 @@ Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> posi
 			((int32_t) positions.size() - 1) // number of segments
 		} ;
 		CircleShape circle_shape(radius, segments);
-		ExtrudeMesh extrude_mesh(circle_shape, parametricPath);
+		ExtrudeMesh<generator::CircleShape, generator::ParametricPath> extrude_mesh(circle_shape, parametricPath);
 		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
@@ -1954,7 +1966,7 @@ Mesh* Mesh::createRoundedRectangleTubeFromPolyline(std::string name, std::vector
 		throw std::runtime_error("Error: positions must be greater than 1!");
 	
 	using namespace generator;
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		
 		ParametricPath parametricPath {
@@ -1989,12 +2001,12 @@ Mesh* Mesh::createRoundedRectangleTubeFromPolyline(std::string name, std::vector
 			((int32_t) positions.size() - 1) // number of segments
 		} ;
 		RoundedRectangleShape rounded_rectangle_shape(radius, size, slices, segments);
-		ExtrudeMesh extrude_mesh(rounded_rectangle_shape, parametricPath);
+		ExtrudeMesh<generator::RoundedRectangleShape, generator::ParametricPath> extrude_mesh(rounded_rectangle_shape, parametricPath);
 		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
@@ -2005,7 +2017,7 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 		throw std::runtime_error("Error: positions must be greater than 1!");
 	
 	using namespace generator;
-	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		ParametricPath parametricPath {
 			[positions](double t) {
@@ -2039,12 +2051,12 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 			((int32_t) positions.size() - 1) // number of segments
 		} ;
 		RectangleShape rectangle_shape(size, segments);
-		ExtrudeMesh extrude_mesh(rectangle_shape, parametricPath);
+		ExtrudeMesh<generator::RectangleShape, generator::ParametricPath> extrude_mesh(rectangle_shape, parametricPath);
 		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
@@ -2052,52 +2064,52 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 
 // Mesh* Mesh::createFromObj(std::string name, std::string objPath)
 // {
-// 	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 	try {
 // 		mesh->load_obj(objPath, allow_edits, submit_immediately);
 // 		anyDirty = true;
 // 		return mesh;
 // 	} catch (...) {
-// 		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+// 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 		throw;
 // 	}
 // }
 
 // Mesh* Mesh::createFromStl(std::string name, std::string stlPath)
 // {
-// 	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 	try {
 // 		mesh->load_stl(stlPath, allow_edits, submit_immediately);
 // 		anyDirty = true;
 // 		return mesh;
 // 	} catch (...) {
-// 		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+// 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 		throw;
 // 	}
 // }
 
 // Mesh* Mesh::createFromGlb(std::string name, std::string glbPath)
 // {
-// 	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 	try {
 // 		mesh->load_glb(glbPath, allow_edits, submit_immediately);
 // 		anyDirty = true;
 // 		return mesh;
 // 	} catch (...) {
-// 		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+// 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 		throw;
 // 	}
 // }
 
 // Mesh* Mesh::createFromTetgen(std::string name, std::string path)
 // {
-// 	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 	try {
 // 		mesh->load_tetgen(path, allow_edits, submit_immediately);
 // 		anyDirty = true;
 // 		return mesh;
 // 	} catch (...) {
-// 		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+// 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 		throw;
 // 	}
 // }
@@ -2112,24 +2124,24 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 // 	bool allow_edits, 
 // 	bool submit_immediately)
 // {
-// 	auto mesh = StaticFactory::create(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 	try {
 // 		mesh->load_raw(positions, normals, colors, texcoords, indices, allow_edits, submit_immediately);
 // 		anyDirty = true;
 // 		return mesh;
 // 	} catch (...) {
-// 		StaticFactory::removeIfExists(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+// 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 		throw;
 // 	}
 // }
 
 void Mesh::remove(std::string name) {
-	StaticFactory::remove(creationMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	StaticFactory::remove(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	anyDirty = true;
 }
 
 void Mesh::remove(uint32_t id) {
-	StaticFactory::remove(creationMutex, id, "Mesh", lookupTable, meshes, MAX_MESHES);
+	StaticFactory::remove(editMutex, id, "Mesh", lookupTable, meshes, MAX_MESHES);
 	anyDirty = true;
 }
 

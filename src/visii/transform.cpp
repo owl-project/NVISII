@@ -38,15 +38,19 @@ void Transform::updateComponents()
 {
 	for (int i = 0; i < MAX_TRANSFORMS; ++i) {
 		if (!transforms[i].isFactoryInitialized()) continue;
-		transformStructs[i].worldToLocalPrev = transformStructs[i].worldToLocal;
-		transformStructs[i].localToWorldPrev = transformStructs[i].localToWorld;
-		transformStructs[i].worldToLocalRotationPrev = transformStructs[i].worldToLocalRotation;
-		transformStructs[i].worldToLocalTranslationPrev = transformStructs[i].worldToLocalTranslation;
+		// transformStructs[i].worldToLocalPrev = transformStructs[i].worldToLocal;
+		// transformStructs[i].localToWorldPrev = transformStructs[i].localToWorld;
+		// transformStructs[i].worldToLocalRotationPrev = transformStructs[i].worldToLocalRotation;
+		// transformStructs[i].worldToLocalTranslationPrev = transformStructs[i].worldToLocalTranslation;
+
+		transformStructs[i].scale = transforms[i].getWorldScale();
+		transformStructs[i].translation = transforms[i].getWorldTranslation();
+		transformStructs[i].rotation = transforms[i].getWorldRotation();
 
 		transformStructs[i].worldToLocal = transforms[i].getWorldToLocalMatrix();
 		transformStructs[i].localToWorld = transforms[i].getLocalToWorldMatrix();
-		transformStructs[i].worldToLocalRotation = transforms[i].getWorldToLocalRotationMatrix();
-		transformStructs[i].worldToLocalTranslation = transforms[i].getWorldToLocalTranslationMatrix();
+		// transformStructs[i].worldToLocalRotation = transforms[i].getWorldToLocalRotationMatrix();
+		// transformStructs[i].worldToLocalTranslation = transforms[i].getWorldToLocalTranslationMatrix();
 		transforms[i].markClean();
 	};
 	anyDirty = false;
@@ -116,15 +120,15 @@ std::string Transform::toString()
 	output += "{\n";
 	output += "\ttype: \"Transform\",\n";
 	output += "\tname: \"" + name + "\",\n";
-	output += "\tid: \"" + std::to_string(id) + "\",\n";
-	output += "\tscale: " + glm::to_string(getScale()) + "\n";
-	output += "\tposition: " + glm::to_string(getPosition()) + "\n";
-	output += "\trotation: " + glm::to_string(getRotation()) + "\n";
-	output += "\tright: " + glm::to_string(right) + "\n";
-	output += "\tup: " + glm::to_string(up) + "\n";
-	output += "\tforward: " + glm::to_string(forward) + "\n";
-	output += "\tlocal_to_parent_matrix: " + glm::to_string(getLocalToParentMatrix()) + "\n";
-	output += "\tparent_to_local_matrix: " + glm::to_string(getParentToLocalMatrix()) + "\n";
+	// output += "\tid: \"" + std::to_string(id) + "\",\n";
+	// output += "\tscale: " + glm::to_string(getScale()) + "\n";
+	// output += "\tposition: " + glm::to_string(getPosition()) + "\n";
+	// output += "\trotation: " + glm::to_string(getRotation()) + "\n";
+	// output += "\tright: " + glm::to_string(right) + "\n";
+	// output += "\tup: " + glm::to_string(up) + "\n";
+	// output += "\tforward: " + glm::to_string(forward) + "\n";
+	// output += "\tlocal_to_parent_matrix: " + glm::to_string(getLocalToParentMatrix()) + "\n";
+	// output += "\tparent_to_local_matrix: " + glm::to_string(getParentToLocalMatrix()) + "\n";
 	output += "}";
 	return output;
 }
@@ -543,6 +547,10 @@ glm::quat Transform::getWorldRotation() {
 
 glm::vec3 Transform::getWorldTranslation() {
 	return worldTranslation;
+}
+
+glm::vec3 Transform::getWorldScale() {
+	return worldScale;
 }
 
 glm::mat4 Transform::getWorldToLocalRotationMatrix()

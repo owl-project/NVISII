@@ -717,17 +717,20 @@ class Mesh : public StaticFactory
 		// /* TODO: Explain this */
 		// void save_tetrahedralization(float quality_bound, float maximum_volume);
 
-		// /* Returns the last computed centroid. */
-		// glm::vec3 get_centroid();
+		/** \returns the last computed mesh centroid. */
+		glm::vec3 get_centroid();
 
-		// /* Returns the minimum axis aligned bounding box position */
-		// glm::vec3 get_min_aabb_corner();
+		/** \returns the minimum axis aligned bounding box position */
+		glm::vec3 get_min_aabb_corner();
 
-		// /* Returns the maximum axis aligned bounding box position */
-		// glm::vec3 get_max_aabb_corner();
+		/** \returns the maximum axis aligned bounding box position */
+		glm::vec3 get_max_aabb_corner();
 
-		// /* Returns the radius of a sphere centered at the centroid which completely contains the mesh */
-		// float get_bounding_sphere_radius();
+		/** \returns the center of the aligned bounding box */
+		glm::vec3 get_aabb_center();
+
+		/* \returns the radius of a sphere centered at the centroid which completely contains the mesh */
+		float get_bounding_sphere_radius();
 
 		// /* If mesh editing is enabled, replaces the position at the given index with a new position */
 		// void edit_position(uint32_t index, glm::vec4 new_position);
@@ -772,6 +775,8 @@ class Mesh : public StaticFactory
 		// /* TODO */
 		// bool should_show_bounding_box();
 
+		static std::shared_ptr<std::mutex> getEditMutex();
+
 	private:
 		/** Creates an uninitialized mesh. Useful for preallocation. */
 		Mesh();
@@ -780,7 +785,7 @@ class Mesh : public StaticFactory
 		Mesh(std::string name, uint32_t id);
 
 		/* TODO */
-		static std::shared_ptr<std::mutex> creationMutex;
+		static std::shared_ptr<std::mutex> editMutex;
 		
 		/* TODO */
 		static bool factoryInitialized;
@@ -891,6 +896,8 @@ class Mesh : public StaticFactory
 		template <class Generator>
 		void generateProcedural(Generator &mesh, bool flip_z)
 		{
+			std::lock_guard<std::mutex>lock(*editMutex.get());
+
 			std::vector<Vertex> vertices;
 
 			auto genVerts = mesh.vertices();

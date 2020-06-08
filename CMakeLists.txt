@@ -10,7 +10,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 # Use c++17
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
@@ -25,7 +25,7 @@ if(APPLE)
 endif(APPLE)
 
 if(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14")
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif(MSVC)
@@ -60,12 +60,24 @@ set(CMAKE_INSTALL_NAME_DIR "${RPATHS}")
 SET(CMAKE_INSTALL_NAME_DIR @executable_path)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
+set(MY_DEFINITION 
+    $<$<CONFIG:Debug>:definition_for_debug>
+    $<$<CONFIG:RelWithDebInfo>:definition_for_rel_with_debug>
+    $<$<CONFIG:Release>:definition_for_release> 
+    $<$<CONFIG:MinSizeRel>:definition_for_tight_release>
+    )
+
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Build options                                                   │
 # └──────────────────────────────────────────────────────────────────┘
 
 # Build options go here... Things like "Build Tests", or "Generate documentation"...
-option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" ON)
+option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" OFF)
+
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+	# Enable c++11 and hide symbols which shouldn't be visible
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Definitions                                                     │
@@ -74,6 +86,7 @@ option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" ON)
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_definitions(-DNOMINMAX)
 add_definitions(-DGENERATOR_USE_GLM)
+add_definitions(-D_WIN64)
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  External Dependencies                                           │
@@ -112,22 +125,32 @@ find_package(SWIG 4.0.1)
 include(${SWIG_USE_FILE})
 
 # python
-find_package(PythonLibs)
-find_package(Python3 3.6 COMPONENTS Development REQUIRED)
-if (UNIX AND NOT Python3_FOUND)
-  message(FATAL_ERROR "Python 3 development libraries missing!"
-    "You probably dont have python 3.6 or later development libraries installed on your system. It is possible to recover "
+if (EXISTS ${Python_ROOT_DIR})
+  set(Python_FIND_STRATEGY "LOCATION")
+  message(WARN "${Python_ROOT_DIR}") 
+endif()
+
+set(PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
+if(PYTHON_VERSION)
+  find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development REQUIRED)
+else()
+  find_package(Python  COMPONENTS Development REQUIRED)
+endif()
+
+if (UNIX AND NOT Python_FOUND)
+  message(FATAL_ERROR "Python development libraries missing!"
+    "You probably dont have python 2.7 or later development libraries installed on your system. It is possible to recover "
     "by running \"sudo apt install python3-dev\" (or equivalent on your unix distro)")
 endif()
-if (MSVC AND NOT Python3_FOUND)
-  message(FATAL_ERROR "Python 3 development libraries missing!"
-    "You probably dont have python 3.6 or later development libraries installed on your system. It is possible to recover "
+if (MSVC AND NOT Python_FOUND)
+  message(FATAL_ERROR "Python development libraries missing!"
+    "You probably dont have python 2.7 or later development libraries installed on your system. It is possible to recover "
     "by downloading python from https://www.python.org/downloads/. NOTE: for debug builds, make sure to check \"Download debug binaries\" "
     "in the \"Advanced Options\" tab of the Python installation wizard, and to run with python_d.exe")
 endif()
-include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
+include_directories(SYSTEM ${Python_INCLUDE_DIRS})
 
-# glm
+# # glm
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
 
 # geometry generator
@@ -165,8 +188,8 @@ set_property(TARGET glfw PROPERTY FOLDER "externals/GLFW3" )
 # OpenGL
 find_package(OpenGL)
 
-# # stb
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/stb/)
+# stb
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/stb/)
 
 # # tiny obj
 # include_directories(SYSTEM external/tinyobj)
@@ -211,22 +234,21 @@ set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
 find_package(OptiX REQUIRED VERSION 7)
 include_directories(${OptiX_INCLUDE})
 
-# owl
+# # owl
+set(SET_UP_CONFIGURATIONS_DONE 1)
 set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
 set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
 set(OWL_USE_TBB OFF CACHE STRING "" FORCE)
 add_subdirectory(externals/owl)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
 include(configure_cuda)
 
-# include(configure_optix)
-# include(configure_build_type)
-
 # add libraries to a list for linking
 set (
   LIBRARIES
-  ${PYTHON_LIBRARY}
+  ${Python_LIBRARIES}
   generator
   ${GLFW_LIBRARIES}
   glfw
@@ -234,7 +256,24 @@ set (
   # ${TBB_LIBRARIES}
   owl
   )
-  
+
+# If debug lib for python exists, add it to the list.
+if (${Python_LIBRARY_DEBUG})
+set (
+  LIBRARIES
+  ${LIBRARIES}
+  ${Python_LIBRARY_DEBUG}
+)
+endif()
+if (${Python_LIBRARY_RELEASE})
+set (
+  LIBRARIES
+  ${LIBRARIES}
+  ${Python_LIBRARY_RELEASE}
+)
+endif()
+
+# If on linux, request support for atomics
 if(NOT WIN32)
   set (
     LIBRARIES
@@ -258,7 +297,6 @@ endif()
 
 # For compiling cuda kernels and embedding them as ptx
 if (NVCC_VERBOSE)
-set(VERBOSE 1)
 set (NVCC_VERBOSE_FLAG --verbose)
 endif()
 
@@ -303,8 +341,8 @@ cuda_compile_and_embed(ptxCode ${SRC_CU})
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  ViSII Library                                                   │
 # └──────────────────────────────────────────────────────────────────┘
-add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode})
-target_link_libraries(visii_lib PUBLIC ${LIBRARIES})
+cuda_add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
+target_link_libraries(visii_lib ${LIBRARIES})
 set_target_properties(visii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 install(TARGETS visii_lib 
     DESTINATION ${CMAKE_INSTALL_PREFIX}
@@ -317,16 +355,14 @@ install(TARGETS visii_lib
 set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY CPLUSPLUS ON)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen" "-py3") # -builtin seems to remove kwargs...
+set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen") # -builtin seems to remove kwargs...
 swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
 target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
 set(SWIG_DEFS 
-  Python3_VERSION_MAJOR=${Python3_VERSION_MAJOR} 
-  Python3_VERSION_MINOR=${Python3_VERSION_MINOR})
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-set(SWIG_DEFS ${SWIG_DEFS} Python3_DEBUG)
-endif()
+  Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
+  Python_VERSION_MINOR=${Python_VERSION_MINOR})
+set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python_DEBUG>)
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
 
 
@@ -335,30 +371,15 @@ set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINIT
 # └──────────────────────────────────────────────────────────────────┘
 
 # Install
-# install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${CMAKE_BINARY_DIR}/visii.py DESTINATION ${CMAKE_INSTALL_PREFIX})
-# install(FILES ${CMAKE_BINARY_DIR}/glm.py DESTINATION ${CMAKE_INSTALL_PREFIX})
-
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
-    # GLM debug module
-    if (WIN32) 
-    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX} RENAME _visii_d.pyd)
-    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb DESTINATION ${CMAKE_INSTALL_PREFIX} RENAME _visii_d.pdb OPTIONAL)
-    else()
-    install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX} RENAME _visii.so)
-    endif()
-ELSE(CMAKE_BUILD_TYPE MATCHES Debug)
-    # GLM module
-    if (WIN32) 
-    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX})
-    install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
-    else()
-    install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX})
-    endif()
-ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
+install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL RENAME _visii_d.pyd)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL RENAME _visii_d.pdb)
 
 # # TBB DLL for windows
 # if (WIN32) 
 # install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
 # install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb_debug.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
 # endif(WIN32)
+ 

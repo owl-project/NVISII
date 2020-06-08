@@ -1,16 +1,16 @@
 %module visii
 
 /* -------- Python Version Check --------------*/
-#if Python3_VERSION_MAJOR == 3
+#if Python_VERSION_MAJOR == 3
 %pythonbegin %{_built_major_version = 3%}
 #else
 %pythonbegin %{_built_major_version = 2%}
 #endif
-#if Python3_VERSION_MINOR == 8
-%pythonbegin %{_built_minor_version = 3%}
-#elif Python3_VERSION_MINOR == 7
+#if Python_VERSION_MINOR == 8
+%pythonbegin %{_built_minor_version = 8%}
+#elif Python_VERSION_MINOR == 7
 %pythonbegin %{_built_minor_version = 7%}
-#elif Python3_VERSION_MINOR == 6
+#elif Python_VERSION_MINOR == 6
 %pythonbegin %{_built_minor_version = 6%}
 #endif
 %pythonbegin %{
@@ -21,7 +21,7 @@ if _import_version_info < (_built_major_version, _built_minor_version, 0):
 %}
 
 /* -------- Debug Build Check --------------*/
-#ifdef Python3_DEBUG
+#ifdef Python_DEBUG
 %pythonbegin %{
 import sys
 if not hasattr(sys, 'gettotalrefcount'):
@@ -45,6 +45,12 @@ if hasattr(sys, 'gettotalrefcount'):
   }
 }
 
+/* STD Vectors */
+%include "std_vector.i"
+namespace std {
+  %template(FloatVector) vector<float>;
+}
+
 /* -------- GLM Vector Math Library --------------*/
 %feature("autodoc","2");
 %include "glm.i"
@@ -65,6 +71,7 @@ if hasattr(sys, 'gettotalrefcount'):
 
 #include "visii/camera.h"
 #include "visii/entity.h"
+#include "visii/light.h"
 #include "visii/transform.h"
 #include "visii/material.h"
 #include "visii/mesh.h"
@@ -75,6 +82,7 @@ if hasattr(sys, 'gettotalrefcount'):
 
 %feature("kwargs") camera;
 %feature("kwargs") entity;
+%feature("kwargs") light;
 %feature("kwargs") transform;
 %feature("kwargs") material;
 %feature("kwargs") mesh;
@@ -83,6 +91,7 @@ if hasattr(sys, 'gettotalrefcount'):
 %include "visii/utilities/static_factory.h"
 %include "visii/camera.h"
 %include "visii/entity.h"
+%include "visii/light.h"
 %include "visii/transform.h"
 %include "visii/material.h"
 %include "visii/mesh.h"

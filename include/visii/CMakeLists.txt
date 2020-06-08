@@ -4,6 +4,8 @@ set(HDR
     ${Utilities_HDR}
     ${CMAKE_CURRENT_SOURCE_DIR}/camera_struct.h
     ${CMAKE_CURRENT_SOURCE_DIR}/camera.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/light_struct.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/light.h
     ${CMAKE_CURRENT_SOURCE_DIR}/entity_struct.h
     ${CMAKE_CURRENT_SOURCE_DIR}/entity.h
     ${CMAKE_CURRENT_SOURCE_DIR}/material_struct.h

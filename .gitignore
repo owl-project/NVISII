@@ -1,6 +1,12 @@
 build
+*.ptx
+*.c
+*__*
+*_*
+*.cmake
 install
 .vscode
 imgui.ini
 include\visii\utilities\version.h
 include/visii/utilities/version.h
+*.png
