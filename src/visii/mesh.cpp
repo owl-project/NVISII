@@ -307,25 +307,25 @@ void Mesh::computeMetadata()
 // 	}
 // }
 
-// glm::vec3 Mesh::get_centroid()
-// {
-// 	return vec3(mesh_struct.center);
-// }
+glm::vec3 Mesh::get_centroid()
+{
+	return vec3(meshStructs[id].center);
+}
 
-// float Mesh::get_bounding_sphere_radius()
-// {
-// 	return mesh_struct.bounding_sphere_radius;
-// }
+float Mesh::get_bounding_sphere_radius()
+{
+	return meshStructs[id].bounding_sphere_radius;
+}
 
-// glm::vec3 Mesh::get_min_aabb_corner()
-// {
-// 	return mesh_struct.bbmin;
-// }
+glm::vec3 Mesh::get_min_aabb_corner()
+{
+	return meshStructs[id].bbmin;
+}
 
-// glm::vec3 Mesh::get_max_aabb_corner()
-// {
-// 	return mesh_struct.bbmax;
-// }
+glm::vec3 Mesh::get_max_aabb_corner()
+{
+	return meshStructs[id].bbmax;
+}
 
 
 // void Mesh::cleanup()
