@@ -223,16 +223,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float3 path_throughput = make_float3(1.f);
         uint16_t ray_count = 0;
         float roughnessMinimum = 0.f;
+        RayPayload payload;
+        owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
+                        /*the ray to trace*/ ray,
+                        /*prd*/ payload);
 
         do {
-            RayPayload payload;
-            owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
-                            /*the ray to trace*/ ray,
-                            /*prd*/ payload);
-            #ifdef REPORT_RAY_STATS
-                ++ray_count;
-            #endif
-
             // if ray misses, interpret normal as "miss color" assigned by miss program
             if (payload.tHit <= 0.f) {
                 illum = illum + path_throughput * payload.normal;
@@ -362,6 +358,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 break;
             }
 
+            // vec3 offset = payload.normal * .001f;
+            ray.origin = hit_p;// + make_float3(offset.x, offset.y, offset.z);
+            ray.direction = w_i;
+            owl::traceRay(optixLaunchParams.world, ray, payload);
+
             // Sample the BRDF to compute a light sample as well
             {
                 const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
@@ -369,14 +370,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 float bsdf_pdf;
                 float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdf_pdf, sampledSpecularLight);
                 if ((light_pdf > EPSILON) && !all_zero(bsdf) && bsdf_pdf >= EPSILON) {        
-                    RayPayload payload;
-                    payload.entityID = -1;
-                    owl::Ray ray;
-                    ray.tmin = EPSILON * 10.f;
-                    ray.tmax = 1e20f;
-                    ray.origin = owl::vec3f(hit_p.x, hit_p.y, hit_p.z) ;
-                    ray.direction = owl::vec3f(w_i.x, w_i.y, w_i.z);
-                    owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
                     bool visible = (payload.entityID == sampledLightID);
                     if (visible) {
                         float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
@@ -421,11 +414,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 roughnessMinimum = min((roughnessMinimum + .35f), 1.f);
             }
 
-            // vec3 offset = payload.normal * .001f;
-            ray.origin = hit_p;// + make_float3(offset.x, offset.y, offset.z);
-            ray.direction = w_i;
-
-            ++bounce;
+            ++bounce;            
         } while (bounce < MAX_PATH_DEPTH);
         // clamp out fireflies
         glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
