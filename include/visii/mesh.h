@@ -654,6 +654,9 @@ class Mesh : public StaticFactory
 		/** \returns the maximum axis aligned bounding box position */
 		glm::vec3 get_max_aabb_corner();
 
+		/** \returns the center of the aligned bounding box */
+		glm::vec3 get_aabb_center();
+
 		/* \returns the radius of a sphere centered at the centroid which completely contains the mesh */
 		float get_bounding_sphere_radius();
 

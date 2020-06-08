@@ -327,6 +327,11 @@ glm::vec3 Mesh::get_max_aabb_corner()
 	return meshStructs[id].bbmax;
 }
 
+glm::vec3 Mesh::get_aabb_center()
+{
+	return meshStructs[id].bbmin + (meshStructs[id].bbmax - meshStructs[id].bbmin) * .5f;
+}
+
 
 // void Mesh::cleanup()
 // {
