@@ -264,8 +264,8 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
         
         // Sample the light to compute an incident light ray to this point
         {    
-            glm::mat4 tfm =  glm::translate(glm::mat4(1.0f), transform.translation) * glm::toMat4(transform.rotation);
-            glm::mat4 tfmInv = glm::inverse(tfm);
+            glm::mat4 tfm =  transform.localToWorld;//glm::translate(glm::mat4(1.0f), transform.translation) * glm::toMat4(transform.rotation);
+            glm::mat4 tfmInv = transform.worldToLocal;//glm::inverse(tfm);
             // for (int ittr = 0; ittr < 6; ++ittr) {
                 //     sampleDirectLight(pos, normal, 
                     //         lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng),
@@ -278,18 +278,22 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
                         //     // light_pdf
                         // }
             vec3 dir; 
-            vec3 pos = glm::vec3(tfmInv * glm::vec4(hit_p.x, hit_p.y, hit_p.z, 1.f));
-            vec3 v1 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.x];
-            vec3 v2 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.y];
-            vec3 v3 = optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.z];
-            vec3 A = normalize(v1 - pos);
-            vec3 B = normalize(v2 - pos);
-            vec3 C = normalize(v3 - pos);
-            sampleSphericalTriangle(A, B, C, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf);
-            dir = normalize(dir);
-            dir = vec3(tfm * vec4(dir, 0.f));
+            vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
+            vec3 v1 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.x];
+            vec3 v2 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.y];
+            vec3 v3 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.z];
+            vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
+            sampleTriangle(pos, N, v1, v2, v3, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf);
             vec3 normal = glm::vec3(n.x, n.y, n.z);
             float dotNWi = abs(dot(dir, normal));
+
+            // vec3 A = normalize(v1 - pos);
+            // vec3 B = normalize(v2 - pos);
+            // vec3 C = normalize(v3 - pos);
+            // sampleSphericalTriangle(A, B, C, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf);
+            // dir = normalize( glm::vec3(glm::scale(glm::mat4(1.f), transform.scale) * vec4(dir, 0.0)));
+            // dir = vec3(tfm * vec4(dir, 0.f));
+
             // if(dot(-dir,normal) < 0.0){
             //     light_pdf = 0.0;
             // }
@@ -309,11 +313,11 @@ __device__ float3 sample_direct_light(const DisneyMaterial &mat, const float3 &h
                     ray.origin = hit_p;
                     ray.direction = light_dir;
                     owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
-                    bool visible = (payload.entityID == light_entity_id);
+                    bool visible = ((payload.entityID == light_entity_id) || (payload.entityID == -1));
                     if (visible) {
                         float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
                         float3 bsdf = disney_brdf(mat, n, w_o, light_dir, v_x, v_y);
-						float3 Li = light_emission / light_pdf;
+						float3 Li = light_emission * w / light_pdf;
                         illum = (bsdf * Li * fabs(dotNWi));
                     }
                 }
@@ -355,12 +359,13 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     TransformStruct camera_transform;
     CameraStruct    camera;
     if (!loadCamera(camera_entity, camera, camera_transform)) {
-        optixLaunchParams.fbPtr[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
+        optixLaunchParams.frameBuffer[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
         return;
     }
 
-
     float3 accum_illum = make_float3(0.f);
+    float3 primaryAlbedo = make_float3(0.f);
+    float3 primaryNormal = make_float3(0.f);
     #define SPP 1
     for (uint32_t rid = 0; rid < SPP; ++rid) {
 
@@ -401,6 +406,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if (bounce == 0) {
                     entityLight = optixLaunchParams.lights[entity.light_id];
                     illum = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
+                    primaryNormal = payload.normal;
+                    primaryAlbedo = mat.base_color;
                 } 
                 break;
             }
@@ -441,6 +448,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
             path_throughput = path_throughput * bsdf / pdf;
 
+            if (bounce == 0) {
+                primaryNormal = payload.normal;
+                primaryAlbedo = mat.base_color;
+            }
+
             if (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON) {
                 break;
             }
@@ -462,7 +474,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         } while (bounce < MAX_PATH_DEPTH);
         // clamp out fireflies
         glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
-        gillum = clamp(gillum, vec3(0.f), vec3(500.f));
+        gillum = clamp(gillum, vec3(0.f), vec3(5000.f));
+
+        // just in case we get inf's or nans, remove them.
+        if (glm::any(glm::isnan(gillum))) gillum = vec3(0.f);
+        if (glm::any(glm::isinf(gillum))) gillum = vec3(0.f);
         illum = make_float3(gillum.r, gillum.g, gillum.b);
 
         accum_illum = accum_illum + illum;
@@ -480,11 +496,20 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         accum_color.z, 
         accum_color.w
     );
-    optixLaunchParams.fbPtr[fbOfs] = vec4(
+    optixLaunchParams.frameBuffer[fbOfs] = vec4(
         linear_to_srgb(accum_color.x),
         linear_to_srgb(accum_color.y),
         linear_to_srgb(accum_color.z),
         1.0f
     );
+
+    vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
+    vec4 oldNormal = optixLaunchParams.normalBuffer[fbOfs];
+    vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
+    vec4 newNormal = normalize(camera_transform.worldToLocal * vec4(primaryNormal.x, primaryNormal.y, primaryNormal.z, 0.f));
+    vec4 accumAlbedo = (newAlbedo + float(optixLaunchParams.frameID) * oldAlbedo) / float(optixLaunchParams.frameID + 1);
+    vec4 accumNormal = (newNormal + float(optixLaunchParams.frameID) * oldNormal) / float(optixLaunchParams.frameID + 1);
+    optixLaunchParams.albedoBuffer[fbOfs] = accumAlbedo;
+    optixLaunchParams.normalBuffer[fbOfs] = accumNormal;
 }
 
