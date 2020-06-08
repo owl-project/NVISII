@@ -645,17 +645,17 @@ class Mesh : public StaticFactory
 		// /* TODO: Explain this */
 		// void save_tetrahedralization(float quality_bound, float maximum_volume);
 
-		// /* Returns the last computed centroid. */
-		// glm::vec3 get_centroid();
+		/** \returns the last computed mesh centroid. */
+		glm::vec3 get_centroid();
 
-		// /* Returns the minimum axis aligned bounding box position */
-		// glm::vec3 get_min_aabb_corner();
+		/** \returns the minimum axis aligned bounding box position */
+		glm::vec3 get_min_aabb_corner();
 
-		// /* Returns the maximum axis aligned bounding box position */
-		// glm::vec3 get_max_aabb_corner();
+		/** \returns the maximum axis aligned bounding box position */
+		glm::vec3 get_max_aabb_corner();
 
-		// /* Returns the radius of a sphere centered at the centroid which completely contains the mesh */
-		// float get_bounding_sphere_radius();
+		/* \returns the radius of a sphere centered at the centroid which completely contains the mesh */
+		float get_bounding_sphere_radius();
 
 		// /* If mesh editing is enabled, replaces the position at the given index with a new position */
 		// void edit_position(uint32_t index, glm::vec4 new_position);
