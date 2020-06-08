@@ -10,7 +10,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 # Use c++17
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
@@ -25,7 +25,7 @@ if(APPLE)
 endif(APPLE)
 
 if(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14")
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif(MSVC)
@@ -78,6 +78,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	# Enable c++11 and hide symbols which shouldn't be visible
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
+
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Definitions                                                     │
 # └──────────────────────────────────────────────────────────────────┘
@@ -85,6 +86,7 @@ endif()
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_definitions(-DNOMINMAX)
 add_definitions(-DGENERATOR_USE_GLM)
+add_definitions(-D_WIN64)
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  External Dependencies                                           │

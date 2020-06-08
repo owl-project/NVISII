@@ -327,6 +327,11 @@ glm::vec3 Mesh::get_max_aabb_corner()
 	return meshStructs[id].bbmax;
 }
 
+glm::vec3 Mesh::get_aabb_center()
+{
+	return meshStructs[id].bbmin + (meshStructs[id].bbmax - meshStructs[id].bbmin) * .5f;
+}
+
 
 // void Mesh::cleanup()
 // {
@@ -1945,7 +1950,7 @@ Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> posi
 			((int32_t) positions.size() - 1) // number of segments
 		} ;
 		CircleShape circle_shape(radius, segments);
-		ExtrudeMesh extrude_mesh(circle_shape, parametricPath);
+		ExtrudeMesh<generator::CircleShape, generator::ParametricPath> extrude_mesh(circle_shape, parametricPath);
 		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
@@ -1996,7 +2001,7 @@ Mesh* Mesh::createRoundedRectangleTubeFromPolyline(std::string name, std::vector
 			((int32_t) positions.size() - 1) // number of segments
 		} ;
 		RoundedRectangleShape rounded_rectangle_shape(radius, size, slices, segments);
-		ExtrudeMesh extrude_mesh(rounded_rectangle_shape, parametricPath);
+		ExtrudeMesh<generator::RoundedRectangleShape, generator::ParametricPath> extrude_mesh(rounded_rectangle_shape, parametricPath);
 		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
@@ -2046,7 +2051,7 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 			((int32_t) positions.size() - 1) // number of segments
 		} ;
 		RectangleShape rectangle_shape(size, segments);
-		ExtrudeMesh extrude_mesh(rectangle_shape, parametricPath);
+		ExtrudeMesh<generator::RectangleShape, generator::ParametricPath> extrude_mesh(rectangle_shape, parametricPath);
 		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
 		anyDirty = true;
 		return mesh;
