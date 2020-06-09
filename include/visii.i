@@ -58,16 +58,6 @@ namespace std {
 %include "glm.i"
 %feature("autodoc", "");
 
-// %rename("Entity") "entity";
-// %rename("Transform") "transform";
-// %rename("Material") "material";
-// %rename("Mesh") "mesh";
-
-// %feature("doxygen:ignore:transferfull");
-// %feature("doxygen:ignore:compileroptions", range="line");
-// %feature("doxygen:ignore:forcpponly", range="end");
-// %feature("doxygen:ignore:beginPythonOnly", range="end:endPythonOnly", contents="parse");
-
 %{
 #include "visii/visii.h"
 

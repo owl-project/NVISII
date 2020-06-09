@@ -62,8 +62,17 @@ class Texture : public StaticFactory
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
 
-    /** Returns a json string representation of the current component */
+    /** \returns a json string representation of the current component */
     std::string toString();
+
+    /** \returns a flattened list of texels */
+    std::vector<vec4> getTexels();
+
+    /** \returns the width of the texture in texels */
+    uint32_t getWidth();
+    
+    /** \returns the height of the texture in texels */
+    uint32_t getHeight();
 
   private:
   	/* Creates an uninitialized texture. Useful for preallocation. */
@@ -90,4 +99,7 @@ class Texture : public StaticFactory
 
     /* Indicates this component has been edited */
     bool dirty = true;
+
+    /* The texels of the texture */
+    std::vector<vec4> texels;
 };

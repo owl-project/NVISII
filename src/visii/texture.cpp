@@ -17,6 +17,23 @@ Texture::Texture(std::string name, uint32_t id)
     this->initialized = true;
     this->name = name;
     this->id = id;
+
+    // ------------------------------------------------------------------
+    // create a 4x4 checkerboard texture
+    // ------------------------------------------------------------------
+    glm::ivec2 texSize = glm::ivec2(4);
+    std::vector<vec4> texels;
+    for (int iy=0;iy<texSize.y;iy++) {
+        for (int ix=0;ix<texSize.x;ix++) {
+            texels.push_back(((ix ^ iy)&1) ?
+                            vec4(0,1,0,0) :
+                            vec4(1));
+        }
+    }
+
+    textureStructs[id].width = 4;
+    textureStructs[id].height = 4;
+    this->texels = texels;
     
     // TODO: INITIALIZE STRUCT
 }
@@ -28,6 +45,18 @@ std::string Texture::toString() {
     output += "\tname: \"" + name + "\"\n";
     output += "}";
     return output;
+}
+
+std::vector<vec4> Texture::getTexels() {
+    return texels;
+}
+
+uint32_t Texture::getWidth() {
+    return textureStructs[id].width;
+}
+
+uint32_t Texture::getHeight() {
+    return textureStructs[id].height;
 }
 
 /* SSBO logic */

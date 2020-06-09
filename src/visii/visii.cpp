@@ -97,6 +97,8 @@ static struct OptixData {
     OWLBuffer denoiserScratchBuffer;
     OWLBuffer denoiserStateBuffer;
     OWLBuffer hdrIntensityBuffer;
+
+    Texture* domeLightTexture = nullptr;
 } OptixData;
 
 static struct ViSII {
@@ -211,6 +213,12 @@ void setDomeLightIntensity(float intensity)
 {
     intensity = std::max(float(intensity), float(0.f));
     OptixData.LP.domeLightIntensity = intensity;
+    resetAccumulation();
+}
+
+void setDomeLightTexture(Texture* texture)
+{
+    OptixData.domeLightTexture = texture;
     resetAccumulation();
 }
 
@@ -365,24 +373,14 @@ void initializeOptix(bool headless)
     owlLaunchParamsSetBuffer(OD.launchParams, "vertexLists", OD.vertexListsBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "indexLists", OD.indexListsBuffer);
 
-    // ------------------------------------------------------------------
-    // create a 4x4 checkerboard texture
-    // ------------------------------------------------------------------
-    glm::ivec2 texSize = glm::ivec2(4);
-    std::vector<u8vec4> texels;
-    for (int iy=0;iy<texSize.y;iy++)
-        for (int ix=0;ix<texSize.x;ix++) {
-        texels.push_back(((ix ^ iy)&1) ?
-                        u8vec4(0,255,0,0) :
-                        u8vec4(255));
-        }
-    OWLTexture envTexture = owlTexture2DCreate(OD.context,
-                            OWL_TEXEL_FORMAT_RGBA8,
-                            texSize.x,texSize.y,
-                            texels.data(),
-                            OWL_TEXTURE_NEAREST);
-    OD.LP.environmentMapSet = true;
-    owlLaunchParamsSetTexture(OD.launchParams, "environmentMap", envTexture);
+    // OWLTexture envTexture = owlTexture2DCreate(OD.context,
+    //                         OWL_TEXEL_FORMAT_RGBA8,
+    //                         texSize.x,texSize.y,
+    //                         texels.data(),
+    //                         OWL_TEXTURE_NEAREST);
+
+    OD.LP.environmentMapSet = false;
+    owlLaunchParamsSetTexture(OD.launchParams, "environmentMap", nullptr);
     owlLaunchParamsSetRaw(OD.launchParams, "environmentMapSet", &OD.LP.environmentMapSet);
                             
     OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
@@ -1013,6 +1011,17 @@ void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std:
     stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
 }
 
+void initializeComponentFactories()
+{
+    Camera::initializeFactory();
+    Entity::initializeFactory();
+    Transform::initializeFactory();
+    Texture::initializeFactory();
+    Material::initializeFactory();
+    Mesh::initializeFactory();
+    Light::initializeFactory();
+}
+
 void initializeInteractive(bool windowOnTop)
 {
     // don't initialize more than once
@@ -1020,12 +1029,7 @@ void initializeInteractive(bool windowOnTop)
 
     initialized = true;
     close = false;
-    Camera::initializeFactory();
-    Entity::initializeFactory();
-    Transform::initializeFactory();
-    Material::initializeFactory();
-    Mesh::initializeFactory();
-    Light::initializeFactory();
+    initializeComponentFactories();
 
     auto loop = [windowOnTop]() {
         ViSII.render_thread_id = std::this_thread::get_id();
@@ -1084,12 +1088,7 @@ void initializeHeadless()
 
     initialized = true;
     close = false;
-    Camera::initializeFactory();
-    Entity::initializeFactory();
-    Transform::initializeFactory();
-    Material::initializeFactory();
-    Mesh::initializeFactory();
-    Light::initializeFactory();
+    initializeComponentFactories();
 
     auto loop = []() {
         ViSII.render_thread_id = std::this_thread::get_id();
