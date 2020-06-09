@@ -12,6 +12,8 @@
 %pythonbegin %{_built_minor_version = 7%}
 #elif Python_VERSION_MINOR == 6
 %pythonbegin %{_built_minor_version = 6%}
+#elif Python_VERSION_MINOR == 5
+%pythonbegin %{_built_minor_version = 5%}
 #endif
 %pythonbegin %{
 from sys import version_info as _import_version_info
@@ -72,6 +74,7 @@ namespace std {
 #include "visii/camera.h"
 #include "visii/entity.h"
 #include "visii/light.h"
+#include "visii/texture.h"
 #include "visii/transform.h"
 #include "visii/material.h"
 #include "visii/mesh.h"
@@ -81,6 +84,7 @@ namespace std {
 %rename("%(undercase)s",%$isclass) "";
 
 %feature("kwargs") camera;
+%feature("kwargs") texture;
 %feature("kwargs") entity;
 %feature("kwargs") light;
 %feature("kwargs") transform;
@@ -92,6 +96,7 @@ namespace std {
 %include "visii/camera.h"
 %include "visii/entity.h"
 %include "visii/light.h"
+%include "visii/texture.h"
 %include "visii/transform.h"
 %include "visii/material.h"
 %include "visii/mesh.h"
