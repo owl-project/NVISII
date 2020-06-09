@@ -100,7 +100,7 @@ for i in range(NB_FRAMES):
             x_lim = [-5,5],
             y_lim = [-5,5],
             z_lim = [-5,5])
-
+        random_rotation(obj_id)
     # time.sleep(SLEEP_TIME)
     # a = [512*512*4]
     # visii.get_buffer_width(), visii.get_buffer_height()

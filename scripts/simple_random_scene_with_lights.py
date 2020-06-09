@@ -46,7 +46,7 @@ camera_entity = visii.entity.create(
 # camera_entity.get_camera().set_focal_distance(3.5)
 
 # Change the dome light intensity
-visii.set_dome_light_intensity(1)
+visii.set_dome_light_intensity(0.5)
 
 # set the view camera transform
 camera_entity.get_camera().set_view(

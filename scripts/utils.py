@@ -3,13 +3,65 @@ import visii
 import randomcolor
 import math 
 
+def add_cuboid(name):
+    obj = visii.entity.get(name)
+
+    min_obj = obj.get_mesh().get_min_aabb_corner()
+    max_obj = obj.get_mesh().get_max_aabb_corner()
+    centroid_obj = obj.get_mesh().get_aabb_center()
+
+    cuboid = [
+        visii.vec3(max_obj[0], max_obj[1], max_obj[2]),
+        visii.vec3(min_obj[0], max_obj[1], max_obj[2]),
+        visii.vec3(max_obj[0], min_obj[1], max_obj[2]),
+        visii.vec3(max_obj[0], max_obj[1], min_obj[2]),
+        visii.vec3(min_obj[0], min_obj[1], max_obj[2]),
+        visii.vec3(max_obj[0], min_obj[1], min_obj[2]),
+        visii.vec3(min_obj[0], max_obj[1], min_obj[2]),
+        visii.vec3(min_obj[0], min_obj[1], min_obj[2]),
+        visii.vec3(centroid_obj[0], centroid_obj[1], centroid_obj[2]), 
+    ]
+
+    for i_p, p in enumerate(cuboid):
+        child_transform = visii.transform.create(f"{name}_cuboid_{i_p}")
+        child_transform.set_position(p)
+        child_transform.set_parent(obj.get_transform().get_id())
+
+def get_cuboid_image_space(obj_id,camera_name = 'my_camera'):
+    # return cubdoid + centroid projected to the image, values [0..1]
+    # This assumes that only the cam_view is used.
+
+    # cam_matrix = camera_entity.transform().get_world_to_local_matrix()
+
+    cam_view_matrix = visii.entity.get(camera_name).get_camera().get_view()
+    cam_proj_matrix = visii.entity.get(camera_name).get_camera().get_projection()
+
+    points = []
+    for i_t in range(9):
+        trans = visii.transform.get(f"{obj_id}_cuboid_{i_t}")
+        pos_m = visii.vec4(
+            trans.get_world_translation()[0],
+            trans.get_world_translation()[1],
+            trans.get_world_translation()[2],
+            1)
+      
+        p_image = cam_proj_matrix * (cam_view_matrix * pos_m) 
+        p_image = visii.vec2(p_image) / p_image.w
+        p_image = p_image * visii.vec2(1,-1)
+        p_image = (p_image + visii.vec2(1,1)) * 0.5
+        points.append(p_image)
+
+    return points
+
 def add_random_obj(name = "name",
     x_lim = [-1,1],
     y_lim = [-1,1],
     z_lim = [-1,1],
     scale_lim = [0.01,1]
     ):
-
+    
+    # obj = visii.entity.get(name)
+    # if obj is None:
     obj= visii.entity.create(
         name = name,
         transform = visii.transform.create(name),
@@ -119,7 +171,7 @@ add_random_obj.create_torus = None
 add_random_obj.create_tube = None
 
 def random_light(obj_id,
-    intensity_lim = [50000,100000],
+    intensity_lim = [50000,10000],
     color = None,
     temperature_lim  = [100,10000],
     ):
@@ -158,13 +210,40 @@ def random_material(obj_id,
         obj_mat.set_base_color(color[0],color[1],color[2])  
         
 
-    obj_mat.set_roughness(random.uniform(0,1)) # default is 1  
-    obj_mat.set_metallic(random.uniform(0,1))  # degault is 0     
-    obj_mat.set_transmission(random.uniform(0,1))  # degault is 0     
+
+
+    r = random.randint(0,2)
+
+    if r == 0:  
+        # Plastic / mat
+        obj_mat.set_metallic(0)  # should 0 or 1      
+        obj_mat.set_transmission(0)  # should 0 or 1      
+        obj_mat.set_roughness(random.uniform(0,1)) # default is 1  
+    if r == 1:  
+        # metallic
+        obj_mat.set_metallic(random.uniform(0.9,1))  # should 0 or 1      
+        obj_mat.set_transmission(0)  # should 0 or 1      
+    if r == 2:  
+        # glass
+        obj_mat.set_metallic(0)  # should 0 or 1      
+        obj_mat.set_transmission(random.uniform(0.9,1))  # should 0 or 1      
+
+    if r > 0: # for metallic and glass
+        r2 = random.randint(0,1)
+        if r2 == 1: 
+            obj_mat.set_roughness(random.uniform(0,.1)) # default is 1  
+        else:
+            obj_mat.set_roughness(random.uniform(0.9,1)) # default is 1  
+
     obj_mat.set_sheen(random.uniform(0,1))  # degault is 0     
     obj_mat.set_clearcoat(random.uniform(0,1))  # degault is 0     
     obj_mat.set_specular(random.uniform(0,1))  # degault is 0     
-    obj_mat.set_anisotropic(random.uniform(0,1))  # degault is 0     
+
+    r = random.randint(0,1)
+    if r == 0:
+        obj_mat.set_anisotropic(random.uniform(0,0.1))  # degault is 0     
+    else:
+        obj_mat.set_anisotropic(random.uniform(0.9,1))  # degault is 0     
 
 def distance(v0,v1=[0,0,0]):
     l2 = 0
@@ -224,23 +303,34 @@ random_translation.destinations = {}
 random_translation.speeds = {}
 
 
+def random_rotation(obj_id,
+    speed_lim = [0.01,0.05]
+    ):
+    from pyquaternion import Quaternion
 
+    trans = visii.transform.get(str(obj_id))    
 
+    # Rotation
+    if not str(obj_id) in random_rotation.destinations.keys() :
+        random_rotation.destinations[str(obj_id)] = Quaternion.random()
+        random_rotation.speeds[str(obj_id)] = random.uniform(speed_lim[0],speed_lim[1])
 
-    # # Rotation
-    # if not str(obj_id) in move_around.destination['rot'].keys() :
-    #     move_around.destination['rot'][str(obj_id)] = Quaternion.random()
-    # else:
-    #     goal = move_around.destination['rot'][str(obj_id)]
-    #     rot = trans.get_rotation()
-    #     rot = Quaternion(rot.w,rot.x,rot.y,rot.z)
-    #     if Quaternion.sym_distance(goal, rot) < 0.1:
-    #         move_around.destination['rot'][str(obj_id)] = Quaternion.random()    
-    #         goal = move_around.destination['rot'][str(obj_id)]
-    #     dir_vec = Quaternion.slerp(rot,goal,0.01)
-    #     q = visii.quat()
-    #     q.w,q.x,q.y,q.z = dir_vec.w,dir_vec.x,dir_vec.y,dir_vec.z
-    #     trans.set_rotation(q)
+    else:
+        goal = random_rotation.destinations[str(obj_id)]
+        rot = trans.get_rotation()
+        rot = Quaternion(rot.w,rot.x,rot.y,rot.z)
+        if Quaternion.sym_distance(goal, rot) < 0.1:
+            random_rotation.destinations[str(obj_id)] = Quaternion.random()    
+            random_rotation.speeds[str(obj_id)] = random.uniform(speed_lim[0],speed_lim[1])
+            goal = random_rotation.destinations[str(obj_id)]
+        dir_vec = Quaternion.slerp(rot,goal,random_rotation.speeds[str(obj_id)])
+        q = visii.quat()
+        q.w,q.x,q.y,q.z = dir_vec.w,dir_vec.x,dir_vec.y,dir_vec.z
+        trans.set_rotation(q)
+
+random_rotation.destinations = {}
+random_rotation.speeds = {}
+
 
     # # color
     # if not str(obj_id) in move_around.destination['color'].keys() :
