@@ -143,7 +143,7 @@ void loadMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float
 
     mat.metallic = /*textured_scalar_param(*/p.metallic/*, uv)*/;
     mat.specular = /*textured_scalar_param(*/p.specular/*, uv)*/;
-    mat.roughness = max(/*textured_scalar_param(*/p.roughness/*, uv)*/, roughnessMinimum);
+    mat.roughness = max(/*textured_scalar_param(*/max(p.roughness, MIN_ROUGHNESS)/*, uv)*/, roughnessMinimum);
     mat.specular_tint = /*textured_scalar_param(*/p.specular_tint/*, uv)*/;
     mat.anisotropy = /*textured_scalar_param(*/p.anisotropic/*, uv)*/;
     mat.sheen = /*textured_scalar_param(*/p.sheen/*, uv)*/;
