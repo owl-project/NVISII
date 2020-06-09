@@ -30,6 +30,8 @@ vec2 toSpherical(vec3 dir) {
 inline __device__
 float3 missColor(const owl::Ray &ray)
 {
+    // return make_float3(.5f);
+
     auto pixelID = owl::getLaunchIndex();
 
     float3 rayDir = normalize(ray.direction);
@@ -340,7 +342,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             bool visible = ((payload.entityID == sampledLightID) || (payload.entityID == -1));
                             if (visible) {
                                 float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
-                                float3 bsdf = disney_brdf(mat, v_z, w_o, light_dir, v_x, v_y);
+                                float3 bsdf = disney_brdf(mat, v_z, w_o, light_dir, v_x, v_y, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP);
                                 float3 Li = lightEmission * w / light_pdf;
                                 irradiance = (bsdf * Li * fabs(dotNWi));
                             }
@@ -353,7 +355,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 w_i;
             float pdf;
             bool sampledSpecular;
-            float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, pdf, sampledSpecular);
+            float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, pdf, sampledSpecular, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP);
             if (pdf < EPSILON || all_zero(bsdf)) {
                 break;
             }
@@ -368,7 +370,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
                 float3 w_i;
                 float bsdf_pdf;
-                float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdf_pdf, sampledSpecularLight);
+                float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdf_pdf, sampledSpecularLight, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP);
                 if ((light_pdf > EPSILON) && !all_zero(bsdf) && bsdf_pdf >= EPSILON) {        
                     bool visible = (payload.entityID == sampledLightID);
                     if (visible) {

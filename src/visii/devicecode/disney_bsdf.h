@@ -109,7 +109,16 @@ __device__ float gtr_1(float cos_theta_h, float alpha) {
 // Burley notes eq. 8
 __device__ float gtr_2(float cos_theta_h, float alpha) {
 	float alpha_sqr = alpha * alpha;
-	return M_1_PI * alpha_sqr / pow2(1.f + (alpha_sqr - 1.f) * cos_theta_h * cos_theta_h);
+	return M_1_PI * alpha_sqr / max(pow2(1.f + (alpha_sqr - 1.f) * cos_theta_h * cos_theta_h), 0.00000000001f);
+}
+
+__device__ float gtr_2(float3 halfDir, float3 normal, float rough){
+	float rough2 = rough * rough;
+    float NdotH = max(dot(normal, halfDir), 0.0);
+    float numerator = rough2;
+    float media = NdotH * NdotH * (rough2 - 1.0) + 1.0;
+    float denominator = M_PI * media * media;
+    return numerator / max(denominator, 0.00000000001f);
 }
 
 // D_GTR2 Anisotropic: Anisotropic generalized Trowbridge-Reitz with gamma=2
@@ -246,6 +255,53 @@ __device__ float3 disney_subsurface(const DisneyMaterial &mat, const float3 &n,
     return (1./M_PI) * ss * mat.base_color;
 }
 
+// Eavg in the algorithm is fitted into this
+__device__ float AverageEnergy(float rough){
+    float smoothness = 1.0 - rough;
+    float r = -0.0761947 - 0.383026 * smoothness;
+          r = 1.04997 + smoothness * r;
+          r = 0.409255 + smoothness * r;
+    return min(0.9, r); 
+}
+
+// multiple scattering...
+// Favg in the algorithm is fitted into this
+__device__ float3 AverageFresnel(float3 specularColor){
+    return specularColor + (make_float3(1.0) - specularColor) * (1.0 / 21.0);
+}
+
+__device__ float3 disney_multiscatter(const DisneyMaterial &mat, const float3 &n,
+	const float3 &w_o, const float3 &w_i,
+	cudaTextureObject_t GGX_E_LOOKUP, cudaTextureObject_t GGX_E_AVG_LOOKUP)
+{
+	float3 w_h = normalize(w_i + w_o);
+	float v_dot_n = abs(dot(normalize(w_o), normalize(n)));
+	float l_dot_n = abs(dot(normalize(w_i), normalize(n)));
+	float alpha = max(mat.roughness*mat.roughness, .0016);
+
+    //E(μ) is in fact the sum of the red and green channels in our environment BRDF
+    // vec2 sampleE_o = texture2D(BRDFlut, vec2(NdotV, alpha)).xy;
+    // E_o = sampleE_o.x + sampleE_o.y;
+	float E_o = tex2D<float>(GGX_E_LOOKUP, v_dot_n, alpha);
+    float oneMinusE_o = 1.0 - E_o;
+    float E_i = tex2D<float>(GGX_E_LOOKUP, l_dot_n, alpha);
+    float oneMinusE_i = 1.0 - E_i;
+
+    float Eavg = tex2D<float>(GGX_E_AVG_LOOKUP, alpha, .5);
+	// float Eavg = AverageEnergy(alpha);
+    float oneMinusEavg = 1.0 - Eavg;
+	
+	float lum = luminance(mat.base_color);
+	float3 tint = lum > 0.f ? mat.base_color / lum : make_float3(1.f);
+	float3 F0 = lerp(mat.specular * 0.08f * lerp(make_float3(1.f), tint, mat.specular_tint), mat.base_color, mat.metallic);
+	float3 Favg = AverageFresnel(F0);
+
+    float brdf = (oneMinusE_o * oneMinusE_i) / (M_PI * oneMinusEavg);
+    float3 energyScale = (Favg * Favg * Eavg) / (make_float3(1.0) - Favg * oneMinusEavg);
+
+    return brdf * energyScale;
+}
+
 __device__ float3 disney_microfacet_isotropic(const DisneyMaterial &mat, const float3 &n,
 	const float3 &w_o, const float3 &w_i)
 {
@@ -333,7 +389,9 @@ __device__ float3 disney_sheen(const DisneyMaterial &mat, const float3 &n,
 }
 
 __device__ float3 disney_brdf(const DisneyMaterial &mat, const float3 &n,
-	const float3 &w_o, const float3 &w_i, const float3 &v_x, const float3 &v_y)
+	const float3 &w_o, const float3 &w_i, const float3 &v_x, const float3 &v_y,
+	cudaTextureObject_t GGX_E_LOOKUP, cudaTextureObject_t GGX_E_AVG_LOOKUP
+	)
 {
 	if (!same_hemisphere(w_o, w_i, n)) {
 		// transmissive objects refract when back of surface is visible.
@@ -355,24 +413,26 @@ __device__ float3 disney_brdf(const DisneyMaterial &mat, const float3 &n,
 	float3 gloss;
 	if (mat.anisotropy == 0.f) {
 		gloss = disney_microfacet_isotropic(mat, n, w_o, w_i);
-	} else {
+		gloss = gloss + disney_multiscatter(mat, n, w_o, w_i, GGX_E_LOOKUP, GGX_E_AVG_LOOKUP);
+	} else 
+	{
 		gloss = disney_microfacet_anisotropic(mat, n, w_o, w_i, v_x, v_y);
+		gloss = gloss + disney_multiscatter(mat, n, w_o, w_i, GGX_E_LOOKUP, GGX_E_AVG_LOOKUP);
 	}
-
 	return 
 		(lerp(diffuse, subsurface, mat.flatness) * (1.f - mat.metallic) * (1.f - mat.specular_transmission) 
 		+ sheen + gloss + coat) * fabs(dot(w_i, n));
 }
 
 __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
-	const float3 &w_o, const float3 &w_i, const float3 &v_x, const float3 &v_y)
-{
+	const float3 &w_o, const float3 &w_i, const float3 &v_x, const float3 &v_y
+) {
 	bool entering = dot(w_o, n) > 0.f;
 	bool sameHemisphere = same_hemisphere(w_o, w_i, n);
 	
-	float alpha = max(0.001f, mat.roughness * mat.roughness);
+	float alpha = max(0.002f, mat.roughness * mat.roughness);
 	float aspect = sqrt(1.f - mat.anisotropy * 0.9f);
-	float2 alpha_aniso = make_float2(max(0.001f, alpha / aspect), max(0.001f, alpha * aspect));
+	float2 alpha_aniso = make_float2(max(0.002f, alpha / aspect), max(0.002f, alpha * aspect));
 
 	float clearcoat_alpha = lerp(0.1f, 0.001f, mat.clearcoat_gloss);
 
@@ -412,7 +472,8 @@ __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
  */
 __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 	const float3 &w_o, const float3 &v_x, const float3 &v_y, LCGRand &rng,
-	float3 &w_i, float &pdf, bool &is_specular)
+	float3 &w_i, float &pdf, bool &is_specular,
+	cudaTextureObject_t GGX_E_LOOKUP, cudaTextureObject_t GGX_E_AVG_LOOKUP)
 {
 	bool entering = dot(w_o, n) > 0.f;
 
@@ -494,7 +555,7 @@ __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		}
 	}
 	pdf = disney_pdf(mat, n, w_o, w_i, v_x, v_y);
-	float3 brdf = disney_brdf(mat, n, w_o, w_i, v_x, v_y);
+	float3 brdf = disney_brdf(mat, n, w_o, w_i, v_x, v_y, GGX_E_LOOKUP, GGX_E_AVG_LOOKUP);
 	return brdf;
 }
 

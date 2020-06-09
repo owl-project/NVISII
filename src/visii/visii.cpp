@@ -13,6 +13,7 @@
 #include <devicecode/launch_params.h>
 #include <devicecode/path_tracer.h>
 
+#define PBRLUT_IMPLEMENTATION
 #include <visii/utilities/ggx_lookup_tables.h>
 
 #include <thread>
@@ -379,19 +380,19 @@ void initializeOptix(bool headless)
                             OWL_TEXEL_FORMAT_RGBA8,
                             texSize.x,texSize.y,
                             texels.data(),
-                            OWL_TEXTURE_LINEAR);
+                            OWL_TEXTURE_NEAREST);
     OD.LP.environmentMapSet = true;
     owlLaunchParamsSetTexture(OD.launchParams, "environmentMap", envTexture);
     owlLaunchParamsSetRaw(OD.launchParams, "environmentMapSet", &OD.LP.environmentMapSet);
                             
     OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
                             OWL_TEXEL_FORMAT_R32F,
-                            32,1,
+                            GGX_E_avg_size,1,
                             GGX_E_avg,
                             OWL_TEXTURE_LINEAR);
     OWLTexture GGX_E_LOOKUP = owlTexture2DCreate(OD.context,
                             OWL_TEXEL_FORMAT_R32F,
-                            32,32,
+                            GGX_E_size[0],GGX_E_size[1],
                             GGX_E,
                             OWL_TEXTURE_LINEAR);
     owlLaunchParamsSetTexture(OD.launchParams, "GGX_E_AVG_LOOKUP", GGX_E_AVG_LOOKUP);
