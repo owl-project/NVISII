@@ -174,10 +174,10 @@ for i_frame in range(opt.nbframes):
             z_lim = [-10,0])
         random_scale(obj_id,
             # scale_lim = [0.1,0.5],
-            speed_lim = [0.01,0.05],
-            x_lim = [0.1,0.3],
-            y_lim = [0.1,0.3],
-            z_lim = [0.1,0.3]
+            speed_lim = [0.001,0.005],
+            x_lim = [0.3,0.5],
+            y_lim = [0.3,0.5],
+            z_lim = [0.3,0.5]
             )
         random_rotation(obj_id)
         random_color(obj_id,
