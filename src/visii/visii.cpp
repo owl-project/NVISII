@@ -13,6 +13,9 @@
 #include <devicecode/launch_params.h>
 #include <devicecode/path_tracer.h>
 
+#define PBRLUT_IMPLEMENTATION
+#include <visii/utilities/ggx_lookup_tables.h>
+
 #include <thread>
 #include <future>
 #include <queue>
@@ -73,10 +76,14 @@ static struct OptixData {
     OWLBuffer materialBuffer;
     OWLBuffer meshBuffer;
     OWLBuffer lightBuffer;
+    OWLBuffer textureBuffer;
     OWLBuffer lightEntitiesBuffer;
     OWLBuffer instanceToEntityMapBuffer;
     OWLBuffer vertexListsBuffer;
     OWLBuffer indexListsBuffer;
+    OWLBuffer textureObjectsBuffer;
+
+    OWLTexture textureObjects[MAX_TEXTURES];
 
     uint32_t numLightEntities;
 
@@ -94,6 +101,8 @@ static struct OptixData {
     OWLBuffer denoiserScratchBuffer;
     OWLBuffer denoiserStateBuffer;
     OWLBuffer hdrIntensityBuffer;
+
+    Texture* domeLightTexture = nullptr;
 } OptixData;
 
 static struct ViSII {
@@ -211,6 +220,13 @@ void setDomeLightIntensity(float intensity)
     resetAccumulation();
 }
 
+void setDomeLightTexture(Texture* texture)
+{
+    // OptixData.domeLightTexture = texture;
+    OptixData.LP.environmentMapID = texture->getId();
+    resetAccumulation();
+}
+
 void initializeFrameBuffer(int fbWidth, int fbHeight) {
     synchronizeDevices();
 
@@ -310,12 +326,17 @@ void initializeOptix(bool headless)
         { "materials",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
         { "meshes",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
         { "lights",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lights)},
+        { "textures",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
         { "lightEntities",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
         { "vertexLists",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
         { "indexLists",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, indexLists)},
         { "numLightEntities",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
         { "instanceToEntityMap", OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
         { "domeLightIntensity",  OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
+        { "environmentMapID",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapID)},
+        { "textureObjects",      OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textureObjects)},
+        { "GGX_E_AVG_LOOKUP",    OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_AVG_LOOKUP)},
+        { "GGX_E_LOOKUP",        OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_LOOKUP)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = owlLaunchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
@@ -337,26 +358,47 @@ void initializeOptix(bool headless)
     owlLaunchParamsSetRaw(OD.launchParams, "frameSize", &OD.LP.frameSize);
 
     /* Create Component Buffers */
-    OD.entityBuffer    = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(EntityStruct),    MAX_ENTITIES,   nullptr);
-    OD.transformBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(TransformStruct), MAX_TRANSFORMS, nullptr);
-    OD.cameraBuffer    = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),    MAX_CAMERAS,    nullptr);
-    OD.materialBuffer  = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),  MAX_MATERIALS,  nullptr);
-    OD.meshBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),      MAX_MESHES,     nullptr);
-    OD.lightBuffer     = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),     MAX_LIGHTS,     nullptr);
-    OD.lightEntitiesBuffer            = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),        1,     nullptr);
-    OD.instanceToEntityMapBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),        1,     nullptr);
-    OD.vertexListsBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*), MAX_MESHES, nullptr);
-    OD.indexListsBuffer =  owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(ivec3*), MAX_MESHES, nullptr);
-    owlLaunchParamsSetBuffer(OD.launchParams, "entities",   OD.entityBuffer);
-    owlLaunchParamsSetBuffer(OD.launchParams, "transforms", OD.transformBuffer);
-    owlLaunchParamsSetBuffer(OD.launchParams, "cameras",    OD.cameraBuffer);
-    owlLaunchParamsSetBuffer(OD.launchParams, "materials",  OD.materialBuffer);
-    owlLaunchParamsSetBuffer(OD.launchParams, "meshes",     OD.meshBuffer);
-    owlLaunchParamsSetBuffer(OD.launchParams, "lights",     OD.lightBuffer);
-    owlLaunchParamsSetBuffer(OD.launchParams, "lightEntities", OD.lightEntitiesBuffer);
+    OD.entityBuffer              = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(EntityStruct),        MAX_ENTITIES,   nullptr);
+    OD.transformBuffer           = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(TransformStruct),     MAX_TRANSFORMS, nullptr);
+    OD.cameraBuffer              = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),        MAX_CAMERAS,    nullptr);
+    OD.materialBuffer            = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),      MAX_MATERIALS,  nullptr);
+    OD.meshBuffer                = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),          MAX_MESHES,     nullptr);
+    OD.lightBuffer               = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),         MAX_LIGHTS,     nullptr);
+    OD.textureBuffer             = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       MAX_TEXTURES,   nullptr);
+    OD.lightEntitiesBuffer       = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
+    OD.instanceToEntityMapBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
+    OD.vertexListsBuffer         = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*),               MAX_MESHES,     nullptr);
+    OD.indexListsBuffer          = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(ivec3*),              MAX_MESHES,     nullptr);
+    OD.textureObjectsBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(cudaTextureObject_t), MAX_TEXTURES,   nullptr);
+    owlLaunchParamsSetBuffer(OD.launchParams, "entities",            OD.entityBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "transforms",          OD.transformBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "cameras",             OD.cameraBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "materials",           OD.materialBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "meshes",              OD.meshBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "lights",              OD.lightBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "textures",            OD.textureBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "lightEntities",       OD.lightEntitiesBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "instanceToEntityMap", OD.instanceToEntityMapBuffer);
-    owlLaunchParamsSetBuffer(OD.launchParams, "vertexLists", OD.vertexListsBuffer);
-    owlLaunchParamsSetBuffer(OD.launchParams, "indexLists", OD.indexListsBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "vertexLists",         OD.vertexListsBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "indexLists",          OD.indexListsBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "textureObjects",      OD.textureObjectsBuffer);
+
+    OD.LP.environmentMapID = -1;
+    owlLaunchParamsSetRaw(OD.launchParams, "environmentMapID", &OD.LP.environmentMapID);
+                            
+    OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
+                            OWL_TEXEL_FORMAT_R32F,
+                            GGX_E_avg_size,1,
+                            GGX_E_avg,
+                            OWL_TEXTURE_LINEAR);
+    OWLTexture GGX_E_LOOKUP = owlTexture2DCreate(OD.context,
+                            OWL_TEXEL_FORMAT_R32F,
+                            GGX_E_size[0],GGX_E_size[1],
+                            GGX_E,
+                            OWL_TEXTURE_LINEAR);
+    owlLaunchParamsSetTexture(OD.launchParams, "GGX_E_AVG_LOOKUP", GGX_E_AVG_LOOKUP);
+    owlLaunchParamsSetTexture(OD.launchParams, "GGX_E_LOOKUP",     GGX_E_LOOKUP);
+    
 
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
     owlLaunchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
@@ -459,14 +501,16 @@ void updateComponents()
 {
     auto &OD = OptixData;
 
+    // If any of the components are dirty, reset accumulation
     if (Mesh::areAnyDirty()) resetAccumulation();
     if (Material::areAnyDirty()) resetAccumulation();
     if (Camera::areAnyDirty()) resetAccumulation();
     if (Transform::areAnyDirty()) resetAccumulation();
     if (Entity::areAnyDirty()) resetAccumulation();
     if (Light::areAnyDirty()) resetAccumulation();
+    if (Texture::areAnyDirty()) resetAccumulation();
 
-    // Build / Rebuild BLAS
+    // Manage Meshes: Build / Rebuild BLAS
     if (Mesh::areAnyDirty()) {
         auto mutex = Mesh::getEditMutex();
         std::lock_guard<std::mutex> lock(*mutex.get());
@@ -492,31 +536,33 @@ void updateComponents()
             owlGroupBuildAccel(OD.meshes[mid].blas);          
         }
 
-        if (Mesh::areAnyDirty()) {
-            std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
-            std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
-            for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
-                // If a mesh is initialized, vertex and index buffers should already be created, and so 
-                if (!meshes[mid].isInitialized()) continue;
-                if (meshes[mid].getTriangleIndices().size() == 0) continue;
-                if ((!OD.meshes[mid].vertices) || (!OD.meshes[mid].indices)) {
-                    std::cout<<"Mesh ID"<< mid << " is dirty?" << meshes[mid].isDirty() << std::endl;
-                    std::cout<<"nverts : " << meshes[mid].getVertices().size() << std::endl;
-                    std::cout<<"nindices : " << meshes[mid].getTriangleIndices().size() << std::endl;
-                    throw std::runtime_error("ERROR: vertices/indices is nullptr");
-                }
-                vertexLists[mid] = ((vec4*) owlBufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
-                indexLists[mid] = ((ivec3*) owlBufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
+        std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
+        std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
+        for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
+            // If a mesh is initialized, vertex and index buffers should already be created, and so 
+            if (!meshes[mid].isInitialized()) continue;
+            if (meshes[mid].getTriangleIndices().size() == 0) continue;
+            if ((!OD.meshes[mid].vertices) || (!OD.meshes[mid].indices)) {
+                std::cout<<"Mesh ID"<< mid << " is dirty?" << meshes[mid].isDirty() << std::endl;
+                std::cout<<"nverts : " << meshes[mid].getVertices().size() << std::endl;
+                std::cout<<"nindices : " << meshes[mid].getTriangleIndices().size() << std::endl;
+                throw std::runtime_error("ERROR: vertices/indices is nullptr");
             }
-            owlBufferUpload(OD.vertexListsBuffer, vertexLists.data());
-            owlBufferUpload(OD.indexListsBuffer, indexLists.data());
+            vertexLists[mid] = ((vec4*) owlBufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
+            indexLists[mid] = ((ivec3*) owlBufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
         }
-
+        owlBufferUpload(OD.vertexListsBuffer, vertexLists.data());
+        owlBufferUpload(OD.indexListsBuffer, indexLists.data());
+        
         Mesh::updateComponents();
+        owlBufferUpload(OptixData.meshBuffer, Mesh::getFrontStruct());
     }
 
-    // Build / Rebuild TLAS
+    // Manage Entities: Build / Rebuild TLAS
     if (Entity::areAnyDirty()) {
+        auto mutex = Entity::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
+
         std::vector<OWLGroup> instances;
         std::vector<glm::mat4> instanceTransforms;
         std::vector<uint32_t> instanceToEntityMap;
@@ -552,10 +598,8 @@ void updateComponents()
         owlGroupBuildAccel(OD.tlas);
         owlLaunchParamsSetGroup(OD.launchParams, "world", OD.tlas);
         owlBuildSBT(OD.context);
-    }
+    
 
-    if (Entity::areAnyDirty()) {
-        Entity* entities = Entity::getFront();
         OD.lightEntities.resize(0);
         for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
             if (!entities[eid].isInitialized()) continue;
@@ -567,21 +611,69 @@ void updateComponents()
         owlBufferUpload(OptixData.lightEntitiesBuffer, OD.lightEntities.data());
         OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
         owlLaunchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
+
+        Entity::updateComponents();
+        owlBufferUpload(OptixData.entityBuffer,    Entity::getFrontStruct());
+    }
+
+    // Manage textures
+    if (Texture::areAnyDirty()) {
+        auto mutex = Texture::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
+
+        Texture* textures = Texture::getFront();
+        std::vector<cudaTextureObject_t> textureObjects(Texture::getCount());
+        for (uint32_t tid = 0; tid < Texture::getCount(); ++tid) {
+            if (!textures[tid].isInitialized()) continue;
+            if (textures[tid].isDirty()) {
+                OD.textureObjects[tid] = owlTexture2DCreate(
+                    OD.context, OWL_TEXEL_FORMAT_RGBA32F,
+                    textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
+                    OWL_TEXTURE_NEAREST);        
+            }
+            textureObjects[tid] = owlTextureGetObject(OD.textureObjects[tid], 0);
+        }
+        owlBufferUpload(OD.textureObjectsBuffer, textureObjects.data());
+        
+        Texture::updateComponents();
+        owlBufferUpload(OptixData.textureBuffer, Texture::getFrontStruct());
     }
     
-    Entity::updateComponents();
-    Transform::updateComponents();
-    Camera::updateComponents();
-    Material::updateComponents();
-    Light::updateComponents();
+    // Manage transforms
+    if (Transform::areAnyDirty()) {
+        auto mutex = Transform::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
 
-    // For now, just copy everything each frame. Later we can check if any components are dirty, and be more conservative in uploading data
-    owlBufferUpload(OptixData.entityBuffer,    Entity::getFrontStruct());
-    owlBufferUpload(OptixData.cameraBuffer,    Camera::getFrontStruct());
-    owlBufferUpload(OptixData.meshBuffer,      Mesh::getFrontStruct());
-    owlBufferUpload(OptixData.materialBuffer,  Material::getFrontStruct());
-    owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
-    owlBufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());
+        Transform::updateComponents();
+        owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
+    }   
+
+    // Manage Cameras
+    if (Camera::areAnyDirty()) {
+        auto mutex = Camera::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
+
+        Camera::updateComponents();
+        owlBufferUpload(OptixData.cameraBuffer,    Camera::getFrontStruct());
+    }    
+
+    // Manage materials
+    if (Material::areAnyDirty()) {
+        auto mutex = Material::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
+
+        Material::updateComponents();
+        owlBufferUpload(OptixData.materialBuffer,  Material::getFrontStruct());
+    }
+
+    // Manage lights
+    if (Light::areAnyDirty()) {
+        auto mutex = Light::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
+
+        Light::updateComponents();
+        owlBufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());
+    }
 }
 
 void updateLaunchParams()
@@ -638,6 +730,7 @@ void updateLaunchParams()
     owlLaunchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
     owlLaunchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
     owlLaunchParamsSetRaw(OptixData.launchParams, "domeLightIntensity", &OptixData.LP.domeLightIntensity);
+    owlLaunchParamsSetRaw(OptixData.launchParams, "environmentMapID", &OptixData.LP.environmentMapID);
     // auto bumesh_transform_struct = bumesh_transform->get_struct();
     // owlLaunchParamsSetRaw(launchParams,"bumesh_transform",&bumesh_transform_struct);
 
@@ -972,6 +1065,17 @@ void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std:
     stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
 }
 
+void initializeComponentFactories()
+{
+    Camera::initializeFactory();
+    Entity::initializeFactory();
+    Transform::initializeFactory();
+    Texture::initializeFactory();
+    Material::initializeFactory();
+    Mesh::initializeFactory();
+    Light::initializeFactory();
+}
+
 void initializeInteractive(bool windowOnTop)
 {
     // don't initialize more than once
@@ -979,12 +1083,7 @@ void initializeInteractive(bool windowOnTop)
 
     initialized = true;
     close = false;
-    Camera::initializeFactory();
-    Entity::initializeFactory();
-    Transform::initializeFactory();
-    Material::initializeFactory();
-    Mesh::initializeFactory();
-    Light::initializeFactory();
+    initializeComponentFactories();
 
     auto loop = [windowOnTop]() {
         ViSII.render_thread_id = std::this_thread::get_id();
@@ -1034,6 +1133,10 @@ void initializeInteractive(bool windowOnTop)
     };
 
     renderThread = thread(loop);
+
+    auto wait = [] () {};
+    auto future = enqueueCommand(wait);
+    future.wait();
 }
 
 void initializeHeadless()
@@ -1043,12 +1146,7 @@ void initializeHeadless()
 
     initialized = true;
     close = false;
-    Camera::initializeFactory();
-    Entity::initializeFactory();
-    Transform::initializeFactory();
-    Material::initializeFactory();
-    Mesh::initializeFactory();
-    Light::initializeFactory();
+    initializeComponentFactories();
 
     auto loop = []() {
         ViSII.render_thread_id = std::this_thread::get_id();
@@ -1071,6 +1169,10 @@ void initializeHeadless()
     };
 
     renderThread = thread(loop);
+
+    auto wait = [] () {};
+    auto future = enqueueCommand(wait);
+    future.wait();
 }
 
 void cleanup()

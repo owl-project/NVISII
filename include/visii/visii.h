@@ -5,6 +5,7 @@
 #include <visii/mesh.h>
 #include <visii/camera.h>
 #include <visii/light.h>
+#include <visii/texture.h>
 
 /**
    Initializes various backend systems required to render scene data.
@@ -33,6 +34,12 @@ void setCameraEntity(Entity* camera_entity);
  * \param intensity How powerful the dome light is in emitting light
  */ 
 void setDomeLightIntensity(float intensity);
+
+/** Sets the texture used to color the dome light (aka the environment). 
+ * Textures are sampled using a 2D to 3D latitude/longitude strategy.
+ * \param texture The texture to sample for the dome light.
+ */ 
+void setDomeLightTexture(Texture* texture);
 
 /**
    If using interactive mode, resizes the window to the specified dimentions.

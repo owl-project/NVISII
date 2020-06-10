@@ -30,7 +30,7 @@ private:
 	//std::map<std::type_index, std::vector<std::shared_ptr<Component>>> components;
 	
 	/** Prevents multiple components from simultaneously being added and/or removed from the component list */
-	static std::shared_ptr<std::mutex> creationMutex;
+	static std::shared_ptr<std::mutex> editMutex;
 	
     /** Marks that the StaticFactory has allocated the table of components */
 	static bool factoryInitialized;
@@ -111,6 +111,7 @@ public:
 	/** \return True the current entity is a valid, initialized entity, and False if the entity was cleared or removed. */
 	bool isInitialized();
 
+	/** Iterates through all components, updating any component struct fields and marking components as clean. */
     static void updateComponents();
 
     // static void UploadSSBO(vk::CommandBuffer command_buffer);
@@ -227,4 +228,6 @@ public:
 	
 	/** \return a reference to the connected mesh component, or None/nullptr if no component is connected. */
 	Mesh* getMesh();
+
+	static std::shared_ptr<std::mutex> getEditMutex();
 };

@@ -65,6 +65,9 @@ public:
 
     /** \return True if the tables used to store all light components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
+    
+    /** \return True the current light is a valid, initialized light, and False if the light was cleared or removed. */
+	bool isInitialized();
 
     /** Iterates through all light components, computing light metadata for rendering purposes. */
     static void updateComponents();
@@ -86,6 +89,8 @@ public:
 
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
+
+    static std::shared_ptr<std::mutex> getEditMutex();
 
     /** Returns a json string representation of the current component */
     std::string toString();
@@ -164,7 +169,7 @@ private:
     Light(std::string name, uint32_t id);
 
     /* A mutex used to make component access and modification thread safe */
-    static std::shared_ptr<std::mutex> creationMutex;
+    static std::shared_ptr<std::mutex> editMutex;
 
     /* Flag indicating that static resources were created */
     static bool factoryInitialized;

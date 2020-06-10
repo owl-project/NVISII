@@ -45,32 +45,39 @@ class Camera : public StaticFactory
 	  * \param near Specifies the distance from the viewer to the near clipping plane (always positive) */
 	static Camera *createPerspectiveFromFocalLength(std::string name, float focal_length, float sensor_width, float sensor_height, float near);
 
-	/* Retrieves a camera component by name. */
+	/** Gets a Camera by name 
+     * \return a Camera who's primary name key matches \p name */
 	static Camera *get(std::string name);
 
-	/* Retrieves a camera component by id. */
+	/** Gets a Camera by id 
+     * \return a Camera who's primary id key matches \p id */
 	static Camera *get(uint32_t id);
 
+	/** \return a pointer to the table of CameraStructs */
 	static CameraStruct *getFrontStruct();
 
-	/* Returns a pointer to the list of camera components. */
+	/** \returns a pointer to the list of camera components. */
 	static Camera *getFront();
 
-	/* Returns the total number of reserved cameras. */
+	/** \returns the total number of reserved cameras. */
 	static uint32_t getCount();
 
-	/* Deallocates a camera with the given name. */
+	/** Deallocates a camera with the given name. */
 	static void remove(std::string name);
 
-	/* Deallocates a camera with the given id. */
+	/** Deallocates a camera with the given id. */
 	static void remove(uint32_t id);
 
-	/* Initializes the Camera factory. Loads any default components. */
+	/** Allocates the tables used to store all Camera components */
 	static void initializeFactory();
 
-	/* TODO: Explain this */
+	/** \return True if the tables used to store all Camera components have been allocated, and False otherwise */
 	static bool isFactoryInitialized();
 
+	/** \return True the current camera is a valid, initialized camera, and False if the camera was cleared or removed. */
+	bool isInitialized();
+
+	/** Iterates through all components, updating any component struct fields and marking components as clean. */
     static void updateComponents();
 
 	/* Releases vulkan resources */
@@ -89,6 +96,8 @@ class Camera : public StaticFactory
 
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
+
+	static std::shared_ptr<std::mutex> getEditMutex();
 
     /** Returns a json string representation of the current component */
     std::string toString();
@@ -211,7 +220,7 @@ class Camera : public StaticFactory
 	Camera(std::string name, uint32_t id);
 
   	/* TODO */
-	static std::shared_ptr<std::mutex> creationMutex;
+	static std::shared_ptr<std::mutex> editMutex;
 
 	/* TODO */
 	static bool factoryInitialized;

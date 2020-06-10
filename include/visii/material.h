@@ -76,6 +76,9 @@ class Material : public StaticFactory
     /** \return True if the tables used to store all material components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
 
+    /** \return True the current material is a valid, initialized material, and False if the material was cleared or removed. */
+	  bool isInitialized();
+
     /** Iterates through all material components, computing material metadata for rendering purposes. */
     static void updateComponents();
 
@@ -96,6 +99,8 @@ class Material : public StaticFactory
 
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
+
+    static std::shared_ptr<std::mutex> getEditMutex();
 
     /** Returns a json string representation of the current component */
     std::string toString();
@@ -320,7 +325,7 @@ class Material : public StaticFactory
     Material(std::string name, uint32_t id);
 
     /* TODO */
-    static std::shared_ptr<std::mutex> creationMutex;
+    static std::shared_ptr<std::mutex> editMutex;
 
     /* TODO */
     static bool factoryInitialized;

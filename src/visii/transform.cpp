@@ -5,20 +5,25 @@ Transform Transform::transforms[MAX_TRANSFORMS];
 TransformStruct Transform::transformStructs[MAX_TRANSFORMS];
 std::map<std::string, uint32_t> Transform::lookupTable;
 
-std::shared_ptr<std::mutex> Transform::creationMutex;
+std::shared_ptr<std::mutex> Transform::editMutex;
 bool Transform::factoryInitialized = false;
 bool Transform::anyDirty = true;
 
 void Transform::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
-	creationMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::mutex>();
 	factoryInitialized = true;
 }
 
 bool Transform::isFactoryInitialized()
 {
 	return factoryInitialized;
+}
+
+bool Transform::isInitialized()
+{
+	return initialized;
 }
 
 bool Transform::areAnyDirty()
@@ -72,25 +77,30 @@ void Transform::cleanUp()
 
 /* Static Factory Implementations */
 Transform* Transform::create(std::string name) {
-	auto t = StaticFactory::create(creationMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+	auto t = StaticFactory::create(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 	anyDirty = true;
 	return t;
 }
 
+std::shared_ptr<std::mutex> Transform::getEditMutex()
+{
+	return editMutex;
+}
+
 Transform* Transform::get(std::string name) {
-	return StaticFactory::get(creationMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+	return StaticFactory::get(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 }
 
 Transform* Transform::get(uint32_t id) {
-	return StaticFactory::get(creationMutex, id, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+	return StaticFactory::get(editMutex, id, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 }
 
 void Transform::remove(std::string name) {
-	StaticFactory::remove(creationMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+	StaticFactory::remove(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 }
 
 void Transform::remove(uint32_t id) {
-	StaticFactory::remove(creationMutex, id, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+	StaticFactory::remove(editMutex, id, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 }
 
 TransformStruct* Transform::getFrontStruct()
