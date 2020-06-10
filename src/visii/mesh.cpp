@@ -3,8 +3,8 @@
 #endif
 
 #define TINYGLTF_IMPLEMENTATION
-// #define TINYGLTF_NO_FS
-// #define TINYGLTF_NO_STB_IMAGE_WRITE
+#define TINYGLTF_NO_FS
+#define TINYGLTF_NO_STB_IMAGE_WRITE
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -24,8 +24,9 @@
 
 // #include "Foton/Tools/Options.hxx"
 // #include "Foton/Tools/HashCombiner.hxx"
-// #include <tiny_stl.h>
-// #include <tiny_gltf.h>
+#include <tiny_obj_loader.h>
+#include <tiny_stl.h>
+#include <tiny_gltf.h>
 
 #include <generator/generator.hpp>
 
@@ -548,89 +549,88 @@ void Mesh::updateComponents()
 // 	return ssbo_sizes;
 // }
 
-// void Mesh::load_obj(std::string objPath)
-// {
-// 	allowEdits = allow_edits;
+void Mesh::loadObj(std::string objPath)
+{
+	struct stat st;
+	if (stat(objPath.c_str(), &st) != 0)
+		throw std::runtime_error(std::string(objPath + " does not exist!"));
 
-// 	struct stat st;
-// 	if (stat(objPath.c_str(), &st) != 0)
-// 		throw std::runtime_error( std::string(objPath + " does not exist!"));
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string err;
 
-// 	std::vector<tinyobj::shape_t> shapes;
-// 	std::vector<tinyobj::material_t> materials;
-// 	std::string err;
+	tinyobj::attrib_t attrib;
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, objPath.c_str()))
+		throw std::runtime_error( std::string("Error: Unable to load " + objPath));
 
-// 	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, objPath.c_str()))
-// 		throw std::runtime_error( std::string("Error: Unable to load " + objPath));
+	std::vector<Vertex> vertices;
 
-// 	std::vector<Vertex> vertices;
+	// bool has_normals = false;
 
-// 	bool has_normals = false;
+	// /* If the mesh has a set of shapes, merge them all into one */
+	// if (shapes.size() > 0)
+	// {
+	// 	for (const auto &shape : shapes)
+	// 	{
+	// 		for (const auto &index : shape.mesh.indices)
+	// 		{
+	// 			Vertex vertex = Vertex();
+	// 			vertex.point = {
+	// 				attrib.vertices[3 * index.vertex_index + 0],
+	// 				attrib.vertices[3 * index.vertex_index + 1],
+	// 				attrib.vertices[3 * index.vertex_index + 2],
+	// 				1.0f};
+	// 			if (attrib.colors.size() != 0)
+	// 			{
+	// 				vertex.color = {
+	// 					attrib.colors[3 * index.vertex_index + 0],
+	// 					attrib.colors[3 * index.vertex_index + 1],
+	// 					attrib.colors[3 * index.vertex_index + 2],
+	// 					1.f};
+	// 			}
+	// 			if (attrib.normals.size() != 0)
+	// 			{
+	// 				vertex.normal = {
+	// 					attrib.normals[3 * index.normal_index + 0],
+	// 					attrib.normals[3 * index.normal_index + 1],
+	// 					attrib.normals[3 * index.normal_index + 2],
+	// 					0.0f};
+	// 				has_normals = true;
+	// 			}
+	// 			if (attrib.texcoords.size() != 0)
+	// 			{
+	// 				vertex.texcoord = {
+	// 					attrib.texcoords[2 * index.texcoord_index + 0],
+	// 					attrib.texcoords[2 * index.texcoord_index + 1]};
+	// 			}
+	// 			vertices.push_back(vertex);
+	// 		}
+	// 	}
+	// }
 
-// 	/* If the mesh has a set of shapes, merge them all into one */
-// 	if (shapes.size() > 0)
-// 	{
-// 		for (const auto &shape : shapes)
-// 		{
-// 			for (const auto &index : shape.mesh.indices)
-// 			{
-// 				Vertex vertex = Vertex();
-// 				vertex.point = {
-// 					attrib.vertices[3 * index.vertex_index + 0],
-// 					attrib.vertices[3 * index.vertex_index + 1],
-// 					attrib.vertices[3 * index.vertex_index + 2],
-// 					1.0f};
-// 				if (attrib.colors.size() != 0)
-// 				{
-// 					vertex.color = {
-// 						attrib.colors[3 * index.vertex_index + 0],
-// 						attrib.colors[3 * index.vertex_index + 1],
-// 						attrib.colors[3 * index.vertex_index + 2],
-// 						1.f};
-// 				}
-// 				if (attrib.normals.size() != 0)
-// 				{
-// 					vertex.normal = {
-// 						attrib.normals[3 * index.normal_index + 0],
-// 						attrib.normals[3 * index.normal_index + 1],
-// 						attrib.normals[3 * index.normal_index + 2],
-// 						0.0f};
-// 					has_normals = true;
-// 				}
-// 				if (attrib.texcoords.size() != 0)
-// 				{
-// 					vertex.texcoord = {
-// 						attrib.texcoords[2 * index.texcoord_index + 0],
-// 						attrib.texcoords[2 * index.texcoord_index + 1]};
-// 				}
-// 				vertices.push_back(vertex);
-// 			}
-// 		}
-// 	}
-
-// 	/* If the obj has no shapes, eg polylines, then try looking for per vertex data */
-// 	else if (shapes.size() == 0)
-// 	{
-// 		for (int idx = 0; idx < attrib.vertices.size() / 3; ++idx)
-// 		{
-// 			Vertex v = Vertex();
-// 			v.point = glm::vec4(attrib.vertices[(idx * 3)], attrib.vertices[(idx * 3) + 1], attrib.vertices[(idx * 3) + 2], 1.0f);
-// 			if (attrib.normals.size() != 0)
-// 			{
-// 				v.normal = glm::vec4(attrib.normals[(idx * 3)], attrib.normals[(idx * 3) + 1], attrib.normals[(idx * 3) + 2], 0.0f);
-// 				has_normals = true;
-// 			}
-// 			if (attrib.colors.size() != 0)
-// 			{
-// 				v.normal = glm::vec4(attrib.colors[(idx * 3)], attrib.colors[(idx * 3) + 1], attrib.colors[(idx * 3) + 2], 0.0f);
-// 			}
-// 			if (attrib.texcoords.size() != 0)
-// 			{
-// 				v.texcoord = glm::vec2(attrib.texcoords[(idx * 2)], attrib.texcoords[(idx * 2) + 1]);
-// 			}
-// 			vertices.push_back(v);
-// 		}
-// 	}
+	// /* If the obj has no shapes, eg polylines, then try looking for per vertex data */
+	// else if (shapes.size() == 0)
+	// {
+	// 	for (int idx = 0; idx < attrib.vertices.size() / 3; ++idx)
+	// 	{
+	// 		Vertex v = Vertex();
+	// 		v.point = glm::vec4(attrib.vertices[(idx * 3)], attrib.vertices[(idx * 3) + 1], attrib.vertices[(idx * 3) + 2], 1.0f);
+	// 		if (attrib.normals.size() != 0)
+	// 		{
+	// 			v.normal = glm::vec4(attrib.normals[(idx * 3)], attrib.normals[(idx * 3) + 1], attrib.normals[(idx * 3) + 2], 0.0f);
+	// 			has_normals = true;
+	// 		}
+	// 		if (attrib.colors.size() != 0)
+	// 		{
+	// 			v.normal = glm::vec4(attrib.colors[(idx * 3)], attrib.colors[(idx * 3) + 1], attrib.colors[(idx * 3) + 2], 0.0f);
+	// 		}
+	// 		if (attrib.texcoords.size() != 0)
+	// 		{
+	// 			v.texcoord = glm::vec2(attrib.texcoords[(idx * 2)], attrib.texcoords[(idx * 2) + 1]);
+	// 		}
+	// 		vertices.push_back(v);
+	// 	}
+	// }
 
 // 	/* Eliminate duplicate positions */
 // 	std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
@@ -670,7 +670,8 @@ void Mesh::updateComponents()
 // 	createNormalBuffer(allow_edits, submit_immediately);
 // 	createTexCoordBuffer(allow_edits, submit_immediately);
 // 	compute_metadata(submit_immediately);
-// }
+	markDirty();
+}
 
 
 // void Mesh::load_stl(std::string stlPath) {
@@ -2062,18 +2063,19 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 }
 
 
-// Mesh* Mesh::createFromObj(std::string name, std::string objPath)
-// {
-// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-// 	try {
-// 		mesh->load_obj(objPath, allow_edits, submit_immediately);
-// 		anyDirty = true;
-// 		return mesh;
-// 	} catch (...) {
-// 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-// 		throw;
-// 	}
-// }
+Mesh* Mesh::createFromObj(std::string name, std::string path)
+{
+	auto create = [path] (Mesh* mesh) {
+		mesh->loadObj(path);
+	};
+	
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		throw;
+	}
+}
 
 // Mesh* Mesh::createFromStl(std::string name, std::string stlPath)
 // {
