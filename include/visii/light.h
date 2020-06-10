@@ -65,6 +65,9 @@ public:
 
     /** \return True if the tables used to store all light components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
+    
+    /** \return True the current light is a valid, initialized light, and False if the light was cleared or removed. */
+	bool isInitialized();
 
     /** Iterates through all light components, computing light metadata for rendering purposes. */
     static void updateComponents();

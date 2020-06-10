@@ -35,10 +35,13 @@ float3 missColor(const owl::Ray &ray)
     auto pixelID = owl::getLaunchIndex();
 
     float3 rayDir = normalize(ray.direction);
-    if (optixLaunchParams.environmentMapSet) 
+    if (optixLaunchParams.environmentMapID != -1) 
     {
         vec2 tc = toSpherical(vec3(rayDir.x, rayDir.y, rayDir.z));
-        float4 texColor = tex2D<float4>(optixLaunchParams.environmentMap, tc.x,tc.y);
+        cudaTextureObject_t tex = optixLaunchParams.textureObjects[optixLaunchParams.environmentMapID];
+        if (!tex) return make_float3(1.f, 0.f, 1.f);
+
+        float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
         return make_float3(texColor);
     }
 

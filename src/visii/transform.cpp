@@ -21,6 +21,11 @@ bool Transform::isFactoryInitialized()
 	return factoryInitialized;
 }
 
+bool Transform::isInitialized()
+{
+	return initialized;
+}
+
 bool Transform::areAnyDirty()
 {
 	return anyDirty;

@@ -104,6 +104,11 @@ bool Light::isFactoryInitialized()
     return factoryInitialized;
 }
 
+bool Light::isInitialized()
+{
+	return initialized;
+}
+
 bool Light::areAnyDirty()
 {
 	return anyDirty;

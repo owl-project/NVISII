@@ -83,6 +83,11 @@ bool Material::isFactoryInitialized()
 	return factoryInitialized;
 }
 
+bool Material::isInitialized()
+{
+	return initialized;
+}
+
 bool Material::areAnyDirty()
 {
 	return anyDirty;

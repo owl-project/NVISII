@@ -111,6 +111,7 @@ public:
 	/** \return True the current entity is a valid, initialized entity, and False if the entity was cleared or removed. */
 	bool isInitialized();
 
+	/** Iterates through all components, updating any component struct fields and marking components as clean. */
     static void updateComponents();
 
     // static void UploadSSBO(vk::CommandBuffer command_buffer);

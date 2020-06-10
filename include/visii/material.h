@@ -76,6 +76,9 @@ class Material : public StaticFactory
     /** \return True if the tables used to store all material components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
 
+    /** \return True the current material is a valid, initialized material, and False if the material was cleared or removed. */
+	  bool isInitialized();
+
     /** Iterates through all material components, computing material metadata for rendering purposes. */
     static void updateComponents();
 

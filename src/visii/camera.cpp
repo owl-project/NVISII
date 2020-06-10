@@ -52,6 +52,11 @@ bool Camera::isFactoryInitialized()
     return factoryInitialized;
 }
 
+bool Camera::isInitialized()
+{
+	return initialized;
+}
+
 bool Camera::areAnyDirty() {
     return anyDirty;
 }

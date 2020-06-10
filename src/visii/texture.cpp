@@ -10,6 +10,7 @@ bool Texture::anyDirty = true;
 Texture::Texture()
 {
     this->initialized = false;
+    markDirty();
 }
 
 Texture::Texture(std::string name, uint32_t id)
@@ -35,7 +36,7 @@ Texture::Texture(std::string name, uint32_t id)
     textureStructs[id].height = 4;
     this->texels = texels;
     
-    // TODO: INITIALIZE STRUCT
+    markDirty();
 }
 
 std::string Texture::toString() {
@@ -70,6 +71,11 @@ void Texture::initializeFactory()
 bool Texture::isFactoryInitialized()
 {
     return factoryInitialized;
+}
+
+bool Texture::isInitialized()
+{
+	return initialized;
 }
 
 bool Texture::areAnyDirty()

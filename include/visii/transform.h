@@ -155,6 +155,9 @@ class Transform : public StaticFactory
     /** \return True if the tables used to store all transform components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
 
+    /** \return True the current transform is a valid, initialized transform, and False if the transform was cleared or removed. */
+	  bool isInitialized();
+
     /** Iterates through all transform components, computing transform metadata for rendering purposes. */
     static void updateComponents();
 
