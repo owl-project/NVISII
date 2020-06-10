@@ -133,9 +133,9 @@ Texture* Texture::createFromImage(std::string name, std::string path) {
         memcpy(l->texels.data(), pixels, x * y * 4 * sizeof(float));
         textureStructs[l->getId()].width = x;
         textureStructs[l->getId()].height = y;
+        l->markDirty();
     };
     auto l = StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
-    anyDirty = true;
     return l;
 }
 

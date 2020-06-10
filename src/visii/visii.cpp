@@ -1133,6 +1133,10 @@ void initializeInteractive(bool windowOnTop)
     };
 
     renderThread = thread(loop);
+
+    auto wait = [] () {};
+    auto future = enqueueCommand(wait);
+    future.wait();
 }
 
 void initializeHeadless()
@@ -1165,6 +1169,10 @@ void initializeHeadless()
     };
 
     renderThread = thread(loop);
+
+    auto wait = [] () {};
+    auto future = enqueueCommand(wait);
+    future.wait();
 }
 
 void cleanup()
