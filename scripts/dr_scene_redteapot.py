@@ -19,12 +19,15 @@ parser.add_argument('--outf',
                     default="out_visii")
 parser.add_argument('--nbobjects', 
                     default=1500)
+parser.add_argument('--distractors', 
+                    default=25)
 parser.add_argument('--nblights', 
                     default=10)
 parser.add_argument('--spp', 
-                    default=256)
-parser.add_argument('--nbframes', 
-                    default=2)
+                    default=10)
+parser.add_argument('--nbframes',
+                    type=int, 
+                    default=10)
 parser.add_argument('--width', 
                     default=500)
 parser.add_argument('--height', 
@@ -84,6 +87,15 @@ for i in range(opt.nbobjects):
         x_lim = [-5, 5],
         y_lim = [-5, 5],
         z_lim = [-10, 0]
+    )
+    random_material(str(i))
+
+for i in range(opt.distractors):
+    add_random_obj("d"+str(i),
+        scale_lim = [0.1,0.2],
+        x_lim = [-2, 2],
+        y_lim = [-2, 2],
+        z_lim = [0, 3]
     )
     random_material(str(i))
 
@@ -147,28 +159,72 @@ for i_frame in range(opt.nbframes):
 
     print(f"{opt.outf}/{str(i_frame).zfill(4)}.png")
 
-    
+    # randomize the lights
+    for i in range(opt.nblights):
+        random_intensity("L"+str(i),
+            intensity_lim  = [5000, 10000]
+            )
+        random_color("L"+str(i))
+
+    # randomize the objects     
     for obj_id in range(opt.nbobjects): 
         random_translation(obj_id,
             x_lim = [-5,5],
             y_lim = [-5,5],
-            z_lim = [-10,3])
-        
-    random_translation('teapot',
-            x_lim = [-1,1],
-            y_lim = [-1,1],
-            z_lim = [1,2])
+            z_lim = [-10,0])
+        random_scale(obj_id,
+            # scale_lim = [0.1,0.5],
+            speed_lim = [0.01,0.05],
+            x_lim = [0.1,0.3],
+            y_lim = [0.1,0.3],
+            z_lim = [0.1,0.3]
+            )
+        random_rotation(obj_id)
+        random_color(obj_id,
+            speed_lim = [0.02,0.25])
 
+    for i in range(opt.distractors):
+        random_translation("d"+str(i),
+            x_lim = [-2, 2],
+            y_lim = [-2, 2],
+            z_lim = [0, 3],
+            speed_lim = [0.02,0.1]
+        )
+        random_scale("d"+str(i),
+            # scale_lim = [0.1,0.5],
+            speed_lim = [0.001,0.01],
+            x_lim = [0.1,0.2],
+            y_lim = [0.1,0.2],
+            z_lim = [0.1,0.2]
+            )
+        random_color("d"+str(i),
+            speed_lim = [0.02,0.25])
+        random_rotation("d"+str(i))
+
+    # Move object of interest
+    random_translation('teapot',
+            x_lim = [-2,2],
+            y_lim = [-2,2],
+            z_lim = [1,3])
+    random_scale('teapot', scale_lim = [scale,scale+0.1], speed_lim = [0.001,0.003])
+    random_rotation('teapot')
+    # random_color("teapot")
 
     # Find the positions in image space of the teapot
     # get_projection and a get_view
 
-    get_cuboid_image_space('teapot')
-
-    visii.render_to_png(width=int(opt.width), 
+    # get_cuboid_image_space('teapot')
+    export_to_ndds_file(
+        filename = f"{opt.outf}/{str(i_frame).zfill(5)}.json",
+        obj_names= ['teapot'],
+        width=int(opt.width), 
+        height=int(opt.height),
+        )
+    visii.render_to_png(
+                    width=int(opt.width), 
                     height=int(opt.height), 
                     samples_per_pixel=int(opt.spp),
-                    image_path=f"{opt.outf}/{str(i_frame).zfill(4)}.png")
+                    image_path=f"{opt.outf}/{str(i_frame).zfill(5)}.png")
     
     # import PIL.Image as Image
     # import PIL.ImageDraw as ImageDraw

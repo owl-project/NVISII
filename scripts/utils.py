@@ -3,56 +3,6 @@ import visii
 import randomcolor
 import math 
 
-def add_cuboid(name):
-    obj = visii.entity.get(name)
-
-    min_obj = obj.get_mesh().get_min_aabb_corner()
-    max_obj = obj.get_mesh().get_max_aabb_corner()
-    centroid_obj = obj.get_mesh().get_aabb_center()
-
-    cuboid = [
-        visii.vec3(max_obj[0], max_obj[1], max_obj[2]),
-        visii.vec3(min_obj[0], max_obj[1], max_obj[2]),
-        visii.vec3(max_obj[0], min_obj[1], max_obj[2]),
-        visii.vec3(max_obj[0], max_obj[1], min_obj[2]),
-        visii.vec3(min_obj[0], min_obj[1], max_obj[2]),
-        visii.vec3(max_obj[0], min_obj[1], min_obj[2]),
-        visii.vec3(min_obj[0], max_obj[1], min_obj[2]),
-        visii.vec3(min_obj[0], min_obj[1], min_obj[2]),
-        visii.vec3(centroid_obj[0], centroid_obj[1], centroid_obj[2]), 
-    ]
-
-    for i_p, p in enumerate(cuboid):
-        child_transform = visii.transform.create(f"{name}_cuboid_{i_p}")
-        child_transform.set_position(p)
-        child_transform.set_parent(obj.get_transform().get_id())
-
-def get_cuboid_image_space(obj_id,camera_name = 'my_camera'):
-    # return cubdoid + centroid projected to the image, values [0..1]
-    # This assumes that only the cam_view is used.
-
-    # cam_matrix = camera_entity.transform().get_world_to_local_matrix()
-
-    cam_view_matrix = visii.entity.get(camera_name).get_camera().get_view()
-    cam_proj_matrix = visii.entity.get(camera_name).get_camera().get_projection()
-
-    points = []
-    for i_t in range(9):
-        trans = visii.transform.get(f"{obj_id}_cuboid_{i_t}")
-        pos_m = visii.vec4(
-            trans.get_world_translation()[0],
-            trans.get_world_translation()[1],
-            trans.get_world_translation()[2],
-            1)
-      
-        p_image = cam_proj_matrix * (cam_view_matrix * pos_m) 
-        p_image = visii.vec2(p_image) / p_image.w
-        p_image = p_image * visii.vec2(1,-1)
-        p_image = (p_image + visii.vec2(1,1)) * 0.5
-        points.append(p_image)
-
-    return points
-
 def add_random_obj(name = "name",
     x_lim = [-1,1],
     y_lim = [-1,1],
@@ -170,29 +120,6 @@ add_random_obj.create_spring = None
 add_random_obj.create_torus = None
 add_random_obj.create_tube = None
 
-def random_light(obj_id,
-    intensity_lim = [50000,10000],
-    color = None,
-    temperature_lim  = [100,10000],
-    ):
-
-    obj = visii.entity.get(str(obj_id))
-    obj.set_light(visii.light.create(str(obj_id)))
-
-    obj.get_light().set_intensity(random.uniform(intensity_lim[0],intensity_lim[1]))
-    # obj.get_light().set_temperature(np.random.randint(100,9000))
-
-
-    if not color is None:
-        obj.get_material().set_base_color(color[0],color[1],color[2])  
-        # c = eval(str(rcolor.generate(luminosity='bright',format_='rgb')[0])[3:])
-        # obj.get_light().set_color(
-        #     c[0]/255.0,
-        #     c[1]/255.0,
-        #     c[2]/255.0)  
-       
-    else:
-        obj.get_light().set_temperature(random.uniform(temperature_lim[0],temperature_lim[1]))
 
 
 def random_material(obj_id,
@@ -247,8 +174,12 @@ def random_material(obj_id,
 
 def distance(v0,v1=[0,0,0]):
     l2 = 0
-    for i in range(len(v0)):
-        l2 += (v0[i]-v1[i])**2
+    try:
+        for i in range(len(v0)):
+            l2 += (v0[i]-v1[i])**2
+    except:
+        for i in range(3):
+            l2 += (v0[i]-v1[i])**2
     return math.sqrt(l2)
 
 def normalize(v):
@@ -331,206 +262,281 @@ def random_rotation(obj_id,
 random_rotation.destinations = {}
 random_rotation.speeds = {}
 
+def random_scale(obj_id,
+    scale_lim = [0.01,0.2],
+    speed_lim = [0.01,0.02],
+    x_lim = None,
+    y_lim = None,
+    z_lim = None
+    ):
+    # This assumes only one dimensions gets scale
 
-    # # color
-    # if not str(obj_id) in move_around.destination['color'].keys() :
-    #     c = eval(str(rcolor.generate(format_='rgb')[0])[3:])
-    #     move_around.destination['color'][str(obj_id)] = np.array(c)/255.0
+    trans = visii.transform.get(str(obj_id))    
 
-    # else:
-    #     goal = move_around.destination['color'][str(obj_id)]
-    #     current = visii.material.get(str(obj_id)).get_base_color()
-    #     current = np.array([current[0],current[1],current[2]])
-
-    #     if np.linalg.norm(goal - current) < 0.1:
-    #         c = eval(str(rcolor.generate(format_='rgb')[0])[3:])
-    #         move_around.destination['color'][str(obj_id)] = np.array(c)/255
-    #         goal = move_around.destination['color'][str(obj_id)]
-
-
-    #     dir_vec = normalized(np.array(goal) - current)[0] * 0.01
-    #     color = current + dir_vec
-    #     color[color>1]=1
-    #     color[color<0]=0
-
-    #     visii.material.get(str(obj_id)).set_base_color(
-    #         color[0],
-    #         color[1],
-    #         color[2]
-    #     )
-
-    # # Materials - roughness
-    # if not str(obj_id) in move_around.destination['roughness'].keys() :
-    #     move_around.destination['roughness'][str(obj_id)] = np.random.uniform(0,1)
-
-    # else:
-    #     goal = move_around.destination['roughness'][str(obj_id)]
-    #     current = visii.material.get(str(obj_id)).get_roughness()
-
-    #     if np.abs(goal-current) < 0.01:
-    #         move_around.destination['roughness'][str(obj_id)] = np.random.uniform(0,1)
-    #         goal = move_around.destination['roughness'][str(obj_id)]
-
-    #     interval = 0.001
-    #     dir_vec = (goal - current)
-    #     if dir_vec > 0:
-    #         to_set = current + interval
-    #     else:
-    #         to_set = current - interval
-    #     if to_set>1:
-    #         to_set = 1
-    #     if to_set<0:
-    #         to_set = 0
-
-    #     visii.material.get(str(obj_id)).set_roughness(to_set)
-
-    # # Materials - metallic
-    # if not str(obj_id) in move_around.destination['metallic'].keys() :
-    #     move_around.destination['metallic'][str(obj_id)] = np.random.uniform(0,1)
-
-    # else:
-    #     goal = move_around.destination['metallic'][str(obj_id)]
-    #     current = visii.material.get(str(obj_id)).get_metallic()
-
-    #     if np.abs(goal-current) < 0.01:
-    #         move_around.destination['metallic'][str(obj_id)] = np.random.uniform(0,1)
-    #         goal = move_around.destination['metallic'][str(obj_id)]
-
-    #     interval = 0.001
-    #     dir_vec = (goal - current)
-    #     if dir_vec > 0:
-    #         to_set = current + interval
-    #     else:
-    #         to_set = current - interval
-    #     if to_set>1:
-    #         to_set = 1
-    #     if to_set<0:
-    #         to_set = 0
-
-    #     visii.material.get(str(obj_id)).set_metallic(to_set)
-
-    # # Materials - transmission
-    # if not str(obj_id) in move_around.destination['transmission'].keys() :
-    #     move_around.destination['transmission'][str(obj_id)] = np.random.uniform(0,1)
-
-    # else:
-    #     goal = move_around.destination['transmission'][str(obj_id)]
-    #     current = visii.material.get(str(obj_id)).get_transmission()
-
-    #     if np.abs(goal-current) < 0.01:
-    #         move_around.destination['transmission'][str(obj_id)] = np.random.uniform(0,1)
-    #         goal = move_around.destination['transmission'][str(obj_id)]
-
-    #     interval = 0.001
-    #     dir_vec = (goal - current)
-    #     if dir_vec > 0:
-    #         to_set = current + interval
-    #     else:
-    #         to_set = current - interval
-    #     if to_set>1:
-    #         to_set = 1
-    #     if to_set<0:
-    #         to_set = 0
-
-    #     visii.material.get(str(obj_id)).set_transmission(to_set)
-
-    # # Materials - sheen
-    # if not str(obj_id) in move_around.destination['sheen'].keys() :
-    #     move_around.destination['sheen'][str(obj_id)] = np.random.uniform(0,1)
-
-    # else:
-    #     goal = move_around.destination['sheen'][str(obj_id)]
-    #     current = visii.material.get(str(obj_id)).get_sheen()
-
-    #     if np.abs(goal-current) < 0.01:
-    #         move_around.destination['sheen'][str(obj_id)] = np.random.uniform(0,1)
-    #         goal = move_around.destination['sheen'][str(obj_id)]
-
-    #     interval = 0.001
-    #     dir_vec = (goal - current)
-    #     if dir_vec > 0:
-    #         to_set = current + interval
-    #     else:
-    #         to_set = current - interval
-    #     if to_set>1:
-    #         to_set = 1
-    #     if to_set<0:
-    #         to_set = 0
-
-    #     visii.material.get(str(obj_id)).set_sheen(to_set)
+    limit = min(speed_lim)*2
     
-    # # Materials - clearcoat
-    # if not str(obj_id) in move_around.destination['clearcoat'].keys() :
-    #     move_around.destination['clearcoat'][str(obj_id)] = np.random.uniform(0,1)
+    if not x_lim is None:
+        limit = [min(y_lim)*2,min(x_lim)*2,min(z_lim)*2]
+    
+    # Rotation
+    if not str(obj_id) in random_scale.destinations.keys() :
+        if not x_lim is None:
+            random_scale.destinations[str(obj_id)] = [
+                                        random.uniform(x_lim[0],x_lim[1]),
+                                        random.uniform(y_lim[0],y_lim[1]),
+                                        random.uniform(z_lim[0],z_lim[1])
+                                        ]
+        else:    
+            random_scale.destinations[str(obj_id)] = random.uniform(scale_lim[0],scale_lim[1])
 
-    # else:
-    #     goal = move_around.destination['clearcoat'][str(obj_id)]
-    #     current = visii.material.get(str(obj_id)).get_clearcoat()
+        random_scale.speeds[str(obj_id)] = random.uniform(speed_lim[0],speed_lim[1])
 
-    #     if np.abs(goal-current) < 0.01:
-    #         move_around.destination['clearcoat'][str(obj_id)] = np.random.uniform(0,1)
-    #         goal = move_around.destination['clearcoat'][str(obj_id)]
+    else:
+        goal = random_scale.destinations[str(obj_id)]
 
-    #     interval = 0.001
-    #     dir_vec = (goal - current)
-    #     if dir_vec > 0:
-    #         to_set = current + interval
-    #     else:
-    #         to_set = current - interval
-    #     if to_set>1:
-    #         to_set = 1
-    #     if to_set<0:
-    #         to_set = 0
+        if x_lim is None:
+            current = trans.get_scale()[0]
+        else:
+            current = trans.get_scale()
+        
+        if x_lim is None:
 
-    #     visii.material.get(str(obj_id)).set_clearcoat(to_set)
+            if abs(goal-current) < limit:
+                random_scale.destinations[str(obj_id)] = random.uniform(scale_lim[0],scale_lim[1])
+                random_scale.speeds[str(obj_id)] = random.uniform(speed_lim[0],speed_lim[1])
+                goal = random_scale.destinations[str(obj_id)]
+            if goal>current:
+                q = random_scale.speeds[str(obj_id)]
+            else:
+                q = -random_scale.speeds[str(obj_id)]
+            trans.set_scale(current + q)
+        else:
+            limits  = [x_lim,y_lim,z_lim]
+            q = [0,0,0]
+            for i in range(3):
+                if abs(goal[i]-current[i]) < limit[i]:
+                    random_scale.destinations[str(obj_id)][i] = random.uniform(limits[i][0],limits[i][1])
+                    random_scale.speeds[str(obj_id)] = random.uniform(speed_lim[0],speed_lim[1])                    
+                    goal = random_scale.destinations[str(obj_id)]
+                if goal[i]>current[i]:
+                    q[i] = random_scale.speeds[str(obj_id)]
+                else:
+                    q[i] = -random_scale.speeds[str(obj_id)]
+            trans.set_scale(current + visii.vec3(q[0],q[1],q[2]))
 
-    # # Materials - specular
-    # if not str(obj_id) in move_around.destination['specular'].keys() :
-    #     move_around.destination['specular'][str(obj_id)] = np.random.uniform(0,1)
-
-    # else:
-    #     goal = move_around.destination['specular'][str(obj_id)]
-    #     current = visii.material.get(str(obj_id)).get_specular()
-
-    #     if np.abs(goal-current) < 0.01:
-    #         move_around.destination['specular'][str(obj_id)] = np.random.uniform(0,1)
-    #         goal = move_around.destination['specular'][str(obj_id)]
-
-    #     interval = 0.001
-    #     dir_vec = (goal - current)
-    #     if dir_vec > 0:
-    #         to_set = current + interval
-    #     else:
-    #         to_set = current - interval
-    #     if to_set>1:
-    #         to_set = 1
-    #     if to_set<0:
-    #         to_set = 0
-
-    #     visii.material.get(str(obj_id)).set_specular(to_set)
+random_scale.destinations = {}
+random_scale.speeds = {}
 
 
-    # # Materials - anisotropic
-    # if not str(obj_id) in move_around.destination['anisotropic'].keys() :
-    #     move_around.destination['anisotropic'][str(obj_id)] = np.random.uniform(0,1)
+def random_color(obj_id,
+    speed_lim = [0.01,0.1]
+    ):
 
-    # else:
-    #     goal = move_around.destination['anisotropic'][str(obj_id)]
-    #     current = visii.material.get(str(obj_id)).get_anisotropic()
+    # color
+    if not str(obj_id) in random_color.destinations.keys() :
+        c = eval(str(random_color.rcolor.generate(luminosity='bright',format_='rgb')[0])[3:])
+        random_color.destinations[str(obj_id)] = visii.vec3(c[0]/255.0, c[1]/255.0, c[2]/255.0)
+        random_color.speeds[str(obj_id)] = random.uniform(speed_lim[0],speed_lim[1])
 
-    #     if np.abs(goal-current) < 0.01:
-    #         move_around.destination['anisotropic'][str(obj_id)] = np.random.uniform(0,1)
-    #         goal = move_around.destination['anisotropic'][str(obj_id)]
+    else:
+        goal = random_color.destinations[str(obj_id)]
+        current = visii.material.get(str(obj_id)).get_base_color()
 
-    #     interval = 0.001
-    #     dir_vec = (goal - current)
-    #     if dir_vec > 0:
-    #         to_set = current + interval
-    #     else:
-    #         to_set = current - interval
-    #     if to_set>1:
-    #         to_set = 1
-    #     if to_set<0:
-    #         to_set = 0
+        if distance(goal,current) < 0.1:
+            random_color.speeds[str(obj_id)] = random.uniform(speed_lim[0],speed_lim[1])
+            c = eval(str(random_color.rcolor.generate(luminosity='bright',format_='rgb')[0])[3:])
+            random_color.destinations[str(obj_id)] = visii.vec3(c[0]/255.0, c[1]/255.0, c[2]/255.0)
+            goal = random_color.destinations[str(obj_id)]
 
-    #     visii.material.get(str(obj_id)).set_anisotropic(to_set)
+        target = visii.mix(current,goal,
+            visii.vec3( random_color.speeds[str(obj_id)],
+                        random_color.speeds[str(obj_id)],
+                        random_color.speeds[str(obj_id)]
+                        )
+        ) 
+
+        visii.material.get(str(obj_id)).set_base_color(target)
+
+random_color.destinations = {}
+random_color.speeds = {}
+random_color.rcolor = randomcolor.RandomColor()
+
+######## RANDOM LIGHTS ############
+
+def random_light(obj_id,
+    intensity_lim = [5000,10000],
+    color = None,
+    temperature_lim  = [100,10000],
+    ):
+
+    obj = visii.entity.get(str(obj_id))
+    obj.set_light(visii.light.create(str(obj_id)))
+
+    obj.get_light().set_intensity(random.uniform(intensity_lim[0],intensity_lim[1]))
+    # obj.get_light().set_temperature(np.random.randint(100,9000))
+
+
+    if not color is None:
+        obj.get_material().set_base_color(color[0],color[1],color[2])  
+        # c = eval(str(rcolor.generate(luminosity='bright',format_='rgb')[0])[3:])
+        # obj.get_light().set_color(
+        #     c[0]/255.0,
+        #     c[1]/255.0,
+        #     c[2]/255.0)  
+       
+    else:
+        obj.get_light().set_temperature(random.uniform(temperature_lim[0],temperature_lim[1]))
+
+def random_intensity(obj_id,
+    intensity_lim = [5000,10000],
+    speed_lim = [100,1000]
+    ):
+
+    obj = visii.entity.get(str(obj_id)).get_light()
+
+    if not str(obj_id) in random_intensity.destinations.keys() :
+        random_intensity.destinations[str(obj_id)] = random.uniform(intensity_lim[0],intensity_lim[1])
+        random_intensity.speeds[str(obj_id)] = random.uniform(speed_lim[0],speed_lim[1])
+        random_intensity.current[str(obj_id)] = random_intensity.destinations[str(obj_id)]
+        obj.set_intensity(random_intensity.current[str(obj_id)]) 
+    else:
+        goal = random_intensity.destinations[str(obj_id)]
+        current = random_intensity.current[str(obj_id)]
+        
+        if abs(goal-current) < min(speed_lim)*2:
+            random_intensity.destinations[str(obj_id)] = random.uniform(intensity_lim[0],intensity_lim[1])
+            random_intensity.speeds[str(obj_id)] = random.uniform(speed_lim[0],speed_lim[1])
+            goal = random_intensity.destinations[str(obj_id)]
+        if goal>current:
+            q = random_intensity.speeds[str(obj_id)]
+        else:
+            q = -random_intensity.speeds[str(obj_id)]
+        obj.set_intensity(random_intensity.current[str(obj_id)] + q)
+        random_intensity.current[str(obj_id)] = random_intensity.current[str(obj_id)] + q
+
+random_intensity.destinations = {}
+random_intensity.current = {}
+random_intensity.speeds = {}
+
+######## NDDS ##########
+def add_cuboid(name):
+    obj = visii.entity.get(name)
+
+    min_obj = obj.get_mesh().get_min_aabb_corner()
+    max_obj = obj.get_mesh().get_max_aabb_corner()
+    centroid_obj = obj.get_mesh().get_aabb_center()
+
+    # TODO CHECK WHICH POINT IS WHICH
+    cuboid = [
+        visii.vec3(max_obj[0], max_obj[1], max_obj[2]),
+        visii.vec3(min_obj[0], max_obj[1], max_obj[2]),
+        visii.vec3(max_obj[0], min_obj[1], max_obj[2]),
+        visii.vec3(max_obj[0], max_obj[1], min_obj[2]),
+        visii.vec3(min_obj[0], min_obj[1], max_obj[2]),
+        visii.vec3(max_obj[0], min_obj[1], min_obj[2]),
+        visii.vec3(min_obj[0], max_obj[1], min_obj[2]),
+        visii.vec3(min_obj[0], min_obj[1], min_obj[2]),
+        visii.vec3(centroid_obj[0], centroid_obj[1], centroid_obj[2]), 
+    ]
+
+    for i_p, p in enumerate(cuboid):
+        child_transform = visii.transform.create(f"{name}_cuboid_{i_p}")
+        child_transform.set_position(p)
+        child_transform.set_parent(obj.get_transform().get_id())
+
+def get_cuboid_image_space(obj_id, camera_name = 'my_camera'):
+    # return cubdoid + centroid projected to the image, values [0..1]
+    # This assumes that only the cam_view is used.
+
+    # cam_matrix = camera_entity.transform().get_world_to_local_matrix()
+
+    cam_view_matrix = visii.entity.get(camera_name).get_camera().get_view()
+    cam_proj_matrix = visii.entity.get(camera_name).get_camera().get_projection()
+
+    points = []
+    for i_t in range(9):
+        trans = visii.transform.get(f"{obj_id}_cuboid_{i_t}")
+        pos_m = visii.vec4(
+            trans.get_world_translation()[0],
+            trans.get_world_translation()[1],
+            trans.get_world_translation()[2],
+            1)
+      
+        p_image = cam_proj_matrix * (cam_view_matrix * pos_m) 
+        p_image = visii.vec2(p_image) / p_image.w
+        p_image = p_image * visii.vec2(1,-1)
+        p_image = (p_image + visii.vec2(1,1)) * 0.5
+        points.append([p_image[0],p_image[1]])
+
+    return points
+
+
+def export_to_ndds_file(
+    filename = "tmp.json", #this has to include path as well
+    obj_names = [], # this is a list of ids to load and export
+    height = 500, 
+    width = 500,
+    camera_name = 'my_camera',
+    ):
+    # To do export things in the camera frame, e.g., pose and quaternion
+
+    import simplejson as json
+    import numpy as np
+
+    # assume we only use the view camera
+    cam_view_matrix = visii.entity.get(camera_name).get_camera().get_view()
+    cam_world_translation = [cam_view_matrix[3][0],cam_view_matrix[3][1],cam_view_matrix[3][2]] 
+    cam_world_quaternion = visii.quat_cast(cam_view_matrix)
+
+    dict_out = {
+                    "camera_data" : {
+                        "width" : width,
+                        'height' : height,
+                        'location_world':cam_world_translation,
+                        'quaternion_world_xyzw':[
+                            cam_world_quaternion[0],
+                            cam_world_quaternion[1],
+                            cam_world_quaternion[2],
+                            cam_world_quaternion[3],
+                            ],
+                    }, 
+                    "objects" : []
+                }
+
+    for obj_name in obj_names: 
+
+        projected_keypoints = get_cuboid_image_space(obj_name,camera_name=camera_name)
+
+        # put them in the image space. 
+        for i_p, p in enumerate(projected_keypoints):
+            projected_keypoints[i_p] = [p[0]*width, p[1]*height]
+
+        # Get the location and rotation of the object in the camera frame 
+
+        trans = visii.transform.get(obj_name)
+        obj_matrix = cam_view_matrix * trans.get_local_to_world_matrix()
+        quaternion_xyzw = visii.quat_cast(obj_matrix)
+        translation = [obj_matrix[3][0],obj_matrix[3][1],obj_matrix[3][2]] 
+
+
+        dict_out['objects'].append({
+            'class':obj_name,
+            'location':translation,
+            'quaternion_xyzw':[
+                    quaternion_xyzw[0],
+                    quaternion_xyzw[1],
+                    quaternion_xyzw[2],
+                    quaternion_xyzw[3],
+                ],
+            'projected_cuboid':projected_keypoints,
+            
+        })
+    
+    # if os.path.exists(filename):
+    #     with open(path_json) as f:
+    #         data = json.load(f)
+    #     dict_out['objects'] = data['objects'] + dict_out['objects']
+    
+    with open(filename, 'w+') as fp:
+        json.dump(dict_out, fp, indent=4, sort_keys=True)
+
