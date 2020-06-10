@@ -1,9 +1,12 @@
 #include <visii/texture.h>
 
+#include <stb_image.h>
+#include <stb_image_write.h>
+
 Texture Texture::textures[MAX_TEXTURES];
 TextureStruct Texture::textureStructs[MAX_TEXTURES];
 std::map<std::string, uint32_t> Texture::lookupTable;
-std::shared_ptr<std::mutex> Texture::creationMutex;
+std::shared_ptr<std::mutex> Texture::editMutex;
 bool Texture::factoryInitialized = false;
 bool Texture::anyDirty = true;
 
@@ -64,7 +67,7 @@ uint32_t Texture::getHeight() {
 void Texture::initializeFactory()
 {
     if (isFactoryInitialized()) return;
-    creationMutex = std::make_shared<std::mutex>();
+    editMutex = std::make_shared<std::mutex>();
     factoryInitialized = true;
 }
 
@@ -115,26 +118,47 @@ void Texture::cleanUp()
 
 /* Static Factory Implementations */
 Texture* Texture::create(std::string name) {
-    auto l = StaticFactory::create(creationMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+    auto l = StaticFactory::create(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
     anyDirty = true;
     return l;
 }
 
+Texture* Texture::createFromImage(std::string name, std::string path) {
+    auto create = [path] (Texture* l) {
+        int x, y, num_channels;
+        stbi_set_flip_vertically_on_load(true);
+        float* pixels = stbi_loadf(path.c_str(), &x, &y, &num_channels, STBI_rgb_alpha);
+        if (!pixels) { throw std::runtime_error("failed to load texture image!"); }
+        l->texels.resize(x * y);
+        memcpy(l->texels.data(), pixels, x * y * 4 * sizeof(float));
+        textureStructs[l->getId()].width = x;
+        textureStructs[l->getId()].height = y;
+    };
+    auto l = StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+    anyDirty = true;
+    return l;
+}
+
+std::shared_ptr<std::mutex> Texture::getEditMutex()
+{
+	return editMutex;
+}
+
 Texture* Texture::get(std::string name) {
-    return StaticFactory::get(creationMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+    return StaticFactory::get(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
 }
 
 Texture* Texture::get(uint32_t id) {
-    return StaticFactory::get(creationMutex, id, "Texture", lookupTable, textures, MAX_TEXTURES);
+    return StaticFactory::get(editMutex, id, "Texture", lookupTable, textures, MAX_TEXTURES);
 }
 
 void Texture::remove(std::string name) {
-    StaticFactory::remove(creationMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+    StaticFactory::remove(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
     anyDirty = true;
 }
 
 void Texture::remove(uint32_t id) {
-    StaticFactory::remove(creationMutex, id, "Texture", lookupTable, textures, MAX_TEXTURES);
+    StaticFactory::remove(editMutex, id, "Texture", lookupTable, textures, MAX_TEXTURES);
     anyDirty = true;
 }
 

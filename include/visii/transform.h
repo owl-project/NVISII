@@ -74,7 +74,7 @@ class Transform : public StaticFactory
     // float interpolation = 1.0;
 
     /* TODO */
-	static std::shared_ptr<std::mutex> creationMutex;
+	static std::shared_ptr<std::mutex> editMutex;
     static bool factoryInitialized;
 
     static Transform transforms[MAX_TRANSFORMS];
@@ -178,6 +178,8 @@ class Transform : public StaticFactory
 
     /** Tags the current component as being unmodified since the previous frame. */
 	  void markClean() { dirty = false; }
+
+    static std::shared_ptr<std::mutex> getEditMutex();
 
     /** \return a json string representation of the current component */
     std::string toString();

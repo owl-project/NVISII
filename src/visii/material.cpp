@@ -3,7 +3,7 @@
 Material Material::materials[MAX_MATERIALS];
 MaterialStruct Material::materialStructs[MAX_MATERIALS];
 std::map<std::string, uint32_t> Material::lookupTable;
-std::shared_ptr<std::mutex> Material::creationMutex;
+std::shared_ptr<std::mutex> Material::editMutex;
 bool Material::factoryInitialized = false;
 bool Material::anyDirty = true;
 
@@ -74,7 +74,7 @@ std::string Material::toString() {
 void Material::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
-	creationMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::mutex>();
 	factoryInitialized = true;
 }
 
@@ -125,26 +125,31 @@ void Material::cleanUp()
 
 /* Static Factory Implementations */
 Material* Material::create(std::string name) {
-	auto mat = StaticFactory::create(creationMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
+	auto mat = StaticFactory::create(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
 	anyDirty = true;
 	return mat;
 }
 
+std::shared_ptr<std::mutex> Material::getEditMutex()
+{
+	return editMutex;
+}
+
 Material* Material::get(std::string name) {
-	return StaticFactory::get(creationMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
+	return StaticFactory::get(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
 }
 
 Material* Material::get(uint32_t id) {
-	return StaticFactory::get(creationMutex, id, "Material", lookupTable, materials, MAX_MATERIALS);
+	return StaticFactory::get(editMutex, id, "Material", lookupTable, materials, MAX_MATERIALS);
 }
 
 void Material::remove(std::string name) {
-	StaticFactory::remove(creationMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
+	StaticFactory::remove(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
 	anyDirty = true;
 }
 
 void Material::remove(uint32_t id) {
-	StaticFactory::remove(creationMutex, id, "Material", lookupTable, materials, MAX_MATERIALS);
+	StaticFactory::remove(editMutex, id, "Material", lookupTable, materials, MAX_MATERIALS);
 	anyDirty = true;
 }
 

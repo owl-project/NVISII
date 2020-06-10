@@ -100,6 +100,8 @@ class Material : public StaticFactory
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
 
+    static std::shared_ptr<std::mutex> getEditMutex();
+
     /** Returns a json string representation of the current component */
     std::string toString();
 
@@ -323,7 +325,7 @@ class Material : public StaticFactory
     Material(std::string name, uint32_t id);
 
     /* TODO */
-    static std::shared_ptr<std::mutex> creationMutex;
+    static std::shared_ptr<std::mutex> editMutex;
 
     /* TODO */
     static bool factoryInitialized;

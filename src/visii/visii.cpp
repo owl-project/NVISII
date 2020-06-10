@@ -222,7 +222,8 @@ void setDomeLightIntensity(float intensity)
 
 void setDomeLightTexture(Texture* texture)
 {
-    OptixData.domeLightTexture = texture;
+    // OptixData.domeLightTexture = texture;
+    OptixData.LP.environmentMapID = texture->getId();
     resetAccumulation();
 }
 
@@ -500,6 +501,7 @@ void updateComponents()
 {
     auto &OD = OptixData;
 
+    // If any of the components are dirty, reset accumulation
     if (Mesh::areAnyDirty()) resetAccumulation();
     if (Material::areAnyDirty()) resetAccumulation();
     if (Camera::areAnyDirty()) resetAccumulation();
@@ -508,7 +510,7 @@ void updateComponents()
     if (Light::areAnyDirty()) resetAccumulation();
     if (Texture::areAnyDirty()) resetAccumulation();
 
-    // Build / Rebuild BLAS
+    // Manage Meshes: Build / Rebuild BLAS
     if (Mesh::areAnyDirty()) {
         auto mutex = Mesh::getEditMutex();
         std::lock_guard<std::mutex> lock(*mutex.get());
@@ -534,31 +536,33 @@ void updateComponents()
             owlGroupBuildAccel(OD.meshes[mid].blas);          
         }
 
-        if (Mesh::areAnyDirty()) {
-            std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
-            std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
-            for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
-                // If a mesh is initialized, vertex and index buffers should already be created, and so 
-                if (!meshes[mid].isInitialized()) continue;
-                if (meshes[mid].getTriangleIndices().size() == 0) continue;
-                if ((!OD.meshes[mid].vertices) || (!OD.meshes[mid].indices)) {
-                    std::cout<<"Mesh ID"<< mid << " is dirty?" << meshes[mid].isDirty() << std::endl;
-                    std::cout<<"nverts : " << meshes[mid].getVertices().size() << std::endl;
-                    std::cout<<"nindices : " << meshes[mid].getTriangleIndices().size() << std::endl;
-                    throw std::runtime_error("ERROR: vertices/indices is nullptr");
-                }
-                vertexLists[mid] = ((vec4*) owlBufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
-                indexLists[mid] = ((ivec3*) owlBufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
+        std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
+        std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
+        for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
+            // If a mesh is initialized, vertex and index buffers should already be created, and so 
+            if (!meshes[mid].isInitialized()) continue;
+            if (meshes[mid].getTriangleIndices().size() == 0) continue;
+            if ((!OD.meshes[mid].vertices) || (!OD.meshes[mid].indices)) {
+                std::cout<<"Mesh ID"<< mid << " is dirty?" << meshes[mid].isDirty() << std::endl;
+                std::cout<<"nverts : " << meshes[mid].getVertices().size() << std::endl;
+                std::cout<<"nindices : " << meshes[mid].getTriangleIndices().size() << std::endl;
+                throw std::runtime_error("ERROR: vertices/indices is nullptr");
             }
-            owlBufferUpload(OD.vertexListsBuffer, vertexLists.data());
-            owlBufferUpload(OD.indexListsBuffer, indexLists.data());
+            vertexLists[mid] = ((vec4*) owlBufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
+            indexLists[mid] = ((ivec3*) owlBufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
         }
-
+        owlBufferUpload(OD.vertexListsBuffer, vertexLists.data());
+        owlBufferUpload(OD.indexListsBuffer, indexLists.data());
+        
         Mesh::updateComponents();
+        owlBufferUpload(OptixData.meshBuffer, Mesh::getFrontStruct());
     }
 
-    // Build / Rebuild TLAS
+    // Manage Entities: Build / Rebuild TLAS
     if (Entity::areAnyDirty()) {
+        auto mutex = Entity::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
+
         std::vector<OWLGroup> instances;
         std::vector<glm::mat4> instanceTransforms;
         std::vector<uint32_t> instanceToEntityMap;
@@ -594,10 +598,8 @@ void updateComponents()
         owlGroupBuildAccel(OD.tlas);
         owlLaunchParamsSetGroup(OD.launchParams, "world", OD.tlas);
         owlBuildSBT(OD.context);
-    }
+    
 
-    if (Entity::areAnyDirty()) {
-        Entity* entities = Entity::getFront();
         OD.lightEntities.resize(0);
         for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
             if (!entities[eid].isInitialized()) continue;
@@ -609,10 +611,16 @@ void updateComponents()
         owlBufferUpload(OptixData.lightEntitiesBuffer, OD.lightEntities.data());
         OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
         owlLaunchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
+
+        Entity::updateComponents();
+        owlBufferUpload(OptixData.entityBuffer,    Entity::getFrontStruct());
     }
 
     // Manage textures
     if (Texture::areAnyDirty()) {
+        auto mutex = Texture::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
+
         Texture* textures = Texture::getFront();
         std::vector<cudaTextureObject_t> textureObjects(Texture::getCount());
         for (uint32_t tid = 0; tid < Texture::getCount(); ++tid) {
@@ -626,37 +634,45 @@ void updateComponents()
             textureObjects[tid] = owlTextureGetObject(OD.textureObjects[tid], 0);
         }
         owlBufferUpload(OD.textureObjectsBuffer, textureObjects.data());
+        
+        Texture::updateComponents();
+        owlBufferUpload(OptixData.textureBuffer, Texture::getFrontStruct());
     }
     
-    /* These could probably be made more efficient... 
-       Probably also some race conditions here... */
-    if (Entity::areAnyDirty()) {
-        Entity::updateComponents();
-        owlBufferUpload(OptixData.entityBuffer,    Entity::getFrontStruct());
-    }
+    // Manage transforms
     if (Transform::areAnyDirty()) {
+        auto mutex = Transform::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
+
         Transform::updateComponents();
         owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
-    }    
+    }   
+
+    // Manage Cameras
     if (Camera::areAnyDirty()) {
+        auto mutex = Camera::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
+
         Camera::updateComponents();
         owlBufferUpload(OptixData.cameraBuffer,    Camera::getFrontStruct());
     }    
-    if (Mesh::areAnyDirty()) {
-        Mesh::updateComponents();
-        owlBufferUpload(OptixData.meshBuffer,      Mesh::getFrontStruct());
-    }
+
+    // Manage materials
     if (Material::areAnyDirty()) {
+        auto mutex = Material::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
+
         Material::updateComponents();
         owlBufferUpload(OptixData.materialBuffer,  Material::getFrontStruct());
     }
+
+    // Manage lights
     if (Light::areAnyDirty()) {
+        auto mutex = Light::getEditMutex();
+        std::lock_guard<std::mutex> lock(*mutex.get());
+
         Light::updateComponents();
         owlBufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());
-    }
-    if (Texture::areAnyDirty()) {
-        Texture::updateComponents();
-        owlBufferUpload(OptixData.textureBuffer,   Texture::getFrontStruct());
     }
 }
 
@@ -714,6 +730,7 @@ void updateLaunchParams()
     owlLaunchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
     owlLaunchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
     owlLaunchParamsSetRaw(OptixData.launchParams, "domeLightIntensity", &OptixData.LP.domeLightIntensity);
+    owlLaunchParamsSetRaw(OptixData.launchParams, "environmentMapID", &OptixData.LP.environmentMapID);
     // auto bumesh_transform_struct = bumesh_transform->get_struct();
     // owlLaunchParamsSetRaw(launchParams,"bumesh_transform",&bumesh_transform_struct);
 

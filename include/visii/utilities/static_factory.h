@@ -39,6 +39,8 @@
 
 #include <exception>
 #include <mutex>
+#include <thread>
+#include <future>
 
 class StaticFactory {
     public:
@@ -71,7 +73,7 @@ class StaticFactory {
     
     /* Reserves a location in items and adds an entry in the lookup table */
     template<class T>
-    static T* create(std::shared_ptr<std::mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems) 
+    static T* create(std::shared_ptr<std::mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems, std::function<void(T*)> function = nullptr) 
     {
         auto mutex = factory_mutex.get();
         std::lock_guard<std::mutex> lock(*mutex);
@@ -89,6 +91,10 @@ class StaticFactory {
         #endif
         items[id] = T(name, id);
         lookupTable[name] = id;
+
+        // callback for creation before releasing mutex
+        if (function != nullptr) function(&items[id]);
+
         return &items[id];
     }
 

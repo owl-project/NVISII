@@ -18,6 +18,11 @@ class Texture : public StaticFactory
      * \return a Texture allocated by the renderer. */
 	static Texture *create(std::string name);
 
+	/** Constructs a Texture with the given name from a high dynamic range (HDR) image.
+	 * \param path The path to the HDR image.
+     * \return a Texture allocated by the renderer. */
+	static Texture *createFromImage(std::string name, std::string path);
+
     /** Gets a Texture by name 
      * \return a Texture who's primary name key matches \p name */
 	static Texture *get(std::string name);
@@ -69,6 +74,8 @@ class Texture : public StaticFactory
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
 
+	static std::shared_ptr<std::mutex> getEditMutex();
+
     /** \returns a json string representation of the current component */
     std::string toString();
 
@@ -89,7 +96,7 @@ class Texture : public StaticFactory
 	Texture(std::string name, uint32_t id);
 
   	/* TODO */
-	static std::shared_ptr<std::mutex> creationMutex;
+	static std::shared_ptr<std::mutex> editMutex;
 
 	/* TODO */
 	static bool factoryInitialized;

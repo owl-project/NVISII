@@ -3,7 +3,7 @@
 Camera Camera::cameras[MAX_CAMERAS];
 CameraStruct Camera::cameraStructs[MAX_CAMERAS];
 std::map<std::string, uint32_t> Camera::lookupTable;
-std::shared_ptr<std::mutex> Camera::creationMutex;
+std::shared_ptr<std::mutex> Camera::editMutex;
 bool Camera::factoryInitialized = false;
 bool Camera::anyDirty = true;
 // int32_t Camera::minRenderOrder = 0;
@@ -43,7 +43,7 @@ std::string Camera::toString()
 void Camera::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
-	creationMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::mutex>();
 	factoryInitialized = true;
 }
 
@@ -172,47 +172,52 @@ void Camera::cleanUp()
 /* Static Factory Implementations */
 Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, float aspect, float near)
 {
-	auto camera = StaticFactory::create(creationMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	try {
         camera->usePerspectiveFromFOV(fieldOfView, aspect, near);
         camera->setView(glm::mat4(1.f));
 		// camera->setup(tex_width, tex_height, msaa_samples, max_views, use_depth_prepass, use_multiview);
 		return camera;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 		throw;
 	}
 }
 
 Camera* Camera::createPerspectiveFromFocalLength(std::string name, float focalLength, float sensorWidth, float sensorHeight, float near)
 {
-	auto camera = StaticFactory::create(creationMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	try {
         camera->usePerspectiveFromFocalLength(focalLength, sensorWidth, sensorHeight, near);
         camera->setView(glm::mat4(1.f));
 		// camera->setup(tex_width, tex_height, msaa_samples, max_views, use_depth_prepass, use_multiview);
 		return camera;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 		throw;
 	}
 }
 
+std::shared_ptr<std::mutex> Camera::getEditMutex()
+{
+	return editMutex;
+}
+
 Camera* Camera::get(std::string name) {
-	return StaticFactory::get(creationMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	return StaticFactory::get(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 }
 
 Camera* Camera::get(uint32_t id) {
-	return StaticFactory::get(creationMutex, id, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	return StaticFactory::get(editMutex, id, "Camera", lookupTable, cameras, MAX_CAMERAS);
 }
 
 void Camera::remove(std::string name) {
-	StaticFactory::remove(creationMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	StaticFactory::remove(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	anyDirty = true;
 }
 
 void Camera::remove(uint32_t id) {
-	StaticFactory::remove(creationMutex, id, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	StaticFactory::remove(editMutex, id, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	anyDirty = true;
 }
 
