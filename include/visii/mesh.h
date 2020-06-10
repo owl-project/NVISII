@@ -13,7 +13,6 @@
 
 /* External includes */
 #include <glm/glm.hpp>
-// #include <tiny_obj_loader.h>
 
 /* Project includes */
 // #include "Foton/Tools/Options.hxx"
@@ -473,8 +472,10 @@ class Mesh : public StaticFactory
 			vec2 size = {1., 1.},
 			ivec2 segments = {8, 8});
 
-		// /* Creates a mesh component from an OBJ file (ignores .mtl files) */
-		// static Mesh* createFromObj(std::string name, std::string objPath);
+		/// Creates a mesh component from an OBJ file (ignoring any .mtl files) 
+		/// @param name The name (used as a primary key) for this mesh component
+		/// @param path A path to the OBJ file.
+		static Mesh* createFromObj(std::string name, std::string path);
 
 		// /* Creates a mesh component from an ASCII STL file */
 		// static Mesh* createFromStl(std::string name, std::string stlPath);
@@ -734,9 +735,6 @@ class Mesh : public StaticFactory
 		std::vector<uint32_t> triangleIndices;
 		// std::vector<uint32_t> edge_indices;
 
-		// /* A handle to the attributes loaded from tiny obj */
-		// tinyobj::attrib_t attrib;
-
 		// /* A handle to the buffer containing per vertex positions */
 		// vk::Buffer pointBuffer;
 		// vk::DeviceMemory pointBufferMemory;
@@ -798,16 +796,16 @@ class Mesh : public StaticFactory
 		// void createTriangleIndexBuffer(bool allow_edits, bool submit_immediately);
 
 		// /* Loads in an OBJ mesh and copies per vertex data to the GPU */
-		// void load_obj(std::string objPath, bool allow_edits, bool submit_immediately);
+		void loadObj(std::string objPath);
 
 		// /* Loads in an STL mesh and copies per vertex data to the GPU */
-		// void load_stl(std::string stlPath, bool allow_edits, bool submit_immediately);
+		// void load_stl(std::string stlPath);
 
 		// /* Loads in a GLB mesh and copies per vertex data to the GPU */
-		// void load_glb(std::string glbPath, bool allow_edits, bool submit_immediately);
+		// void load_glb(std::string glbPath);
 
 		// /* TODO: Explain this */
-		// void load_tetgen(std::string path, bool allow_edits, bool submit_immediately);
+		// void load_tetgen(std::string path);
 
 		// /* Copies per vertex data to the GPU */
 		// void load_raw (

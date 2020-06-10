@@ -135,8 +135,13 @@ Texture* Texture::createFromImage(std::string name, std::string path) {
         textureStructs[l->getId()].height = y;
         l->markDirty();
     };
-    auto l = StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
-    return l;
+
+    try {
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+    } catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		throw;
+	}
 }
 
 std::shared_ptr<std::mutex> Texture::getEditMutex()
