@@ -133,6 +133,14 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
     return true;
 }
 
+inline __device__ 
+float4 sampleTexture(int32_t textureId, float2 texCoord, float4 defaultValue) {
+    if (textureId < 0 || textureId > MAX_TEXTURES) return defaultValue;
+    cudaTextureObject_t tex = optixLaunchParams.textureObjects[textureId];
+    if (!tex) return defaultValue;
+    return tex2D<float4>(tex, texCoord.x, texCoord.y);
+}
+
 __device__ 
 void loadMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float roughnessMinimum) {
 
@@ -141,21 +149,22 @@ void loadMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float
     //     const uint32_t tex_id = GET_TEXTURE_ID(mask);
     //     mat.base_color = make_float3(tex2D<float4>(launch_params.textures[tex_id], uv.x, uv.y));
     // } else {
-        mat.base_color = make_float3(p.base_color.x, p.base_color.y, p.base_color.z);
-    // }
-
-    mat.metallic = /*textured_scalar_param(*/p.metallic/*, uv)*/;
-    mat.specular = /*textured_scalar_param(*/p.specular/*, uv)*/;
-    mat.roughness = max(/*textured_scalar_param(*/max(p.roughness, MIN_ROUGHNESS)/*, uv)*/, roughnessMinimum);
-    mat.specular_tint = /*textured_scalar_param(*/p.specular_tint/*, uv)*/;
-    mat.anisotropy = /*textured_scalar_param(*/p.anisotropic/*, uv)*/;
-    mat.sheen = /*textured_scalar_param(*/p.sheen/*, uv)*/;
-    mat.sheen_tint = /*textured_scalar_param(*/p.sheen_tint/*, uv)*/;
-    mat.clearcoat = /*textured_scalar_param(*/p.clearcoat/*, uv)*/;
-    mat.clearcoat_gloss = /*textured_scalar_param(*/1.0 - max(p.clearcoat_roughness, roughnessMinimum)/*, uv)*/;
-    mat.ior = /*textured_scalar_param(*/p.ior/*, uv)*/;
-    mat.specular_transmission = /*textured_scalar_param(*/p.transmission/*, uv)*/;
-    mat.flatness = p.subsurface;
+        // }
+        
+    mat.base_color = make_float3(sampleTexture(p.base_color_texture_id, uv, make_float4(p.base_color.x, p.base_color.y, p.base_color.z, 1.f)));
+    mat.metallic = sampleTexture(p.metallic_texture_id, uv, make_float4(p.metallic)).x;
+    mat.specular = sampleTexture(p.specular_texture_id, uv, make_float4(p.specular)).x;
+    mat.roughness = max(max(sampleTexture(p.roughness_texture_id, uv, make_float4(p.roughness)).x, MIN_ROUGHNESS), roughnessMinimum);
+    mat.specular_tint = sampleTexture(p.specular_tint_texture_id, uv, make_float4(p.specular_tint)).x;
+    mat.anisotropy = sampleTexture(p.anisotropic_texture_id, uv, make_float4(p.anisotropic)).x;
+    mat.sheen = sampleTexture(p.sheen_texture_id, uv, make_float4(p.sheen)).x;
+    mat.sheen_tint = sampleTexture(p.sheen_tint_texture_id, uv, make_float4(p.sheen_tint)).x;
+    mat.clearcoat = sampleTexture(p.clearcoat_texture_id, uv, make_float4(p.clearcoat)).x;
+    float clearcoat_roughness = max(sampleTexture(p.clearcoat_roughness_texture_id, uv, make_float4(p.clearcoat_roughness)).x, roughnessMinimum);
+    mat.clearcoat_gloss = 1.0 - clearcoat_roughness * clearcoat_roughness;
+    mat.ior = sampleTexture(p.ior_texture_id, uv, make_float4(p.ior)).x;
+    mat.specular_transmission = sampleTexture(p.transmission_texture_id, uv, make_float4(p.transmission)).x;
+    mat.flatness = sampleTexture(p.subsurface_texture_id, uv, make_float4(p.subsurface)).x;
 }
 
 inline __device__
