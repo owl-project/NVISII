@@ -2,6 +2,7 @@
 
 #include <stb_image.h>
 #include <stb_image_write.h>
+#include <cstring>
 
 Texture Texture::textures[MAX_TEXTURES];
 TextureStruct Texture::textureStructs[MAX_TEXTURES];
