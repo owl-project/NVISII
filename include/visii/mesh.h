@@ -647,19 +647,19 @@ class Mesh : public StaticFactory
 		// void save_tetrahedralization(float quality_bound, float maximum_volume);
 
 		/** \returns the last computed mesh centroid. */
-		glm::vec3 get_centroid();
+		glm::vec3 getCentroid();
 
 		/** \returns the minimum axis aligned bounding box position */
-		glm::vec3 get_min_aabb_corner();
+		glm::vec3 getMinAabbCorner();
 
 		/** \returns the maximum axis aligned bounding box position */
-		glm::vec3 get_max_aabb_corner();
+		glm::vec3 getMaxAabbCorner();
 
 		/** \returns the center of the aligned bounding box */
-		glm::vec3 get_aabb_center();
+		glm::vec3 getAabbCenter();
 
 		/* \returns the radius of a sphere centered at the centroid which completely contains the mesh */
-		float get_bounding_sphere_radius();
+		float getBoundingSphereRadius();
 
 		// /* If mesh editing is enabled, replaces the position at the given index with a new position */
 		// void edit_position(uint32_t index, glm::vec4 new_position);
@@ -673,8 +673,11 @@ class Mesh : public StaticFactory
 		// /* If mesh editing is enabled, replaces the set of normals starting at the given index with a new set of normals */
 		// void edit_normals(uint32_t index, std::vector<glm::vec4> new_normals);
 
-		// /* TODO: EXPLAIN THIS */
-		// void compute_smooth_normals(bool upload = true);
+		/** Replaces any existing normals with per-vertex smooth normals computed by 
+		 * averaging neighboring geometric face normals together. 
+		 * Note that this does not take into account the surface area of each triangular face.
+		*/
+		void generateSmoothNormals();
 
 		// /* If mesh editing is enabled, replaces the vertex color at the given index with a new vertex color */
 		// void edit_vertex_color(uint32_t index, glm::vec4 new_color);
@@ -848,12 +851,6 @@ class Mesh : public StaticFactory
 				genTriangles.next();
 			}
 
-			// cleanup();
-			// createPointBuffer();
-			// createColorBuffer();
-			// createNormalBuffer();
-			// createTexCoordBuffer();
-			// createTriangleIndexBuffer();
 			computeMetadata();
 		}
 
