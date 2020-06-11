@@ -23,7 +23,7 @@
 #include <visii/mesh.h>
 
 // #include "Foton/Tools/Options.hxx"
-// #include "Foton/Tools/HashCombiner.hxx"
+#include <visii/utilities/hash_combiner.h>
 #include <tiny_obj_loader.h>
 #include <tiny_stl.h>
 #include <tiny_gltf.h>
@@ -75,22 +75,22 @@ void buildOrthonormalBasis(glm::vec3 n, glm::vec3 &b1, glm::vec3 &b2)
     b2 = glm::vec3(b, 1.0 - n.y*n.y*a, -n.y);
 }
 
-// namespace std
-// {
-// template <>
-// struct hash<Vertex>
-// {
-// 	size_t operator()(const Vertex &k) const
-// 	{
-// 		std::size_t h = 0;
-// 		hash_combine(h, k.point.x, k.point.y, k.point.z,
-// 					 k.color.x, k.color.y, k.color.z, k.color.a,
-// 					 k.normal.x, k.normal.y, k.normal.z,
-// 					 k.texcoord.x, k.texcoord.y);
-// 		return h;
-// 	}
-// };
-// } // namespace std
+namespace std
+{
+template <>
+struct hash<Vertex>
+{
+	size_t operator()(const Vertex &k) const
+	{
+		std::size_t h = 0;
+		hash_combine(h, k.point.x, k.point.y, k.point.z,
+					 k.color.x, k.color.y, k.color.z, k.color.a,
+					 k.normal.x, k.normal.y, k.normal.z,
+					 k.texcoord.x, k.texcoord.y);
+		return h;
+	}
+};
+} // namespace std
 
 Mesh::Mesh() {
 	this->initialized = false;
@@ -308,27 +308,27 @@ void Mesh::computeMetadata()
 // 	}
 // }
 
-glm::vec3 Mesh::get_centroid()
+glm::vec3 Mesh::getCentroid()
 {
 	return vec3(meshStructs[id].center);
 }
 
-float Mesh::get_bounding_sphere_radius()
+float Mesh::getBoundingSphereRadius()
 {
 	return meshStructs[id].bounding_sphere_radius;
 }
 
-glm::vec3 Mesh::get_min_aabb_corner()
+glm::vec3 Mesh::getMinAabbCorner()
 {
 	return meshStructs[id].bbmin;
 }
 
-glm::vec3 Mesh::get_max_aabb_corner()
+glm::vec3 Mesh::getMaxAabbCorner()
 {
 	return meshStructs[id].bbmax;
 }
 
-glm::vec3 Mesh::get_aabb_center()
+glm::vec3 Mesh::getAabbCenter()
 {
 	return meshStructs[id].bbmin + (meshStructs[id].bbmax - meshStructs[id].bbmin) * .5f;
 }
@@ -565,111 +565,102 @@ void Mesh::loadObj(std::string objPath)
 
 	std::vector<Vertex> vertices;
 
-	// bool has_normals = false;
+	bool has_normals = false;
 
-	// /* If the mesh has a set of shapes, merge them all into one */
-	// if (shapes.size() > 0)
-	// {
-	// 	for (const auto &shape : shapes)
-	// 	{
-	// 		for (const auto &index : shape.mesh.indices)
-	// 		{
-	// 			Vertex vertex = Vertex();
-	// 			vertex.point = {
-	// 				attrib.vertices[3 * index.vertex_index + 0],
-	// 				attrib.vertices[3 * index.vertex_index + 1],
-	// 				attrib.vertices[3 * index.vertex_index + 2],
-	// 				1.0f};
-	// 			if (attrib.colors.size() != 0)
-	// 			{
-	// 				vertex.color = {
-	// 					attrib.colors[3 * index.vertex_index + 0],
-	// 					attrib.colors[3 * index.vertex_index + 1],
-	// 					attrib.colors[3 * index.vertex_index + 2],
-	// 					1.f};
-	// 			}
-	// 			if (attrib.normals.size() != 0)
-	// 			{
-	// 				vertex.normal = {
-	// 					attrib.normals[3 * index.normal_index + 0],
-	// 					attrib.normals[3 * index.normal_index + 1],
-	// 					attrib.normals[3 * index.normal_index + 2],
-	// 					0.0f};
-	// 				has_normals = true;
-	// 			}
-	// 			if (attrib.texcoords.size() != 0)
-	// 			{
-	// 				vertex.texcoord = {
-	// 					attrib.texcoords[2 * index.texcoord_index + 0],
-	// 					attrib.texcoords[2 * index.texcoord_index + 1]};
-	// 			}
-	// 			vertices.push_back(vertex);
-	// 		}
-	// 	}
-	// }
+	/* If the mesh has a set of shapes, merge them all into one */
+	if (shapes.size() > 0)
+	{
+		for (const auto &shape : shapes)
+		{
+			for (const auto &index : shape.mesh.indices)
+			{
+				Vertex vertex = Vertex();
+				vertex.point = {
+					attrib.vertices[3 * index.vertex_index + 0],
+					attrib.vertices[3 * index.vertex_index + 1],
+					attrib.vertices[3 * index.vertex_index + 2],
+					1.0f};
+				if (attrib.colors.size() != 0)
+				{
+					vertex.color = {
+						attrib.colors[3 * index.vertex_index + 0],
+						attrib.colors[3 * index.vertex_index + 1],
+						attrib.colors[3 * index.vertex_index + 2],
+						1.f};
+				}
+				if (attrib.normals.size() != 0)
+				{
+					vertex.normal = {
+						attrib.normals[3 * index.normal_index + 0],
+						attrib.normals[3 * index.normal_index + 1],
+						attrib.normals[3 * index.normal_index + 2],
+						0.0f};
+					has_normals = true;
+				}
+				if (attrib.texcoords.size() != 0)
+				{
+					vertex.texcoord = {
+						attrib.texcoords[2 * index.texcoord_index + 0],
+						attrib.texcoords[2 * index.texcoord_index + 1]};
+				}
+				vertices.push_back(vertex);
+			}
+		}
+	}
 
-	// /* If the obj has no shapes, eg polylines, then try looking for per vertex data */
-	// else if (shapes.size() == 0)
-	// {
-	// 	for (int idx = 0; idx < attrib.vertices.size() / 3; ++idx)
-	// 	{
-	// 		Vertex v = Vertex();
-	// 		v.point = glm::vec4(attrib.vertices[(idx * 3)], attrib.vertices[(idx * 3) + 1], attrib.vertices[(idx * 3) + 2], 1.0f);
-	// 		if (attrib.normals.size() != 0)
-	// 		{
-	// 			v.normal = glm::vec4(attrib.normals[(idx * 3)], attrib.normals[(idx * 3) + 1], attrib.normals[(idx * 3) + 2], 0.0f);
-	// 			has_normals = true;
-	// 		}
-	// 		if (attrib.colors.size() != 0)
-	// 		{
-	// 			v.normal = glm::vec4(attrib.colors[(idx * 3)], attrib.colors[(idx * 3) + 1], attrib.colors[(idx * 3) + 2], 0.0f);
-	// 		}
-	// 		if (attrib.texcoords.size() != 0)
-	// 		{
-	// 			v.texcoord = glm::vec2(attrib.texcoords[(idx * 2)], attrib.texcoords[(idx * 2) + 1]);
-	// 		}
-	// 		vertices.push_back(v);
-	// 	}
-	// }
+	/* If the obj has no shapes, eg polylines, then try looking for per vertex data */
+	else if (shapes.size() == 0)
+	{
+		for (int idx = 0; idx < attrib.vertices.size() / 3; ++idx)
+		{
+			Vertex v = Vertex();
+			v.point = glm::vec4(attrib.vertices[(idx * 3)], attrib.vertices[(idx * 3) + 1], attrib.vertices[(idx * 3) + 2], 1.0f);
+			if (attrib.normals.size() != 0)
+			{
+				v.normal = glm::vec4(attrib.normals[(idx * 3)], attrib.normals[(idx * 3) + 1], attrib.normals[(idx * 3) + 2], 0.0f);
+				has_normals = true;
+			}
+			if (attrib.colors.size() != 0)
+			{
+				v.normal = glm::vec4(attrib.colors[(idx * 3)], attrib.colors[(idx * 3) + 1], attrib.colors[(idx * 3) + 2], 0.0f);
+			}
+			if (attrib.texcoords.size() != 0)
+			{
+				v.texcoord = glm::vec2(attrib.texcoords[(idx * 2)], attrib.texcoords[(idx * 2) + 1]);
+			}
+			vertices.push_back(v);
+		}
+	}
 
-// 	/* Eliminate duplicate positions */
-// 	std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
-// 	std::vector<Vertex> uniqueVertices;
-// 	for (int i = 0; i < vertices.size(); ++i)
-// 	{
-// 		Vertex vertex = vertices[i];
-// 		if (uniqueVertexMap.count(vertex) == 0)
-// 		{
-// 			uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
-// 			uniqueVertices.push_back(vertex);
-// 		}
-// 		triangle_indices.push_back(uniqueVertexMap[vertex]);
-// 	}
+	/* Eliminate duplicate positions */
+	std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
+	std::vector<Vertex> uniqueVertices;
+	for (int i = 0; i < vertices.size(); ++i)
+	{
+		Vertex vertex = vertices[i];
+		if (uniqueVertexMap.count(vertex) == 0)
+		{
+			uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
+			uniqueVertices.push_back(vertex);
+		}
+		triangleIndices.push_back(uniqueVertexMap[vertex]);
+	}
 
-// 	if (!has_normals) {
-// 		compute_smooth_normals(false);
-// 	}
+	if (!has_normals) {
+		generateSmoothNormals();
+	}
 
+	/* Map vertices to buffers */
+	for (int i = 0; i < uniqueVertices.size(); ++i)
+	{
+		Vertex v = uniqueVertices[i];
+		positions.push_back(v.point);
+		colors.push_back(v.color);
+		normals.push_back(v.normal);
+		texCoords.push_back(v.texcoord);
+	}
 
-// 	/* Map vertices to buffers */
-// 	for (int i = 0; i < uniqueVertices.size(); ++i)
-// 	{
-// 		Vertex v = uniqueVertices[i];
-// 		positions.push_back(v.point);
-// 		colors.push_back(v.color);
-// 		normals.push_back(v.normal);
-// 		texcoords.push_back(v.texcoord);
-// 	}
-
-	
-
-// 	cleanup();
-// 	createPointBuffer(allow_edits, submit_immediately);
-// 	createColorBuffer(allow_edits, submit_immediately);
-// 	createTriangleIndexBuffer(allow_edits, submit_immediately);
-// 	createNormalBuffer(allow_edits, submit_immediately);
-// 	createTexCoordBuffer(allow_edits, submit_immediately);
-// 	compute_metadata(submit_immediately);
+	computeMetadata();
 	markDirty();
 }
 
@@ -1108,7 +1099,7 @@ void Mesh::loadObj(std::string objPath)
 // 	}
 
 // 	if (!reading_normals) {
-// 		compute_smooth_normals(false);
+// 		generateSmoothNormals();
 // 	}
 
 // 	cleanup();
@@ -1208,64 +1199,62 @@ void Mesh::loadObj(std::string objPath)
 // 	device.unmapMemory(normalBufferMemory);
 // }
 
-// void Mesh::compute_smooth_normals(bool upload)
-// {
-// 	std::vector<std::vector<glm::vec4>> w_normals(positions.size());
+void Mesh::generateSmoothNormals()
+{
+	std::vector<std::vector<glm::vec4>> w_normals(positions.size());
 
-// 	for (uint32_t f = 0; f < triangle_indices.size(); f += 3)
-// 	{
-// 		uint32_t i1 = triangle_indices[f + 0];
-// 		uint32_t i2 = triangle_indices[f + 1];
-// 		uint32_t i3 = triangle_indices[f + 2];
+	for (uint32_t f = 0; f < triangleIndices.size(); f += 3)
+	{
+		uint32_t i1 = triangleIndices[f + 0];
+		uint32_t i2 = triangleIndices[f + 1];
+		uint32_t i3 = triangleIndices[f + 2];
 
-// 		// p1, p2 and p3 are the positions in the face (f)
-// 		auto p1 = glm::vec3(positions[i1]);
-// 		auto p2 = glm::vec3(positions[i2]);
-// 		auto p3 = glm::vec3(positions[i3]);
+		// p1, p2 and p3 are the positions in the face (f)
+		auto p1 = glm::vec3(positions[i1]);
+		auto p2 = glm::vec3(positions[i2]);
+		auto p3 = glm::vec3(positions[i3]);
 
-// 		// calculate facet normal of the triangle  using cross product;
-// 		// both components are "normalized" against a common point chosen as the base
-// 		auto n = glm::cross((p2 - p1), (p3 - p1));    // p1 is the 'base' here
+		// calculate facet normal of the triangle  using cross product;
+		// both components are "normalized" against a common point chosen as the base
+		auto n = glm::cross((p2 - p1), (p3 - p1));    // p1 is the 'base' here
 
-// 		// get the angle between the two other positions for each point;
-// 		// the starting point will be the 'base' and the two adjacent positions will be normalized against it
-// 		auto a1 = glm::angle(glm::normalize(p2 - p1), glm::normalize(p3 - p1));    // p1 is the 'base' here
-// 		auto a2 = glm::angle(glm::normalize(p3 - p2), glm::normalize(p1 - p2));    // p2 is the 'base' here
-// 		auto a3 = glm::angle(glm::normalize(p1 - p3), glm::normalize(p2 - p3));    // p3 is the 'base' here
+		// get the angle between the two other positions for each point;
+		// the starting point will be the 'base' and the two adjacent positions will be normalized against it
+		auto a1 = glm::angle(glm::normalize(p2 - p1), glm::normalize(p3 - p1));    // p1 is the 'base' here
+		auto a2 = glm::angle(glm::normalize(p3 - p2), glm::normalize(p1 - p2));    // p2 is the 'base' here
+		auto a3 = glm::angle(glm::normalize(p1 - p3), glm::normalize(p2 - p3));    // p3 is the 'base' here
 
-// 		// normalize the initial facet normals if you want to ignore surface area
-// 		// if (!area_weighting)
-// 		// {
-// 		//    n = glm::normalize(n);
-// 		// }
+		// normalize the initial facet normals if you want to ignore surface area
+		// if (!area_weighting)
+		// {
+		//    n = glm::normalize(n);
+		// }
 
-// 		// store the weighted normal in an structured array
-// 		auto wn1 = n * a1;
-// 		auto wn2 = n * a2;
-// 		auto wn3 = n * a3;
-// 		w_normals[i1].push_back(glm::vec4(wn1.x, wn1.y, wn1.z, 0.f));
-// 		w_normals[i2].push_back(glm::vec4(wn2.x, wn2.y, wn2.z, 0.f));
-// 		w_normals[i3].push_back(glm::vec4(wn3.x, wn3.y, wn3.z, 0.f));
-// 	}
-// 	for (uint32_t v = 0; v < w_normals.size(); v++)
-// 	{
-// 		glm::vec4 N = glm::vec4(0.0);
+		// store the weighted normal in an structured array
+		auto wn1 = n * a1;
+		auto wn2 = n * a2;
+		auto wn3 = n * a3;
+		w_normals[i1].push_back(glm::vec4(wn1.x, wn1.y, wn1.z, 0.f));
+		w_normals[i2].push_back(glm::vec4(wn2.x, wn2.y, wn2.z, 0.f));
+		w_normals[i3].push_back(glm::vec4(wn3.x, wn3.y, wn3.z, 0.f));
+	}
+	for (uint32_t v = 0; v < w_normals.size(); v++)
+	{
+		glm::vec4 N = glm::vec4(0.0);
 
-// 		// run through the normals in each vertex's array and interpolate them
-// 		// vertex(v) here fetches the data of the vertex at index 'v'
-// 		for (uint32_t n = 0; n < w_normals[v].size(); n++)
-// 		{
-// 			N += w_normals[v][n];
-// 		}
+		// run through the normals in each vertex's array and interpolate them
+		// vertex(v) here fetches the data of the vertex at index 'v'
+		for (uint32_t n = 0; n < w_normals[v].size(); n++)
+		{
+			N += w_normals[v][n];
+		}
 
-// 		// normalize the final normal
-// 		normals[v] = glm::normalize(glm::vec4(N.x, N.y, N.z, 0.0f));
-// 	}
+		// normalize the final normal
+		normals[v] = glm::normalize(glm::vec4(N.x, N.y, N.z, 0.0f));
+	}
 
-// 	if (upload) {
-// 		edit_normals(0, normals);
-// 	}
-// }
+	markDirty();
+}
 
 // void Mesh::edit_vertex_color(uint32_t index, glm::vec4 new_color)
 // {
