@@ -136,9 +136,6 @@ def random_material(obj_id,
     else:
         obj_mat.set_base_color(color[0],color[1],color[2])  
         
-
-
-
     r = random.randint(0,2)
 
     if r == 0:  
@@ -171,6 +168,14 @@ def random_material(obj_id,
         obj_mat.set_anisotropic(random.uniform(0,0.1))  # degault is 0     
     else:
         obj_mat.set_anisotropic(random.uniform(0.9,1))  # degault is 0     
+
+
+
+########################################
+# ANIMATION RANDOMIZATION 
+########################################
+
+
 
 def distance(v0,v1=[0,0,0]):
     l2 = 0
