@@ -9,6 +9,7 @@ Welcome to ViSII's documentation!
    transform
    material
    mesh
+   texture
    camera
    all
 
