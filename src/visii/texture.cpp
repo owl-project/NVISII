@@ -145,6 +145,25 @@ Texture* Texture::createFromImage(std::string name, std::string path) {
 	}
 }
 
+Texture* Texture::createFromData(std::string name, uint32_t width, uint32_t height, std::vector<glm::vec4> data)
+{
+    auto create = [width, height, &data] (Texture* l) {
+        if (data.size() != (width * height)) { throw std::runtime_error("Error: width * height does not equal length of data!"); }
+        l->texels.resize(width * height);
+        memcpy(l->texels.data(), data.data(), width * height * 4 * sizeof(float));
+        textureStructs[l->getId()].width = width;
+        textureStructs[l->getId()].height = height;
+        l->markDirty();
+    };
+
+    try {
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+    } catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		throw;
+	}
+}
+
 std::shared_ptr<std::mutex> Texture::getEditMutex()
 {
 	return editMutex;

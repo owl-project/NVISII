@@ -486,18 +486,23 @@ class Mesh : public StaticFactory
 		// /* Creates a mesh component from TetGen node/element files (Can be made using "Mesh::tetrahedrahedralize") */
 		// static Mesh* createFromTetgen(std::string name, std::string path);
 
-		// /* Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates, 
-		// 	and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length
-		// 	as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other
-		// 	supplied per vertex data must be a multiple of 3 in length. */
-		// static Mesh* createFromRaw(
-		// 	std::string name,
-		// 	std::vector<glm::vec4> positions, 
-		// 	std::vector<glm::vec4> normals = std::vector<glm::vec4>(), 
-		// 	std::vector<glm::vec4> colors = std::vector<glm::vec4>(), 
-		// 	std::vector<glm::vec2> texcoords = std::vector<glm::vec2>(), 
-		// 	std::vector<uint32_t> indices = std::vector<uint32_t>(),
-		// 	bool allow_edits = false, bool submit_immediately = false);
+		/// Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates, 
+		///	and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length
+		///	as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other
+		///	supplied per vertex data must be a multiple of 3 in length. 
+		/// @param positions A list of 3D vertex positions. If indices aren't supplied, this must be a multiple of 3.
+		/// @param normals A list of 3D vertex normals. If indices aren't supplied, this must be a multiple of 3.
+		/// @param colors A list of per-vertex colors. If indices aren't supplied, this must be a multiple of 3.
+		/// @param texcoords A list of 2D per-vertex texture coordinates. If indices aren't supplied, this must be a multiple of 3.
+		/// @param indices A list of integer indices connecting vertex positions in a counterclockwise ordering to form triangles. If supplied, indices must be a multiple of 3.
+		/// @returns a reference to the mesh component
+		static Mesh* createFromData(
+			std::string name,
+			std::vector<glm::vec4> positions, 
+			std::vector<glm::vec4> normals = std::vector<glm::vec4>(), 
+			std::vector<glm::vec4> colors = std::vector<glm::vec4>(), 
+			std::vector<glm::vec2> texcoords = std::vector<glm::vec2>(), 
+			std::vector<uint32_t> indices = std::vector<uint32_t>());
 
         /** Gets a mesh by name 
          * \returns a mesh who's primary name key matches \p name 
@@ -810,16 +815,14 @@ class Mesh : public StaticFactory
 		// /* TODO: Explain this */
 		// void load_tetgen(std::string path);
 
-		// /* Copies per vertex data to the GPU */
-		// void load_raw (
-		// 	std::vector<glm::vec4> &positions, 
-		// 	std::vector<glm::vec4> &normals, 
-		// 	std::vector<glm::vec4> &colors, 
-		// 	std::vector<glm::vec2> &texcoords,
-		// 	std::vector<uint32_t> indices,
-		// 	bool allow_edits,
-		// 	bool submit_immediately
-		// );
+		/* Copies per vertex data to the GPU */
+		void loadData (
+			std::vector<glm::vec4> &positions, 
+			std::vector<glm::vec4> &normals, 
+			std::vector<glm::vec4> &colors, 
+			std::vector<glm::vec2> &texcoords,
+			std::vector<uint32_t> indices
+		);
 		
 		/* Creates a procedural mesh from the given mesh generator, and copies per vertex to the GPU */
 		template <class Generator>
