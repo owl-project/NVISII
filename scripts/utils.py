@@ -486,7 +486,6 @@ def export_to_ndds_file(
     # To do export things in the camera frame, e.g., pose and quaternion
 
     import simplejson as json
-    import numpy as np
 
     # assume we only use the view camera
     cam_view_matrix = visii.entity.get(camera_name).get_camera().get_view()

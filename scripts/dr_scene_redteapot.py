@@ -1,7 +1,6 @@
 import sys, os
 
 import visii 
-import numpy as np 
 from PIL import Image 
 import PIL
 import time 
@@ -203,9 +202,10 @@ for i_frame in range(opt.nbframes):
 
     # Move object of interest
     random_translation('teapot',
-            x_lim = [-2,2],
-            y_lim = [-2,2],
-            z_lim = [1,3])
+            x_lim = [-1.8,1.8],
+            y_lim = [-1.8,1.8],
+            z_lim = [1,3],
+            speed_lim = [0.05,0.1])
     random_scale('teapot', scale_lim = [scale,scale+0.1], speed_lim = [0.001,0.003])
     random_rotation('teapot')
     # random_color("teapot")
