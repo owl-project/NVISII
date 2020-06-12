@@ -329,12 +329,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     glm::mat4 tfmInv = transform.worldToLocal;//glm::inverse(tfm);
                     
                     vec3 dir; 
+                    vec2 uv;
                     vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
                     vec3 v1 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.x];
                     vec3 v2 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.y];
                     vec3 v3 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.z];
+                    vec2 uvtemp;
                     vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
-                    sampleTriangle(pos, N, v1, v2, v3, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf);
+                    sampleTriangle(pos, N, v1, v2, v3, uvtemp, uvtemp, uvtemp, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf, uv);
                     vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
                     float dotNWi = abs(dot(dir, normal));         
         
@@ -377,6 +379,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.direction = w_i;
             owl::traceRay(optixLaunchParams.world, ray, payload);
 
+            // BUGS HERE!!! ENTITY ISNT UPDATED...
+            
             // Sample the BRDF to compute a light sample as well
             {
                 const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;

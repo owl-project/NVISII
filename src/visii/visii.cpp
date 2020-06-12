@@ -80,6 +80,7 @@ static struct OptixData {
     OWLBuffer lightEntitiesBuffer;
     OWLBuffer instanceToEntityMapBuffer;
     OWLBuffer vertexListsBuffer;
+    OWLBuffer texCoordListsBuffer;
     OWLBuffer indexListsBuffer;
     OWLBuffer textureObjectsBuffer;
 
@@ -329,6 +330,7 @@ void initializeOptix(bool headless)
         { "textures",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
         { "lightEntities",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
         { "vertexLists",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
+        { "texCoordLists",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, texCoordLists)},
         { "indexLists",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, indexLists)},
         { "numLightEntities",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
         { "instanceToEntityMap", OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
@@ -368,6 +370,7 @@ void initializeOptix(bool headless)
     OD.lightEntitiesBuffer       = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.instanceToEntityMapBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.vertexListsBuffer         = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*),               MAX_MESHES,     nullptr);
+    OD.texCoordListsBuffer       = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(vec2*),               MAX_MESHES,     nullptr);
     OD.indexListsBuffer          = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(ivec3*),              MAX_MESHES,     nullptr);
     OD.textureObjectsBuffer      = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(cudaTextureObject_t), MAX_TEXTURES,   nullptr);
     owlLaunchParamsSetBuffer(OD.launchParams, "entities",            OD.entityBuffer);
@@ -380,6 +383,7 @@ void initializeOptix(bool headless)
     owlLaunchParamsSetBuffer(OD.launchParams, "lightEntities",       OD.lightEntitiesBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "instanceToEntityMap", OD.instanceToEntityMapBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "vertexLists",         OD.vertexListsBuffer);
+    owlLaunchParamsSetBuffer(OD.launchParams, "texCoordLists",       OD.texCoordListsBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "indexLists",          OD.indexListsBuffer);
     owlLaunchParamsSetBuffer(OD.launchParams, "textureObjects",      OD.textureObjectsBuffer);
 
@@ -538,6 +542,7 @@ void updateComponents()
 
         std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
         std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
+        std::vector<vec2*> texCoordLists(Mesh::getCount(), nullptr);
         for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
             // If a mesh is initialized, vertex and index buffers should already be created, and so 
             if (!meshes[mid].isInitialized()) continue;
@@ -549,11 +554,12 @@ void updateComponents()
                 throw std::runtime_error("ERROR: vertices/indices is nullptr");
             }
             vertexLists[mid] = ((vec4*) owlBufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
+            texCoordLists[mid] = ((vec2*) owlBufferGetPointer(OD.meshes[mid].texCoords, /* device */ 0));
             indexLists[mid] = ((ivec3*) owlBufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
         }
         owlBufferUpload(OD.vertexListsBuffer, vertexLists.data());
+        owlBufferUpload(OD.texCoordListsBuffer, texCoordLists.data());
         owlBufferUpload(OD.indexListsBuffer, indexLists.data());
-        
         Mesh::updateComponents();
         owlBufferUpload(OptixData.meshBuffer, Mesh::getFrontStruct());
     }
