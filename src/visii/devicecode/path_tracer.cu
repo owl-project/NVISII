@@ -275,7 +275,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // Load information about the hit entity
             EntityStruct entity = optixLaunchParams.entities[payload.entityID];
             TransformStruct entityTransform = optixLaunchParams.transforms[entity.transform_id];
-            MaterialStruct entityMaterial;
+            MaterialStruct entityMaterial; entityMaterial.base_color_texture_id = -1;
             LightStruct entityLight;
             if (entity.material_id >= 0 && entity.material_id < MAX_MATERIALS) {
                 entityMaterial = optixLaunchParams.materials[entity.material_id];
@@ -287,7 +287,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
                 if (bounce == 0) {
                     entityLight = optixLaunchParams.lights[entity.light_id];
-                    float3 light_emission = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
+                    float3 light_emission;
+                    if (entityMaterial.base_color_texture_id == -1) light_emission = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
+                    else light_emission = mat.base_color;// * entityLight.intensity;
                     illum = light_emission; 
                     primaryNormal = payload.normal;
                     primaryAlbedo = mat.base_color;
@@ -298,9 +300,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // Sample a light source
             uint32_t sampledLightID = -1;
             int numLights = optixLaunchParams.numLightEntities;
-            float3 lightEmission = make_float3(0.f);
+            // float3 lightEmission = make_float3(0.f);
             float3 irradiance = make_float3(0.f);
             float light_pdf = 0.f;
+
+            EntityStruct light_entity;
+            MaterialStruct light_material;
+            LightStruct light_light;
+            light_material.base_color_texture_id = -1;
             
             // first, sample the light source by importance sampling the light
             do {
@@ -309,24 +316,28 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 uint32_t random_id = uint32_t(min(lcg_randomf(rng) * numLights, float(numLights - 1)));
                 random_id = min(random_id, numLights - 1);
                 sampledLightID = optixLaunchParams.lightEntities[random_id];
-                EntityStruct light_entity = optixLaunchParams.entities[sampledLightID];
+                light_entity = optixLaunchParams.entities[sampledLightID];
                 
                 // shouldn't happen, but just in case...
                 if ((light_entity.light_id < 0) || (light_entity.light_id > MAX_LIGHTS)) break;
                 if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_TRANSFORMS)) break;
             
-                
-                LightStruct light = optixLaunchParams.lights[light_entity.light_id];
+                LightStruct light_light = optixLaunchParams.lights[light_entity.light_id];
                 TransformStruct transform = optixLaunchParams.transforms[light_entity.transform_id];
                 MeshStruct mesh;
+                
                 bool is_area_light = false;
+                bool is_light_textured = false;
                 if ((light_entity.mesh_id >= 0) && (light_entity.mesh_id < MAX_MESHES)) {
                     mesh = optixLaunchParams.meshes[light_entity.mesh_id];
                     is_area_light = true;
                 };
-            
-                lightEmission = make_float3(light.r, light.g, light.b) * light.intensity;
-            
+                if ((light_entity.material_id >= 0) && (light_entity.material_id < MAX_MATERIALS)) {
+                    light_material = optixLaunchParams.materials[light_entity.material_id];
+                    if ((light_material.base_color_texture_id >= 0) && (light_material.base_color_texture_id < MAX_TEXTURES))
+                        is_light_textured = true;
+                };
+                        
                 const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
                     // | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
                     // | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT;
@@ -348,11 +359,16 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     vec3 v1 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.x];
                     vec3 v2 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.y];
                     vec3 v3 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.z];
-                    vec2 uvtemp;
+                    vec2 uv1 = optixLaunchParams.texCoordLists[light_entity.mesh_id][triIndex.x];
+                    vec2 uv2 = optixLaunchParams.texCoordLists[light_entity.mesh_id][triIndex.y];
+                    vec2 uv3 = optixLaunchParams.texCoordLists[light_entity.mesh_id][triIndex.z];
                     vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
-                    sampleTriangle(pos, N, v1, v2, v3, uvtemp, uvtemp, uvtemp, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf, uv);
+                    sampleTriangle(pos, N, v1, v2, v3, uv1, uv2, uv3, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf, uv);
                     vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
-                    float dotNWi = abs(dot(dir, normal));         
+                    float dotNWi = abs(dot(dir, normal));     
+                    
+                    float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
+                    float3 lightEmission = make_float3(sampleTexture(light_material.base_color_texture_id, make_float2(uv.x, uv.y), default_light_emission)) * light_light.intensity;
         
                     if ((light_pdf > EPSILON) && (dotNWi > EPSILON)) {
                         float3 light_dir = make_float3(dir.x, dir.y, dir.z);
@@ -397,6 +413,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 // if by sampling the brdf we also hit the light source...
                 bool visible = (payload.entityID == sampledLightID);
                 if (visible) {
+                    float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
+                    float3 lightEmission = make_float3(sampleTexture(light_material.base_color_texture_id, make_float2(payload.uv.x, payload.uv.y), default_light_emission)) * light_light.intensity;
+
                     float dist = distance(vec3(hit_p.x, hit_p.y, hit_p.z ), vec3(ray.origin.x, ray.origin.y, ray.origin.z));
                     float dotNWi = dot(payload.normal, ray.direction);
                     float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
