@@ -113,7 +113,7 @@ std::string Mesh::toString() {
 	output += "\tname: \"" + name + "\",\n";
 	// output += "\tnum_positions: \"" + std::to_string(positions.size()) + "\",\n";
 	// output += "\tnum_edge_indices: \"" + std::to_string(edge_indices.size()) + "\",\n";
-	// output += "\tnum_triangle_indices: \"" + std::to_string(triangle_indices.size()) + "\",\n";
+	// output += "\tnum_triangleIndices: \"" + std::to_string(triangleIndices.size()) + "\",\n";
 	// output += "\tnum_tetrahedra_indices: \"" + std::to_string(tetrahedra_indices.size()) + "\",\n";
 	output += "}";
 	return output;
@@ -186,9 +186,9 @@ std::vector<uint32_t> Mesh::getTriangleIndices() {
 // 	return (uint32_t)edge_indices.size();
 // }
 
-// uint32_t Mesh::get_total_triangle_indices()
+// uint32_t Mesh::get_total_triangleIndices()
 // {
-// 	return (uint32_t)triangle_indices.size();
+// 	return (uint32_t)triangleIndices.size();
 // }
 
 // uint32_t Mesh::get_total_tetrahedra_indices()
@@ -255,11 +255,11 @@ void Mesh::computeMetadata()
 // 			in.pointlist[i * 3 + 2] = this->positions[i].z;
 // 		}
 
-// 		in.numberoffacets = this->triangle_indices.size() / 3; 
+// 		in.numberoffacets = this->triangleIndices.size() / 3; 
 // 		in.facetlist = new tetgenio::facet[in.numberoffacets];
 // 		in.facetmarkerlist = new int[in.numberoffacets];
 
-// 		for (uint32_t i = 0; i < this->triangle_indices.size() / 3; ++i) {
+// 		for (uint32_t i = 0; i < this->triangleIndices.size() / 3; ++i) {
 // 			f = &in.facetlist[i];
 // 			f->numberofpolygons = 1;
 // 			f->polygonlist = new tetgenio::polygon[f->numberofpolygons];
@@ -269,9 +269,9 @@ void Mesh::computeMetadata()
 // 			p->numberofvertices = 3;
 // 			p->vertexlist = new int[p->numberofvertices];
 // 			// Note, tetgen indices start at one.
-// 			p->vertexlist[0] = triangle_indices[i * 3 + 0] + 1; 
-// 			p->vertexlist[1] = triangle_indices[i * 3 + 1] + 1; 
-// 			p->vertexlist[2] = triangle_indices[i * 3 + 2] + 1; 
+// 			p->vertexlist[0] = triangleIndices[i * 3 + 0] + 1; 
+// 			p->vertexlist[1] = triangleIndices[i * 3 + 1] + 1; 
+// 			p->vertexlist[2] = triangleIndices[i * 3 + 2] + 1; 
 // 			in.facetmarkerlist[i] = 0; // ?
 // 		}
 
@@ -709,7 +709,7 @@ void Mesh::loadObj(std::string objPath)
 // 			uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
 // 			uniqueVertices.push_back(vertex);
 // 		}
-// 		triangle_indices.push_back(uniqueVertexMap[vertex]);
+// 		triangleIndices.push_back(uniqueVertexMap[vertex]);
 // 	}
 
 // 	/* Map vertices to buffers */
@@ -831,7 +831,7 @@ void Mesh::loadObj(std::string objPath)
 // 			uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
 // 			uniqueVertices.push_back(vertex);
 // 		}
-// 		triangle_indices.push_back(uniqueVertexMap[vertex]);
+// 		triangleIndices.push_back(uniqueVertexMap[vertex]);
 // 	}
 
 // 	/* Map vertices to buffers */
@@ -945,7 +945,7 @@ void Mesh::loadObj(std::string objPath)
 // 	/* Eliminate duplicate positions */
 // 	std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
 // 	std::vector<Vertex> uniqueVertices;
-// 	std::vector<uint32_t> all_triangle_indices;
+// 	std::vector<uint32_t> all_triangleIndices;
 // 	for (int i = 0; i < tri_vertices.size(); ++i)
 // 	{
 // 		Vertex vertex = tri_vertices[i];
@@ -954,18 +954,18 @@ void Mesh::loadObj(std::string objPath)
 // 			uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
 // 			uniqueVertices.push_back(vertex);
 // 		}
-// 		all_triangle_indices.push_back(uniqueVertexMap[vertex]);
+// 		all_triangleIndices.push_back(uniqueVertexMap[vertex]);
 // 	}
 
 // 	/* Only add outside triangles to triangle indices. 
 // 	We do this by removing all triangles which contain duplicates. */
 // 	std::unordered_map<Triangle, uint32_t> triangleCount = {};
-// 	for (int i = 0; i < all_triangle_indices.size(); i+=3)
+// 	for (int i = 0; i < all_triangleIndices.size(); i+=3)
 // 	{
 // 		Triangle t;
-// 		t.idx[0] = all_triangle_indices[i + 0];
-// 		t.idx[1] = all_triangle_indices[i + 1];
-// 		t.idx[2] = all_triangle_indices[i + 2];
+// 		t.idx[0] = all_triangleIndices[i + 0];
+// 		t.idx[1] = all_triangleIndices[i + 1];
+// 		t.idx[2] = all_triangleIndices[i + 2];
 // 		if (triangleCount.find(t) != triangleCount.end())
 // 			triangleCount[t]++;
 // 		else
@@ -974,9 +974,9 @@ void Mesh::loadObj(std::string objPath)
 
 // 	for (auto &item : triangleCount) {
 // 		if (item.second == 1) {
-// 			triangle_indices.push_back(item.first.idx[0]);
-// 			triangle_indices.push_back(item.first.idx[1]);
-// 			triangle_indices.push_back(item.first.idx[2]);
+// 			triangleIndices.push_back(item.first.idx[0]);
+// 			triangleIndices.push_back(item.first.idx[1]);
+// 			triangleIndices.push_back(item.first.idx[2]);
 // 		}
 // 	}
 
@@ -1007,109 +1007,103 @@ void Mesh::loadObj(std::string objPath)
 // 	compute_metadata(submit_immediately);
 // }
 
-// void Mesh::load_raw(
-// 	std::vector<glm::vec4> &positions_, 
-// 	std::vector<glm::vec4> &normals_, 
-// 	std::vector<glm::vec4> &colors_, 
-// 	std::vector<glm::vec2> &texcoords_, 
-// 	std::vector<uint32_t> indices_,
-// 	bool allow_edits, bool submit_immediately
-// )
-// {
-// 	allowEdits = allow_edits;
-// 	bool reading_normals = normals_.size() > 0;
-// 	bool reading_colors = colors_.size() > 0;
-// 	bool reading_texcoords = texcoords_.size() > 0;
-// 	bool reading_indices = indices_.size() > 0;
+void Mesh::loadData(
+	std::vector<glm::vec4> &positions_, 
+	std::vector<glm::vec4> &normals_, 
+	std::vector<glm::vec4> &colors_, 
+	std::vector<glm::vec2> &texcoords_, 
+	std::vector<uint32_t> indices_
+)
+{
+	bool readingNormals = normals_.size() > 0;
+	bool readingColors = colors_.size() > 0;
+	bool readingTexCoords = texcoords_.size() > 0;
+	bool readingIndices = indices_.size() > 0;
 
-// 	if (positions_.size() == 0)
-// 		throw std::runtime_error( std::string("Error, no positions supplied. "));
+	if (positions_.size() == 0)
+		throw std::runtime_error( std::string("Error, no positions supplied. "));
 
-// 	if ((!reading_indices) && ((positions_.size() % 3) != 0))
-// 		throw std::runtime_error( std::string("Error: No indices provided, and length of positions (") + std::to_string(positions_.size()) + std::string(") is not a multiple of 3."));
+	if ((!readingIndices) && ((positions_.size() % 3) != 0))
+		throw std::runtime_error( std::string("Error: No indices provided, and length of positions (") + std::to_string(positions_.size()) + std::string(") is not a multiple of 3."));
 
-// 	if ((reading_indices) && ((indices_.size() % 3) != 0))
-// 		throw std::runtime_error( std::string("Error: Length of indices (") + std::to_string(triangle_indices.size()) + std::string(") is not a multiple of 3."));
+	if ((readingIndices) && ((indices_.size() % 3) != 0))
+		throw std::runtime_error( std::string("Error: Length of indices (") + std::to_string(triangleIndices.size()) + std::string(") is not a multiple of 3."));
 	
-// 	if (reading_normals && (normals_.size() != positions_.size()))
-// 		throw std::runtime_error( std::string("Error, length mismatch. Total normals: " + std::to_string(normals_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingNormals && (normals_.size() != positions_.size()))
+		throw std::runtime_error( std::string("Error, length mismatch. Total normals: " + std::to_string(normals_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
 
-// 	if (reading_colors && (colors_.size() != positions_.size()))
-// 		throw std::runtime_error( std::string("Error, length mismatch. Total colors: " + std::to_string(colors_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingColors && (colors_.size() != positions_.size()))
+		throw std::runtime_error( std::string("Error, length mismatch. Total colors: " + std::to_string(colors_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
 		
-// 	if (reading_texcoords && (texcoords_.size() != positions_.size()))
-// 		throw std::runtime_error( std::string("Error, length mismatch. Total texcoords: " + std::to_string(texcoords_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingTexCoords && (texcoords_.size() != positions_.size()))
+		throw std::runtime_error( std::string("Error, length mismatch. Total texcoords: " + std::to_string(texcoords_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
 	
-// 	if (reading_indices) {
-// 		for (uint32_t i = 0; i < indices_.size(); ++i) {
-// 			if (indices_[i] >= positions_.size())
-// 				throw std::runtime_error( std::string("Error, index out of bounds. Index " + std::to_string(i) + " is greater than total positions: " + std::to_string(positions_.size())));
-// 		}
-// 	}
+	if (readingIndices) {
+		for (uint32_t i = 0; i < indices_.size(); ++i) {
+			if (indices_[i] >= positions_.size())
+				throw std::runtime_error( std::string("Error, index out of bounds. Index " + std::to_string(i) + " is greater than total positions: " + std::to_string(positions_.size())));
+		}
+	}
 		
-// 	std::vector<Vertex> vertices;
+	std::vector<Vertex> vertices;
 
-// 	/* For each vertex */
-// 	for (int i = 0; i < positions_.size(); ++ i) {
-// 		Vertex vertex = Vertex();
-// 		vertex.point = positions_[i];
-// 		if (reading_normals) vertex.normal = normals_[i];
-// 		if (reading_colors) vertex.color = colors_[i];
-// 		if (reading_texcoords) vertex.texcoord = texcoords_[i];        
-// 		vertices.push_back(vertex);
-// 	}
+	/* For each vertex */
+	for (int i = 0; i < positions_.size(); ++ i) {
+		Vertex vertex = Vertex();
+		vertex.point = positions_[i];
+		if (readingNormals) vertex.normal = normals_[i];
+		if (readingColors) vertex.color = colors_[i];
+		if (readingTexCoords) vertex.texcoord = texcoords_[i];        
+		vertices.push_back(vertex);
+	}
 
-// 	/* Eliminate duplicate positions */
-// 	std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
-// 	std::vector<Vertex> uniqueVertices;
+	/* Eliminate duplicate positions */
+	std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
+	std::vector<Vertex> uniqueVertices;
 
-// 	/* Don't bin positions as unique when editing, since it's unexpected for a user to lose positions */
-// 	if ((allow_edits && !reading_indices) || (!reading_normals)) {
-// 		uniqueVertices = vertices;
-// 		for (int i = 0; i < vertices.size(); ++i) {
-// 			triangle_indices.push_back(i);
-// 		}
-// 	}
-// 	else if (reading_indices) {
-// 		triangle_indices = indices_;
-// 		uniqueVertices = vertices;
-// 	}
-// 	/* If indices werent supplied and editing isn't allowed, optimize by binning unique verts */
-// 	else {    
-// 		for (int i = 0; i < vertices.size(); ++i)
-// 		{
-// 			Vertex vertex = vertices[i];
-// 			if (uniqueVertexMap.count(vertex) == 0)
-// 			{
-// 				uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
-// 				uniqueVertices.push_back(vertex);
-// 			}
-// 			triangle_indices.push_back(uniqueVertexMap[vertex]);
-// 		}
-// 	}
+	/* Don't bin positions as unique when editing, since it's unexpected for a user to lose positions */
+	bool allow_edits = false; // temporary...
+	if ((allow_edits && !readingIndices) || (!readingNormals)) {
+		uniqueVertices = vertices;
+		for (int i = 0; i < vertices.size(); ++i) {
+			triangleIndices.push_back(i);
+		}
+	}
+	else if (readingIndices) {
+		triangleIndices = indices_;
+		uniqueVertices = vertices;
+	}
+	/* If indices werent supplied and editing isn't allowed, optimize by binning unique verts */
+	else {    
+		for (int i = 0; i < vertices.size(); ++i)
+		{
+			Vertex vertex = vertices[i];
+			if (uniqueVertexMap.count(vertex) == 0)
+			{
+				uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
+				uniqueVertices.push_back(vertex);
+			}
+			triangleIndices.push_back(uniqueVertexMap[vertex]);
+		}
+	}
 
-// 	/* Map vertices to buffers */
-// 	for (int i = 0; i < uniqueVertices.size(); ++i)
-// 	{
-// 		Vertex v = uniqueVertices[i];
-// 		positions.push_back(v.point);
-// 		colors.push_back(v.color);
-// 		normals.push_back(v.normal);
-// 		texcoords.push_back(v.texcoord);
-// 	}
+	/* Map vertices to buffers */
+	for (int i = 0; i < uniqueVertices.size(); ++i)
+	{
+		Vertex v = uniqueVertices[i];
+		positions.push_back(v.point);
+		colors.push_back(v.color);
+		normals.push_back(v.normal);
+		texCoords.push_back(v.texcoord);
+	}
 
-// 	if (!reading_normals) {
-// 		generateSmoothNormals();
-// 	}
+	if (!readingNormals) {
+		generateSmoothNormals();
+	}
 
-// 	cleanup();
-// 	createPointBuffer(allow_edits, submit_immediately);
-// 	createColorBuffer(allow_edits, submit_immediately);
-// 	createTriangleIndexBuffer(allow_edits, submit_immediately);
-// 	createNormalBuffer(allow_edits, submit_immediately);
-// 	createTexCoordBuffer(allow_edits, submit_immediately);
-// 	compute_metadata(submit_immediately);
-// }
+	computeMetadata();
+	markDirty();
+}
 
 // void Mesh::edit_position(uint32_t index, glm::vec4 new_position)
 // {
@@ -1365,7 +1359,7 @@ void Mesh::generateSmoothNormals()
 // 		tris.vertexFormat = vk::Format::eR32G32B32Sfloat;
 // 		tris.indexData = this->triangleIndexBuffer;
 // 		tris.indexOffset = 0;
-// 		tris.indexCount = this->get_total_triangle_indices();
+// 		tris.indexCount = this->get_total_triangleIndices();
 // 		tris.indexType = vk::IndexType::eUint32;
 // 		tris.transformData = vk::Buffer();
 // 		tris.transformOffset = 0;
@@ -2105,26 +2099,25 @@ Mesh* Mesh::createFromObj(std::string name, std::string path)
 // 	}
 // }
 
-// Mesh* Mesh::createFromRaw (
-// 	std::string name,
-// 	std::vector<glm::vec4> positions, 
-// 	std::vector<glm::vec4> normals, 
-// 	std::vector<glm::vec4> colors, 
-// 	std::vector<glm::vec2> texcoords, 
-// 	std::vector<uint32_t> indices, 
-// 	bool allow_edits, 
-// 	bool submit_immediately)
-// {
-// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-// 	try {
-// 		mesh->load_raw(positions, normals, colors, texcoords, indices, allow_edits, submit_immediately);
-// 		anyDirty = true;
-// 		return mesh;
-// 	} catch (...) {
-// 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-// 		throw;
-// 	}
-// }
+Mesh* Mesh::createFromData (
+	std::string name,
+	std::vector<glm::vec4> positions, 
+	std::vector<glm::vec4> normals, 
+	std::vector<glm::vec4> colors, 
+	std::vector<glm::vec2> texcoords, 
+	std::vector<uint32_t> indices
+) {
+	auto create = [&positions, &normals, &colors, &texcoords, &indices] (Mesh* mesh) {
+		mesh->loadData(positions, normals, colors, texcoords, indices);
+	};
+	
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		throw;
+	}
+}
 
 void Mesh::remove(std::string name) {
 	StaticFactory::remove(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
@@ -2273,14 +2266,14 @@ uint32_t Mesh::getCount() {
 // 	auto vulkan = Libraries::Vulkan::Get();
 // 	auto device = vulkan->get_device();
 
-// 	vk::DeviceSize bufferSize = triangle_indices.size() * sizeof(uint32_t);
+// 	vk::DeviceSize bufferSize = triangleIndices.size() * sizeof(uint32_t);
 // 	triangleIndexBufferSize = bufferSize;
 // 	vk::Buffer stagingBuffer;
 // 	vk::DeviceMemory stagingBufferMemory;
 // 	createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, stagingBuffer, stagingBufferMemory);
 
 // 	void *data = device.mapMemory(stagingBufferMemory, 0, bufferSize, vk::MemoryMapFlags());
-// 	memcpy(data, triangle_indices.data(), (size_t)bufferSize);
+// 	memcpy(data, triangleIndices.data(), (size_t)bufferSize);
 // 	device.unmapMemory(stagingBufferMemory);
 
 // 	vk::MemoryPropertyFlags memoryProperties;

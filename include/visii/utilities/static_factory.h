@@ -109,8 +109,9 @@ class StaticFactory {
             if (!items[id].initialized) return nullptr;
             return &items[id];
         }
-
-        throw std::runtime_error(std::string("Error: " + type + " \"" + name + "\" does not exist."));
+        
+        // Finding it's more useful to catch this by finding something == None/nullptr
+        // throw std::runtime_error(std::string("Error: " + type + " \"" + name + "\" does not exist."));
         return nullptr;
     }
 

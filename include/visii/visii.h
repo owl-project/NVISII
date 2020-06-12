@@ -54,3 +54,8 @@ void enableDenoiser();
 void disableDenoiser();
 void renderToHDR(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);
 void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);
+
+std::vector<Entity*> importOBJ(std::string name_prefix, std::string filepath, std::string mtl_base_dir, 
+        glm::vec3 position = glm::vec3(0.0f), 
+        glm::vec3 scale = glm::vec3(1.0f),
+        glm::quat rotation = glm::angleAxis(0.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
