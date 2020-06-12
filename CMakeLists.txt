@@ -191,8 +191,8 @@ find_package(OpenGL)
 # stb
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/stb/)
 
-# # tiny obj
-# include_directories(SYSTEM external/tinyobj)
+# tiny things
+include_directories(SYSTEM externals/tiny/)
 
 # ImGUI
 add_definitions(-D IMGUI_IMPL_OPENGL_LOADER_GLAD)
@@ -234,7 +234,7 @@ set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
 find_package(OptiX REQUIRED VERSION 7)
 include_directories(${OptiX_INCLUDE})
 
-# # owl
+# owl
 set(SET_UP_CONFIGURATIONS_DONE 1)
 set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
 set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)

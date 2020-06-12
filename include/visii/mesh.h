@@ -13,7 +13,6 @@
 
 /* External includes */
 #include <glm/glm.hpp>
-// #include <tiny_obj_loader.h>
 
 /* Project includes */
 // #include "Foton/Tools/Options.hxx"
@@ -537,8 +536,10 @@ class Mesh : public StaticFactory
 			vec2 size = {1., 1.},
 			ivec2 segments = {8, 8});
 
-		// /* Creates a mesh component from an OBJ file (ignores .mtl files) */
-		// static Mesh* createFromObj(std::string name, std::string objPath);
+		/// Creates a mesh component from an OBJ file (ignoring any .mtl files) 
+		/// @param name The name (used as a primary key) for this mesh component
+		/// @param path A path to the OBJ file.
+		static Mesh* createFromObj(std::string name, std::string path);
 
 		// /* Creates a mesh component from an ASCII STL file */
 		// static Mesh* createFromStl(std::string name, std::string stlPath);
@@ -549,18 +550,23 @@ class Mesh : public StaticFactory
 		// /* Creates a mesh component from TetGen node/element files (Can be made using "Mesh::tetrahedrahedralize") */
 		// static Mesh* createFromTetgen(std::string name, std::string path);
 
-		// /** Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates, 
-		// 	and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length
-		// 	as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other
-		// 	supplied per vertex data must be a multiple of 3 in length. */
-		// static Mesh* createFromRaw(
-		// 	std::string name,
-		// 	std::vector<glm::vec4> positions, 
-		// 	std::vector<glm::vec4> normals = std::vector<glm::vec4>(), 
-		// 	std::vector<glm::vec4> colors = std::vector<glm::vec4>(), 
-		// 	std::vector<glm::vec2> texcoords = std::vector<glm::vec2>(), 
-		// 	std::vector<uint32_t> indices = std::vector<uint32_t>(),
-		// 	bool allow_edits = false, bool submit_immediately = false);
+		/// Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates, 
+		///	and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length
+		///	as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other
+		///	supplied per vertex data must be a multiple of 3 in length. 
+		/// @param positions A list of 3D vertex positions. If indices aren't supplied, this must be a multiple of 3.
+		/// @param normals A list of 3D vertex normals. If indices aren't supplied, this must be a multiple of 3.
+		/// @param colors A list of per-vertex colors. If indices aren't supplied, this must be a multiple of 3.
+		/// @param texcoords A list of 2D per-vertex texture coordinates. If indices aren't supplied, this must be a multiple of 3.
+		/// @param indices A list of integer indices connecting vertex positions in a counterclockwise ordering to form triangles. If supplied, indices must be a multiple of 3.
+		/// @returns a reference to the mesh component
+		static Mesh* createFromData(
+			std::string name,
+			std::vector<glm::vec4> positions, 
+			std::vector<glm::vec4> normals = std::vector<glm::vec4>(), 
+			std::vector<glm::vec4> colors = std::vector<glm::vec4>(), 
+			std::vector<glm::vec2> texcoords = std::vector<glm::vec2>(), 
+			std::vector<uint32_t> indices = std::vector<uint32_t>());
 
         /** Gets a mesh by name 
 		 * 
@@ -718,19 +724,19 @@ class Mesh : public StaticFactory
 		// void save_tetrahedralization(float quality_bound, float maximum_volume);
 
 		/** \returns the last computed mesh centroid. */
-		glm::vec3 get_centroid();
+		glm::vec3 getCentroid();
 
 		/** \returns the minimum axis aligned bounding box position */
-		glm::vec3 get_min_aabb_corner();
+		glm::vec3 getMinAabbCorner();
 
 		/** \returns the maximum axis aligned bounding box position */
-		glm::vec3 get_max_aabb_corner();
+		glm::vec3 getMaxAabbCorner();
 
 		/** \returns the center of the aligned bounding box */
-		glm::vec3 get_aabb_center();
+		glm::vec3 getAabbCenter();
 
 		/* \returns the radius of a sphere centered at the centroid which completely contains the mesh */
-		float get_bounding_sphere_radius();
+		float getBoundingSphereRadius();
 
 		// /* If mesh editing is enabled, replaces the position at the given index with a new position */
 		// void edit_position(uint32_t index, glm::vec4 new_position);
@@ -744,8 +750,11 @@ class Mesh : public StaticFactory
 		// /* If mesh editing is enabled, replaces the set of normals starting at the given index with a new set of normals */
 		// void edit_normals(uint32_t index, std::vector<glm::vec4> new_normals);
 
-		// /* TODO: EXPLAIN THIS */
-		// void compute_smooth_normals(bool upload = true);
+		/** Replaces any existing normals with per-vertex smooth normals computed by 
+		 * averaging neighboring geometric face normals together. 
+		 * Note that this does not take into account the surface area of each triangular face.
+		*/
+		void generateSmoothNormals();
 
 		// /* If mesh editing is enabled, replaces the vertex color at the given index with a new vertex color */
 		// void edit_vertex_color(uint32_t index, glm::vec4 new_color);
@@ -805,9 +814,6 @@ class Mesh : public StaticFactory
 		// std::vector<uint32_t> tetrahedra_indices;
 		std::vector<uint32_t> triangleIndices;
 		// std::vector<uint32_t> edge_indices;
-
-		// /* A handle to the attributes loaded from tiny obj */
-		// tinyobj::attrib_t attrib;
 
 		// /* A handle to the buffer containing per vertex positions */
 		// vk::Buffer pointBuffer;
@@ -870,27 +876,25 @@ class Mesh : public StaticFactory
 		// void createTriangleIndexBuffer(bool allow_edits, bool submit_immediately);
 
 		// /* Loads in an OBJ mesh and copies per vertex data to the GPU */
-		// void load_obj(std::string objPath, bool allow_edits, bool submit_immediately);
+		void loadObj(std::string objPath);
 
 		// /* Loads in an STL mesh and copies per vertex data to the GPU */
-		// void load_stl(std::string stlPath, bool allow_edits, bool submit_immediately);
+		// void load_stl(std::string stlPath);
 
 		// /* Loads in a GLB mesh and copies per vertex data to the GPU */
-		// void load_glb(std::string glbPath, bool allow_edits, bool submit_immediately);
+		// void load_glb(std::string glbPath);
 
 		// /* TODO: Explain this */
-		// void load_tetgen(std::string path, bool allow_edits, bool submit_immediately);
+		// void load_tetgen(std::string path);
 
-		// /* Copies per vertex data to the GPU */
-		// void load_raw (
-		// 	std::vector<glm::vec4> &positions, 
-		// 	std::vector<glm::vec4> &normals, 
-		// 	std::vector<glm::vec4> &colors, 
-		// 	std::vector<glm::vec2> &texcoords,
-		// 	std::vector<uint32_t> indices,
-		// 	bool allow_edits,
-		// 	bool submit_immediately
-		// );
+		/* Copies per vertex data to the GPU */
+		void loadData (
+			std::vector<glm::vec4> &positions, 
+			std::vector<glm::vec4> &normals, 
+			std::vector<glm::vec4> &colors, 
+			std::vector<glm::vec2> &texcoords,
+			std::vector<uint32_t> indices
+		);
 		
 		/** Creates a procedural mesh from the given mesh generator, and copies per vertex to the GPU */
 		template <class Generator>
@@ -922,12 +926,6 @@ class Mesh : public StaticFactory
 				genTriangles.next();
 			}
 
-			// cleanup();
-			// createPointBuffer();
-			// createColorBuffer();
-			// createNormalBuffer();
-			// createTexCoordBuffer();
-			// createTriangleIndexBuffer();
 			computeMetadata();
 		}
 

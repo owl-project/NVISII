@@ -16,7 +16,7 @@
 Entity Entity::entities[MAX_ENTITIES];
 EntityStruct Entity::entityStructs[MAX_ENTITIES];
 std::map<std::string, uint32_t> Entity::lookupTable;
-std::shared_ptr<std::mutex> Entity::creationMutex;
+std::shared_ptr<std::mutex> Entity::editMutex;
 bool Entity::factoryInitialized = false;
 bool Entity::anyDirty = true;
 
@@ -415,7 +415,7 @@ void Entity::initializeFactory()
 	// 	device.bindBufferMemory(SSBO, SSBOMemory, 0);
 	// }
 
-	creationMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::mutex>();
 
 	factoryInitialized = true;
 
@@ -542,7 +542,7 @@ Entity* Entity::create(
 	// Collider* collider
     )
 {
-	auto entity =  StaticFactory::create(creationMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
+	auto entity =  StaticFactory::create(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
 	try {
 		if (transform) entity->setTransform(transform);
 		if (material) entity->setMaterial(material);
@@ -553,26 +553,31 @@ Entity* Entity::create(
 		// if (collider) entity->setCollider(collider);
 		return entity;
 	} catch (...) {
-		StaticFactory::removeIfExists(creationMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
+		StaticFactory::removeIfExists(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
 		throw;
 	}
 }
 
+std::shared_ptr<std::mutex> Entity::getEditMutex()
+{
+	return editMutex;
+}
+
 Entity* Entity::get(std::string name) {
-	return StaticFactory::get(creationMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
+	return StaticFactory::get(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
 }
 
 Entity* Entity::get(uint32_t id) {
-	return StaticFactory::get(creationMutex, id, "Entity", lookupTable, entities, MAX_ENTITIES);
+	return StaticFactory::get(editMutex, id, "Entity", lookupTable, entities, MAX_ENTITIES);
 }
 
 void Entity::remove(std::string name) {
-	StaticFactory::remove(creationMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
+	StaticFactory::remove(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
 	anyDirty = true;
 }
 
 void Entity::remove(uint32_t id) {
-	StaticFactory::remove(creationMutex, id, "Entity", lookupTable, entities, MAX_ENTITIES);
+	StaticFactory::remove(editMutex, id, "Entity", lookupTable, entities, MAX_ENTITIES);
 	anyDirty = true;
 }
 

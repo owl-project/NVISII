@@ -21,7 +21,7 @@
 #include <visii/utilities/static_factory.h>
 #include <visii/material_struct.h>
 
-// class Texture;
+class Texture;
 
 enum MaterialFlags : uint32_t { 
   MATERIAL_FLAGS_HIDDEN = 1, 
@@ -76,6 +76,9 @@ class Material : public StaticFactory
     /** \return True if the tables used to store all material components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
 
+    /** \return True the current material is a valid, initialized material, and False if the material was cleared or removed. */
+	  bool isInitialized();
+
     /** Iterates through all material components, computing material metadata for rendering purposes. */
     static void updateComponents();
 
@@ -96,6 +99,8 @@ class Material : public StaticFactory
 
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
+
+    static std::shared_ptr<std::mutex> getEditMutex();
 
     /** Returns a json string representation of the current component */
     std::string toString();
@@ -119,6 +124,12 @@ class Material : public StaticFactory
       * \returns the color intensity vector */
     vec3 getBaseColor();
 
+    /** The diffuse or metal surface color. Overrides any existing constant base color. */
+    void setBaseColorTexture(Texture *texture);
+
+    /** Disconnects the base color texture, reverting back to any existing constant base color*/
+    void clearBaseColorTexture();
+
     /** Mix between diffuse and subsurface scattering. 
       * \param subsurface Rather than being a simple mix between Diffuse and Subsurface Scattering, 
       * this value controls a multiplier for the Subsurface Radius. */
@@ -127,6 +138,10 @@ class Material : public StaticFactory
     /** Mix between diffuse and subsurface scattering. 
      * \returns the current subsurface radius multiplier. */
     float getSubsurface();
+
+    /** Mix between diffuse and subsurface scattering. */
+    void setSubsurfaceTexture(Texture *texture);
+    void clearSubsurfaceTexture();
 
     /** Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
       *  as light bleeds into shadows and through the object. The scattering distance is specified separately 
@@ -147,6 +162,9 @@ class Material : public StaticFactory
       * \returns The subsurface scattering distance is specified separately for the RGB channels. */
     vec3 getSubsurfaceRadius();
 
+    void setSubsurfaceRadiusTexture(Texture *texture);
+    void clearSubsurfaceRadiusTexture();
+
     /** The subsurface scattering base color. 
      * \param color the color intensity vector, usually between 0 and 1 */
     void setSubsurfaceColor(vec3 color);
@@ -160,6 +178,9 @@ class Material : public StaticFactory
     /** The subsurface scattering base color.
      * \returns the color intensity vector, usually between 0 and 1 */
     vec3 getSubsurfaceColor();    
+
+    void setSubsurfaceColorTexture(Texture *texture);
+    void clearSubsurfaceColorTexture();
     
     /** Blends between a non-metallic and metallic material model. 
       * \param metallic A value of 1.0 gives 
@@ -172,6 +193,9 @@ class Material : public StaticFactory
       * \returns the current metallic value. */
     float getMetallic();
 
+    void setMetallicTexture(Texture *texture);
+    void clearMetallicTexture();
+
     /** The amount of dielectric specular reflection. 
      * \param specular Specifies facing (along normal) reflectivity in the most common 0 - 8% range. Since materials with reflectivity above 8% do exist, the field allows values above 1.*/
     void setSpecular(float specular);
@@ -179,6 +203,9 @@ class Material : public StaticFactory
     /** The amount of dielectric specular reflection. 
       * \returns the current dielectric specular reflection value. */
     float getSpecular();
+
+    void setSpecularTexture(Texture *texture);
+    void clearSpecularTexture();
 
     /** Tints the facing specular reflection using the base color, while glancing reflection remains white.
       * Normal dielectrics have colorless reflection, so this parameter is not technically physically correct 
@@ -190,6 +217,9 @@ class Material : public StaticFactory
       * \returns the current specular tint value, between 0 and 1 */
     float getSpecularTint();
 
+    void setSpecularTintTexture(Texture *texture);
+    void clearSpecularTintTexture();
+
     /** Microfacet roughness of the surface for diffuse and specular reflection. 
       * \param roughness Specifies the surface microfacet roughness value, between 0 and 1 */
     void setRoughness(float roughness);
@@ -197,6 +227,9 @@ class Material : public StaticFactory
     /** Microfacet roughness of the surface for diffuse and specular reflection. 
       * \returns the current surface microfacet roughness value, between 0 and 1 */
     float getRoughness();
+
+    void setRoughnessTexture(Texture *texture);
+    void clearRoughnessTexture();
 
     /** The transparency of the surface, independent of transmission.
       * \param a Controls the transparency of the surface, with 1.0 being fully opaque. */
@@ -206,6 +239,9 @@ class Material : public StaticFactory
       * \returns the current surface transparency, with 1.0 being fully opaque and 0.0 being fully transparent. */
     float getAlpha();
 
+    void setAlphaTexture(Texture *texture);
+    void clearAlphaTexture();
+
     /** The amount of anisotropy for specular reflection.
       * \param anistropic The amount of anisotropy for specular reflection. Higher values give elongated highlights along the tangent direction; negative values give highlights shaped perpendicular to the tangent direction. */
     void setAnisotropic(float anisotropic);
@@ -213,6 +249,9 @@ class Material : public StaticFactory
     /** The amount of anisotropy for specular reflection.
       * \returns The current amount of anisotropy for specular reflection. */
     float getAnisotropic();
+
+    void setAnisotropicTexture(Texture *texture);
+    void clearAnisotropicTexture();
 
     /** The direction of anisotropy.
       * \param anisotropic_rotation Rotates the direction of anisotropy, with 1.0 going full circle. */
@@ -222,6 +261,9 @@ class Material : public StaticFactory
       * \returns the current the direction of anisotropy, between 0 and 1. */
     float getAnisotropicRotation();
 
+    void setAnisotropicRotationTexture(Texture *texture);
+    void clearAnisotropicRotationTexture();
+
     /** Amount of soft velvet like reflection near edges, for simulating materials such as cloth. 
      * \param sheen controls the amount of sheen, between 0 and 1 */
     void setSheen(float sheen);
@@ -229,6 +271,9 @@ class Material : public StaticFactory
     /** Amount of soft velvet like reflection near edges, for simulating materials such as cloth. 
      * \returns the current sheen amount, between 0 and 1 */
     float getSheen();
+
+    void setSheenTexture(Texture *texture);
+    void clearSheenTexture();
 
     /** Mix between white and using base color for sheen reflection. 
      * \param sheen_tint controls the mix between white and base color for sheen reflection. */
@@ -238,6 +283,9 @@ class Material : public StaticFactory
      * \returns the current value used to mix between white and base color for sheen reflection. */
     float getSheenTint();
 
+    void setSheenTintTexture(Texture *texture);
+    void clearSheenTintTexture();
+
     /** Extra white specular layer on top of others. This is useful for materials like car paint and the like. 
      * \param clearcoat controls the influence of clear coat, between 0 and 1 */
     void setClearcoat(float clearcoat);
@@ -245,6 +293,9 @@ class Material : public StaticFactory
     /** Extra white specular layer on top of others. This is useful for materials like car paint and the like. 
      * \returns the current clear coat influence */
     float getClearcoat();
+
+    void setClearcoatTexture(Texture *texture);
+    void clearClearcoatTexture();
     
     /** Microfacet surface roughness of clearcoat specular. 
      * \param clearcoat_roughness the roughness of the microfacet distribution influencing the clearcoat, between 0 and 1 */
@@ -253,6 +304,9 @@ class Material : public StaticFactory
     /** Microfacet surface roughness of clearcoat specular. 
      * \returns the current clearcoat microfacet roughness value, between 0 and 1 */
     float getClearcoatRoughness();
+
+    void setClearcoatRoughnessTexture(Texture *texture);
+    void clearClearcoatRoughnessTexture();
     
     /** Index of refraction used for transmission events. 
      * \param ior the index of refraction. A value of 1 results in no refraction. For reference, the IOR of water is roughly 1.33, and for glass is roughly 1.57. */
@@ -261,6 +315,9 @@ class Material : public StaticFactory
     /** Index of refraction used for transmission events. 
      * \returns the current index of refraction. */
     float getIor();
+
+    void setIorTexture(Texture *texture);
+    void clearIorTexture();
     
     /** Controls how much the surface looks like glass. Note, metallic takes precedence.
      * \param transmission Mixes between a fully opaque surface at zero to fully glass like transmissions at one. */
@@ -269,6 +326,9 @@ class Material : public StaticFactory
     /** Controls how much the surface looks like glass. Note, metallic takes precedence.
      * \returns the current specular transmission of the surface. */
     float getTransmission();
+
+    void setTransmissionTexture(Texture *texture);
+    void clearTransmissionTexture();
     
     /** The roughness of the interior surface used for transmitted light. 
      * \param transmission_roughness Controls the roughness value used for transmitted light. */
@@ -277,25 +337,12 @@ class Material : public StaticFactory
     /** The roughness of the interior surface used for transmitted light. 
      * \returns the current roughness value used for transmitted light. */
     float getTransmissionRoughness();
+
+    void setTransmissionRoughnessTexture(Texture *texture);
+    void clearTransmissionRoughnessTexture();
     
-    
-
-    // /* Certain constant material properties can be replaced with texture lookups. */
-    // void set_base_color_texture(uint32_t texture_id);
-    // void set_base_color_texture(Texture *texture);
-    // void clear_base_color_texture();
-
-    // void set_roughness_texture(uint32_t texture_id);
-    // void set_roughness_texture(Texture *texture);
-    // void clear_roughness_texture();
-
-    // void set_bump_texture(uint32_t texture_id);
-    // void set_bump_texture(Texture *texture);
-    // void clear_bump_texture();
-
-    // void set_alpha_texture(uint32_t texture_id);
-    // void set_alpha_texture(Texture *texture);
-    // void clear_alpha_texture();
+    void setBumpTexture(Texture *texture);
+    void clearBumpTexture();
 
     // /* A uniform base color can be replaced with per-vertex colors as well. */
     // void use_vertex_colors(bool use);
@@ -320,7 +367,7 @@ class Material : public StaticFactory
     Material(std::string name, uint32_t id);
 
     /* TODO */
-    static std::shared_ptr<std::mutex> creationMutex;
+    static std::shared_ptr<std::mutex> editMutex;
 
     /* TODO */
     static bool factoryInitialized;
