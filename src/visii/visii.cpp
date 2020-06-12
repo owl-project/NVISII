@@ -1162,13 +1162,13 @@ void initializeHeadless()
 
         while (!close)
         {
-            updateComponents();
-            updateLaunchParams();
-            traceRays();
-            if (OptixData.enableDenoiser)
-            {
-                denoiseImage();
-            }
+            // updateComponents();
+            // updateLaunchParams();
+            // traceRays();
+            // if (OptixData.enableDenoiser)
+            // {
+            //     denoiseImage();
+            // }
             processCommandQueue();
             if (close) break;
         }
