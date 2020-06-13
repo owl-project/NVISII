@@ -106,7 +106,9 @@ for i in range(opt.nblights):
         y_lim = [-5, 5],
         z_lim = [8, 20]
     )
-    random_light("L"+str(i))    
+    random_light("L"+str(i),
+        intensity_lim = [50000,100000]
+        )    
 
 
 # create red teapot
@@ -161,7 +163,7 @@ for i_frame in range(opt.nbframes):
     # randomize the lights
     for i in range(opt.nblights):
         random_intensity("L"+str(i),
-            intensity_lim  = [5000, 10000]
+            intensity_lim  = [50000, 100000]
             )
         random_color("L"+str(i))
 
