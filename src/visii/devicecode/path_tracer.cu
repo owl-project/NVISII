@@ -208,6 +208,47 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     return ray;
 }
 
+__device__
+void initializeRenderData(float3 &renderData)
+{
+    // these might change in the future...
+    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) {
+        renderData = make_float3(FLT_MAX);
+    }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::DEPTH) {
+        renderData = make_float3(FLT_MAX);
+    }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::POSITION) {
+        renderData = make_float3(FLT_MAX);
+    }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::NORMAL) {
+        renderData = make_float3(FLT_MAX);
+    }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::ENTITY_ID) {
+        renderData = make_float3(FLT_MAX);
+    }
+}
+
+__device__
+void saveRenderData(float3 &renderData, int bounce, float depth, float3 w_p, float3 w_n, int entity_id)
+{
+    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
+    if (bounce != optixLaunchParams.renderDataBounce) return;
+
+    if (optixLaunchParams.renderDataMode == RenderDataFlags::DEPTH) {
+        renderData = make_float3(depth);
+    }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::POSITION) {
+        renderData = w_p;
+    }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::NORMAL) {
+        renderData = w_n;
+    }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::ENTITY_ID) {
+        renderData = make_float3(float(entity_id));
+    }
+}
+
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
@@ -227,9 +268,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     float3 primaryAlbedo = make_float3(0.f);
     float3 primaryNormal = make_float3(0.f);
     
+    float3 renderData = make_float3(0.f);
+    initializeRenderData(renderData);
+    
     // For potentially several samples per pixel... 
+    // Update: for machine learning applications, it's important there be only 1SPP.
+    // Metadata like depth or IDs dont work with multiple SPP.
     #define SPP 1
-    for (uint32_t rid = 0; rid < SPP; ++rid) {
+    for (uint32_t rid = 0; rid < SPP; ++rid) 
+    {
 
         // Trace an initial ray through the scene
         owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng);
@@ -271,6 +318,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 v_z = -v_z;
             }
             ortho_basis(v_x, v_y, v_z);
+
+            // For segmentations, metadata extraction for applications like denoising or ML training
+            saveRenderData(renderData, bounce, payload.tHit, hit_p, v_z, payload.entityID);
 
             // Load information about the hit entity
             EntityStruct entity = optixLaunchParams.entities[payload.entityID];
@@ -486,4 +536,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     vec4 accumNormal = (newNormal + float(optixLaunchParams.frameID) * oldNormal) / float(optixLaunchParams.frameID + 1);
     optixLaunchParams.albedoBuffer[fbOfs] = accumAlbedo;
     optixLaunchParams.normalBuffer[fbOfs] = accumNormal;
+
+    // Override framebuffer output if user requested to render metadata
+    if (optixLaunchParams.renderDataMode != RenderDataFlags::NONE) {
+        optixLaunchParams.frameBuffer[fbOfs] = vec4( renderData.x, renderData.y, renderData.z, 1.0f);
+    }
 }

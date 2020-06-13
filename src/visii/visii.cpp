@@ -19,6 +19,8 @@
 #include <thread>
 #include <future>
 #include <queue>
+#include <algorithm>
+#include <cctype>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -511,6 +513,8 @@ void initializeOptix(bool headless)
         { "textureObjects",      OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textureObjects)},
         { "GGX_E_AVG_LOOKUP",    OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_AVG_LOOKUP)},
         { "GGX_E_LOOKUP",        OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_LOOKUP)},
+        { "renderDataMode",      OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, renderDataMode)},
+        { "renderDataBounce",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, renderDataBounce)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = launchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
@@ -853,6 +857,8 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
     launchParamsSetRaw(OptixData.launchParams, "domeLightIntensity", &OptixData.LP.domeLightIntensity);
     launchParamsSetRaw(OptixData.launchParams, "environmentMapID", &OptixData.LP.environmentMapID);
+    launchParamsSetRaw(OptixData.launchParams, "renderDataMode", &OptixData.LP.renderDataMode);
+    launchParamsSetRaw(OptixData.launchParams, "renderDataBounce", &OptixData.LP.renderDataBounce);
     OptixData.LP.frameID ++;
 }
 
@@ -1158,18 +1164,112 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
     return frameBuffer;
 }
 
+std::string trim(const std::string& line)
+{
+    const char* WhiteSpace = " \t\v\r\n";
+    std::size_t start = line.find_first_not_of(WhiteSpace);
+    std::size_t end = line.find_last_not_of(WhiteSpace);
+    return start == end ? std::string() : line.substr(start, end - start + 1);
+}
+
+std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t frame, uint32_t bounce, std::string _option)
+{
+    std::vector<float> frameBuffer(width * height * 4);
+
+    auto readFrameBuffer = [&frameBuffer, width, height, frame, bounce, _option] () {
+        if (!ViSII.headlessMode) {
+            using namespace Libraries;
+            auto glfw = GLFW::Get();
+            glfw->resize_window("ViSII", width, height);
+            initializeFrameBuffer(width, height);
+        }
+
+        // remove trailing whitespace from option, convert to lowercase
+        std::string option = trim(_option);
+        std::transform(option.begin(), option.end(), option.begin(),
+            [](unsigned char c){ return std::tolower(c); });
+
+        if (option == std::string("none")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::NONE;
+        }
+        else if (option == std::string("depth")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DEPTH;
+        }
+        else if (option == std::string("position")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::POSITION;
+        }
+        else if (option == std::string("normal")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::NORMAL;
+        }
+        else if (option == std::string("entity_id")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::ENTITY_ID;
+        }
+        else {
+            throw std::runtime_error(std::string("Error, unknown option : \"") + _option + std::string("\". ")
+            + std::string("Available options are \"none\", \"depth\", \"position\", ") 
+            + std::string("\"normal\", and \"entity_id\""));
+        }
+        
+        resizeOptixFrameBuffer(width, height);
+        OptixData.LP.frameID = frame;
+        OptixData.LP.renderDataBounce = bounce;
+        updateComponents();
+        updateLaunchParams();
+        traceRays();
+        synchronizeDevices();
+
+        const glm::vec4 *fb = (const glm::vec4*) bufferGetPointer(OptixData.frameBuffer,0);
+        for (uint32_t test = 0; test < frameBuffer.size(); test += 4) {
+            frameBuffer[test + 0] = fb[test / 4].r;
+            frameBuffer[test + 1] = fb[test / 4].g;
+            frameBuffer[test + 2] = fb[test / 4].b;
+            frameBuffer[test + 3] = fb[test / 4].a;
+        }
+
+        synchronizeDevices();
+
+        OptixData.LP.renderDataMode = 0;
+        OptixData.LP.renderDataBounce = 0;
+        updateLaunchParams();
+    };
+
+    auto future = enqueueCommand(readFrameBuffer);
+    future.wait();
+
+    return frameBuffer;
+}
+
+void renderDataToHDR(uint32_t width, uint32_t height, uint32_t frame, uint32_t bounce, std::string field, std::string imagePath)
+{
+    std::vector<float> fb = renderData(width, height, frame, bounce, field);
+    stbi_flip_vertically_on_write(true);
+    stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
+}
+
 void renderToHDR(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath)
 {
-    std::vector<float> framebuffer = render(width, height, samplesPerPixel);
+    std::vector<float> fb = render(width, height, samplesPerPixel);
     stbi_flip_vertically_on_write(true);
-    stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, framebuffer.data());
-    // stbi_write_png(path.c_str(), curr_frame_size.x, curr_frame_size.y, /* num channels*/ 4, frameBuffer.data(), /* stride in bytes */ curr_frame_size.x * 4);
-    // memcpy(frameBuffer.data(), fb, frameBuffer.size() * sizeof(float));
+    stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
 }
 
 void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath)
 {
     std::vector<float> fb = render(width, height, samplesPerPixel);
+    std::vector<uint8_t> colors(4 * width * height);
+    for (size_t i = 0; i < (width * height); ++i) {       
+        colors[i * 4 + 0] = uint8_t(glm::clamp(fb[i * 4 + 0] * 255.f, 0.f, 255.f));
+        colors[i * 4 + 1] = uint8_t(glm::clamp(fb[i * 4 + 1] * 255.f, 0.f, 255.f));
+        colors[i * 4 + 2] = uint8_t(glm::clamp(fb[i * 4 + 2] * 255.f, 0.f, 255.f));
+        colors[i * 4 + 3] = uint8_t(glm::clamp(fb[i * 4 + 3] * 255.f, 0.f, 255.f));
+    }
+    stbi_flip_vertically_on_write(true);
+    stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
+}
+
+void renderDataToPNG(uint32_t width, uint32_t height, uint32_t frame, uint32_t bounce, std::string field, std::string imagePath)
+{
+    std::vector<float> fb = renderData(width, height, frame, bounce, field);
     std::vector<uint8_t> colors(4 * width * height);
     for (size_t i = 0; i < (width * height); ++i) {       
         colors[i * 4 + 0] = uint8_t(glm::clamp(fb[i * 4 + 0] * 255.f, 0.f, 255.f));
