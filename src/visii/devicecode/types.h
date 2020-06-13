@@ -18,6 +18,8 @@
 #define NUM_RAY_TYPES 2
 #define MAX_PATH_DEPTH 5
 
+#define FLT_MIN 1.175494e-38
+#define FLT_MAX 3.402823e+38
 // #ifdef __CUDA_ARCH__
 // typedef unsigned long long uint64_t;
 // typedef unsigned int uint32_t;
