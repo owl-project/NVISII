@@ -70,6 +70,20 @@ namespace std {
 #include "visii/mesh.h"
 %}
 
+/* -------- Ignores --------------*/
+%ignore Entity::initializeFactory();
+%ignore Entity::getFront();
+%ignore Entity::getFrontStruct();
+%ignore Entity::isFactoryInitialized();
+%ignore Entity::updateComponents();
+%ignore Entity::getStruct();
+%ignore Entity::getEditMutex();
+%ignore Entity::isDirty();
+%ignore Entity::isClean();
+%ignore Entity::markDirty();
+%ignore Entity::markClean();
+
+/* -------- Renames --------------*/
 %rename("%(undercase)s",%$isfunction) "";
 %rename("%(undercase)s",%$isclass) "";
 
@@ -90,6 +104,7 @@ namespace std {
 %include "visii/transform.h"
 %include "visii/material.h"
 %include "visii/mesh.h"
+
 
 
 // Cleanup on exit

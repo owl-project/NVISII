@@ -34,8 +34,9 @@ bool Transform::areAnyDirty()
 void Transform::markDirty() {
 	dirty = true;
 	anyDirty = true;
+	auto entityPointers = Entity::getFront();
 	for (auto &eid : entities) {
-		Entity::get(eid)->markDirty();
+		entityPointers[eid].markDirty();
 	}
 };
 
