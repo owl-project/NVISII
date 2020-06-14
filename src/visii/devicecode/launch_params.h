@@ -45,4 +45,16 @@ struct LaunchParams {
 
     cudaTextureObject_t GGX_E_AVG_LOOKUP;
     cudaTextureObject_t GGX_E_LOOKUP;
+
+    // Used to extract metadata from the renderer.
+    uint32_t renderDataMode = 0;
+    uint32_t renderDataBounce = 0;
+};
+
+enum RenderDataFlags : uint32_t { 
+  NONE = 0, 
+  DEPTH = 1, 
+  POSITION = 2,
+  NORMAL = 3,
+  ENTITY_ID = 4,
 };

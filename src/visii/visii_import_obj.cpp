@@ -5,6 +5,11 @@
 #include <map>
 #include <string>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <functional>
+#include <limits>
+
 #include <tiny_obj_loader.h>
 #include <glm/glm.hpp>
 #include <stb_image_write.h>
