@@ -83,17 +83,30 @@ namespace std {
 %ignore Entity::markDirty();
 %ignore Entity::markClean();
 
+%ignore Transform::initializeFactory();
+%ignore Transform::getFront();
+%ignore Transform::getFrontStruct();
+%ignore Transform::isFactoryInitialized();
+%ignore Transform::updateComponents();
+%ignore Transform::getStruct();
+%ignore Transform::getEditMutex();
+%ignore Transform::isDirty();
+%ignore Transform::isClean();
+%ignore Transform::markDirty();
+%ignore Transform::markClean();
+
 /* -------- Renames --------------*/
 %rename("%(undercase)s",%$isfunction) "";
 %rename("%(undercase)s",%$isclass) "";
 
-%feature("kwargs") camera;
-%feature("kwargs") texture;
-%feature("kwargs") entity;
-%feature("kwargs") light;
-%feature("kwargs") transform;
-%feature("kwargs") material;
-%feature("kwargs") mesh;
+%feature("kwargs");
+//  transform;
+// // %feature("kwargs") camera;
+// // %feature("kwargs") texture;
+// // %feature("kwargs") entity;
+// // %feature("kwargs") light;
+// // %feature("kwargs") material;
+// // %feature("kwargs") mesh;
 
 %include "visii/visii.h"
 %include "visii/utilities/static_factory.h"

@@ -247,8 +247,8 @@ class Mesh : public StaticFactory
 		 */
 		static Mesh* createPlane(
 			std::string name,
-			vec2 size     = {1.0, 1.0},
-			ivec2 segments = {8, 8});
+			vec2 size     = vec2(1.0, 1.0),
+			ivec2 segments = ivec2(8, 8));
 
 		/** Creates a regular icosahedron centered at the origin and with a given radius.
 		 *
@@ -290,9 +290,9 @@ class Mesh : public StaticFactory
 		static Mesh* createRoundedBox(
 			std::string name, 
 			float radius   = 0.25, 
-			vec3  size     = {0.75f, 0.75f, 0.75f}, 
+			vec3  size     = vec3(0.75f, 0.75f, 0.75f), 
 			int   slices   = 4, 
-			ivec3 segments = {1,1,1});
+			ivec3 segments = ivec3(1,1,1));
 	
 		/** Creates a sphere of the given radius, centered around the origin, subdivided around the z-axis in slices and along the z-axis in segments.
 		 * 
@@ -518,9 +518,9 @@ class Mesh : public StaticFactory
 			std::string name, 
 			std::vector<glm::vec3> path, 
 			float radius = 1.0, 
-			vec2 size = {.75, .75},
+			vec2 size = vec2(.75, .75),
 			int slices = 4,
-			ivec2 segments = {8, 8});
+			ivec2 segments = ivec2(8, 8));
 
 		/** Creates a tube from a rounded rectangle extruded linearly along the specified path.
 		 * 
@@ -533,8 +533,8 @@ class Mesh : public StaticFactory
 		static Mesh* createRectangleTubeFromPolyline(
 			std::string name, 
 			std::vector<glm::vec3> path, 
-			vec2 size = {1., 1.},
-			ivec2 segments = {8, 8});
+			vec2 size = vec2(1., 1.),
+			ivec2 segments = ivec2(8, 8));
 
 		/// Creates a mesh component from an OBJ file (ignoring any .mtl files) 
 		/// @param name The name (used as a primary key) for this mesh component

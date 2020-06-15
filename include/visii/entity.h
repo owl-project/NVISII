@@ -89,7 +89,7 @@ public:
 	 * @param mesh If connected, a mesh component describes the geometry of the entity to be rendered. 
 	 * @param light If connected, a light component indicates that any connected geometry should act like a light source.
 	 * @param camera If connected, a camera component indicates that the current entity can be used to view into the scene.
-     * @returns an Entity allocated by the renderer.
+     * @returns a reference to an Entity
 	 */
 	static Entity* create(std::string name, 
 		Transform* transform = nullptr, 
@@ -101,7 +101,7 @@ public:
 
 	/**
      * @param name The name of the entity to get
-	 * @returns an Entity who's name matches \p name 
+	 * @returns an Entity who's name matches the given name 
 	 */
 	static Entity* get(std::string name);
 
