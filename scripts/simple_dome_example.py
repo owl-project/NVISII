@@ -42,7 +42,7 @@ visii.initialize_headless()
 
 if not opt.noise is True: 
     visii.enable_denoiser()
-
+#%%
 camera_entity = visii.entity.create(
     name="my_camera_entity",
     transform=visii.transform.create("my_camera_transform"),
@@ -58,8 +58,8 @@ visii.set_camera_entity(camera_entity)
 camera_entity.get_camera().use_perspective_from_fov(0.785398, 1.0, .01)
 camera_entity.get_camera().set_view(
     visii.lookAt(
-        visii.vec3(4,0,0.5),
-        visii.vec3(0,0,1),
+        visii.vec3(6,0,1),
+        visii.vec3(0,0,2),
         visii.vec3(0,0,1),
     )
 )
@@ -80,42 +80,24 @@ floor = visii.entity.create(
     material = visii.material.create("floor")
 )
 
-floor.get_transform().set_scale(1000)
-floor.get_material().set_roughness(1.0)
-
-
-
 #%%
-
-
-
-soup_mesh = visii.mesh.create_from_obj("soup", "models/alphabet_soup/textured.obj")
-soup_texture = visii.texture.create_from_image('soup',"models/alphabet_soup/texture_map.png")
-
 mesh1 = visii.entity.create(
     name="mesh1",
-    # mesh = visii.mesh.create_sphere("mesh1", 1, 128, 128),
-    mesh = soup_mesh,
+    mesh = visii.mesh.create_sphere("mesh1", 1, 128, 128),
     transform = visii.transform.create("mesh1"),
     material = visii.material.create("mesh1")
 )
 
 random_material('mesh1')
 
-# mesh1.get_material().set_metallic(0)  # should 0 or 1      
-# mesh1.get_material().set_transmission(random.uniform(0.9,1))  # should 0 or 1   
-# mesh1.get_material().set_roughness(random.uniform(0,.1)) # default is 1
-
 mesh1.get_material().set_metallic(0)  # should 0 or 1      
-mesh1.get_material().set_transmission(0)  # should 0 or 1      
-mesh1.get_material().set_roughness(random.uniform(0,1)) # default is 1  
-mesh1.get_material().set_base_color_texture(soup_texture)
+mesh1.get_material().set_transmission(random.uniform(0.9,1))  # should 0 or 1   
+mesh1.get_material().set_roughness(random.uniform(0,.1)) # default is 1
+
+
+
 
 mesh1.get_transform().set_position(0.0, 0.0, 1.0)
-mesh1.get_transform().set_scale(0.01)
-
-
-# LIGHT
 
 
 areaLight1 = visii.entity.create(
@@ -128,7 +110,11 @@ areaLight1.get_light().set_intensity(10000.)
 areaLight1.get_transform().set_position(0, 0, 5)
 areaLight1.get_light().set_temperature(4000)
 
+visii.set_dome_light_intensity(0.1)
+#%%
 
+floor.get_transform().set_scale(1000)
+floor.get_material().set_roughness(1.0)
 
 
 #%%

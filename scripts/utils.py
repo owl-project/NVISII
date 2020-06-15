@@ -7,7 +7,8 @@ def add_random_obj(name = "name",
     x_lim = [-1,1],
     y_lim = [-1,1],
     z_lim = [-1,1],
-    scale_lim = [0.01,1]
+    scale_lim = [0.01,1],
+    obj_id = None,
     ):
     
     # obj = visii.entity.get(name)
@@ -17,8 +18,8 @@ def add_random_obj(name = "name",
         transform = visii.transform.create(name),
         material = visii.material.create(name)
     )
-
-    obj_id = random.randint(0,15)
+    if obj_id is None:
+        obj_id = random.randint(0,15)
 
     mesh = None
     if obj_id == 0:
@@ -37,7 +38,8 @@ def add_random_obj(name = "name",
         mesh = add_random_obj.create_teapotahedron
     if obj_id == 3:
         if add_random_obj.create_box is None:
-            add_random_obj.create_box = visii.mesh.create_box(name) 
+            add_random_obj.create_box = visii.mesh.create_box(name)
+             
         mesh = add_random_obj.create_box
     if obj_id == 4:
         if add_random_obj.create_capped_cone is None:
@@ -102,6 +104,7 @@ def add_random_obj(name = "name",
 
     obj.get_transform().set_scale(random.uniform(scale_lim[0],scale_lim[1]))
     
+    return obj
 add_random_obj.rcolor = randomcolor.RandomColor()
 add_random_obj.create_sphere = None
 add_random_obj.create_torus_knot = None

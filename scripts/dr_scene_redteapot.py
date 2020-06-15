@@ -207,9 +207,11 @@ for i_frame in range(opt.nbframes):
             x_lim = [-1.8,1.8],
             y_lim = [-1.8,1.8],
             z_lim = [1,3],
-            speed_lim = [0.05,0.1])
-    random_scale('teapot', scale_lim = [scale,scale+0.1], speed_lim = [0.001,0.003])
-    random_rotation('teapot')
+            speed_lim = [0.1,0.2])
+    random_scale('teapot', scale_lim = [scale-0.15,scale+0.1], speed_lim = [0.003,0.008])
+    random_rotation('teapot',
+        speed_lim = [0.1,0.2]
+        )
     # random_color("teapot")
 
     # Find the positions in image space of the teapot

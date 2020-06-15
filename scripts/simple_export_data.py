@@ -24,6 +24,9 @@ parser.add_argument('--height',
 parser.add_argument('--noise',
                     action='store_true',
                     default=False)
+parser.add_argument('--outf', 
+                    default="outf")
+
 opt = parser.parse_args()
 
 
@@ -42,7 +45,7 @@ visii.initialize_headless()
 
 if not opt.noise is True: 
     visii.enable_denoiser()
-
+#%%
 camera_entity = visii.entity.create(
     name="my_camera_entity",
     transform=visii.transform.create("my_camera_transform"),
@@ -115,6 +118,9 @@ mesh1.get_transform().set_position(0.0, 0.0, 1.0)
 mesh1.get_transform().set_scale(0.01)
 
 
+print(mesh1.get_id())
+
+
 # LIGHT
 
 
@@ -134,16 +140,47 @@ areaLight1.get_light().set_temperature(4000)
 #%%
 # visii.enable_denoiser()
 
-# Read and save the image 
-x = visii.render(width=WIDTH, height=HEIGHT, samples_per_pixel=SAMPLES_PER_PIXEL)
-# x = np.array(x).reshape(WIDTH,HEIGHT,4)
-x = np.array(x).reshape(HEIGHT,WIDTH,4)
+i_frame = 0 
 
-# make sure the image is clamped 
-x[x>1.0] = 1.0
-x[x<0] = 0
+visii.render_data_to_hdr(
+                    width=int(opt.width), 
+                    height=int(opt.height), 
+                    frame=int(0),
+                    bounce=int(0),
+                    options="depth",
+                    image_path=f"{opt.outf}/{str(i_frame).zfill(5)}_depth.hdr")
 
-img = Image.fromarray((x*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
-img.save("tmp.png")
+visii.render_data_to_hdr(
+                    width=int(opt.width), 
+                    height=int(opt.height), 
+                    frame=int(0),
+                    bounce=int(0),
+                    options="normal",
+                    image_path=f"{opt.outf}/{str(i_frame).zfill(5)}_normal.hdr")
+
+visii.render_data_to_hdr(
+                    width=int(opt.width), 
+                    height=int(opt.height), 
+                    frame=int(0),
+                    bounce=int(0),
+                    options="entity_id",
+                    image_path=f"{opt.outf}/{str(i_frame).zfill(5)}_segmentation.hdr")
+
+visii.render_data_to_hdr(
+                    width=int(opt.width), 
+                    height=int(opt.height), 
+                    frame=int(0),
+                    bounce=int(0),
+                    options="position",
+                    image_path=f"{opt.outf}/{str(i_frame).zfill(5)}_position.hdr")
+
+visii.render_to_png(
+                    width=int(opt.width), 
+                    height=int(opt.height), 
+                    samples_per_pixel = int(opt.spp),   
+                    # frame=int(0),
+                    # bounce=int(0),
+                    # options="none",
+                    image_path=f"{opt.outf}/{str(i_frame).zfill(5)}.png")
 
 visii.cleanup()
