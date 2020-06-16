@@ -124,22 +124,57 @@ void Material::updateComponents()
 	anyDirty = false;
 } 
 
-void Material::cleanUp()
+void Material::clearAll()
 {
 	if (!isFactoryInitialized()) return;
 
 	for (auto &material : materials) {
 		if (material.initialized) {
-			Material::remove(material.id);
+			Material::remove(material.name);
 		}
 	}
-
-	factoryInitialized = false;
 }	
 
 /* Static Factory Implementations */
-Material* Material::create(std::string name) {
+Material* Material::create(std::string name,
+	vec3  base_color,
+	float roughness,
+	float metallic,
+	float specular,
+	float specular_tint,
+	float transmission,
+	float transmission_roughness,
+	float ior,
+	float alpha,
+	vec3  subsurface_radius,
+	vec3  subsurface_color,
+	float subsurface,
+	float anisotropic,
+	float anisotropic_rotation,
+	float sheen,
+	float sheen_tint,
+	float clearcoat,
+	float clearcoat_roughness)
+{
 	auto mat = StaticFactory::create(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
+	mat->setBaseColor(base_color);
+	mat->setRoughness(roughness);
+	mat->setMetallic(metallic);
+	mat->setSpecular(specular);
+	mat->setSpecularTint(specular_tint);
+	mat->setTransmission(transmission);
+	mat->setTransmissionRoughness(transmission_roughness);
+	mat->setIor(ior);
+	mat->setAlpha(alpha);
+	mat->setSubsurfaceRadius(subsurface_radius);
+	mat->setSubsurfaceColor(subsurface_color);
+	mat->setSubsurface(subsurface);
+	mat->setAnisotropic(anisotropic);
+	mat->setAnisotropicRotation(anisotropic_rotation);
+	mat->setSheen(sheen);
+	mat->setSheenTint(sheen_tint);
+	mat->setClearcoat(clearcoat);
+	mat->setClearcoatRoughness(clearcoat_roughness);
 	anyDirty = true;
 	return mat;
 }
@@ -153,17 +188,8 @@ Material* Material::get(std::string name) {
 	return StaticFactory::get(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
 }
 
-Material* Material::get(uint32_t id) {
-	return StaticFactory::get(editMutex, id, "Material", lookupTable, materials, MAX_MATERIALS);
-}
-
 void Material::remove(std::string name) {
 	StaticFactory::remove(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
-	anyDirty = true;
-}
-
-void Material::remove(uint32_t id) {
-	StaticFactory::remove(editMutex, id, "Material", lookupTable, materials, MAX_MATERIALS);
 	anyDirty = true;
 }
 
@@ -184,13 +210,6 @@ void Material::setBaseColor(glm::vec3 color) {
 	materialStructs[id].base_color.r = color.r;
 	materialStructs[id].base_color.g = color.g;
 	materialStructs[id].base_color.b = color.b;
-	markDirty();
-}
-
-void Material::setBaseColor(float r, float g, float b) {
-	materialStructs[id].base_color.r = r;
-	materialStructs[id].base_color.g = g;
-	materialStructs[id].base_color.b = b;
 	markDirty();
 }
 
@@ -219,13 +238,6 @@ void Material::setSubsurfaceColor(glm::vec3 color) {
 	markDirty();
 }
 
-void Material::setSubsurfaceColor(float r, float g, float b) {
-	materialStructs[id].subsurface_color.r = r;
-	materialStructs[id].subsurface_color.g = g;
-	materialStructs[id].subsurface_color.b = b;
-	markDirty();
-}
-
 glm::vec3 Material::getSubsurfaceColor() {
 	return glm::vec3(materialStructs[id].subsurface_color.r, 
 					 materialStructs[id].subsurface_color.g, 
@@ -246,11 +258,6 @@ void Material::clearSubsurfaceColorTexture() {
 
 void Material::setSubsurfaceRadius(glm::vec3 radius) {
 	materialStructs[id].subsurface_radius = glm::vec4(radius.x, radius.y, radius.z, 0.0);
-	markDirty();
-}
-
-void Material::setSubsurfaceRadius(float x, float y, float z) {
-	materialStructs[id].subsurface_radius = glm::vec4(x, y, z, 0.0);
 	markDirty();
 }
 

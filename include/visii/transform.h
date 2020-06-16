@@ -146,11 +146,7 @@ class Transform : public StaticFactory
     /** @returns the number of allocated transforms */
 	  static uint32_t getCount();
 
-    /** 
-     * Deletes the transform who's name matches the given name 
-     * 
-     * @param name A unique name used to lookup the transform for deletion.
-     */
+    /** @param name The name of the transform to remove */
     static void remove(std::string name);
 
     /** Allocates the tables used to store all transform components */
@@ -168,10 +164,10 @@ class Transform : public StaticFactory
     /** Clears any existing transform components. */
     static void clearAll();
 
-    /** @returns True if the Transform has been modified since the previous frame, and False otherwise */
+    /** @return True if this transform has been modified since the previous frame, and False otherwise */
 	  bool isDirty() { return dirty; }
 
-    /** Indicates whether or not any transforms are "out of date" and need to be updated through the "update components" function*/
+    /** @return True if any the transform has been modified since the previous frame, and False otherwise */
 	  static bool areAnyDirty();
 
     /** @return True if the Transform has not been modified since the previous frame, and False otherwise */

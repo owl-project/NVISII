@@ -95,6 +95,18 @@ namespace std {
 %ignore Transform::markDirty();
 %ignore Transform::markClean();
 
+%ignore Material::initializeFactory();
+%ignore Material::getFront();
+%ignore Material::getFrontStruct();
+%ignore Material::isFactoryInitialized();
+%ignore Material::updateComponents();
+%ignore Material::getStruct();
+%ignore Material::getEditMutex();
+%ignore Material::isDirty();
+%ignore Material::isClean();
+%ignore Material::markDirty();
+%ignore Material::markClean();
+
 /* -------- Renames --------------*/
 %rename("%(undercase)s",%$isfunction) "";
 %rename("%(undercase)s",%$isclass) "";

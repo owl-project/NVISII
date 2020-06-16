@@ -134,7 +134,7 @@ std::vector<Entity*> importOBJ(std::string name_prefix, std::string filepath, st
         if (materials[i].specular_texname.length() > 0)
             texture_paths.insert({materials[i].specular_texname, false});
 
-        materialComponents[i]->setBaseColor(materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]);
+        materialComponents[i]->setBaseColor(vec3(materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]));
         materialComponents[i]->setRoughness(1.0);
         materialComponents[i]->setMetallic(0.0);
 

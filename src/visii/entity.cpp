@@ -62,8 +62,9 @@ void Entity::setTransform(Transform* transform)
 
 void Entity::clearTransform()
 {
+	auto transforms = Transform::getFront();
 	if (entityStructs[id].transform_id != -1) {
-		Transform::get(entityStructs[id].transform_id)->entities.erase(id);
+		transforms[entityStructs[id].transform_id].entities.erase(id);
 	}
 	entityStructs[id].transform_id = -1;
 	markDirty();
@@ -73,10 +74,10 @@ Transform* Entity::getTransform()
 {
 	if ((entityStructs[id].transform_id < 0) || (entityStructs[id].transform_id >= MAX_TRANSFORMS)) 
 		return nullptr;
-	auto transform = Transform::get(entityStructs[id].transform_id); 
-	if (!transform->isFactoryInitialized())
+	auto transforms = Transform::getFront(); 
+	if (!transforms[entityStructs[id].transform_id].isInitialized())
 		return nullptr;
-	return transform;
+	return &transforms[entityStructs[id].transform_id];
 }
 
 void Entity::setCamera(Camera *camera) 
@@ -125,9 +126,9 @@ Material* Entity::getMaterial()
 {
 	if ((entityStructs[id].material_id < 0) || (entityStructs[id].material_id >= MAX_MATERIALS)) 
 		return nullptr;
-	auto material = Material::get(entityStructs[id].material_id);
-	if (!material->isFactoryInitialized()) return nullptr;
-	return material;
+	auto &material = Material::getFront()[entityStructs[id].material_id];
+	if (!material.isInitialized()) return nullptr;
+	return &material;
 }
 
 void Entity::setLight(Light* light) 

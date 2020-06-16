@@ -37,61 +37,92 @@ class Material : public StaticFactory
 {
   friend class StaticFactory;
   public:
-    /** Constructs a material with the given name.
-     * \returns a reference to a material component
-     * \param name A unique name for this material.
+    /**
+     * Constructs a material with the given name.
+     * 
+     * @returns a reference to a material component
+     * @param name A unique name for this material.
+     * @param base_color The diffuse or metal surface color.
+     * @param roughness Microfacet roughness of the surface for diffuse and specular reflection. 
+     * @param metallic Blends between a non-metallic and metallic material model. 
+     * @param specular The amount of dielectric specular reflection. 
+     * @param specular_tint Tints the facing specular reflection using the base color, while glancing reflection remains white.
+     * @param transmission Controls how much the surface looks like glass. Note, metallic takes precedence.
+     * @param transmission_roughness The roughness of the interior surface used for transmitted light. 
+     * @param ior Index of refraction used for transmission events.
+     * @param alpha The transparency of the surface, independent of transmission.
+     * @param subsurface_radius Average distance that light scatters below the surface
+     * @param subsurface_color The subsurface scattering base color. 
+     * @param subsurface Mix between diffuse and subsurface scattering. 
+     * @param anisotropic The amount of anisotropy for specular reflection.
+     * @param anisotropic_rotation The angle of anisotropy.
+     * @param sheen Amount of soft velvet like reflection near edges, for simulating materials such as cloth. 
+     * @param sheen_tint Mix between white and using base color for sheen reflection. 
+     * @param clearcoat Extra white specular layer on top of others.
+     * @param clearcoat_roughness Microfacet surface roughness of clearcoat specular. 
     */
-    static Material* create(std::string name);
+    static Material* create(std::string name,
+      vec3  base_color = vec3(.8f, .8f, .8f),
+      float roughness = .5f,
+      float metallic = 0.f, 
+      float specular = .5f,
+      float specular_tint = 0.f,
+      float transmission = 0.f, 
+      float transmission_roughness = 0.f, 
+      float ior = 1.45f, 
+      float alpha = 1.0f, 
+      vec3  subsurface_radius = vec3(1.0, .2, .1),
+      vec3  subsurface_color = vec3(0.8f, 0.8f, 0.8f),
+      float subsurface = 0.f,
+      float anisotropic = 0.f, 
+      float anisotropic_rotation = 0.f,
+      float sheen = 0.f,
+      float sheen_tint = 0.5f, 
+      float clearcoat = 0.f,
+      float clearcoat_roughness = .03f);
 
-    /** Gets a material by name 
-     * \returns a material who's primary name key matches \p name 
-     * \param name A unique name used to lookup this material. */
+    /**
+     * Gets a material by name 
+     * 
+     * @returns a material who's primary name key matches \p name 
+     * @param name A unique name used to lookup this material. 
+    */
     static Material* get(std::string name);
 
-    /** Gets a material by id 
-     * \returns a material who's primary id key matches \p id 
-     * \param id A unique id used to lookup this material. */
-    static Material* get(uint32_t id);
-
-    /** \returns a pointer to the table of MaterialStructs required for rendering */
+    /** @returns a pointer to the table of MaterialStructs */
     static MaterialStruct* getFrontStruct();
 
-    /** \returns a pointer to the table of material components */
+    /** @returns a pointer to the table of Material components */
     static Material* getFront();
 
-    /** \returns the number of allocated materials */
+    /** @returns the number of allocated materials */
 	  static uint32_t getCount();
 
-    /** Deletes the material who's primary name key matches \p name 
-     * \param name A unique name used to lookup the material for deletion.*/
+    /** @param name The name of the material to remove */
     static void remove(std::string name);
-
-    /** Deletes the material who's primary id key matches \p id 
-     * \param id A unique id used to lookup the material for deletion.*/
-    static void remove(uint32_t id);
 
     /** Allocates the tables used to store all material components */
     static void initializeFactory();
 
-    /** \return True if the tables used to store all material components have been allocated, and False otherwise */
+    /** @returns True if the tables used to store all material components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
 
-    /** \return True the current material is a valid, initialized material, and False if the material was cleared or removed. */
+    /** @returns True the current material is a valid, initialized material, and False if the material was cleared or removed. */
 	  bool isInitialized();
 
     /** Iterates through all material components, computing material metadata for rendering purposes. */
     static void updateComponents();
 
-    /** Frees any tables used to store material components */
-    static void cleanUp();
+    /** Clears any existing material components.*/
+    static void clearAll();	
 
-    /** \return True if this material has been modified since the previous frame, and False otherwise */
+    /** @return True if this material has been modified since the previous frame, and False otherwise */
     bool isDirty() { return dirty; }
     
-    /** \return True if any the material has been modified since the previous frame, and False otherwise */
+    /** @return True if any the material has been modified since the previous frame, and False otherwise */
     static bool areAnyDirty();
 
-    /** \return True if the material has not been modified since the previous frame, and False otherwise */
+    /** @return True if the material has not been modified since the previous frame, and False otherwise */
     bool isClean() { return !dirty; }
 
     /** Tags the current component as being modified since the previous frame. */
@@ -100,6 +131,7 @@ class Material : public StaticFactory
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
 
+    /** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
     static std::shared_ptr<std::mutex> getEditMutex();
 
     /** Returns a json string representation of the current component */
@@ -110,252 +142,467 @@ class Material : public StaticFactory
 
     /* Accessors / Mutators */
     
-    /** The diffuse or metal surface color. Ignored if a base color texture is set.
-      * \param color a red, green, blue color intensity vector, usually between 0 and 1 */
+    /** 
+     * The diffuse or metal surface color. Ignored if a base color texture is set.
+     * 
+     * @param color a red, green, blue color intensity vector, usually between 0 and 1 
+    */
     void setBaseColor(vec3 color);
     
-    /** The diffuse or metal surface color. Ignored if a base color texture is set.
-      * \param r red intensity, usually between 0 and 1
-      * \param g green intensity, usually between 0 and 1
-      * \param b blue intensity, usually between 0 and 1 */
-    void setBaseColor(float r, float g, float b);
-
-    /** The diffuse or metal surface color. Ignored if a base color texture is set.
-      * \returns the color intensity vector */
-    vec3 getBaseColor();
-
-    /** The diffuse or metal surface color. Overrides any existing constant base color. */
+    /** 
+     * The diffuse or metal surface color. Texture is expected to be RGB. Overrides any existing constant base color. 
+     * 
+     * @param texture An RGB texture component whose values range between 0 and 1. Alpha channel is ignored.
+    */
     void setBaseColorTexture(Texture *texture);
 
     /** Disconnects the base color texture, reverting back to any existing constant base color*/
     void clearBaseColorTexture();
 
-    /** Mix between diffuse and subsurface scattering. 
-      * \param subsurface Rather than being a simple mix between Diffuse and Subsurface Scattering, 
-      * this value controls a multiplier for the Subsurface Radius. */
+    /** 
+     * The diffuse or metal surface color. Ignored if a base color texture is set.
+     *
+     * @returns the color intensity vector 
+    */
+    vec3 getBaseColor();
+
+    /** 
+     * Mix between diffuse and subsurface scattering. 
+     * 
+     * @param subsurface Rather than being a simple mix between Diffuse and Subsurface Scattering, 
+     * this value controls a multiplier for the Subsurface Radius. 
+    */
     void setSubsurface(float subsurface);
 
-    /** Mix between diffuse and subsurface scattering. 
-     * \returns the current subsurface radius multiplier. */
-    float getSubsurface();
-
-    /** Mix between diffuse and subsurface scattering. */
+    /** 
+     * Mix between diffuse and subsurface scattering. Overrides any existing constant subsurface 
+     * 
+     * @param texture A grayscale texture component containing subsurface radius multipliers. G,B, and A channels ignored.
+     */
     void setSubsurfaceTexture(Texture *texture);
+
+    /** Disconnects the subsurface texture, reverting back to any existing constant subsurface */
     void clearSubsurfaceTexture();
 
-    /** Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
-      *  as light bleeds into shadows and through the object. The scattering distance is specified separately 
-      *  for the RGB channels, to render materials such as skin where red light scatters deeper. 
-      *  \param subsurface_radius control the subsurface radius. The X, Y and Z values of this vector are mapped to the R, G and B radius values, respectively. */
+    /** 
+     * Mix between diffuse and subsurface scattering. 
+     * 
+     * @returns the current subsurface radius multiplier. 
+    */
+    float getSubsurface();
+
+    /** 
+     * Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
+     * as light bleeds into shadows and through the object. The scattering distance is specified separately 
+     * for the RGB channels, to render materials such as skin where red light scatters deeper. 
+     *
+     * @param subsurface_radius control the subsurface radius. The X, Y and Z values of this vector are mapped to the R, G and B radius values, respectively. 
+    */
     void setSubsurfaceRadius(vec3 subsurfaceRadius);
 
-    /** Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
-      *  as light bleeds into shadows and through the object. The scattering distance is specified separately 
-      *  for the RGB channels, to render materials such as skin where red light scatters deeper. 
-      *  \param r control the red subsurface radius 
-      *  \param g control the green subsurface radius
-      *  \param b control the blue subsurface radius */
-    void setSubsurfaceRadius(float r, float g, float b);
-
-    /** Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
-      *  as light bleeds into shadows and through the object. 
-      * \returns The subsurface scattering distance is specified separately for the RGB channels. */
-    vec3 getSubsurfaceRadius();
-
+    /** 
+     * Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
+     * as light bleeds into shadows and through the object. Overrides any existing constant subsurface radius 
+     * 
+     * @param texture An RGB texture component controlling the subsurface radius in x, y, and z. Alpha channel is ignored.
+    */
     void setSubsurfaceRadiusTexture(Texture *texture);
+
+    /** Disconnects the subsurface radius texture, reverting back to any existing constant subsurface radius */
     void clearSubsurfaceRadiusTexture();
 
-    /** The subsurface scattering base color. 
-     * \param color the color intensity vector, usually between 0 and 1 */
+    /** 
+     * Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
+     * as light bleeds into shadows and through the object. 
+     * 
+     * @returns The subsurface scattering distance is specified separately for the RGB channels. 
+    */
+    vec3 getSubsurfaceRadius();
+
+    /**
+     * The subsurface scattering base color. 
+     * 
+     * @param color the color intensity vector, usually between 0 and 1 
+    */
     void setSubsurfaceColor(vec3 color);
 
-    /** The subsurface scattering base color. 
-     * \param r the red subsurface color intensity 
-     * \param g the green subsurface color intensity 
-     * \param b the blue subsurface color intensity */
-    void setSubsurfaceColor(float r, float g, float b);
+    /** 
+     * The subsurface scattering base color. Overrides any existing constant subsurface color 
+     * 
+     * @param texture An RGB texture whose values range between 0 and 1. Alpha channel is ignored.
+     */
+    void setSubsurfaceColorTexture(Texture *texture);
 
-    /** The subsurface scattering base color.
-     * \returns the color intensity vector, usually between 0 and 1 */
+    /** Disconnects the subsurface color texture, reverting back to any existing constant subsurface color */
+    void clearSubsurfaceColorTexture();
+
+    /* 
+     * The subsurface scattering base color.
+     * 
+     * @returns the color intensity vector, usually between 0 and 1 
+    */
     vec3 getSubsurfaceColor();    
 
-    void setSubsurfaceColorTexture(Texture *texture);
-    void clearSubsurfaceColorTexture();
-    
-    /** Blends between a non-metallic and metallic material model. 
-      * \param metallic A value of 1.0 gives 
-      * a fully specular reflection tinted with the base color, without diffuse reflection 
-      * or transmission. At 0.0 the material consists of a diffuse or transmissive base layer, 
-      * with a specular reflection layer on top. */
+    /** 
+     * Blends between a non-metallic and metallic material model. 
+     * 
+     * @param metallic A value of 1.0 gives 
+     * a fully specular reflection tinted with the base color, without diffuse reflection 
+     * or transmission. At 0.0 the material consists of a diffuse or transmissive base layer, 
+     * with a specular reflection layer on top. 
+    */
     void setMetallic(float metallic);
 
-    /** Blends between a non-metallic and metallic material model. 
-      * \returns the current metallic value. */
-    float getMetallic();
-
+    /** 
+     * Blends between a non-metallic and metallic material model. Overrides any existing constant metallic 
+     * 
+     * @param texture A grayscale texture, where texel values of 1 give a fully specular reflection tinted with 
+     * the base color, without diffuse reflection or transmission. When texel values equal 0.0 the material 
+     * consists of a diffuse or transmissive base layer, with a specular reflection layer on top. 
+     * G, B, and A channels are ignored.
+     */
     void setMetallicTexture(Texture *texture);
+
+    /** Disconnects the metallic texture, reverting back to any existing constant metallic */
     void clearMetallicTexture();
 
-    /** The amount of dielectric specular reflection. 
-     * \param specular Specifies facing (along normal) reflectivity in the most common 0 - 8% range. Since materials with reflectivity above 8% do exist, the field allows values above 1.*/
+    /** 
+     * Blends between a non-metallic and metallic material model. 
+     * 
+     * @returns the current metallic value. 
+    */
+    float getMetallic();
+
+    /** 
+     * The amount of dielectric specular reflection. 
+     * 
+     * @param specular Specifies facing (along normal) reflectivity in the most common 0 - 8% range. Since materials with reflectivity above 8% do exist, the field allows values above 1.
+    */
     void setSpecular(float specular);
 
-    /** The amount of dielectric specular reflection. 
-      * \returns the current dielectric specular reflection value. */
-    float getSpecular();
-
+    /** 
+     * The amount of dielectric specular reflection. Overrides any existing constant specular 
+     * 
+     * @param texture A grayscale texture containing dielectric specular reflection values. G, B, and A channels are ignored. 
+     */
     void setSpecularTexture(Texture *texture);
+
+    /** Disconnects the specular texture, reverting back to any existing constant specular */
     void clearSpecularTexture();
 
-    /** Tints the facing specular reflection using the base color, while glancing reflection remains white.
-      * Normal dielectrics have colorless reflection, so this parameter is not technically physically correct 
-      * and is provided for faking the appearance of materials with complex surface structure. 
-      * \param specular_tint a value between 0 and 1, enabling/disabling specular tint */
+    /** 
+     * The amount of dielectric specular reflection. 
+     * 
+     * @returns the current dielectric specular reflection value. 
+    */
+    float getSpecular();
+
+    /** 
+     * Tints the facing specular reflection using the base color, while glancing reflection remains white.
+     * Normal dielectrics have colorless reflection, so this parameter is not technically physically correct 
+     * and is provided for faking the appearance of materials with complex surface structure. 
+     * 
+     * @param specular_tint a value between 0 and 1, enabling/disabling specular tint 
+    */
     void setSpecularTint(float specularTint);
 
-    /** Tints the facing specular reflection using the base color, while glancing reflection remains white.
-      * \returns the current specular tint value, between 0 and 1 */
-    float getSpecularTint();
-
+    /** 
+     * Tints the facing specular reflection using the base color, while glancing reflection remains white. Overrides any existing constant specular tint 
+     *
+     * @param texture A grayscale texture containing specular tint values, between 0 and 1. G, B, and A channels are ignored. 
+    */
     void setSpecularTintTexture(Texture *texture);
+
+    /** Disconnects the specular tint texture, reverting back to any existing constant specular tint */
     void clearSpecularTintTexture();
 
-    /** Microfacet roughness of the surface for diffuse and specular reflection. 
-      * \param roughness Specifies the surface microfacet roughness value, between 0 and 1 */
+    /** 
+     * Tints the facing specular reflection using the base color, while glancing reflection remains white.
+     * 
+     * @returns the current specular tint value, between 0 and 1 
+    */
+    float getSpecularTint();
+
+    /** 
+     * Microfacet roughness of the surface for diffuse and specular reflection. 
+     * 
+     * @param roughness Specifies the surface microfacet roughness value, between 0 and 1 
+    */
     void setRoughness(float roughness);
 
-    /** Microfacet roughness of the surface for diffuse and specular reflection. 
-      * \returns the current surface microfacet roughness value, between 0 and 1 */
-    float getRoughness();
-
+    /** 
+     * Microfacet roughness of the surface for diffuse and specular reflection. Overrides any existing constant roughness 
+     *
+     * @param texture A grayscale texture containing microfacet roughness values, between 0 and 1. G, B, and A channels are ignored.
+     */
     void setRoughnessTexture(Texture *texture);
+
+    /** Disconnects the roughness texture, reverting back to any existing constant roughness */
     void clearRoughnessTexture();
 
-    /** The transparency of the surface, independent of transmission.
-      * \param a Controls the transparency of the surface, with 1.0 being fully opaque. */
+    /** 
+     * Microfacet roughness of the surface for diffuse and specular reflection. 
+     * 
+     * @returns the current surface microfacet roughness value, between 0 and 1 
+    */
+    float getRoughness();
+
+    /** 
+     * The transparency of the surface, independent of transmission.
+     * 
+     * @param a Controls the transparency of the surface, with 1.0 being fully opaque. 
+    */
     void setAlpha(float a);
 
-    /** The transparency of the surface, independent of transmission.
-      * \returns the current surface transparency, with 1.0 being fully opaque and 0.0 being fully transparent. */
-    float getAlpha();
-
+    /** 
+     * The transparency of the surface, independent of transmission. Overrides any existing constant alpha 
+     * 
+     * @param texture A grayscale texture containing surface transparency values, with 1.0 being fully opaque and 0.0 
+     * being fully transparent. G, B, and A channels are ignored.
+     */
     void setAlphaTexture(Texture *texture);
+
+    /** Disconnects the alpha texture, reverting back to any existing constant alpha */
     void clearAlphaTexture();
 
-    /** The amount of anisotropy for specular reflection.
-      * \param anistropic The amount of anisotropy for specular reflection. Higher values give elongated highlights along the tangent direction; negative values give highlights shaped perpendicular to the tangent direction. */
+    /** 
+     * The transparency of the surface, independent of transmission.
+     * 
+     * @returns the current surface transparency, with 1.0 being fully opaque and 0.0 being fully transparent. 
+    */
+    float getAlpha();
+
+    /** 
+     * The amount of anisotropy for specular reflection.
+     * 
+     * @param anistropic The amount of anisotropy for specular reflection. Higher values give elongated highlights along the tangent direction; negative values give highlights shaped perpendicular to the tangent direction. 
+    */
     void setAnisotropic(float anisotropic);
 
-    /** The amount of anisotropy for specular reflection.
-      * \returns The current amount of anisotropy for specular reflection. */
-    float getAnisotropic();
-
+    /** 
+     * The amount of anisotropy for specular reflection. Overrides any existing constant anisotropy 
+     * 
+     * @param texture A grayscale texture containing amounts of anisotropy for specular reflection. G, B, and A channels are ignored.
+     */
     void setAnisotropicTexture(Texture *texture);
+
+    /** Disconnects the anisotropic texture, reverting back to any existing constant anisotropy */
     void clearAnisotropicTexture();
 
-    /** The direction of anisotropy.
-      * \param anisotropic_rotation Rotates the direction of anisotropy, with 1.0 going full circle. */
+    /** 
+     * The amount of anisotropy for specular reflection.
+     * 
+     * @returns The current amount of anisotropy for specular reflection. 
+    */
+    float getAnisotropic();
+
+    /** 
+     * The angle of anisotropy.
+     * @param anisotropic_rotation Rotates the angle of anisotropy, with 1.0 going full circle. 
+    */
     void setAnisotropicRotation(float anisotropicRotation);
 
-    /** The direction of anisotropy.
-      * \returns the current the direction of anisotropy, between 0 and 1. */
-    float getAnisotropicRotation();
-
+    /** 
+     * The angle of anisotropy. Overrides any existing constant anisotropic rotation 
+     * 
+     * @param texture A grayscale texture containing the angle of anisotropy, between 0 and 1. G, B, and A channels are ignored.
+     */
     void setAnisotropicRotationTexture(Texture *texture);
+    
+    /** Disconnects the anisotropic rotation texture, reverting back to any existing constant anisotropic rotation */
     void clearAnisotropicRotationTexture();
 
-    /** Amount of soft velvet like reflection near edges, for simulating materials such as cloth. 
-     * \param sheen controls the amount of sheen, between 0 and 1 */
+    /** 
+     * The angle of anisotropy.
+     * 
+     * @returns the current the angle of anisotropy, between 0 and 1. 
+    */
+    float getAnisotropicRotation();
+
+    /** 
+     * Amount of soft velvet like reflection near edges, for simulating materials such as cloth. 
+     * 
+     * @param sheen controls the amount of sheen, between 0 and 1 
+    */
     void setSheen(float sheen);
     
-    /** Amount of soft velvet like reflection near edges, for simulating materials such as cloth. 
-     * \returns the current sheen amount, between 0 and 1 */
-    float getSheen();
-
+    /** 
+     * Amount of soft velvet like reflection near edges, for simulating materials such as cloth. Overrides any existing constant sheen 
+     * 
+     * @param texture A grayscale texture containing amounts of sheen, between 0 and 1. G, B, and A channels are ignored.
+     */
     void setSheenTexture(Texture *texture);
+
+    /** Disconnects the sheen texture, reverting back to any existing constant sheen */
     void clearSheenTexture();
 
-    /** Mix between white and using base color for sheen reflection. 
-     * \param sheen_tint controls the mix between white and base color for sheen reflection. */
+    /** 
+     * Amount of soft velvet like reflection near edges, for simulating materials such as cloth. 
+     * 
+     * @returns the current sheen amount, between 0 and 1 
+    */
+    float getSheen();
+
+    /** 
+     * Mix between white and using base color for sheen reflection. 
+     * 
+     * @param sheen_tint controls the mix between white and base color for sheen reflection. 
+    */
     void setSheenTint(float sheenTint);
     
-    /** Mix between white and using base color for sheen reflection. 
-     * \returns the current value used to mix between white and base color for sheen reflection. */
-    float getSheenTint();
-
+    /** 
+     * Mix between white and using base color for sheen reflection. Overrides any existing constant sheen tint 
+     * 
+     * @param texture A grayscale texture containing values used to mix between white and base color for sheen reflection. 
+     * G, B, and A channels are ignored.
+    */
     void setSheenTintTexture(Texture *texture);
+
+    /** Disconnects the sheen tint texture, reverting back to any existing constant sheen tint */
     void clearSheenTintTexture();
 
-    /** Extra white specular layer on top of others. This is useful for materials like car paint and the like. 
-     * \param clearcoat controls the influence of clear coat, between 0 and 1 */
+    /** 
+     * Mix between white and using base color for sheen reflection. 
+     * 
+     * @returns the current value used to mix between white and base color for sheen reflection. 
+    */
+    float getSheenTint();
+
+    /** 
+     * Extra white specular layer on top of others. This is useful for materials like car paint and the like. 
+     * 
+     * @param clearcoat controls the influence of clear coat, between 0 and 1 
+    */
     void setClearcoat(float clearcoat);
 
-    /** Extra white specular layer on top of others. This is useful for materials like car paint and the like. 
-     * \returns the current clear coat influence */
+    /** 
+     * Extra white specular layer on top of others. Overrides any existing constant clearcoat 
+     * 
+     * @param texture A grayscale texture controlling the influence of clear coat, between 0 and 1. G, B, and A channels are ignored.
+     */
+    void setClearcoatTexture(Texture *texture);
+
+    /** Disconnects the clearcoat texture, reverting back to any existing constant clearcoat */
+    void clearClearcoatTexture();
+
+    /** 
+     * Extra white specular layer on top of others. This is useful for materials like car paint and the like. 
+     * 
+     * @returns the current clear coat influence 
+    */
     float getClearcoat();
 
-    void setClearcoatTexture(Texture *texture);
-    void clearClearcoatTexture();
-    
-    /** Microfacet surface roughness of clearcoat specular. 
-     * \param clearcoat_roughness the roughness of the microfacet distribution influencing the clearcoat, between 0 and 1 */
+    /** 
+     * Microfacet surface roughness of clearcoat specular. 
+     * 
+     * @param clearcoat_roughness the roughness of the microfacet distribution influencing the clearcoat, between 0 and 1 
+    */
     void setClearcoatRoughness(float clearcoatRoughness);
 
-    /** Microfacet surface roughness of clearcoat specular. 
-     * \returns the current clearcoat microfacet roughness value, between 0 and 1 */
-    float getClearcoatRoughness();
-
+    /** 
+     * Microfacet surface roughness of clearcoat specular. Overrides any existing constant clearcoat roughness 
+     * 
+     * @param texture
+     */
     void setClearcoatRoughnessTexture(Texture *texture);
+
+    /** Disconnects the clearcoat roughness texture, reverting back to any existing constant clearcoat roughness */
     void clearClearcoatRoughnessTexture();
+
+    /** 
+     * Microfacet surface roughness of clearcoat specular. 
+     * 
+     * @returns the current clearcoat microfacet roughness value, between 0 and 1 
+    */
+    float getClearcoatRoughness();
     
-    /** Index of refraction used for transmission events. 
-     * \param ior the index of refraction. A value of 1 results in no refraction. For reference, the IOR of water is roughly 1.33, and for glass is roughly 1.57. */
+    /** 
+     * Index of refraction used for transmission events. 
+     * 
+     * @param ior the index of refraction. A value of 1 results in no refraction. For reference, the IOR of water is roughly 1.33, and for glass is roughly 1.57. 
+    */
     void setIor(float ior);
 
-    /** Index of refraction used for transmission events. 
-     * \returns the current index of refraction. */
+    /** 
+     * Index of refraction used for transmission events. Overrides any existing constant ior. 
+     * 
+     * @param texture
+     */
+    void setIorTexture(Texture *texture);
+
+    /** Disconnects the ior texture, reverting back to any existing constant ior */
+    void clearIorTexture();
+
+    /** 
+     * Index of refraction used for transmission events. 
+     * 
+     * @returns the current index of refraction. 
+    */
     float getIor();
 
-    void setIorTexture(Texture *texture);
-    void clearIorTexture();
-    
-    /** Controls how much the surface looks like glass. Note, metallic takes precedence.
-     * \param transmission Mixes between a fully opaque surface at zero to fully glass like transmissions at one. */
+    /** 
+     * Controls how much the surface looks like glass. Note, metallic takes precedence.
+     * 
+     * @param transmission Mixes between a fully opaque surface at zero to fully glass like transmissions at one. 
+    */
     void setTransmission(float transmission);
 
-    /** Controls how much the surface looks like glass. Note, metallic takes precedence.
-     * \returns the current specular transmission of the surface. */
-    float getTransmission();
 
+    /** 
+     * Controls how much the surface looks like glass. Note, metallic takes precedence. Overrides any existing constant transmission. 
+     * 
+     * @param texture A grayscale texture containing the specular transmission of the surface. G, B, and A channels are ignored.
+    */
     void setTransmissionTexture(Texture *texture);
+    
+    /** Disconnects the transmission texture, reverting back to any existing constant transmission */
     void clearTransmissionTexture();
     
-    /** The roughness of the interior surface used for transmitted light. 
-     * \param transmission_roughness Controls the roughness value used for transmitted light. */
+    /** 
+     * Controls how much the surface looks like glass. Note, metallic takes precedence.
+     * 
+     * @returns the current specular transmission of the surface. 
+    */
+    float getTransmission();
+
+    /** 
+     * The roughness of the interior surface used for transmitted light. 
+     * 
+     * @param transmission_roughness Controls the roughness value used for transmitted light. 
+    */
     void setTransmissionRoughness(float transmissionRoughness);
 
-    /** The roughness of the interior surface used for transmitted light. 
-     * \returns the current roughness value used for transmitted light. */
-    float getTransmissionRoughness();
-
+    /** 
+     * The roughness of the interior surface used for transmitted light. Overrides any existing constant transmission roughness 
+     * 
+     * @param texture A grayscale texture containing
+    */
     void setTransmissionRoughnessTexture(Texture *texture);
+    
+    /** Disconnects the TransmissionRoughness texture, reverting back to any existing constant TransmissionRoughness */
     void clearTransmissionRoughnessTexture();
     
+    /** 
+     * The roughness of the interior surface used for transmitted light. 
+     * 
+     * @returns the current roughness value used for transmitted light. 
+    */
+    float getTransmissionRoughness();
+
+    /** 
+     * A grayscale bump map texture used to displace surface normals. 
+     * 
+     * @param texture A grayscale texture containing a surface displacement between 0 and 1. G, B, and A channels are ignored.
+    */
     void setBumpTexture(Texture *texture);
+    
+    /** Disconnects the Bump texture, reverting back to any existing constant Bump */
     void clearBumpTexture();
 
     // /* A uniform base color can be replaced with per-vertex colors as well. */
     // void use_vertex_colors(bool use);
 
     // /* The volume texture to be used by volume type materials */
-    // void set_volume_texture(uint32_t texture_id);
-    // void set_volume_texture(Texture *texture);
-
-    // void set_transfer_function_texture(uint32_t texture_id);
-    // void set_transfer_function_texture(Texture *texture);
-    // void clear_transfer_function_texture();
-
-    // bool contains_transparency();
     // bool should_show_skybox();
     // bool is_hidden();
 

@@ -10,18 +10,10 @@ class Material;
 class Mesh;
 
 /**
- * An "Entity" is a component which is used connect other component types together. 
- * Once a set of components are connected, they can effect the appearance of the scene
- * in some way. 
+ * An "Entity" is a component that is used to connect other component types together. 
  * 
- * For example, if you'd like to place an object in the scene, that object is 
- * composed of a Mesh component, a Transform component, and a Material component.
- * Creating an entity that connects a Mesh, a Transform, and a Material together 
- * will essentially "instantiate" an object into the scene.
- * 
- * Another way to think about an entity is as a record in a "join table" in a data base,
- * containing foreign keys to different components--and under the hood this is exactly how
- * entities work. 
+ * If you'd like to place an object in the scene, an Entity would be used to 
+ * connect a Mesh component, a Transform component, and a Material component together.
  * 
  * Only one component of a given type can be connected to an entity at any given point 
  * in time.
@@ -84,11 +76,11 @@ public:
     /**
 	 * Constructs an Entity with the given name.
 	 * 
-	 * @param transform If connected, a transform component places the entity into the scene
-	 * @param material If connected, a material component describes how an entity should look when rendered.
-	 * @param mesh If connected, a mesh component describes the geometry of the entity to be rendered. 
-	 * @param light If connected, a light component indicates that any connected geometry should act like a light source.
-	 * @param camera If connected, a camera component indicates that the current entity can be used to view into the scene.
+	 * @param transform (optional) A transform component places the entity into the scene
+	 * @param material (optional) A material component describes how an entity should look when rendered.
+	 * @param mesh (optional) A mesh component describes the geometry of the entity to be rendered. 
+	 * @param light (optional) A light component indicates that any connected geometry should act like a light source.
+	 * @param camera (optional) A camera component indicates that the current entity can be used to view into the scene.
      * @returns a reference to an Entity
 	 */
 	static Entity* create(std::string name, 
@@ -114,7 +106,7 @@ public:
     /** @returns the number of allocated entities */
 	static uint32_t getCount();
 
-    /** Deletes the Entity who's name matches \p name */
+    /** @param name The name of the entity to remove */
 	static void remove(std::string name);
 	
     /** Allocates the tables used to store all Entity components */
