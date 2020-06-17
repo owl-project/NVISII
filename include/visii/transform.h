@@ -484,9 +484,9 @@ class Transform : public StaticFactory
      * Set the parent of this transform, whose transformation will be applied after the current
      * transform. 
      * 
-     * @param parent The primary id key of the transform component to constrain the current transform to. Any existing parent constraint is replaced.
+     * @param parent The transform component to constrain the current transform to. Any existing parent constraint is replaced.
     */
-    void setParent(uint32_t parent);
+    void setParent(Transform * parent);
 
     /** Removes the parent-child relationship affecting this node. */
     void clearParent();
@@ -495,16 +495,16 @@ class Transform : public StaticFactory
      * Add a child to this transform, whose transformation will be applied before the current
      * transform. 
      * 
-     * @param child The primary id key of the child transform component to constrain to the current transform. Any existing parent constraint is replaced.
+     * @param child The child transform component to constrain to the current transform. Any existing parent constraint is replaced.
     */
-	  void addChild(uint32_t child);
+	  void addChild(Transform*  child);
 
     /** 
      * Removes a child transform previously added to the current transform. 
      * 
-     * @param child The primary id key of the constrained child transform component to un-constrain from the current transform. Any existing parent constraint is replaced.
+     * @param child The constrained child transform component to un-constrain from the current transform. Any existing parent constraint is replaced.
     */
-	  void removeChild(uint32_t child);
+	  void removeChild(Transform* child);
 
     /** 
      * @returns a matrix transforming this component from world space to its local space, taking all 

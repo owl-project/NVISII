@@ -484,15 +484,18 @@ glm::mat4 Transform::getParentToLocalRotationMatrix()
 	return parentToLocalRotation;
 }
 
-void Transform::setParent(uint32_t parent) {
-	if ((parent < 0) || (parent >= MAX_TRANSFORMS))
-		throw std::runtime_error(std::string("Error: parent must be between 0 and ") + std::to_string(MAX_TRANSFORMS));
-	
-	if (parent == this->getId())
-		throw std::runtime_error(std::string("Error: a component cannot be the parent of itself"));
+void Transform::setParent(Transform *parent) {
+	if (!parent)
+		throw std::runtime_error(std::string("Error: parent is empty"));
 
-	this->parent = parent;
-	transforms[parent].children.insert(this->id);
+	if (!parent->isInitialized())
+		throw std::runtime_error(std::string("Error: parent is uninitialized"));
+	
+	if (parent->getId() == this->getId())
+		throw std::runtime_error(std::string("Error: a transform cannot be the parent of itself"));
+
+	this->parent = parent->getId();
+	transforms[parent->getId()].children.insert(this->id);
 	updateChildren();
 	markDirty();
 }
@@ -510,33 +513,36 @@ void Transform::clearParent()
 	markDirty();
 }
 
-void Transform::addChild(uint32_t object) {
-	if ((object < 0) || (object >= MAX_TRANSFORMS))
-		throw std::runtime_error(std::string("Error: child must be between 0 and ") + std::to_string(MAX_TRANSFORMS));
-	
-	if (object == this->getId())
-		throw std::runtime_error(std::string("Error: a component cannot be it's own child"));
+void Transform::addChild(Transform *object) {
+	if (!object)
+		throw std::runtime_error(std::string("Error: child is empty"));
 
-	children.insert(object);
-	transforms[object].parent = this->id;
-	transforms[object].updateWorldMatrix();
-	transforms[object].markDirty();
+	if (!object->isInitialized())
+		throw std::runtime_error(std::string("Error: child is uninitialized"));
+	
+	if (object->getId() == this->getId())
+		throw std::runtime_error(std::string("Error: a transform cannot be the child of itself"));
+
+	children.insert(object->getId());
+	transforms[object->getId()].parent = this->id;
+	transforms[object->getId()].updateWorldMatrix();
+	transforms[object->getId()].markDirty();
 }
 
-void Transform::removeChild(uint32_t object) {
-	if ((object < 0) || (object >= MAX_TRANSFORMS))
-		throw std::runtime_error(std::string("Error: child must be between 0 and ") + std::to_string(MAX_TRANSFORMS));
+void Transform::removeChild(Transform *object) {
+	if (!object)
+		throw std::runtime_error(std::string("Error: child is empty"));
+
+	if (!object->isInitialized())
+		throw std::runtime_error(std::string("Error: child is uninitialized"));
 	
-	if (object == this->getId())
-		throw std::runtime_error(std::string("Error: a component cannot be it's own child"));
+	if (object->getId() == this->getId())
+		throw std::runtime_error(std::string("Error: a transform cannot be the child of itself"));
 
-	if (children.find(object) == children.end()) 
-		throw std::runtime_error(std::string("Error: child does not exist"));
-
-	children.erase(object);
-	transforms[object].parent = -1;
-	transforms[object].updateWorldMatrix();
-	transforms[object].markDirty();
+	children.erase(object->getId());
+	transforms[object->getId()].parent = -1;
+	transforms[object->getId()].updateWorldMatrix();
+	transforms[object->getId()].markDirty();
 }
 
 glm::mat4 Transform::getWorldToLocalMatrix() {
