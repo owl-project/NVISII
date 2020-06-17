@@ -547,3 +547,139 @@ def export_to_ndds_file(
     with open(filename, 'w+') as fp:
         json.dump(dict_out, fp, indent=4, sort_keys=True)
 
+#################### BULLET THINGS ##############################
+
+import pybullet as p
+
+
+def create_obj(
+    name = 'name',
+    path_obj = "",
+    path_tex = "",
+    scale = 1, 
+    rot_base = None
+    ):
+
+    
+    # This is for YCB like dataset
+    obj_mesh = visii.mesh.create_from_obj(name, path_obj)
+    obj_texture = visii.texture.create_from_image(name,path_tex)
+
+    obj_entity = visii.entity.create(
+        name=name,
+        # mesh = visii.mesh.create_sphere("mesh1", 1, 128, 128),
+        mesh = obj_mesh,
+        transform = visii.transform.create(name),
+        material = visii.material.create(name)
+    )
+
+    # should randomize
+    obj_entity.get_material().set_metallic(0)  # should 0 or 1      
+    obj_entity.get_material().set_transmission(0)  # should 0 or 1      
+    obj_entity.get_material().set_roughness(random.uniform(0,1)) # default is 1  
+    obj_entity.get_material().set_roughness(1) # default is 1  
+
+    obj_entity.get_material().set_base_color_texture(obj_texture)
+
+    obj_entity.get_transform().set_scale(visii.vec3(scale))
+
+    return obj_entity
+
+def create_physics(
+    aabb,             # list two vec3 (min,max) as visii vec3
+    base_position = [0,0,0],    # list x,y,z
+    base_orientation = [0,0,0,1], # list x,y,z,w 
+    base_rot = None,  # visii quat to rotate the frame of the object
+    type_collision = p.GEOM_MESH, # so far that is the only one
+    scale = 1,        # scale in all directions
+    mass = 1,         # mass in kg
+    mesh_path="",      # path to the obj mesh
+    name="",
+    ):
+
+    if not base_rot is None:    
+        min_vec4 = visii.vec4(aabb[0][0],aabb[0][1],aabb[0][2],1)
+        max_vec4 = visii.vec4(aabb[1][0],aabb[1][1],aabb[1][2],1)
+
+        rot_min = base_rot * min_vec4
+        rot_max = base_rot * max_vec4
+        
+        aabb = [
+                visii.vec3(rot_min[0],rot_min[1],rot_min[2]),
+                visii.vec3(rot_max[0],rot_max[1],rot_max[2]),
+                ]
+    # if type_collision == p.GEOM_BOX:
+    # print(visii.mesh.get(name).get_vertices())
+
+    vertices = []
+    for v in visii.mesh.get(name).get_vertices():
+        vertices.append([v[0],v[1],v[2]])
+    
+    print(len(vertices))
+
+    if type_collision == p.GEOM_MESH:
+        obj_col_id = p.createCollisionShape(
+            type_collision,
+            meshScale = [scale,scale,scale],
+            # fileName = mesh_path
+            vertices = vertices,
+            # vertices = [
+            # [0,0,0],
+            # [0,0,1],
+            # [0,1,0],
+            # [1,0,0],
+            # [1,0,1],
+            # [1,1,0],
+            # [0,1,1],
+            # [1,1,1],
+            # ]
+            )
+
+    # if type_collision == p.GEOM_CAPSULE:
+    #     radius = max(aabb[1][0],aabb[1][1])
+    #     height = aabb[1][2] * 2 
+
+    #     obj_col_id = p.createCollisionShape(
+    #         type_collision,
+    #         radius = radius * scale,
+    #         height = height * scale
+    #     )
+
+
+    obj_id = p.createMultiBody(  
+                        baseMass = 1, 
+                        baseCollisionShapeIndex = obj_col_id,
+                        basePosition = base_position,
+                        baseOrientation= base_orientation,
+                        )
+
+    return obj_id
+
+
+def update_pose(obj_dict):
+    pos, rot = p.getBasePositionAndOrientation(obj_dict['bullet_id'])
+
+
+    obj_entity = visii.entity.get(obj_dict['visii_id'])
+    obj_entity.get_transform().set_position(visii.vec3(
+                                            pos[0],
+                                            pos[1],
+                                            pos[2]
+                                            )
+                                        )
+    if not obj_dict['base_rot'] is None: 
+        obj_entity.get_transform().set_rotation(visii.quat(
+                                                rot[3],
+                                                rot[0],
+                                                rot[1],
+                                                rot[2]
+                                                ) * obj_dict['base_rot']   
+                                            )
+    else:
+        obj_entity.get_transform().set_rotation(visii.quat(
+                                                rot[3],
+                                                rot[0],
+                                                rot[1],
+                                                rot[2]
+                                                )   
+                                            )
