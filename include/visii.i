@@ -69,6 +69,7 @@ if hasattr(sys, 'gettotalrefcount'):
 %include "std_vector.i"
 namespace std {
   %template(FloatVector) vector<float>;
+  %template(uInt32Vector) vector<uint32_t>;
   %template(EntityVector) vector<Entity*>;
   %template(TransformVector) vector<Transform*>;
   %template(MeshVector) vector<Mesh*>;
