@@ -47,17 +47,6 @@ if hasattr(sys, 'gettotalrefcount'):
   }
 }
 
-/* STD Vectors */
-%include "std_vector.i"
-namespace std {
-  %template(FloatVector) vector<float>;
-}
-
-/* -------- GLM Vector Math Library --------------*/
-%feature("autodoc","2");
-%include "glm.i"
-%feature("autodoc", "");
-
 %{
 #include "visii/visii.h"
 
@@ -69,6 +58,25 @@ namespace std {
 #include "visii/material.h"
 #include "visii/mesh.h"
 %}
+
+/* -------- GLM Vector Math Library --------------*/
+%feature("autodoc","2");
+%include "glm.i"
+%feature("autodoc", "");
+
+
+/* STD Vectors */
+%include "std_vector.i"
+namespace std {
+  %template(FloatVector) vector<float>;
+  %template(EntityVector) vector<Entity*>;
+  %template(TransformVector) vector<Transform*>;
+  %template(MeshVector) vector<Mesh*>;
+  %template(CameraVector) vector<Camera*>;
+  %template(TextureVector) vector<Texture*>;
+  %template(LightVector) vector<Light*>;
+  %template(MaterialVector) vector<Material*>;
+}
 
 /* -------- Ignores --------------*/
 %ignore Entity::initializeFactory();
