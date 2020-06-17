@@ -335,7 +335,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // If the entity we hit is a light, terminate the path.
             // First hits are colored by the light. All other light hits are handled by NEE/MIS 
             if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
-                if (bounce == 0) {
+                if (bounce == 0) 
+                {
                     entityLight = optixLaunchParams.lights[entity.light_id];
                     float3 light_emission;
                     if (entityMaterial.base_color_texture_id == -1) light_emission = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
@@ -372,7 +373,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if ((light_entity.light_id < 0) || (light_entity.light_id > MAX_LIGHTS)) break;
                 if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_TRANSFORMS)) break;
             
-                LightStruct light_light = optixLaunchParams.lights[light_entity.light_id];
+                light_light = optixLaunchParams.lights[light_entity.light_id];
                 TransformStruct transform = optixLaunchParams.transforms[light_entity.transform_id];
                 MeshStruct mesh;
                 
@@ -469,7 +470,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     float dist = distance(vec3(hit_p.x, hit_p.y, hit_p.z ), vec3(ray.origin.x, ray.origin.y, ray.origin.z));
                     float dotNWi = dot(payload.normal, ray.direction);
                     float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
-                    float3 Li = lightEmission * w / light_pdf;
+                    float3 Li = lightEmission * w / bsdf_pdf;
                     irradiance = irradiance + (bsdf * Li * fabs(dotNWi));
                 }
             }
