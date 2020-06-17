@@ -31,7 +31,7 @@ enum MaterialFlags : uint32_t {
 /**
  * The "Material" component describes the surface properties of an entity.
  * This material follows a physically based workflow, more specifically the 
- * Blender principled shader, and very similar to the Disney material model. 
+ * Blender principled shader, and is very similar to the Disney material model. 
 */
 class Material : public StaticFactory
 {
