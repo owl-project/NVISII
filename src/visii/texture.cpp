@@ -129,7 +129,10 @@ Texture* Texture::createFromImage(std::string name, std::string path) {
         int x, y, num_channels;
         stbi_set_flip_vertically_on_load(true);
         float* pixels = stbi_loadf(path.c_str(), &x, &y, &num_channels, STBI_rgb_alpha);
-        if (!pixels) { throw std::runtime_error("failed to load texture image!"); }
+        if (!pixels) { 
+            std::string reason (stbi_failure_reason());
+            throw std::runtime_error(std::string("Error: failed to load texture image \"") + path + std::string("\". Reason: ") + reason); 
+        }
         l->texels.resize(x * y);
         memcpy(l->texels.data(), pixels, x * y * 4 * sizeof(float));
         textureStructs[l->getId()].width = x;

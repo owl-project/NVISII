@@ -47,17 +47,6 @@ if hasattr(sys, 'gettotalrefcount'):
   }
 }
 
-/* STD Vectors */
-%include "std_vector.i"
-namespace std {
-  %template(FloatVector) vector<float>;
-}
-
-/* -------- GLM Vector Math Library --------------*/
-%feature("autodoc","2");
-%include "glm.i"
-%feature("autodoc", "");
-
 %{
 #include "visii/visii.h"
 
@@ -70,16 +59,74 @@ namespace std {
 #include "visii/mesh.h"
 %}
 
+/* -------- GLM Vector Math Library --------------*/
+%feature("autodoc","2");
+%include "glm.i"
+%feature("autodoc", "");
+
+
+/* STD Vectors */
+%include "std_vector.i"
+namespace std {
+  %template(FloatVector) vector<float>;
+  %template(EntityVector) vector<Entity*>;
+  %template(TransformVector) vector<Transform*>;
+  %template(MeshVector) vector<Mesh*>;
+  %template(CameraVector) vector<Camera*>;
+  %template(TextureVector) vector<Texture*>;
+  %template(LightVector) vector<Light*>;
+  %template(MaterialVector) vector<Material*>;
+}
+
+/* -------- Ignores --------------*/
+%ignore Entity::initializeFactory();
+%ignore Entity::getFront();
+%ignore Entity::getFrontStruct();
+%ignore Entity::isFactoryInitialized();
+%ignore Entity::updateComponents();
+%ignore Entity::getStruct();
+%ignore Entity::getEditMutex();
+%ignore Entity::isDirty();
+%ignore Entity::isClean();
+%ignore Entity::markDirty();
+%ignore Entity::markClean();
+
+%ignore Transform::initializeFactory();
+%ignore Transform::getFront();
+%ignore Transform::getFrontStruct();
+%ignore Transform::isFactoryInitialized();
+%ignore Transform::updateComponents();
+%ignore Transform::getStruct();
+%ignore Transform::getEditMutex();
+%ignore Transform::isDirty();
+%ignore Transform::isClean();
+%ignore Transform::markDirty();
+%ignore Transform::markClean();
+
+%ignore Material::initializeFactory();
+%ignore Material::getFront();
+%ignore Material::getFrontStruct();
+%ignore Material::isFactoryInitialized();
+%ignore Material::updateComponents();
+%ignore Material::getStruct();
+%ignore Material::getEditMutex();
+%ignore Material::isDirty();
+%ignore Material::isClean();
+%ignore Material::markDirty();
+%ignore Material::markClean();
+
+/* -------- Renames --------------*/
 %rename("%(undercase)s",%$isfunction) "";
 %rename("%(undercase)s",%$isclass) "";
 
-%feature("kwargs") camera;
-%feature("kwargs") texture;
-%feature("kwargs") entity;
-%feature("kwargs") light;
-%feature("kwargs") transform;
-%feature("kwargs") material;
-%feature("kwargs") mesh;
+%feature("kwargs");
+//  transform;
+// // %feature("kwargs") camera;
+// // %feature("kwargs") texture;
+// // %feature("kwargs") entity;
+// // %feature("kwargs") light;
+// // %feature("kwargs") material;
+// // %feature("kwargs") mesh;
 
 %include "visii/visii.h"
 %include "visii/utilities/static_factory.h"
@@ -90,6 +137,7 @@ namespace std {
 %include "visii/transform.h"
 %include "visii/material.h"
 %include "visii/mesh.h"
+
 
 
 // Cleanup on exit

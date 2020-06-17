@@ -34,8 +34,9 @@ bool Transform::areAnyDirty()
 void Transform::markDirty() {
 	dirty = true;
 	anyDirty = true;
+	auto entityPointers = Entity::getFront();
 	for (auto &eid : entities) {
-		Entity::get(eid)->markDirty();
+		entityPointers[eid].markDirty();
 	}
 };
 
@@ -61,23 +62,26 @@ void Transform::updateComponents()
 	anyDirty = false;
 }
 
-void Transform::cleanUp() 
+void Transform::clearAll() 
 {
 	if (!isFactoryInitialized()) return;
 
 	for (auto &transform : transforms) {
 		if (transform.initialized) {
-			Transform::remove(transform.id);
+			Transform::remove(transform.name);
 		}
 	}
-
-	factoryInitialized = false;
 }
 
 
 /* Static Factory Implementations */
-Transform* Transform::create(std::string name) {
+Transform* Transform::create(std::string name, 
+	vec3 scale, quat rotation, vec3 position) 
+{
 	auto t = StaticFactory::create(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+	t->setPosition(position);
+	t->setRotation(rotation);
+	t->setScale(scale);
 	anyDirty = true;
 	return t;
 }
@@ -91,16 +95,8 @@ Transform* Transform::get(std::string name) {
 	return StaticFactory::get(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 }
 
-Transform* Transform::get(uint32_t id) {
-	return StaticFactory::get(editMutex, id, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
-}
-
 void Transform::remove(std::string name) {
 	StaticFactory::remove(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
-}
-
-void Transform::remove(uint32_t id) {
-	StaticFactory::remove(editMutex, id, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 }
 
 TransformStruct* Transform::getFrontStruct()
@@ -189,24 +185,24 @@ by the parentUp vector.
 // 	add_rotation(amount, axis);
 // }
 
-void Transform::rotateAround(vec3 point, float angle, vec3 axis)
-{
-	glm::vec3 direction = point - getPosition();
-	glm::vec3 newPosition = getPosition() + direction;
-	glm::quat newRotation = glm::angleAxis(angle, axis) * getRotation();
-	newPosition = newPosition - direction * glm::angleAxis(-angle, axis);
+// void Transform::rotateAround(vec3 point, float angle, vec3 axis)
+// {
+// 	glm::vec3 direction = point - getPosition();
+// 	glm::vec3 newPosition = getPosition() + direction;
+// 	glm::quat newRotation = glm::angleAxis(angle, axis) * getRotation();
+// 	newPosition = newPosition - direction * glm::angleAxis(-angle, axis);
 
-	rotation = glm::normalize(newRotation);
-	localToParentRotation = glm::toMat4(rotation);
-	parentToLocalRotation = glm::inverse(localToParentRotation);
+// 	rotation = glm::normalize(newRotation);
+// 	localToParentRotation = glm::toMat4(rotation);
+// 	parentToLocalRotation = glm::inverse(localToParentRotation);
 
-	position = newPosition;
-	localToParentTranslation = glm::translate(glm::mat4(1.0), position);
-	parentToLocalTranslation = glm::translate(glm::mat4(1.0), -position);
+// 	position = newPosition;
+// 	localToParentTranslation = glm::translate(glm::mat4(1.0), position);
+// 	parentToLocalTranslation = glm::translate(glm::mat4(1.0), -position);
 
-	updateMatrix();
-	markDirty();
-}
+// 	updateMatrix();
+// 	markDirty();
+// }
 
 void Transform::rotateAround(vec3 point, glm::quat rot)
 {
@@ -272,11 +268,11 @@ void Transform::setRotation(quat newRotation)
 	markDirty();
 }
 
-void Transform::setRotation(float angle, vec3 axis)
-{
-	setRotation(glm::angleAxis(angle, axis));
-	markDirty();
-}
+// void Transform::setRotation(float angle, vec3 axis)
+// {
+// 	setRotation(glm::angleAxis(angle, axis));
+// 	markDirty();
+// }
 
 void Transform::addRotation(quat additionalRotation)
 {
@@ -285,11 +281,11 @@ void Transform::addRotation(quat additionalRotation)
 	markDirty();
 }
 
-void Transform::addRotation(float angle, vec3 axis)
-{
-	addRotation(glm::angleAxis(angle, axis));
-	markDirty();
-}
+// void Transform::addRotation(float angle, vec3 axis)
+// {
+// 	addRotation(glm::angleAxis(angle, axis));
+// 	markDirty();
+// }
 
 void Transform::updateRotation()
 {
@@ -333,17 +329,17 @@ void Transform::addPosition(vec3 additionalPosition)
 	markDirty();
 }
 
-void Transform::setPosition(float x, float y, float z)
-{
-	setPosition(glm::vec3(x, y, z));
-	markDirty();
-}
+// void Transform::setPosition(float x, float y, float z)
+// {
+// 	setPosition(glm::vec3(x, y, z));
+// 	markDirty();
+// }
 
-void Transform::addPosition(float dx, float dy, float dz)
-{
-	addPosition(glm::vec3(dx, dy, dz));
-	markDirty();
-}
+// void Transform::addPosition(float dx, float dy, float dz)
+// {
+// 	addPosition(glm::vec3(dx, dy, dz));
+// 	markDirty();
+// }
 
 void Transform::updatePosition()
 {
@@ -365,12 +361,12 @@ void Transform::setScale(vec3 newScale)
 	markDirty();
 }
 
-void Transform::setScale(float newScale)
-{
-	scale = vec3(newScale, newScale, newScale);
-	updateScale();
-	markDirty();
-}
+// void Transform::setScale(float newScale)
+// {
+// 	scale = vec3(newScale, newScale, newScale);
+// 	updateScale();
+// 	markDirty();
+// }
 
 void Transform::addScale(vec3 additionalScale)
 {
@@ -379,23 +375,23 @@ void Transform::addScale(vec3 additionalScale)
 	markDirty();
 }
 
-void Transform::setScale(float x, float y, float z)
-{
-	setScale(glm::vec3(x, y, z));
-	markDirty();
-}
+// void Transform::setScale(float x, float y, float z)
+// {
+// 	setScale(glm::vec3(x, y, z));
+// 	markDirty();
+// }
 
-void Transform::addScale(float dx, float dy, float dz)
-{
-	addScale(glm::vec3(dx, dy, dz));
-	markDirty();
-}
+// void Transform::addScale(float dx, float dy, float dz)
+// {
+// 	addScale(glm::vec3(dx, dy, dz));
+// 	markDirty();
+// }
 
-void Transform::addScale(float ds)
-{
-	addScale(glm::vec3(ds, ds, ds));
-	markDirty();
-}
+// void Transform::addScale(float ds)
+// {
+// 	addScale(glm::vec3(ds, ds, ds));
+// 	markDirty();
+// }
 
 void Transform::updateScale()
 {
@@ -488,15 +484,18 @@ glm::mat4 Transform::getParentToLocalRotationMatrix()
 	return parentToLocalRotation;
 }
 
-void Transform::setParent(uint32_t parent) {
-	if ((parent < 0) || (parent >= MAX_TRANSFORMS))
-		throw std::runtime_error(std::string("Error: parent must be between 0 and ") + std::to_string(MAX_TRANSFORMS));
-	
-	if (parent == this->getId())
-		throw std::runtime_error(std::string("Error: a component cannot be the parent of itself"));
+void Transform::setParent(Transform *parent) {
+	if (!parent)
+		throw std::runtime_error(std::string("Error: parent is empty"));
 
-	this->parent = parent;
-	transforms[parent].children.insert(this->id);
+	if (!parent->isInitialized())
+		throw std::runtime_error(std::string("Error: parent is uninitialized"));
+	
+	if (parent->getId() == this->getId())
+		throw std::runtime_error(std::string("Error: a transform cannot be the parent of itself"));
+
+	this->parent = parent->getId();
+	transforms[parent->getId()].children.insert(this->id);
 	updateChildren();
 	markDirty();
 }
@@ -514,33 +513,36 @@ void Transform::clearParent()
 	markDirty();
 }
 
-void Transform::addChild(uint32_t object) {
-	if ((object < 0) || (object >= MAX_TRANSFORMS))
-		throw std::runtime_error(std::string("Error: child must be between 0 and ") + std::to_string(MAX_TRANSFORMS));
-	
-	if (object == this->getId())
-		throw std::runtime_error(std::string("Error: a component cannot be it's own child"));
+void Transform::addChild(Transform *object) {
+	if (!object)
+		throw std::runtime_error(std::string("Error: child is empty"));
 
-	children.insert(object);
-	transforms[object].parent = this->id;
-	transforms[object].updateWorldMatrix();
-	transforms[object].markDirty();
+	if (!object->isInitialized())
+		throw std::runtime_error(std::string("Error: child is uninitialized"));
+	
+	if (object->getId() == this->getId())
+		throw std::runtime_error(std::string("Error: a transform cannot be the child of itself"));
+
+	children.insert(object->getId());
+	transforms[object->getId()].parent = this->id;
+	transforms[object->getId()].updateWorldMatrix();
+	transforms[object->getId()].markDirty();
 }
 
-void Transform::removeChild(uint32_t object) {
-	if ((object < 0) || (object >= MAX_TRANSFORMS))
-		throw std::runtime_error(std::string("Error: child must be between 0 and ") + std::to_string(MAX_TRANSFORMS));
+void Transform::removeChild(Transform *object) {
+	if (!object)
+		throw std::runtime_error(std::string("Error: child is empty"));
+
+	if (!object->isInitialized())
+		throw std::runtime_error(std::string("Error: child is uninitialized"));
 	
-	if (object == this->getId())
-		throw std::runtime_error(std::string("Error: a component cannot be it's own child"));
+	if (object->getId() == this->getId())
+		throw std::runtime_error(std::string("Error: a transform cannot be the child of itself"));
 
-	if (children.find(object) == children.end()) 
-		throw std::runtime_error(std::string("Error: child does not exist"));
-
-	children.erase(object);
-	transforms[object].parent = -1;
-	transforms[object].updateWorldMatrix();
-	transforms[object].markDirty();
+	children.erase(object->getId());
+	transforms[object->getId()].parent = -1;
+	transforms[object->getId()].updateWorldMatrix();
+	transforms[object->getId()].markDirty();
 }
 
 glm::mat4 Transform::getWorldToLocalMatrix() {

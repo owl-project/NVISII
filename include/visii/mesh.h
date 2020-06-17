@@ -27,28 +27,32 @@ class Mesh : public StaticFactory
 {
 	friend class StaticFactory;
 	public:
-		/// Creates a rectangular box centered at the origin aligned along the x, y, and z axis. 
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param size Half of the side length in x (0), y (1) and z (2) direction. 
-		/// @param segments The number of segments in x (0), y (1) and z (2)
-		/// directions. All should be >= 1. If any one is zero faces in that
-		/// direction are not genereted. If more than one is zero the mesh is empty.
-		/// @returns a reference to the mesh component
+		/** Creates a rectangular box centered at the origin aligned along the x, y, and z axis. 
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param size Half of the side length in x (0), y (1) and z (2) direction. 
+		 * @param segments The number of segments in x (0), y (1) and z (2)
+		 * directions. All should be >= 1. If any one is zero, faces in that
+		 * direction are not genereted. If more than one is zero the mesh is empty.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createBox(
 			std::string name, 
 			glm::vec3  size = glm::vec3(1.0), 
 			glm::ivec3 segments = glm::ivec3(1));
 		
-        /// Creates a cone with a cap centered at the origin and pointing towards the positive z-axis. 
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius Radius of the flat (negative z) end along the xy-plane.
-		/// @param size Half of the length of the cylinder along the z-axis.
-		/// @param slices Number of subdivisions around the z-axis.
-		/// @param segments Number of subdivisions along the z-axis.
-		/// @param rings Number of subdivisions of the cap.
-		/// @param start Counterclockwise angle around the z-axis relative to the positive x-axis.
-		/// @param sweep Counterclockwise angle around the z-axis.
-		/// @returns a reference to the mesh component
+        /** Creates a cone with a cap centered at the origin and pointing towards the positive z-axis. 
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param radius Radius of the flat (negative z) end along the xy-plane.
+		 * @param size Half of the length of the cylinder along the z-axis.
+		 * @param slices Number of subdivisions around the z-axis.
+		 * @param segments Number of subdivisions along the z-axis.
+		 * @param rings Number of subdivisions of the cap.
+		 * @param start Counterclockwise angle around the z-axis relative to the positive x-axis.
+		 * @param sweep Counterclockwise angle around the z-axis.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createCappedCone(
 			std::string name, 
 			float radius   = 1.0, 
@@ -59,16 +63,18 @@ class Mesh : public StaticFactory
 			float start    = 0.0, 
 			float sweep    = radians(360.0));
 		
-		/// Creates a cylinder with a cap centered at the origin and aligned along the z-axis
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius Radius of the cylinder along the xy-plane.
-		/// @param size Half of the length cylinder along the z-axis.
-		/// @param slices Number of subdivisions around the z-axis.
-		/// @param segments Number of subdivisions along the z-axis.
-		/// @param rings Number of subdivisions on the caps.
-		/// @param start Counterclockwise angle around the z-axis relative to x-axis.
-		/// @param sweep Counterclockwise angle around the z-axis.
-		/// @returns a reference to the mesh component
+		/** Creates a cylinder with a cap centered at the origin and aligned along the z-axis
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param radius Radius of the cylinder along the xy-plane.
+		 * @param size Half of the length cylinder along the z-axis.
+		 * @param slices Number of subdivisions around the z-axis.
+		 * @param segments Number of subdivisions along the z-axis.
+		 * @param rings Number of subdivisions on the caps.
+		 * @param start Counterclockwise angle around the z-axis relative to x-axis.
+		 * @param sweep Counterclockwise angle around the z-axis.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createCappedCylinder(
 			std::string name, 
 			float radius   = 1.0f, 
@@ -79,17 +85,19 @@ class Mesh : public StaticFactory
 			float start    = 0.0f, 
 			float sweep    = radians(360.0));
 		
-		/// Creates a tube (a cylinder with thickness) with caps on both ends, centered at the origin and aligned along the z-axis.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius The outer radius of the cylinder on the xy-plane.
-		/// @param innerRadius The inner radius of the cylinder on the xy-plane.
-		/// @param size Half of the length of the cylinder along the z-axis.
-		/// @param slices Number nubdivisions around the z-axis.
-		/// @param segments Number of subdivisions along the z-axis.
-		/// @param rings Number radial subdivisions in the cap.
-		/// @param start Counterclockwise angle around the z-axis relative to the x-axis.
-		/// @param sweep Counterclockwise angle around the z-axis.
-		/// @returns a reference to the mesh component
+		/** Creates a tube (a cylinder with thickness) with caps on both ends, centered at the origin and aligned along the z-axis.
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param radius The outer radius of the cylinder on the xy-plane.
+		 * @param innerRadius The inner radius of the cylinder on the xy-plane.
+		 * @param size Half of the length of the cylinder along the z-axis.
+		 * @param slices Number nubdivisions around the z-axis.
+		 * @param segments Number of subdivisions along the z-axis.
+		 * @param rings Number radial subdivisions in the cap.
+		 * @param start Counterclockwise angle around the z-axis relative to the x-axis.
+		 * @param sweep Counterclockwise angle around the z-axis.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createCappedTube(
 			std::string name, 
 			float radius      = 1.0, 
@@ -101,16 +109,18 @@ class Mesh : public StaticFactory
 			float start       = 0.0, 
 			float sweep       = radians(360.0));
 		
-		/// Creates a capsule (a cylinder with spherical caps) centered at the origin and aligned along the z-axis.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius Radius of the capsule on the xy-plane.
-		/// @param size Half of the length between centers of the caps along the z-axis.
-		/// @param slices Number of subdivisions around the z-axis in the caps.
-		/// @param segments Number radial subdivisions in the cylinder.
-		/// @param rings Number of radial subdivisions in the caps.
-		/// @param start Counterclockwise angle relative to the x-axis.
-		/// @param sweep Counterclockwise angle.
-		/// @returns a reference to the mesh component
+		/** Creates a capsule (a cylinder with spherical caps) centered at the origin and aligned along the z-axis.
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param radius Radius of the capsule on the xy-plane.
+		 * @param size Half of the length between centers of the caps along the z-axis.
+		 * @param slices Number of subdivisions around the z-axis in the caps.
+		 * @param segments Number radial subdivisions in the cylinder.
+		 * @param rings Number of radial subdivisions in the caps.
+		 * @param start Counterclockwise angle relative to the x-axis.
+		 * @param sweep Counterclockwise angle.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createCapsule(
 			std::string name, 
 			float radius   = 1.0, 
@@ -121,15 +131,17 @@ class Mesh : public StaticFactory
 			float start    = 0.0, 
 			float sweep    = radians(360.0));
 		
-		/// Creates a cone centered at the origin, and whose tip points towards the z-axis.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius Radius of the negative z end on the xy-plane.
-		/// @param size Half of the length of the cylinder along the z-axis.
-		/// @param slices Number of subdivisions around the z-axis.
-		/// @param segments Number subdivisions along the z-axis.
-		/// @param start Counterclockwise angle around the z-axis relative to the x-axis.
-		/// @param sweep Counterclockwise angle around the z-axis.
-		/// @returns a reference to the mesh component
+		/** Creates a cone centered at the origin, and whose tip points towards the z-axis.
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param radius Radius of the negative z end on the xy-plane.
+		 * @param size Half of the length of the cylinder along the z-axis.
+		 * @param slices Number of subdivisions around the z-axis.
+		 * @param segments Number subdivisions along the z-axis.
+		 * @param start Counterclockwise angle around the z-axis relative to the x-axis.
+		 * @param sweep Counterclockwise angle around the z-axis.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createCone(
 			std::string name, 
 			float radius   = 1.0, 
@@ -139,13 +151,15 @@ class Mesh : public StaticFactory
 			float start    = 0.0, 
 			float sweep    = radians(360.0));
 		
-		/// Creates a convex polygonal disk with an arbitrary number of corners. 
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius The radius the enclosing circle.
-		/// @param sides The number of sides. Should be >= 3. If <3 an empty mesh is generated.
-		/// @param segments The number of segments per side. Should be >= 1. If zero an empty mesh is generated.
-		/// @param rings The number of radial segments. Should be >= 1. = yields an empty mesh.
-		/// @returns a reference to the mesh component
+		/** Creates a convex polygonal disk with an arbitrary number of corners. 
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param radius The radius the enclosing circle.
+		 * @param sides The number of sides. Should be >= 3. If <3 an empty mesh is generated.
+		 * @param segments The number of segments per side. Should be >= 1. If zero an empty mesh is generated.
+		 * @param rings The number of radial segments. Should be >= 1. = yields an empty mesh.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createConvexPolygonFromCircle(
 			std::string name,
 			float radius   = 1.0,
@@ -153,12 +167,14 @@ class Mesh : public StaticFactory
 			int   segments = 4,
 			int   rings    = 4);
 
-		/// Creates a convex polygon from a set of corner vertices.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param vertices The corner coplanar vertex coordinates. Should form a convex polygon.
-		/// @param segments The number of segments per side. Should be >= 1. If zero an empty mesh is generated.
-		/// @param rings The number of radial segments. Should be >= 1. = yields an empty mesh.
-		/// @returns a reference to the mesh component
+		/** Creates a convex polygon from a set of corner vertices.
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param vertices The corner coplanar vertex coordinates. Should form a convex polygon.
+		 * @param segments The number of segments per side. Should be >= 1. If zero an empty mesh is generated.
+		 * @param rings The number of radial segments. Should be >= 1. = yields an empty mesh.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createConvexPolygon(
 			std::string name,
 			std::vector<glm::vec2> vertices,
@@ -166,15 +182,17 @@ class Mesh : public StaticFactory
 			int rings    = 1 
 			);
 		
-		/// Creates an uncapped cylinder centered at the origin and aligned along the z-axis
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius Radius of the cylinder along the xy-plane.
-		/// @param size Half of the length of the cylinder along the z-axis.
-		/// @param slices Subdivisions around the z-axis.
-		/// @param segments Subdivisions along the z-axis.
-		/// @param start Counterclockwise angle around the z-axis relative to the x-axis.
-		/// @param sweep Counterclockwise angle around the z-axis.
-		/// @returns a reference to the mesh component
+		/** Creates an uncapped cylinder centered at the origin and aligned along the z-axis
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param radius Radius of the cylinder along the xy-plane.
+		 * @param size Half of the length of the cylinder along the z-axis.
+		 * @param slices Subdivisions around the z-axis.
+		 * @param segments Subdivisions along the z-axis.
+		 * @param start Counterclockwise angle around the z-axis relative to the x-axis.
+		 * @param sweep Counterclockwise angle around the z-axis.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createCylinder(
 			std::string name,
 			float radius   = 1.0,
@@ -185,15 +203,17 @@ class Mesh : public StaticFactory
 			float sweep    = radians(360.0)
 		);
 
-		/// Creates a circular disk centered at the origin and along the xy-plane
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius Outer radius of the disk on the xy-plane.
-		/// @param innerRadius radius of the inner circle on the xy-plane.
-		/// @param slices Number of subdivisions around the z-axis.
-		/// @param rings Number of subdivisions along the radius.
-		/// @param start Counterclockwise angle relative to the x-axis
-		/// @param sweep Counterclockwise angle.
-		/// @returns a reference to the mesh component
+		/** Creates a circular disk centered at the origin and along the xy-plane
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param radius Outer radius of the disk on the xy-plane.
+		 * @param innerRadius radius of the inner circle on the xy-plane.
+		 * @param slices Number of subdivisions around the z-axis.
+		 * @param rings Number of subdivisions along the radius.
+		 * @param start Counterclockwise angle relative to the x-axis
+		 * @param sweep Counterclockwise angle.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createDisk(
 			std::string name,
 			float radius      = 1.0,
@@ -203,77 +223,89 @@ class Mesh : public StaticFactory
 			float start       = 0.0,
 			float sweep       = radians(360.0));
 
-		/// Creates a regular dodecahedron centered at the origin and with a given radius.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// Each face is optionally subdivided along the edges and/or radius.
-		/// @param radius The radius of the enclosing sphere.
-		/// @param segments The number segments along each edge. Should be >= 1. If <1 empty mesh is generated.
-		/// @param rings The number of radial segments on each face. Should be >= 1. If <1 an empty mesh is generated.
-		/// @returns a reference to the mesh component
+		/** Creates a regular dodecahedron centered at the origin and with a given radius.
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * Each face is optionally subdivided along the edges and/or radius.
+		 * @param radius The radius of the enclosing sphere.
+		 * @param segments The number segments along each edge. Should be >= 1. If <1 empty mesh is generated.
+		 * @param rings The number of radial segments on each face. Should be >= 1. If <1 an empty mesh is generated.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createDodecahedron(
 			std::string name,
 			float radius   = 1.0, 
 			int   segments = 1, 
 			int   rings    = 1);
 
-		/// Creates a plane (a regular grid) on the xy-plane whose normal points towards the z-axis.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param size Half of the side length in x (0) and y (1) direction.
-		/// @param segments Number of subdivisions in the x (0) and y (1) direction.
-		/// @returns a reference to the mesh component
+		/** Creates a plane (a regular grid) on the xy-plane whose normal points towards the z-axis.
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param size Half of the side length in x (0) and y (1) direction.
+		 * @param segments Number of subdivisions in the x (0) and y (1) direction.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createPlane(
 			std::string name,
-			vec2 size     = {1.0, 1.0},
-			ivec2 segments = {8, 8});
+			vec2 size     = vec2(1.0, 1.0),
+			ivec2 segments = ivec2(8, 8));
 
-		/// Creates a regular icosahedron centered at the origin and with a given radius.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius The radius of the enclosing sphere.
-		/// @param segments The number segments along each edge. Must be >= 1.
-		/// @returns a reference to the mesh component
+		/** Creates a regular icosahedron centered at the origin and with a given radius.
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param radius The radius of the enclosing sphere.
+		 * @param segments The number segments along each edge. Must be >= 1.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createIcosahedron(
 			std::string name,
 			float radius   = 1.0, 
 			int   segments = 1);
 
-		/// Creates an icosphere, otherwise known as a spherical subdivided icosahedron.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius The radius of the containing sphere.
-		/// @param segments The number of segments per icosahedron edge. Must be >= 1.
-		/// @returns a reference to the mesh component
+		/** Creates an icosphere, otherwise known as a spherical subdivided icosahedron.
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param radius The radius of the containing sphere.
+		 * @param segments The number of segments per icosahedron edge. Must be >= 1.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createIcosphere(
 			std::string name,
 			float radius  = 1.0, 
 			int  segments = 4);
 
-		/* Creates a mesh component from a procedural parametric mesh. (TODO: accept a callback which given an x and y position 
+		/** Creates a mesh component from a procedural parametric mesh. (TODO: accept a callback which given an x and y position 
 			returns a Z hightfield) */
 		// static Mesh* createParametricMesh(std::string name);
 
-		/// Creates a rectangular box with rounded edges, centered at the origin and aligned along the x, y, and z axis.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius Radius of the rounded edges.
-		/// @param size Half of the side length in x (0), y (1) and z (2) direction.
-		/// @param slices Number subdivions around in the rounded edges.
-		/// @param segments Number of subdivisions in x (0), y (1) and z (2) direction for the flat faces.
-		/// @returns a reference to the mesh component
+		/** Creates a rectangular box with rounded edges, centered at the origin and aligned along the x, y, and z axis.
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param radius Radius of the rounded edges.
+		 * @param size Half of the side length in x (0), y (1) and z (2) direction.
+		 * @param slices Number subdivions around in the rounded edges.
+		 * @param segments Number of subdivisions in x (0), y (1) and z (2) direction for the flat faces.
+		 * @returns a reference to the mesh component
+		 */
 		static Mesh* createRoundedBox(
 			std::string name, 
 			float radius   = 0.25, 
-			vec3  size     = {0.75f, 0.75f, 0.75f}, 
+			vec3  size     = vec3(0.75f, 0.75f, 0.75f), 
 			int   slices   = 4, 
-			ivec3 segments = {1,1,1});
+			ivec3 segments = ivec3(1,1,1));
 	
-		/// Creates a sphere of the given radius, centered around the origin, subdivided around the z-axis in slices and along the z-axis in segments.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius The radius of the sphere
-		/// @param slices Subdivisions around the z-axis (longitudes).
-		/// @param segments Subdivisions along the z-axis (latitudes).
-		/// @param sliceStart Counterclockwise angle around the z-axis relative to x-axis.
-		/// @param sliceSweep Counterclockwise angle.
-		/// @param segmentStart Counterclockwise angle relative to the z-axis.
-		/// @param segmentSweep Counterclockwise angle.
-		/// @returns a reference to the mesh component
+		/** Creates a sphere of the given radius, centered around the origin, subdivided around the z-axis in slices and along the z-axis in segments.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param radius The radius of the sphere
+		 *  @param slices Subdivisions around the z-axis (longitudes).
+		 *  @param segments Subdivisions along the z-axis (latitudes).
+		 *  @param sliceStart Counterclockwise angle around the z-axis relative to x-axis.
+		 *  @param sliceSweep Counterclockwise angle.
+		 *  @param segmentStart Counterclockwise angle relative to the z-axis.
+		 *  @param segmentSweep Counterclockwise angle.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createSphere(
 			std::string name, 		
 			float radius       = 1.0,
@@ -285,17 +317,19 @@ class Mesh : public StaticFactory
 			float segmentSweep = radians(180.0)
 		);
 
-		/// Creates a cone with a spherical cap, centered at the origin and whose tip points towards the z-axis.
-		/// Each point on the cap has equal distance from the tip.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius Radius of the negative z end on the xy-plane.
-		/// @param size Half of the distance between cap and tip along the z-axis.
-		/// @param slices Number of subdivisions around the z-axis.
-		/// @param segments Number subdivisions along the z-axis.
-		/// @param rings Number subdivisions in the cap.
-		/// @param start Counterclockwise angle around the z-axis relative to the positive x-axis.
-		/// @param sweep Counterclockwise angle around the z-axis.
-		/// @returns a reference to the mesh component
+		/** Creates a cone with a spherical cap, centered at the origin and whose tip points towards the z-axis.
+		 *  Each point on the cap has equal distance from the tip.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param radius Radius of the negative z end on the xy-plane.
+		 *  @param size Half of the distance between cap and tip along the z-axis.
+		 *  @param slices Number of subdivisions around the z-axis.
+		 *  @param segments Number subdivisions along the z-axis.
+		 *  @param rings Number subdivisions in the cap.
+		 *  @param start Counterclockwise angle around the z-axis relative to the positive x-axis.
+		 *  @param sweep Counterclockwise angle around the z-axis.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createSphericalCone(
 			std::string name,
 			float radius   = 1.0,
@@ -306,36 +340,44 @@ class Mesh : public StaticFactory
 			float start    = 0.0,
 			float sweep    = radians(360.0));
 
-		/// Creates a triangular region on the surface of a sphere.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius Radius of the containing sphere.
-		/// @param segments Number of subdivisions along each edge.
-		/// @returns a reference to the mesh component
+		/** Creates a triangular region on the surface of a sphere.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param radius Radius of the containing sphere.
+		 *  @param segments Number of subdivisions along each edge.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createSphericalTriangleFromSphere(
 			std::string name,
 			float radius   = 1.0,
 			int   segments = 4);
 
-		/// Creates a triangular region on the surface of a sphere.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param v0,v1,v2 The three counter-clockwise triangle vertices
-		/// @param segments Number of subdivisions along each edge.
-		/// @returns a reference to the mesh component
+		/** Creates a triangular region on the surface of a sphere.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param v0 First of the three counter-clockwise triangle vertices
+		 *  @param v1 Second of the three counter-clockwise triangle vertices
+		 *  @param v2 Third of the three counter-clockwise triangle vertices
+		 *  @param segments Number of subdivisions along each edge.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createSphericalTriangleFromTriangle(
 			std::string name,
 			vec3 v0, vec3 v1, vec3 v2,
 			int segments = 4);
 
-		/// Creates a spring aligned along the z-axis and with a counter-clockwise winding.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param minor Radius of the spring it self.
-		/// @param major Radius from the z-axis
-		/// @param size Half of the length along the z-axis.
-		/// @param slices Subdivisions around the spring.
-		/// @param segments Subdivisions along the path.
-		/// @param majorStart Counterclockwise angle around the z-axis relative to the x-axis.
-		/// @param majorSweep Counterclockwise angle around the z-axis.
-		/// @returns a reference to the mesh component
+		/** Creates a spring aligned along the z-axis and with a counter-clockwise winding.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param minor Radius of the spring it self.
+		 *  @param major Radius from the z-axis
+		 *  @param size Half of the length along the z-axis.
+		 *  @param slices Subdivisions around the spring.
+		 *  @param segments Subdivisions along the path.
+		 *  @param majorStart Counterclockwise angle around the z-axis relative to the x-axis.
+		 *  @param majorSweep Counterclockwise angle around the z-axis.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createSpring(
 			std::string name,
 			float minor      = 0.25,
@@ -348,26 +390,30 @@ class Mesh : public StaticFactory
 			float majorStart = 0.0,
 			float majorSweep = radians(720.0));
 
-		/// Creates the Utah Teapot using the original b-spline surface data. (https://en.wikipedia.org/wiki/Utah_teapot)
-		/// The lid is points towards the z axis and the spout points towards the x axis.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param segments The number segments along each patch. Should be >= 1. If zero empty mesh is generated.
-		/// @returns a reference to the mesh component
+		/** Creates the Utah Teapot using the original b-spline surface data. (https://en.wikipedia.org/wiki/Utah_teapot)
+		 *  The lid is points towards the z axis and the spout points towards the x axis.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param segments The number segments along each patch. Should be >= 1. If zero empty mesh is generated.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createTeapotahedron(
 			std::string name, 
 			int segments = 8);
 
-		/// Creates a torus centered at the origin and along the xy-plane.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param minor Radius of the minor (inner) ring
-		/// @param major Radius of the major (outer) ring
-		/// @param slices Subdivisions around the minor ring
-		/// @param segments Subdivisions around the major ring
-		/// @param minorStart Counterclockwise angle relative to the xy-plane.
-		/// @param minorSweep Counterclockwise angle around the circle.
-		/// @param majorStart Counterclockwise angle around the z-axis relative to the x-axis.
-		/// @param majorSweep Counterclockwise angle around the z-axis.
-		/// @returns a reference to the mesh component
+		/** Creates a torus centered at the origin and along the xy-plane.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param minor Radius of the minor (inner) ring
+		 *  @param major Radius of the major (outer) ring
+		 *  @param slices Subdivisions around the minor ring
+		 *  @param segments Subdivisions around the major ring
+		 *  @param minorStart Counterclockwise angle relative to the xy-plane.
+		 *  @param minorSweep Counterclockwise angle around the circle.
+		 *  @param majorStart Counterclockwise angle around the z-axis relative to the x-axis.
+		 *  @param majorSweep Counterclockwise angle around the z-axis.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createTorus(
 			std::string name,
 			float minor      = 0.25,
@@ -379,12 +425,15 @@ class Mesh : public StaticFactory
 			float majorStart = 0.0,
 			float majorSweep = radians(360.0));
 
-		/// Creates a circle extruded along the path of a knot.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param p,q Each torus knot is specified by a pair of coprime integers p and q. (https://en.wikipedia.org/wiki/Torus_knot)
-		/// @param slices Number subdivisions around the circle.
-		/// @param segments Number of subdivisions around the path.
-		/// @returns a reference to the mesh component
+		/** Creates a circle extruded along the path of a knot. (https://en.wikipedia.org/wiki/Torus_knot)
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param p First coprime integer.
+		 *  @param q Second coprime integer.
+		 *  @param slices Number subdivisions around the circle.
+		 *  @param segments Number of subdivisions around the path.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createTorusKnot(
 			std::string name,
 			int p        = 2,
@@ -392,36 +441,45 @@ class Mesh : public StaticFactory
 			int slices   = 8,
 			int segments = 96);
 
-		/// Creates a triangle centered at the origin and contained within the circumscribed circle.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius The radius of the containing circle.
-		/// @param segments The number of segments along each edge. Must be >= 1.
-		/// @returns a reference to the mesh component
+
+		/** Creates a triangle centered at the origin and contained within the circumscribed circle.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param radius The radius of the containing circle.
+		 *  @param segments The number of segments along each edge. Must be >= 1.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createTriangleFromCircumscribedCircle(
 			std::string name,
 			float radius   = 1.0, 
 			int   segments = 4);
 
-		/// Creates a triangle from the specified vertices
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param v0,v1,v2 The vertex positions of the triangle.
-		/// @param segments The number of segments along each edge. Must be >= 1.
-		/// @returns a reference to the mesh component
+		/** Creates a triangle from the specified vertices
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param v0 First of the vertex positions of the triangle.
+		 *  @param v1 Second of the vertex positions of the triangle.
+		 *  @param v2 Third of the vertex positions of the triangle.
+		 *  @param segments The number of segments along each edge. Must be >= 1.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createTriangle(
 			std::string name,
 			vec3 v0, vec3 v1, vec3 v2,
 			int segments = 4);
 
-		/// Creates an uncapped tube (a cylinder with thickness) centered at the origin and aligned along the z-axis.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param radius The outer radius of the cylinder on the xy-plane.
-		/// @param innerRadius The inner radius of the cylinder on the xy-plane.
-		/// @param size Half of the length of the cylinder along the z-axis.
-		/// @param slices Subdivisions around the z-axis.
-		/// @param segments Subdivisions along the z-axis.
-		/// @param start Counterclockwise angle around the z-axis relative to the x-axis.
-		/// @param sweep Counterclockwise angle around the z-axis.
-		/// @returns a reference to the mesh component
+		/** Creates an uncapped tube (a cylinder with thickness) centered at the origin and aligned along the z-axis.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param radius The outer radius of the cylinder on the xy-plane.
+		 *  @param innerRadius The inner radius of the cylinder on the xy-plane.
+		 *  @param size Half of the length of the cylinder along the z-axis.
+		 *  @param slices Subdivisions around the z-axis.
+		 *  @param segments Subdivisions along the z-axis.
+		 *  @param start Counterclockwise angle around the z-axis relative to the x-axis.
+		 *  @param sweep Counterclockwise angle around the z-axis.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createTube(
 			std::string name,
 			float radius      = 1.0,
@@ -432,45 +490,51 @@ class Mesh : public StaticFactory
 			float start       = 0.0,
 			float sweep       = radians(360.0));
 
-		/// Creates a tube from a circle extruded linearly along the specified path.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param path A set of vertices describing a linear path.
-		/// @param radius The radius of the extruded circle
-		/// @param segments Number of subdivisions around the circle.
-		/// @returns a reference to the mesh component
+		/** Creates a tube from a circle extruded linearly along the specified path.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param path A set of vertices describing a linear path.
+		 *  @param radius The radius of the extruded circle
+		 *  @param segments Number of subdivisions around the circle.
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createTubeFromPolyline(
 			std::string name, 
 			std::vector<glm::vec3> path, 
 			float     radius = 1.0, 
-			uint32_t  segments = 16);
+			int  segments = 16);
 
-		/// Creates a tube from a rounded rectangle extruded linearly along the specified path.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param path A set of vertices describing a linear path.
-		/// @param radius The radius of the rounded corners
-		/// @param size Half of the length of an edge
-		/// @param slices Number of subdivisions in each rounded corner
-		/// @param segments Number of subdivisions along each edge
-		/// @returns a reference to the mesh component
+		/** Creates a tube from a rounded rectangle extruded linearly along the specified path.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param path A set of vertices describing a linear path.
+		 *  @param radius The radius of the rounded corners
+		 *  @param size Half of the length of an edge
+		 *  @param slices Number of subdivisions in each rounded corner
+		 *  @param segments Number of subdivisions along each edge
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createRoundedRectangleTubeFromPolyline(
 			std::string name, 
 			std::vector<glm::vec3> path, 
 			float radius = 1.0, 
-			vec2 size = {.75, .75},
+			vec2 size = vec2(.75, .75),
 			int slices = 4,
-			ivec2 segments = {8, 8});
+			ivec2 segments = ivec2(8, 8));
 
-		/// Creates a tube from a rounded rectangle extruded linearly along the specified path.
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param path A set of vertices describing a linear path.
-		/// @param size Half of the length of an edge
-		/// @param segments Number of subdivisions along each edge
-		/// @returns a reference to the mesh component
+		/** Creates a tube from a rounded rectangle extruded linearly along the specified path.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param path A set of vertices describing a linear path.
+		 *  @param size Half of the length of an edge
+		 *  @param segments Number of subdivisions along each edge
+		 *  @returns a reference to the mesh component
+		 */
 		static Mesh* createRectangleTubeFromPolyline(
 			std::string name, 
 			std::vector<glm::vec3> path, 
-			vec2 size = {1., 1.},
-			ivec2 segments = {8, 8});
+			vec2 size = vec2(1., 1.),
+			ivec2 segments = ivec2(8, 8));
 
 		/// Creates a mesh component from an OBJ file (ignoring any .mtl files) 
 		/// @param name The name (used as a primary key) for this mesh component
@@ -505,13 +569,17 @@ class Mesh : public StaticFactory
 			std::vector<uint32_t> indices = std::vector<uint32_t>());
 
         /** Gets a mesh by name 
+		 * 
          * \returns a mesh who's primary name key matches \p name 
-         * \param name A unique name used to lookup this mesh. */
+         * \param name A unique name used to lookup this mesh. 
+		 */
         static Mesh* get(std::string name);
 
         /** Gets a mesh by id 
+		 * 
          * \returns a mesh who's primary id key matches \p id 
-         * \param id A unique id used to lookup this mesh. */
+         * \param id A unique id used to lookup this mesh. 
+		 */
         static Mesh* get(uint32_t id);
 
         /** \returns a pointer to the table of MeshStructs required for rendering */
@@ -524,11 +592,15 @@ class Mesh : public StaticFactory
         static uint32_t getCount();
 
         /** Deletes the mesh who's primary name key matches \p name 
-         * \param name A unique name used to lookup the mesh for deletion.*/
+		 * 
+         * \param name A unique name used to lookup the mesh for deletion.
+		 */
         static void remove(std::string name);
 
         /** Deletes the mesh who's primary id key matches \p id 
-         * \param id A unique id used to lookup the mesh for deletion.*/
+		 * 
+         * \param id A unique id used to lookup the mesh for deletion.
+		 */
         static void remove(uint32_t id);
 
         /** Allocates the tables used to store all mesh components */
@@ -715,10 +787,10 @@ class Mesh : public StaticFactory
 		static std::shared_ptr<std::mutex> getEditMutex();
 
 	private:
-		/* Creates an uninitialized mesh. Useful for preallocation. */
+		/** Creates an uninitialized mesh. Useful for preallocation. */
 		Mesh();
 
-		/* Creates a mesh with the given name and id. */
+		/** Creates a mesh with the given name and id. */
 		Mesh(std::string name, uint32_t id);
 
 		/* TODO */
@@ -785,22 +857,22 @@ class Mesh : public StaticFactory
 		/* Frees any resources this mesh component may have allocated */
 		// void cleanup();
 
-		// /* Creates a generic vertex buffer object */
+		// /** Creates a generic vertex buffer object */
 		// uint64_t createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, vk::DeviceMemory &bufferMemory);
 
-		// /* Creates a position buffer, and uploads position data stored in the positions list */
+		// /** Creates a position buffer, and uploads position data stored in the positions list */
 		// void createPointBuffer(bool allow_edits, bool submit_immediately);
 
-		// /* Creates a per vertex color buffer, and uploads per vertex color data stored in the colors list */
+		// /** Creates a per vertex color buffer, and uploads per vertex color data stored in the colors list */
 		// void createColorBuffer(bool allow_edits, bool submit_immediately);
 
-		// /* Creates a normal buffer, and uploads normal data stored in the normals list */
+		// /** Creates a normal buffer, and uploads normal data stored in the normals list */
 		// void createNormalBuffer(bool allow_edits, bool submit_immediately);
 
-		// /* Creates a texture coordinate buffer, and uploads texture coordinate data stored in the texture coordinates list */
+		// /** Creates a texture coordinate buffer, and uploads texture coordinate data stored in the texture coordinates list */
 		// void createTexCoordBuffer(bool allow_edits, bool submit_immediately);
 
-		// /* Creates an index buffer, and uploads index data stored in the indices list */
+		// /** Creates an index buffer, and uploads index data stored in the indices list */
 		// void createTriangleIndexBuffer(bool allow_edits, bool submit_immediately);
 
 		// /* Loads in an OBJ mesh and copies per vertex data to the GPU */
@@ -824,7 +896,7 @@ class Mesh : public StaticFactory
 			std::vector<uint32_t> indices
 		);
 		
-		/* Creates a procedural mesh from the given mesh generator, and copies per vertex to the GPU */
+		/** Creates a procedural mesh from the given mesh generator, and copies per vertex to the GPU */
 		template <class Generator>
 		void generateProcedural(Generator &mesh, bool flip_z)
 		{
