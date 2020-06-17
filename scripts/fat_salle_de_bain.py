@@ -123,8 +123,8 @@ for i_s, s in enumerate(sdb):
 
     # if i_s > 4:
     #     break
-    for ind in s.get_mesh().get_triangle_indices():
-        print(ind)
+    a = s.get_mesh().get_triangle_indices()
+    print(a)
         
     try:    
 
