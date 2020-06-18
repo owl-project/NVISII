@@ -57,7 +57,8 @@ camera_entity = visii.entity.create(
         near = .1))
 
 
-camera_pos = visii.vec3(0,-2.5,0.8)
+camera_pos = visii.vec3(0,-1.5,1.3)
+camera_pos = visii.vec3(1,-.8,1.4)
 visii.set_camera_entity(camera_entity)
 # camera_entity.get_transform().set_position(0, 0.0, -5.)
 camera_entity.get_camera().use_perspective_from_fov(0.785398, 1.0, .01)
@@ -89,10 +90,19 @@ obj_scale = 0.1
 # sdb = visii.import_obj("sdb",
 #     "scenes/salle_de_bain/salle_de_bain.obj",
 #     'scenes/salle_de_bain/',
-#     visii.vec3(0), # translation here
+#     visii.vec3(1,0,0), # translation here
 #     visii.vec3(obj_scale), # scale here
 #     visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here)
 # )
+
+sdb = visii.import_obj("sdb",
+    "scenes/salle_de_bain_separated/salle_de_bain_separated.obj",
+    'scenes/salle_de_bain_separated/',
+    visii.vec3(1,0,0), # translation here
+    visii.vec3(obj_scale), # scale here
+    visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here)
+)
+
 
 # obj_scale = 0.2
 # sdb = visii.import_obj("sdb",
@@ -108,82 +118,115 @@ obj_scale = 0.1
 
 # )
 
-obj_scale = 0.1
-sdb = visii.import_obj("sdb",
-    "scenes/bowl/bowl.obj",
-    'scenes/bowl/',
-    visii.vec3(0), # translation here
-    visii.vec3(obj_scale), # scale here
-    visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here)
-)
+# obj_scale = 0.1
+# sdb = visii.import_obj("sdb",
+#     "scenes/bowl/bowl.obj",
+#     'scenes/bowl/',
+#     visii.vec3(0), # translation here
+#     visii.vec3(obj_scale), # scale here
+#     visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here)
+# )
+
+mirror = visii.material.get('sdbMirror')
+
+mirror.set_roughness(0)
+mirror.set_metallic(1)
+mirror.set_base_color(visii.vec3(1))
+
+# light = visii.entity.get("sbdLight")
+# print(light)
+# light.set_light(visii.light.create('light'))
+# light.get_light().set_intensity(10000)
+# light.get_light().set_temperature(5000)
 
 
 # create collision meshes
+light = None
 for i_s, s in enumerate(sdb):
 
-    # if i_s > 4:
-    #     break
-    a = s.get_mesh().get_triangle_indices()
-    print(a)
-        
-    try:    
+    if "light" in s.get_name().lower():
+        print ("light")
+        s.set_light(visii.light.create('light'))
+        s.get_light().set_intensity(100)
+        s.get_light().set_temperature(5000)
+        s.clear_material()
+        light = s
+    vertices = []
+    indices = s.get_mesh().get_triangle_indices()
 
-        vertices = []
-        indices = []
-        for v in s.get_mesh().get_vertices():
-            vertices.append([v[0],v[1],v[2]])
-
-        obj_col_id = p.createCollisionShape(
-            p.GEOM_MESH,
-            vertices = vertices,
-            meshScale = [obj_scale,obj_scale,obj_scale]
-            )
-
+    for v in s.get_mesh().get_vertices():
+        vertices.append([v[0],v[1],v[2]])
         pos = s.get_transform().get_position()
         pos = [pos[0],pos[1],pos[2]]
         rot = s.get_transform().get_rotation()
         rot = [rot[0],rot[1],rot[2],rot[3]]
+
+    try:    
+
+        obj_col_id = p.createCollisionShape(
+            p.GEOM_MESH,
+            vertices = vertices,
+            meshScale = [obj_scale,obj_scale,obj_scale],
+            indices =  indices,
+            )
         
         p.createMultiBody(
             baseCollisionShapeIndex = obj_col_id,
             basePosition = pos,
             baseOrientation= rot,
         )    
-        print(f"added collision for {s.get_name()}, at {pos}, {rot}")
+        print(f"added collision with indices for {s.get_name()}, at {pos}, {rot}")
         # print('min,max')
         # print(s.get_mesh().get_min_aabb_corner(),s.get_mesh().get_max_aabb_corner())
         # print('distance')
         # print(distance(s.get_mesh().get_min_aabb_corner(),s.get_mesh().get_max_aabb_corner()))
     except:
-        print(f"failed to generate collision for {s.get_name()}")
+        try:
+            obj_col_id = p.createCollisionShape(
+                p.GEOM_MESH,
+                vertices = vertices,
+                meshScale = [obj_scale,obj_scale,obj_scale],
+                )
+            
+            p.createMultiBody(
+                baseCollisionShapeIndex = obj_col_id,
+                basePosition = pos,
+                baseOrientation= rot,
+            )    
+            print(f"added collision for {s.get_name()}, at {pos}, {rot}")
+        except:
+            print(f"failed to generate collision for {s.get_name()}")
         # print(distance(s.get_mesh().get_min_aabb_corner(),s.get_mesh().get_max_aabb_corner()))
+
 # raise()
-# a = visii.import_obj("sdb",
-#     "scenes/teapot/teapot.obj",
-#     'scenes/teapot/',
-#     visii.vec3(0), # translation here
-#     visii.vec3(.1), # scale here
-#     visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here)
+
+    # raise()
+    # a = visii.import_obj("sdb",
+    #     "scenes/teapot/teapot.obj",
+    #     'scenes/teapot/',
+    #     visii.vec3(0), # translation here
+    #     visii.vec3(.1), # scale here
+    #     visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here)
+    # )
+    # a[0].get_transform().set_scale(.1)
+
+
+
+
+
+# floor = visii.entity.create(
+#     name="floor",
+#     mesh = visii.mesh.create_plane("floor"),
+#     transform = visii.transform.create("floor"),
+#     material = visii.material.create("floor"),
+#     light = visii.light.create('floor')
 # )
-# a[0].get_transform().set_scale(.1)
-
-
-
-
-
-floor = visii.entity.create(
-    name="floor",
-    mesh = visii.mesh.create_plane("floor"),
-    transform = visii.transform.create("floor"),
-    material = visii.material.create("floor"),
-    light = visii.light.create('floor')
-)
-floor.get_light().set_intensity(10000)
-floor.get_light().set_temperature(5000)
-# floor.get_transform().set_position(0,0,-0.1)
-floor.get_transform().set_position(visii.vec3(0,0,3))
-floor.get_transform().set_scale(visii.vec3(0.5))
-floor.get_transform().set_rotation(visii.quat(0,0,1,0))
+# floor.get_light().set_intensity(10000)
+# floor.get_light().set_temperature(5000)
+# # floor.get_transform().set_position(0,0,-0.1)
+# floor.get_transform().set_position(visii.vec3(0,0,3))
+# floor.get_transform().set_scale(visii.vec3(0.5))
+# floor.get_transform().set_rotation(visii.quat(0,0,1,0))
 
 # Set the collision of the floor
 # plane_col_id = p.createCollisionShape(p.GEOM_PLANE)
@@ -258,9 +301,9 @@ from pyquaternion import Quaternion
 
 for key in objects_dict:
     pos_rand = [
-        np.random.uniform(-0.05,0.05),
-        np.random.uniform(-0.05,0.05),
-        np.random.uniform(1,2),
+        np.random.uniform(-0.1,0.1),
+        np.random.uniform(-0.1,0.1),
+        np.random.uniform(1.8,3),
     ]
     rq = Quaternion.random()
     rot_random = visii.quat(rq.w,rq.x,rq.y,rq.z)
@@ -274,7 +317,7 @@ for key in objects_dict:
     )
 
 
-for i in range (400):
+for i in range (1000):
     p.stepSimulation()
     # if i % 2 == 0:
     if True:
@@ -287,8 +330,9 @@ for i in range (400):
         camera_entity.get_camera().set_view(
             visii.lookAt(
                 camera_pos,
-                # visii.vec3(pos[0],pos[1],pos[2]),
-                visii.vec3(0,0,0),
+                visii.vec3(pos[0],pos[1],pos[2]),
+                # visii.vec3(-0.5,2,2),
+                # light.get_transform().get_position(),
                 visii.vec3(0,0,1),
             )
         )
