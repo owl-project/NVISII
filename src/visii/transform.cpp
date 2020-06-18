@@ -169,21 +169,40 @@ vec3 Transform::inverseTransformVector(vec3 vector)
 	return vec3(localToParentMatrix * vec4(vector, 0.0));
 }
 
-/*
-Rotates the transform so the forward vector points at the target's current position.
-Then it rotates the transform to point its up direction vector in the direction hinted at 
-by the parentUp vector.
-*/
+glm::quat safeQuatLookAt(
+    glm::vec3 const& lookFrom,
+    glm::vec3 const& lookTo,
+    glm::vec3 const& up,
+    glm::vec3 const& alternativeUp)
+{
+    glm::vec3  direction       = lookTo - lookFrom;
+    float      directionLength = glm::length(direction);
 
-// void Transform::look_at(vec3 point)
-// {
-// 	if (glm::distance2(point, position) <= 1e-10f) return;
-// 	glm::vec3 to = glm::normalize(point - position);
-// 	if (glm::distance2(forward, to) <= 1e-10f) return;
-// 	glm::vec3 axis = glm::normalize(glm::cross(forward, to));
-// 	float amount = glm::dot(forward, to);
-// 	add_rotation(amount, axis);
-// }
+    // Check if the direction is valid; Also deals with NaN
+    if(!(directionLength > 0.0001))
+        return glm::quat(1, 0, 0, 0); // Just return identity
+
+    // Normalize direction
+    direction /= directionLength;
+
+    // Is the normal up (nearly) parallel to direction?
+    if(glm::abs(glm::dot(direction, up)) > .9999f) {
+        // Use alternative up
+        return glm::quatLookAt(direction, alternativeUp);
+    }
+    else {
+        return glm::quatLookAt(direction, up);
+    }
+}
+
+void Transform::lookAt(vec3 eye, vec3 at, vec3 up)
+{
+	setPosition(eye);
+	up = normalize(up);
+	glm::vec3 forward = glm::normalize(at - eye);
+	glm::quat rotation = safeQuatLookAt(eye, at, up, up);
+	setRotation(rotation);
+}
 
 // void Transform::rotateAround(vec3 point, float angle, vec3 axis)
 // {
@@ -233,6 +252,7 @@ void Transform::setTransform(glm::mat4 transformation, bool decompose)
 		glm::vec3 skew;
 		glm::vec4 perspective;
 		glm::decompose(transformation, scale, rotation, translation, skew, perspective);
+		// rotation = glm::conjugate(rotation);
 
 		/* Decomposition can return negative scales. We make the assumption this is impossible.*/
 
@@ -407,8 +427,8 @@ void Transform::updateMatrix()
 	parentToLocalMatrix = (parentToLocalScale * parentToLocalRotation * parentToLocalTranslation * parentToLocalTransform);
 
 	right = glm::vec3(localToParentMatrix[0]);
-	forward = glm::vec3(localToParentMatrix[1]);
-	up = glm::vec3(localToParentMatrix[2]);
+	up = glm::vec3(localToParentMatrix[1]);
+	forward = glm::vec3(localToParentMatrix[2]);
 	position = glm::vec3(localToParentMatrix[3]);
 
 	updateChildren();
