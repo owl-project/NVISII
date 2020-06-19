@@ -244,13 +244,16 @@ class Transform : public StaticFactory
     */
     vec3 inverseTransformVector(vec3 vector);
 
-    // /**
-    // Rotates the transform so the forward vector points at the target's current position.
-    // Then it rotates the transform to point its up direction vector in the direction hinted at 
-    // by the parentUp vector.
-    // */
-    // void look_at(Transform target, vec3 parentUp);
-    // void look_at(vec3 point);
+    /**
+     *  Rotates the transform so the forward vector points at the target's current position.
+     *  Then it rotates the transform to point its up direction vector in the direction hinted at 
+     *  by the parentUp vector.
+     * 
+     * @param eye The position to place the object
+     * @param at The position to point the transform towards
+     * @param up The unit direction pointing upwards
+    */
+    void lookAt(vec3 eye, vec3 at, vec3 up);
 
     // /**
     // Applies a rotation of eulerAngles.z degrees around the z axis, eulerAngles.x degrees around 

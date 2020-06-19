@@ -171,13 +171,14 @@ inline __device__
 owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transform, ivec2 pixelID, ivec2 frameSize, LCGRand &rng)
 {
     /* Generate camera rays */    
-    mat4 camWorldToLocal = transform.worldToLocal;
+    mat4 camWorldToLocal = transform.localToWorld;
     mat4 projinv = camera.projinv;//glm::inverse(glm::perspective(.785398, 1.0, .1, 1000));//camera.projinv;
-    mat4 viewinv = camera.viewinv * camWorldToLocal;
+    mat4 viewinv = /*camera.viewinv * */camWorldToLocal;
     vec2 aa = vec2(lcg_randomf(rng),lcg_randomf(rng)) - vec2(.5f,.5f);
     vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(optixLaunchParams.frameSize);
-    vec3 right = normalize(glm::vec3(viewinv[0]));
-    vec3 up = normalize(glm::vec3(viewinv[1]));
+    vec3 right = normalize(glm::column(viewinv, 0));
+    vec3 up = normalize(glm::column(viewinv, 1));
+    vec3 origin = glm::column(viewinv, 3);
     
     float cameraLensRadius = camera.apertureDiameter;
 
@@ -191,7 +192,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     vec3 rd = cameraLensRadius * p;
     vec3 lens_offset = (right * rd.x) / float(frameSize.x) + (up * rd.y) / float(frameSize.y);
 
-    vec3 origin = vec3(viewinv * vec4(0.f,0.f,0.f,1.f)) + lens_offset;
+    origin = origin + lens_offset;
     vec2 dir = inUV * 2.f - 1.f; dir.y *= -1.f;
     vec4 t = (projinv * vec4(dir.x, dir.y, -1.f, 1.f));
     vec3 target = vec3(t) / float(t.w);
