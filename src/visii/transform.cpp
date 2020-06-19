@@ -197,10 +197,11 @@ glm::quat safeQuatLookAt(
 
 void Transform::lookAt(vec3 at, vec3 up, vec3 eye)
 {
-	if (glm::any(glm::equal(eye, vec3(NAN)))) {
+	if (glm::any(glm::isnan(eye))) {
 		eye = this->position;
+	} else {
+		setPosition(eye);
 	}
-	setPosition(eye);
 	up = normalize(up);
 	glm::vec3 forward = glm::normalize(at - eye);
 	glm::quat rotation = safeQuatLookAt(eye, at, up, up);
