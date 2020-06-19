@@ -249,11 +249,11 @@ class Transform : public StaticFactory
      *  Then it rotates the transform to point its up direction vector in the direction hinted at 
      *  by the parentUp vector.
      * 
-     * @param eye The position to place the object
      * @param at The position to point the transform towards
      * @param up The unit direction pointing upwards
+     * @param eye (optional) The position to place the object
     */
-    void lookAt(vec3 eye, vec3 at, vec3 up);
+    void lookAt(vec3 at, vec3 up, vec3 eye = vec3(NAN));
 
     // /**
     // Applies a rotation of eulerAngles.z degrees around the z axis, eulerAngles.x degrees around 
