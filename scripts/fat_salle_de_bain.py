@@ -47,29 +47,39 @@ p.setGravity(0,0,-10)
 if not opt.noise is True: 
     visii.enable_denoiser()
 
-
+# print(float(opt.width)/float(opt.height))
 camera_entity = visii.entity.create(
     name="my_camera_entity",
     transform=visii.transform.create("my_camera_transform"),
-    camera=visii.camera.create_perspective_from_fov(name = "my_camera", 
+    camera=visii.camera.create_perspective_from_fov(
+        name = "my_camera", 
         field_of_view = 0.785398, 
         aspect = float(opt.width)/float(opt.height),
         # aspect = float(opt.height)/float(opt.width),
-        near = .1))
+        near = .01
+    )
+)
 
 
 camera_pos = visii.vec3(0,-1.5,1.3)
 camera_pos = visii.vec3(1,-1.5,1.8)
 visii.set_camera_entity(camera_entity)
 # camera_entity.get_transform().set_position(0, 0.0, -5.)
-camera_entity.get_camera().use_perspective_from_fov(0.785398, 1.0, .01)
-camera_entity.get_camera().set_view(
-    visii.lookAt(
-        camera_pos,
-        visii.vec3(0,0,0),
-        visii.vec3(0,0,1),
-    )
+# camera_entity.get_camera().use_perspective_from_fov(0.785398, float(opt.width)/float(opt.height), .01)
+# camera_entity.get_camera().set_view(
+#     visii.lookAt(
+#         camera_pos,
+#         visii.vec3(0,0,0),
+#         visii.vec3(0,0,1),
+#     )
+# )
+
+camera_entity.get_transform().look_at(
+    camera_pos,
+    visii.vec3(0,0,0),
+    visii.vec3(0,0,1),
 )
+
 
 # areaLight1 = visii.entity.create(
 #     name="areaLight1",
@@ -328,14 +338,12 @@ for i in range (1000):
             update_pose(objects_dict[key])
 
         pos, rot = p.getBasePositionAndOrientation(objects_dict['MacaroniAndCheese']['bullet_id'])   
-        camera_entity.get_camera().set_view(
-            visii.lookAt(
+        camera_entity.get_transform().look_at(
                 camera_pos,
                 visii.vec3(pos[0],pos[1],pos[2]),
                 # visii.vec3(-0.5,2,2),
                 # light.get_transform().get_position(),
                 visii.vec3(0,0,1),
-            )
         )
         render(i)
 

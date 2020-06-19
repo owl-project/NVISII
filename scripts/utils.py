@@ -427,7 +427,18 @@ random_intensity.destinations = {}
 random_intensity.current = {}
 random_intensity.speeds = {}
 
+
+
+
+
+
 ######## NDDS ##########
+
+
+
+
+
+
 def add_cuboid(name):
     obj = visii.entity.get(name)
 
@@ -455,11 +466,10 @@ def add_cuboid(name):
 
 def get_cuboid_image_space(obj_id, camera_name = 'my_camera'):
     # return cubdoid + centroid projected to the image, values [0..1]
-    # This assumes that only the cam_view is used.
 
-    # cam_matrix = camera_entity.transform().get_world_to_local_matrix()
+    cam_matrix = camera_entity.transform().get_world_to_local_matrix()
 
-    cam_view_matrix = visii.entity.get(camera_name).get_camera().get_view()
+    # cam_view_matrix = visii.entity.get(camera_name).get_camera().get_view()
     cam_proj_matrix = visii.entity.get(camera_name).get_camera().get_projection()
 
     points = []
@@ -471,7 +481,7 @@ def get_cuboid_image_space(obj_id, camera_name = 'my_camera'):
             trans.get_world_translation()[2],
             1)
       
-        p_image = cam_proj_matrix * (cam_view_matrix * pos_m) 
+        p_image = cam_proj_matrix * (cam_matrix * pos_m) 
         p_image = visii.vec2(p_image) / p_image.w
         p_image = p_image * visii.vec2(1,-1)
         p_image = (p_image + visii.vec2(1,1)) * 0.5
@@ -548,7 +558,16 @@ def export_to_ndds_file(
     with open(filename, 'w+') as fp:
         json.dump(dict_out, fp, indent=4, sort_keys=True)
 
+
+
+
+
+
 #################### BULLET THINGS ##############################
+
+
+
+
 
 import pybullet as p
 

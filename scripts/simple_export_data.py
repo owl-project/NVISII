@@ -87,13 +87,23 @@ floor.get_transform().set_scale(1000)
 floor.get_material().set_roughness(1.0)
 
 
-
-#%%
-
+# LIGHT
 
 
-soup_mesh = visii.mesh.create_from_obj("soup", "models/alphabet_soup/textured.obj")
-soup_texture = visii.texture.create_from_image('soup',"models/alphabet_soup/texture_map.png")
+areaLight1 = visii.entity.create(
+    name="areaLight1",
+    light = visii.light.create("areaLight1"),
+    transform = visii.transform.create("areaLight1"),
+    mesh = visii.mesh.create_teapotahedron("areaLight1"),
+)
+areaLight1.get_light().set_intensity(10000.)
+areaLight1.get_transform().set_position(0, 0, 5)
+areaLight1.get_light().set_temperature(4000)
+
+
+
+obj_mesh = visii.mesh.create_from_obj("obj", "models/Mayo/google_16k/textured.obj")
+obj_texture = visii.texture.create_from_image('obj',"models/Mayo/google_16k/texture_map.png")
 
 mesh1 = visii.entity.create(
     name="mesh1",
@@ -120,19 +130,6 @@ mesh1.get_transform().set_scale(0.01)
 
 print(mesh1.get_id())
 
-
-# LIGHT
-
-
-areaLight1 = visii.entity.create(
-    name="areaLight1",
-    light = visii.light.create("areaLight1"),
-    transform = visii.transform.create("areaLight1"),
-    mesh = visii.mesh.create_teapotahedron("areaLight1"),
-)
-areaLight1.get_light().set_intensity(10000.)
-areaLight1.get_transform().set_position(0, 0, 5)
-areaLight1.get_light().set_temperature(4000)
 
 
 
