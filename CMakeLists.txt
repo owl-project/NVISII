@@ -222,6 +222,10 @@ set(IMGUI_SRC
 # include_directories(${TBB_INCLUDE_DIR})
 
 # cuda
+if (${CUDA_TOOLKIT_ROOT_DIR})
+message(INFO " CUDA_TOOLKIT_DIR set to ${CUDA_TOOLKIT_ROOT_DIR}")
+endif()
+
 find_package(CUDA REQUIRED)
 include_directories(${CUDA_TOOLKIT_INCLUDE})
 find_program(BIN2C bin2c 
