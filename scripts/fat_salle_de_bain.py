@@ -58,7 +58,7 @@ camera_entity = visii.entity.create(
 
 
 camera_pos = visii.vec3(0,-1.5,1.3)
-camera_pos = visii.vec3(1,-.8,1.4)
+camera_pos = visii.vec3(1,-1.5,1.8)
 visii.set_camera_entity(camera_entity)
 # camera_entity.get_transform().set_position(0, 0.0, -5.)
 camera_entity.get_camera().use_perspective_from_fov(0.785398, 1.0, .01)
@@ -326,7 +326,7 @@ for i in range (1000):
         for key in objects_dict:
             update_pose(objects_dict[key])
 
-        pos, rot = p.getBasePositionAndOrientation(objects_dict[key]['bullet_id'])   
+        pos, rot = p.getBasePositionAndOrientation(objects_dict['MacaroniAndCheese']['bullet_id'])   
         camera_entity.get_camera().set_view(
             visii.lookAt(
                 camera_pos,
