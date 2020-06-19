@@ -53,7 +53,8 @@ camera_entity = visii.entity.create(
     transform=visii.transform.create("my_camera_transform"),
     camera=visii.camera.create_perspective_from_fov(name = "my_camera", 
         field_of_view = 0.785398, 
-        aspect = opt.width/float(opt.height),
+        aspect = float(opt.width)/float(opt.height),
+        # aspect = float(opt.height)/float(opt.width),
         near = .1))
 
 
