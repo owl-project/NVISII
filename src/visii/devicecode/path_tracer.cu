@@ -165,6 +165,7 @@ void loadMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float
     mat.ior = sampleTexture(p.ior_texture_id, uv, make_float4(p.ior)).x;
     mat.specular_transmission = sampleTexture(p.transmission_texture_id, uv, make_float4(p.transmission)).x;
     mat.flatness = sampleTexture(p.subsurface_texture_id, uv, make_float4(p.subsurface)).x;
+    mat.transmission_roughness = max(sampleTexture(p.transmission_roughness_texture_id, uv, make_float4(p.transmission_roughness)).x, MIN_ROUGHNESS);
 }
 
 inline __device__
