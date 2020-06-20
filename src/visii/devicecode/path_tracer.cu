@@ -296,6 +296,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // If ray misses, interpret normal as "miss color" assigned by miss program and move on to the next sample
         if (payload.tHit <= 0.f) {
             illum = payload.normal;
+            primaryNormal = make_float3(0.f, 0.f, 1.f);
+            primaryAlbedo = illum;
         }
 
         // If we hit something, shade each hit point on a path using NEE with MIS
@@ -533,8 +535,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     );
     vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
     vec4 oldNormal = optixLaunchParams.normalBuffer[fbOfs];
+    if (any(isnan(oldAlbedo))) oldAlbedo = vec4(1.f);
+    if (any(isnan(oldNormal))) oldNormal = vec4(1.f);
     vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
     vec4 newNormal = normalize(camera.proj * camera_transform.worldToLocal * vec4(primaryNormal.x, primaryNormal.y, primaryNormal.z, 0.f));
+    newNormal.a = 1.f;
     vec4 accumAlbedo = (newAlbedo + float(optixLaunchParams.frameID) * oldAlbedo) / float(optixLaunchParams.frameID + 1);
     vec4 accumNormal = (newNormal + float(optixLaunchParams.frameID) * oldNormal) / float(optixLaunchParams.frameID + 1);
     optixLaunchParams.albedoBuffer[fbOfs] = accumAlbedo;
