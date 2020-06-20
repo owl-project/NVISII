@@ -300,12 +300,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // If we hit something, shade each hit point on a path using NEE with MIS
         else do {     
-            // If this is the first hit, keep track of primary albedo and normal for denoising.
-            if (bounce == 0) {
-                primaryNormal = payload.normal;
-                primaryAlbedo = mat.base_color;
-            }
-            
             // Load common positions and vectors used for shading...
             const float3 w_o = -ray.direction;
             const float3 hit_p = ray.origin + payload.tHit * ray.direction;
@@ -333,6 +327,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 entityMaterial = optixLaunchParams.materials[entity.material_id];
             }
             loadMaterial(entityMaterial, payload.uv, mat, roughnessMinimum);
+
+            // If this is the first hit, keep track of primary albedo and normal for denoising.
+            if (bounce == 0) {
+                primaryNormal = payload.normal;
+                primaryAlbedo = mat.base_color;
+            }
 
             // If the entity we hit is a light, terminate the path.
             // First hits are colored by the light. All other light hits are handled by NEE/MIS 
@@ -534,7 +534,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
     vec4 oldNormal = optixLaunchParams.normalBuffer[fbOfs];
     vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
-    vec4 newNormal = normalize(camera_transform.worldToLocal * vec4(primaryNormal.x, primaryNormal.y, primaryNormal.z, 0.f));
+    vec4 newNormal = normalize(camera.proj * camera_transform.worldToLocal * vec4(primaryNormal.x, primaryNormal.y, primaryNormal.z, 0.f));
     vec4 accumAlbedo = (newAlbedo + float(optixLaunchParams.frameID) * oldAlbedo) / float(optixLaunchParams.frameID + 1);
     vec4 accumNormal = (newNormal + float(optixLaunchParams.frameID) * oldNormal) / float(optixLaunchParams.frameID + 1);
     optixLaunchParams.albedoBuffer[fbOfs] = accumAlbedo;
