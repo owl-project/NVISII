@@ -32,6 +32,7 @@ struct DisneyMaterial {
 
 	float ior;
 	float specular_transmission;
+	float transmission_roughness;
 	float flatness;
 };
 
@@ -519,7 +520,7 @@ __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		}
 	} else {
 		// Sample microfacet transmission component
-		float alpha = max(MIN_ALPHA, mat.roughness * mat.roughness);
+		float alpha = max(MIN_ALPHA, mat.transmission_roughness * mat.transmission_roughness);
 		float3 w_h = sample_gtr_2_h(n, v_x, v_y, alpha, samples);
 		// if (dot(w_o, w_h) < 0.f) {
 		// 	w_h = -w_h;
@@ -540,8 +541,9 @@ __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 
 		// Invalid refraction, terminate ray
 		if (all_zero(w_i)) {
-			pdf = 0.f;
-			return make_float3(0.f);
+			w_i = reflect(-w_o, (entering) ? w_h : -w_h);
+			pdf = 1.f;
+			return make_float3(1.f);
 		}
 	}
 	pdf = disney_pdf(mat, n, w_o, w_i, v_x, v_y);

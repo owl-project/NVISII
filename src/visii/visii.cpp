@@ -632,7 +632,7 @@ void initializeOptix(bool headless)
 
     // Setup denoiser
     OptixDenoiserOptions options;
-    options.inputKind = OPTIX_DENOISER_INPUT_RGB;//_ALBEDO_NORMAL;
+    options.inputKind = OPTIX_DENOISER_INPUT_RGB_ALBEDO_NORMAL;
     options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
     auto optixContext = getOptixContext(OD.context, 0);
     auto cudaStream = getStream(OD.context, 0);
@@ -895,7 +895,7 @@ void denoiseImage() {
     albedoLayer.pixelStrideInBytes = 4 * sizeof(float);
     albedoLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
     albedoLayer.data   = (CUdeviceptr) bufferGetPointer(OD.albedoBuffer, 0);
-    // inputLayers.push_back(albedoLayer);
+    inputLayers.push_back(albedoLayer);
 
     OptixImage2D normalLayer;
     normalLayer.width = OD.LP.frameSize.x;
@@ -904,7 +904,7 @@ void denoiseImage() {
     normalLayer.pixelStrideInBytes = 4 * sizeof(float);
     normalLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
     normalLayer.data   = (CUdeviceptr) bufferGetPointer(OD.normalBuffer, 0);
-    // inputLayers.push_back(normalLayer);
+    inputLayers.push_back(normalLayer);
 
     OptixImage2D outputLayer = colorLayer; // can I get away with this?
 
