@@ -233,9 +233,11 @@ def random_translation(obj_id,
         )
         
         trans.add_position(
-            dir_vec[0] * random_translation.speeds[str(obj_id)],
-            dir_vec[1] * random_translation.speeds[str(obj_id)],
-            dir_vec[2] * random_translation.speeds[str(obj_id)]
+            visii.vec3(
+                dir_vec[0] * random_translation.speeds[str(obj_id)],
+                dir_vec[1] * random_translation.speeds[str(obj_id)],
+                dir_vec[2] * random_translation.speeds[str(obj_id)]
+            )
         )
 
 
@@ -575,7 +577,7 @@ import pybullet as p
 def create_obj(
     name = 'name',
     path_obj = "",
-    path_tex = "",
+    path_tex = None,
     scale = 1, 
     rot_base = None
     ):
@@ -583,7 +585,6 @@ def create_obj(
     
     # This is for YCB like dataset
     obj_mesh = visii.mesh.create_from_obj(name, path_obj)
-    obj_texture = visii.texture.create_from_image(name,path_tex)
 
     obj_entity = visii.entity.create(
         name=name,
@@ -599,7 +600,9 @@ def create_obj(
     obj_entity.get_material().set_roughness(random.uniform(0,1)) # default is 1  
     obj_entity.get_material().set_roughness(1) # default is 1  
 
-    obj_entity.get_material().set_base_color_texture(obj_texture)
+    if not path_tex is None:
+        obj_texture = visii.texture.create_from_image(name,path_tex)
+        obj_entity.get_material().set_base_color_texture(obj_texture)
 
     obj_entity.get_transform().set_scale(visii.vec3(scale))
 
