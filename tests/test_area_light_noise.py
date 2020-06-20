@@ -29,6 +29,10 @@ def moveCamera(x=3,y=3,z=2):
 interact(moveCamera, x=(-10, 10, .001), y=(-10, 10, .001), z=(-10, 10, .001))
 
 #%%
+tex = v.texture.create_from_image("texture", "../data/abandoned_tank_farm_01_1k.hdr")
+v.set_dome_light_texture(tex)
+
+#%%
 floor = v.entity.create(
     name="floor",
     mesh = v.mesh.create_plane("floor"),
@@ -38,14 +42,14 @@ floor = v.entity.create(
 #%%
 mesh1 = v.entity.create(
     name="mesh1",
-    mesh = v.mesh.create_teapotahedron("sphere1", 8),
+    mesh = v.mesh.create_teapotahedron("sphere1", 32),
     transform = v.transform.create("mesh1"),
     material = v.material.create("mesh1")
 )
 
 mesh2 = v.entity.create(
     name="mesh2",
-    mesh = v.mesh.create_sphere("sphere2", 1, 128, 128),
+    mesh = v.mesh.create_plane("sphere2"),
     transform = v.transform.create("mesh2"),
     material = v.material.create("mesh2")
 )
@@ -72,7 +76,7 @@ mesh2.get_transform().set_position(v.vec3(1.0, -1.0, 1.0))
 def changeRoughness(roughness=0): 
     mesh1.get_material().set_roughness(roughness)
     mesh2.get_material().set_roughness(roughness)
-def changeTransmission(transmission=0): 
+def changeTransmission(transmission=1): 
     mesh1.get_material().set_transmission(transmission)    
     mesh2.get_material().set_transmission(transmission)    
 def changeIor(ior=1.57): 
@@ -117,7 +121,7 @@ interact(changeTransmissionRoughess, transmission_roughness=(0.0, 1.0, .001))
 def changeDomeLightIntensity(dome_intensity=0): v.set_dome_light_intensity(dome_intensity)
 interact(changeDomeLightIntensity, dome_intensity=(0.0, 1.0, .001))
 #%%
-areaLight1.get_light().set_intensity(0.)
+areaLight1.get_light().set_intensity(10000.)
 #%%
 def moveLight(x = 0, y = 0, z = 3): areaLight1.get_transform().set_position(v.vec3(x,y,z))
 interact(moveLight, x=(0.0, 5.0, .001), y=(0.0, 5.0, .001), z=(-5.0, 5.0, .001))
@@ -141,9 +145,8 @@ v.render_to_png(1024,1024,4096,"test_area_light_noise.png")
 v.enable_denoiser()
 
 # %%
-tex = v.texture.create_from_image("texture", "../data/abandoned_tank_farm_01_1k.hdr")
+
 
 # %%
-v.set_dome_light_texture(tex)
 
 # %%

@@ -308,13 +308,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 v_x, v_y;
             float3 v_z = payload.normal;
             float3 v_gz = payload.gnormal;
-            if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
-                // prevents differences from geometric and shading normal from creating black artifacts
-                v_z = reflect(-v_z, v_gz); 
-            }
-            if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
-                v_z = -v_z;
-            }
+            // HACK
+            // if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
+            //     // prevents differences from geometric and shading normal from creating black artifacts
+            //     v_z = reflect(-v_z, v_gz); 
+            // }
+            // if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
+            //     v_z = -v_z;
+            // }
             ortho_basis(v_x, v_y, v_z);
 
             // For segmentations, metadata extraction for applications like denoising or ML training
@@ -460,8 +461,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
 
             // trace the next ray along that sampled BRDF direction
-            ray.origin = hit_p;
+            if (dot(w_o, v_z) < 0.f) {
+                v_z = -v_z;
+            }
+            ray.origin = hit_p;// + v_z * .1;
             ray.direction = w_i;
+            ray.tmin = EPSILON * 100.f;
             owl::traceRay(optixLaunchParams.world, ray, payload);
 
             if (light_pdf > EPSILON) {
