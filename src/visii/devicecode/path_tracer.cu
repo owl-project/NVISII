@@ -511,11 +511,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 break;
             }
 
-            // Do path regularization to reduce fireflies
-            // Note, .35f was chosen emperically, but could be exposed as a parameter later on.
-            if (sampledSpecular) {
-                roughnessMinimum = min((roughnessMinimum + .35f), 1.f);
-            }
+            // // Do path regularization to reduce fireflies
+            // // Note, .35f was chosen emperically, but could be exposed as a parameter later on.
+            // if (sampledSpecular) {
+            //     roughnessMinimum = min((roughnessMinimum + .35f), 1.f);
+            // }
 
             // If ray misses, interpret normal as "miss color" assigned by miss program and move on to the next sample
             if (payload.tHit <= 0.f) {
