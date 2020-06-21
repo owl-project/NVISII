@@ -308,14 +308,13 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 v_x, v_y;
             float3 v_z = payload.normal;
             float3 v_gz = payload.gnormal;
-            // HACK
-            // if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
-            //     // prevents differences from geometric and shading normal from creating black artifacts
-            //     v_z = reflect(-v_z, v_gz); 
-            // }
-            // if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
-            //     v_z = -v_z;
-            // }
+            if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
+                // prevents differences from geometric and shading normal from creating black artifacts
+                v_z = reflect(-v_z, v_gz); 
+            }
+            if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
+                v_z = -v_z;
+            }
             ortho_basis(v_x, v_y, v_z);
 
             // For segmentations, metadata extraction for applications like denoising or ML training
@@ -368,6 +367,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // first, sample the light source by importance sampling the light
             do {
                 if (numLights == 0) break;
+
+                bool entering = dot(w_o, v_z) < 0.f;
+                if (entering) break;
                 
                 uint32_t random_id = uint32_t(min(lcg_randomf(rng) * numLights, float(numLights - 1)));
                 random_id = min(random_id, numLights - 1);

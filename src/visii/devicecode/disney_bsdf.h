@@ -392,7 +392,7 @@ __device__ float3 disney_microfacet_transmission_isotropic(const DisneyMaterial 
 	float c = (fabs(i_dot_h) * fabs(o_dot_h)) / (fabs(i_dot_n) * fabs(o_dot_n));
 	c *= pow2(eta_o) / pow2(eta_i * i_dot_h + eta_o * o_dot_h);
 
-	return mat.base_color * d;//c * (1.f - f) * g * d;
+	return mat.base_color;// * c;//c * (1.f - f) * g * d;
 }
 
 __device__ float3 disney_microfacet_anisotropic(const DisneyMaterial &mat, const float3 &n,
@@ -443,17 +443,15 @@ __device__ float3 disney_brdf(const DisneyMaterial &mat, const float3 &n,
 
 	if (!same_hemisphere(w_o, w_i, n)) {
 		// transmissive objects refract when back of surface is visible.
-		// if (mat.specular_transmission > 0.f) 
-		// {
-		float3 spec_trans = disney_microfacet_transmission_isotropic(mat, n, w_o, w_i); // HACK
-		return spec_trans * (1.f - mat.metallic) * mat.specular_transmission;
-		// }
+		if (mat.specular_transmission > 0.f) 
+		{
+			float3 spec_trans = disney_microfacet_transmission_isotropic(mat, n, w_o, w_i); // HACK
+			return spec_trans * (1.f - mat.metallic) * mat.specular_transmission;
+		}
 
-		// // non-transmissive objects appear black when back of surface is visible.
-		// return make_float3(0.f);
+		// non-transmissive objects appear black when back of surface is visible.
+		return make_float3(0.f);
 	}
-
-	// return make_float3(1.f); // HACK
 
 	float coat = disney_clear_coat(mat, n, w_o, w_i);
 	float3 sheen = disney_sheen(mat, n, w_o, w_i);
@@ -498,16 +496,11 @@ __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
 		microfacet = gtr_2_aniso_pdf(w_o, w_i, n, v_x, v_y, alpha_aniso);
 	}
 
-	// HACK
-	microfacet = 1.f;
 	if ((mat.specular_transmission > 0.f) && (!same_hemisphere(w_o, w_i, n))) {
+		// HACK
 		// microfacet_transmission = gtr_2_transmission_pdf(w_o, w_i, n, alpha, mat.ior);
-		microfacet_transmission = gtr_2_transmission_pdf(w_o, w_i, n, t_alpha, mat.ior); //lambertian_pdf(w_i, -n); // hacking BRDF to be lambertian for now.
-	} else 
-	{
-		microfacet_transmission = 1.f;
-	}
-
+		microfacet_transmission = 1.f;//gtr_2_transmission_pdf(w_o, w_i, n, t_alpha, mat.ior); //lambertian_pdf(w_i, -n); // hacking BRDF to be lambertian for now.
+	} 
 
 	// HACK FOR TESTING
 	// return microfacet_transmission;
@@ -539,17 +532,17 @@ __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 	bool entering = dot(w_o, n) > 0.f;
 
 	int component = 0;
-	// if (mat.specular_transmission == 0.f) {
-	// 	component = lcg_randomf(rng) * 3.f;
-	// 	component = glm::clamp(component, 0, 2);
-	// } else 
+	if (mat.specular_transmission == 0.f) {
+		component = lcg_randomf(rng) * 3.f;
+		component = glm::clamp(component, 0, 2);
+	} else 
 	{
-		component = lcg_randomf(rng) * 4.f;
-		component = glm::clamp(component, 0, 3);
-		// if (entering) {
-		// }
-		// // temporary, forcing only refractive brdf when entering surface 
-		// else component = 3; 
+		if (entering) {
+			component = lcg_randomf(rng) * 4.f;
+			component = glm::clamp(component, 0, 3);
+		}
+		// temporary, forcing only refractive brdf when entering surface 
+		else component = 3; 
 	}
 
 	// HACK
@@ -607,12 +600,12 @@ __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		// Total internal reflection
 		if (all_zero(w_i)) {
 			w_i = reflect(-w_o, (entering) ? w_h : -w_h);
-			// pdf = 1.f;
-			// return make_float3(1.f);
+			pdf = 1.f;
+			return make_float3(1.f);
 		}
+	// return make_float3(1.f); // HACK
 	}
 	pdf = disney_pdf(mat, n, w_o, w_i, v_x, v_y);
-	// return make_float3(1.f); // HACK
 
 	float3 brdf = disney_brdf(mat, n, w_o, w_i, v_x, v_y, GGX_E_LOOKUP, GGX_E_AVG_LOOKUP);
 	return brdf;
