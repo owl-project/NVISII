@@ -251,6 +251,20 @@ void saveRenderData(float3 &renderData, int bounce, float depth, float3 w_p, flo
     }
 }
 
+__device__
+float3 faceNormalForward(const float3 &w_o, const float3 &gn, const float3 &n)
+{
+    float3 new_n = n;
+    if (dot(w_o, new_n) < 0.f) {
+        // prevents differences from geometric and shading normal from creating black artifacts
+        new_n = reflect(-new_n, gn); 
+    }
+    if (dot(w_o, new_n) < 0.f) {
+        new_n = -new_n;
+    }
+    return new_n;
+}
+
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
@@ -308,12 +322,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 v_x, v_y;
             float3 v_z = payload.normal;
             float3 v_gz = payload.gnormal;
-            if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
-                // prevents differences from geometric and shading normal from creating black artifacts
-                v_z = reflect(-v_z, v_gz); 
-            }
-            if (mat.specular_transmission == 0.f && dot(w_o, v_z) < 0.f) {
-                v_z = -v_z;
+            if (mat.specular_transmission == 0.f) {
+                v_z = faceNormalForward(w_o, v_gz, v_z);
             }
             ortho_basis(v_x, v_y, v_z);
 
@@ -364,12 +374,19 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             LightStruct light_light;
             light_material.base_color_texture_id = -1;
             
+            float3 n_l = v_z; //faceNormalForward(w_o, v_gz, v_z);
+            // if (dot(w_o, n_l) < 0.f) {
+                // n_l = -n_l;
+            // }
+
             // first, sample the light source by importance sampling the light
             do {
                 if (numLights == 0) break;
 
-                bool entering = dot(w_o, v_z) < 0.f;
-                if (entering) break;
+                // Disable NEE for transmission events 
+                // bool entering = dot(w_o, v_z) < 0.f;
+                // if (entering) break;
+
                 
                 uint32_t random_id = uint32_t(min(lcg_randomf(rng) * numLights, float(numLights - 1)));
                 random_id = min(random_id, numLights - 1);
@@ -422,8 +439,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     vec2 uv3 = optixLaunchParams.texCoordLists[light_entity.mesh_id][triIndex.z];
                     vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
                     sampleTriangle(pos, N, v1, v2, v3, uv1, uv2, uv3, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf, uv);
-                    vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
-                    float dotNWi = abs(dot(dir, normal));     
+                    vec3 normal = glm::vec3(n_l.x, n_l.y, n_l.z);
+                    float dotNWi = (dot(dir, normal));     
                     
                     float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
                     float3 lightEmission = make_float3(sampleTexture(light_material.base_color_texture_id, make_float2(uv.x, uv.y), default_light_emission)) * light_light.intensity;
@@ -431,7 +448,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     if ((light_pdf > EPSILON) && (dotNWi > EPSILON)) {
                         float3 light_dir = make_float3(dir.x, dir.y, dir.z);
                         light_dir = normalize(light_dir);
-                        float bsdf_pdf = disney_pdf(mat, v_z, w_o, light_dir, v_x, v_y);
+                        float bsdf_pdf = disney_pdf(mat, n_l, w_o, light_dir, v_x, v_y);
                         if (bsdf_pdf > EPSILON) {
                             RayPayload payload;
                             payload.entityID = -1;
@@ -444,7 +461,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             bool visible = ((payload.entityID == sampledLightID) || (payload.entityID == -1));
                             if (visible) {
                                 float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
-                                float3 bsdf = disney_brdf(mat, v_z, w_o, light_dir, v_x, v_y, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP);
+                                float3 bsdf = disney_brdf(mat, n_l, w_o, light_dir, v_x, v_y, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP);
                                 float3 Li = lightEmission * w / light_pdf;
                                 irradiance = (bsdf * Li * fabs(dotNWi));
                             }

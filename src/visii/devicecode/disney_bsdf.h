@@ -197,27 +197,25 @@ __device__ float gtr_2_transmission_pdf(const float3 &w_o, const float3 &w_i, co
 		return 0.f;
 	}
 	float eta_o, eta_i;
-	relative_ior(w_o, n, ior, eta_o, eta_i);
+	relative_ior(w_o, n, ior, eta_i, eta_o);
 
 	// From Eq 16 of Microfacet models for refraction
 	float3 w_h = -(w_o * eta_o + w_i * eta_i);
 	w_h = normalize(w_h);
 
-	// float3 w_h = normalize(w_i + w_o);
-	float cos_theta_h = fabs(dot(n, w_h));
-	float d = gtr_2(cos_theta_h, alpha);
-	return d * cos_theta_h / (4.f * fabs(dot(w_o, w_h)));
-
-	// if (same_hemisphere(w_o, w_i, n)) {
-	// 	return 0.f;
-	// }
-	// float3 w_h = normalize(w_o + w_i * eta_i / eta_o);
+	// // float3 w_h = normalize(w_i + w_o);
 	// float cos_theta_h = fabs(dot(n, w_h));
-	// float i_dot_h = dot(w_i, w_h);
-	// float o_dot_h = dot(w_o, w_h);
 	// float d = gtr_2(cos_theta_h, alpha);
-	// float dwh_dwi = o_dot_h * pow2(eta_o) / pow2(eta_o * o_dot_h + eta_i * i_dot_h);
-	// return d * cos_theta_h * fabs(dwh_dwi);
+	// return d * cos_theta_h / (4.f * fabs(dot(w_o, w_h)));
+
+
+	// float3 w_h = normalize(w_o + w_i * eta_i / eta_o);
+	float cos_theta_h = fabs(dot(n, w_h));
+	float i_dot_h = dot(w_i, w_h);
+	float o_dot_h = dot(w_o, w_h);
+	float d = gtr_2(cos_theta_h, alpha);
+	float dwh_dwi = o_dot_h * pow2(eta_o) / pow2(eta_o * o_dot_h + eta_i * i_dot_h);
+	return d * cos_theta_h * fabs(dwh_dwi);
 }
 
 __device__ float gtr_2_aniso_pdf(const float3 &w_o, const float3 &w_i, const float3 &n,
@@ -317,7 +315,7 @@ __device__ float G(float3 i, float3 o, float3 h, float alpha)
 
 __device__ float D(float3 m, float3 n, float alpha)
 {
-	alpha = 1.f - alpha;
+	// alpha = 1.f - alpha;
 	// float alpha_sqr = alpha * alpha;
 
 	// From Eq 33 of Microfacet Models for Refraction
@@ -365,17 +363,21 @@ __device__ float3 disney_microfacet_transmission_isotropic(const DisneyMaterial 
 {	
 
 	float eta_o, eta_i;
-	relative_ior(w_o, n, mat.ior, eta_o, eta_i);
+	bool entering = relative_ior(w_o, n, mat.ior, eta_o, eta_i);
 
 	float alpha = max(0.001f, mat.transmission_roughness * mat.transmission_roughness);
 	
 	// From Eq 16 of Microfacet models for refraction
-	float3 w_ht = -(w_o * eta_o + w_i * eta_i);
+	float3 w_ht = -(normalize(w_o) * eta_i + normalize(w_i) * eta_o);
 	w_ht = normalize(w_ht);
+
+	// w_ht = n; // HACK
+
+	float3 w_r = refract(-w_o, (entering) ? w_ht : -w_ht, eta_o / eta_i);
 
 	// float3 n_ = (dot(w_ht, n) > 0) ? n : -;
 
-	float d = D(w_ht, n, alpha);
+	float d = D(w_ht, n, alpha); 
 	float f = F(w_i, w_ht, eta_o, eta_i);
 	float g = G(w_i, w_o, w_ht, alpha); 
 
@@ -392,7 +394,8 @@ __device__ float3 disney_microfacet_transmission_isotropic(const DisneyMaterial 
 	float c = (fabs(i_dot_h) * fabs(o_dot_h)) / (fabs(i_dot_n) * fabs(o_dot_n));
 	c *= pow2(eta_o) / pow2(eta_i * i_dot_h + eta_o * o_dot_h);
 
-	return mat.base_color;// * c;//c * (1.f - f) * g * d;
+	//// hacking in a spherical gaussian here... Can't seem to get microfacet model working...
+	return mat.base_color * abs( pow(dot(w_ht, n), (1.0f / (alpha + EPSILON))) ); //* c;//g; //c * (1.f - f) * g * d;
 }
 
 __device__ float3 disney_microfacet_anisotropic(const DisneyMaterial &mat, const float3 &n,
@@ -499,7 +502,7 @@ __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
 	if ((mat.specular_transmission > 0.f) && (!same_hemisphere(w_o, w_i, n))) {
 		// HACK
 		// microfacet_transmission = gtr_2_transmission_pdf(w_o, w_i, n, alpha, mat.ior);
-		microfacet_transmission = 1.f;//gtr_2_transmission_pdf(w_o, w_i, n, t_alpha, mat.ior); //lambertian_pdf(w_i, -n); // hacking BRDF to be lambertian for now.
+		microfacet_transmission = 1.f; //gtr_2_transmission_pdf(w_o, w_i, n, t_alpha, mat.ior); //lambertian_pdf(w_i, -n); // hacking BRDF to be lambertian for now.
 	} 
 
 	// HACK FOR TESTING
