@@ -165,7 +165,7 @@ void loadMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float
     mat.ior = sampleTexture(p.ior_texture_id, uv, make_float4(p.ior)).x;
     mat.specular_transmission = sampleTexture(p.transmission_texture_id, uv, make_float4(p.transmission)).x;
     mat.flatness = sampleTexture(p.subsurface_texture_id, uv, make_float4(p.subsurface)).x;
-    mat.transmission_roughness = max(sampleTexture(p.transmission_roughness_texture_id, uv, make_float4(p.transmission_roughness)).x, MIN_ROUGHNESS);
+    mat.transmission_roughness = max(max(sampleTexture(p.transmission_roughness_texture_id, uv, make_float4(p.transmission_roughness)).x, MIN_ROUGHNESS), roughnessMinimum);
 }
 
 inline __device__
@@ -529,7 +529,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // clamp out any extreme fireflies
         glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
-        gillum = clamp(gillum, vec3(0.f), vec3(500.f));
+        gillum = clamp(gillum, vec3(0.f), vec3(10.f));
 
         // just in case we get inf's or nans, remove them.
         if (glm::any(glm::isnan(gillum))) gillum = vec3(0.f);

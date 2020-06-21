@@ -448,7 +448,7 @@ __device__ float3 disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		// transmissive objects refract when back of surface is visible.
 		if (mat.specular_transmission > 0.f) 
 		{
-			float3 spec_trans = disney_microfacet_transmission_isotropic(mat, n, w_o, w_i); // HACK
+			float3 spec_trans = disney_microfacet_transmission_isotropic(mat, n, w_o, w_i);
 			return spec_trans * (1.f - mat.metallic) * mat.specular_transmission;
 		}
 
@@ -500,15 +500,11 @@ __device__ float disney_pdf(const DisneyMaterial &mat, const float3 &n,
 	}
 
 	if ((mat.specular_transmission > 0.f) && (!same_hemisphere(w_o, w_i, n))) {
-		// HACK
 		// microfacet_transmission = gtr_2_transmission_pdf(w_o, w_i, n, alpha, mat.ior);
-		microfacet_transmission = 1.f; //gtr_2_transmission_pdf(w_o, w_i, n, t_alpha, mat.ior); //lambertian_pdf(w_i, -n); // hacking BRDF to be lambertian for now.
+		
+		// HACK
+		microfacet_transmission = 1.f;
 	} 
-
-	// HACK FOR TESTING
-	// return microfacet_transmission;
-	// return (microfacet_transmission + microfacet) / 2.f;
-
 
 	// not sure why, but energy seems to be added from smooth metallic. By subtracting mat.metallic from n_comps,
 	// we decrease brightness and become almost perfectly conserving energy for shiny metallic. As metals get 
@@ -544,16 +540,11 @@ __device__ float3 sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 			component = lcg_randomf(rng) * 4.f;
 			component = glm::clamp(component, 0, 3);
 		}
-		// temporary, forcing only refractive brdf when entering surface 
+		// HACK, forcing only refractive brdf when entering surface 
 		else component = 3; 
 	}
 
-	// HACK
-	// if ((component == 0) || (component == 1)) component = 1;
-	// else 
-	// component = 3;
-
-	is_specular = (component != 0);
+	is_specular = ((component != 0) && (component != 3));
 
 	float2 samples = make_float2(lcg_randomf(rng), lcg_randomf(rng));
 	if (component == 0) {
