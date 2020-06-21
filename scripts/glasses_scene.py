@@ -72,11 +72,11 @@ light = visii.entity.create(
     material = visii.material.create("light"),
     light = visii.light.create('light')
 )
-light.get_light().set_intensity(1000)
+light.get_light().set_intensity(10000)
 light.get_light().set_temperature(5000)
 # light.get_transform().set_position(0,0,-0.1)
 light.get_transform().set_position(visii.vec3(-1.5,1.5,2))
-light.get_transform().set_scale(visii.vec3(0.1))
+light.get_transform().set_scale(visii.vec3(0.3))
 light.get_transform().set_rotation(visii.quat(0,0,1,0))
 
 light.get_transform().look_at(
@@ -133,7 +133,7 @@ floor.get_transform().set_scale(visii.vec3(10))
 # random_material("floor")
 floor.get_material().set_transmission(0)
 floor.get_material().set_metallic(1.0)
-floor.get_material().set_roughness(0)
+floor.get_material().set_roughness(1.0)
 
 floor.get_material().set_base_color(visii.vec3(1,0.3,1))
 
