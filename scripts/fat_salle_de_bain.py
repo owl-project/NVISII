@@ -49,8 +49,8 @@ if not opt.noise is True:
 
 # print(float(opt.width)/float(opt.height))
 camera_entity = visii.entity.create(
-    name="my_camera_entity",
-    transform=visii.transform.create("my_camera_transform"),
+    name="my_camera",
+    transform=visii.transform.create("my_camera"),
     camera=visii.camera.create_perspective_from_fov(
         name = "my_camera", 
         field_of_view = 0.785398, 
@@ -73,9 +73,9 @@ visii.set_camera_entity(camera_entity)
 #         visii.vec3(0,0,1),
 #     )
 # )
+camera_entity.get_transform().set_position(camera_pos)
 
 camera_entity.get_transform().look_at(
-    camera_pos,
     visii.vec3(0,0,0),
     visii.vec3(0,0,1),
 )
@@ -328,7 +328,7 @@ for key in objects_dict:
     )
 
 
-for i in range (1000):
+for i in range (400):
     p.stepSimulation()
     # if i % 2 == 0:
     if True:
@@ -338,8 +338,13 @@ for i in range (1000):
             update_pose(objects_dict[key])
 
         pos, rot = p.getBasePositionAndOrientation(objects_dict['MacaroniAndCheese']['bullet_id'])   
+        # random_translation('my_camera',
+        #     x_lim = [-1,1],
+        #     y_lim = [-2,2],
+        #     z_lim = [0.4,1],
+        #     speed_lim = [0.02,0.05]
+        # )
         camera_entity.get_transform().look_at(
-                camera_pos,
                 visii.vec3(pos[0],pos[1],pos[2]),
                 # visii.vec3(-0.5,2,2),
                 # light.get_transform().get_position(),
