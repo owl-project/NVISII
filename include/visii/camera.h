@@ -63,10 +63,9 @@ private:
      * @param name A unique name for this camera.
      * @param field_of_view Specifies the field of view angle in the y direction. Expressed in radians.
 	 * @param aspect Specifies the aspect ratio that determines the field of view in the x direction. The aspect ratio is a ratio of x (width) to y (height)
-	 * @param near Specifies the distance from the viewer to the near clipping plane (always positive) 
 	 * @returns a reference to a camera component
 	*/
-	static Camera *createPerspectiveFromFOV(std::string name, float field_of_view, float aspect, float near);
+	static Camera *createPerspectiveFromFOV(std::string name, float field_of_view, float aspect);
 
 	/** 
 	 * Constructs a camera component from a focal length.
@@ -78,10 +77,9 @@ private:
      * @param focal_length Specifies the focal length of the camera lens (in millimeters).
      * @param sensor_width Specifies the width of the camera sensor (in millimeters). 
 	 * @param sensor_height Specifies the height of the camera sensor (in millimeters). 
-	 * @param near Specifies the distance from the viewer to the near clipping plane (always positive) 
 	 * @returns a reference to a camera component
 	*/
-	static Camera *createPerspectiveFromFocalLength(std::string name, float focal_length, float sensor_width, float sensor_height, float near);
+	static Camera *createPerspectiveFromFocalLength(std::string name, float focal_length, float sensor_width, float sensor_height);
 
 	/** 
 	 * @param name The name of the camera to get
@@ -145,9 +143,10 @@ private:
 	 * 
      * @param field_of_view Specifies the field of view angle in the y direction. Expressed in radians.
 	 * @param aspect Specifies the aspect ratio that determines the field of view in the x direction. The aspect ratio is a ratio of x (width) to y (height)
-	 * @param near Specifies the distance from the viewer to the near clipping plane (always positive) 
 	*/
-	void usePerspectiveFromFOV(float field_of_view, float aspect, float near);
+	void usePerspectiveFromFOV(float field_of_view, float aspect);
+
+	//  * @param near Specifies the distance from the viewer to the near clipping plane (always positive) 
 
 	/** 
 	 * Tells the current camera component to use a projection matrix constructed from a focal length.
@@ -158,9 +157,8 @@ private:
      * @param focal_length Specifies the focal length of the camera lens (in millimeters).
      * @param sensor_width Specifies the width of the camera sensor (in millimeters). 
 	 * @param sensor_height Specifies the height of the camera sensor (in millimeters). 
-	 * @param near Specifies the distance from the viewer to the near clipping plane (always positive) 
 	*/
-	void usePerspectiveFromFocalLength(float focal_length, float sensor_width, float sensor_height, float near);
+	void usePerspectiveFromFocalLength(float focal_length, float sensor_width, float sensor_height);
 
 	/** 
 	 * Real-world cameras transmit light through a lens that bends and focuses it onto the sensor. 

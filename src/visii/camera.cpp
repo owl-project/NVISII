@@ -172,11 +172,11 @@ void Camera::clearAll()
 }
 
 /* Static Factory Implementations */
-Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, float aspect, float near)
+Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, float aspect)
 {
 	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	try {
-        camera->usePerspectiveFromFOV(fieldOfView, aspect, near);
+        camera->usePerspectiveFromFOV(fieldOfView, aspect);
         return camera;
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
@@ -184,11 +184,11 @@ Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, fl
 	}
 }
 
-Camera* Camera::createPerspectiveFromFocalLength(std::string name, float focalLength, float sensorWidth, float sensorHeight, float near)
+Camera* Camera::createPerspectiveFromFocalLength(std::string name, float focalLength, float sensorWidth, float sensorHeight)
 {
 	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	try {
-        camera->usePerspectiveFromFocalLength(focalLength, sensorWidth, sensorHeight, near);
+        camera->usePerspectiveFromFocalLength(focalLength, sensorWidth, sensorHeight);
         return camera;
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
@@ -285,19 +285,19 @@ glm::mat4 makeProjRH(float fovY_radians, float aspectWbyH, float zNear)
 // 	mark_dirty();
 // };
 
-void Camera::usePerspectiveFromFOV(float fieldOfView, float aspect, float near)
+void Camera::usePerspectiveFromFOV(float fieldOfView, float aspect)
 {
-    cameraStructs[id].proj = glm::perspective(fieldOfView, aspect, near, 1000.f); //makeInfReversedZProjRH(fieldOfView, aspect, near);
+    cameraStructs[id].proj = glm::perspective(fieldOfView, aspect, 1.f, 1000.f); //makeInfReversedZProjRH(fieldOfView, aspect, near);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
     markDirty();
 }
 
-void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth, float sensorHeight, float near)
+void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth, float sensorHeight)
 {
     float aspect = sensorWidth / sensorHeight;
     float fovy = 2.f*atan(0.5f*sensorHeight / focalLength);
     // cameraStructs[id].proj = makeInfReversedZProjRH(fovy, aspect, near);
-    cameraStructs[id].proj = glm::perspective(fovy, aspect, near, 1000.f);
+    cameraStructs[id].proj = glm::perspective(fovy, aspect, 1.f, 1000.f);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
     markDirty();
 }
