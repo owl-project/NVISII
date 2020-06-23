@@ -40,6 +40,10 @@ std::string Camera::toString()
 	return output;
 }
 
+CameraStruct Camera::getStruct() {
+	return cameraStructs[id];
+}
+
 void Camera::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
@@ -156,17 +160,15 @@ void Camera::updateComponents()
     // 	mark_dirty();
 }
 
-void Camera::cleanUp()
+void Camera::clearAll()
 {
 	if (!isFactoryInitialized()) return;
 
 	for (auto &camera : cameras) {
 		if (camera.initialized) {
-			Camera::remove(camera.id);
+			Camera::remove(camera.name);
 		}
 	}
-
-	factoryInitialized = false;
 }
 
 /* Static Factory Implementations */
@@ -175,9 +177,7 @@ Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, fl
 	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	try {
         camera->usePerspectiveFromFOV(fieldOfView, aspect, near);
-        camera->setView(glm::mat4(1.f));
-		// camera->setup(tex_width, tex_height, msaa_samples, max_views, use_depth_prepass, use_multiview);
-		return camera;
+        return camera;
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 		throw;
@@ -189,9 +189,7 @@ Camera* Camera::createPerspectiveFromFocalLength(std::string name, float focalLe
 	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	try {
         camera->usePerspectiveFromFocalLength(focalLength, sensorWidth, sensorHeight, near);
-        camera->setView(glm::mat4(1.f));
-		// camera->setup(tex_width, tex_height, msaa_samples, max_views, use_depth_prepass, use_multiview);
-		return camera;
+        return camera;
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 		throw;
@@ -207,17 +205,8 @@ Camera* Camera::get(std::string name) {
 	return StaticFactory::get(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 }
 
-Camera* Camera::get(uint32_t id) {
-	return StaticFactory::get(editMutex, id, "Camera", lookupTable, cameras, MAX_CAMERAS);
-}
-
 void Camera::remove(std::string name) {
 	StaticFactory::remove(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
-	anyDirty = true;
-}
-
-void Camera::remove(uint32_t id) {
-	StaticFactory::remove(editMutex, id, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	anyDirty = true;
 }
 
@@ -326,17 +315,6 @@ void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth,
 // 	check_multiview_index(multiview);
 // 	return camera_struct.multiviews[multiview].near_pos; 
 // }
-
-glm::mat4 Camera::getView() { 
-	return cameraStructs[id].view; 
-};
-
-void Camera::setView(glm::mat4 view)
-{
-	cameraStructs[id].view = view;
-	cameraStructs[id].viewinv = glm::inverse(view);
-	markDirty();
-};
 
 void Camera::setFocalDistance(float distance)
 {

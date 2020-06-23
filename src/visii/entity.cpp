@@ -100,10 +100,10 @@ Camera* Entity::getCamera()
 {
 	if ((entityStructs[id].camera_id < 0) || (entityStructs[id].camera_id >= MAX_CAMERAS)) 
 		return nullptr;
-	auto camera = Camera::get(entityStructs[id].camera_id); 
-	if (!camera->isFactoryInitialized())
+	auto cameras = Camera::getFront(); 
+	if (!cameras[entityStructs[id].camera_id].isInitialized())
 		return nullptr;
-	return camera;
+	return &cameras[entityStructs[id].camera_id];
 }
 
 void Entity::setMaterial(Material *material) 
