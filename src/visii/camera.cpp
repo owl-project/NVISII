@@ -1,4 +1,5 @@
 #include <visii/camera.h>
+#include <glm/gtx/matrix_transform_2d.hpp>
 
 Camera Camera::cameras[MAX_CAMERAS];
 CameraStruct Camera::cameraStructs[MAX_CAMERAS];
@@ -287,7 +288,7 @@ glm::mat4 makeProjRH(float fovY_radians, float aspectWbyH, float zNear)
 
 void Camera::usePerspectiveFromFOV(float fieldOfView, float aspect)
 {
-    cameraStructs[id].proj = glm::perspective(fieldOfView, aspect, 1.f, 1000.f); //makeInfReversedZProjRH(fieldOfView, aspect, near);
+    cameraStructs[id].proj = glm::perspective(fieldOfView, aspect, 1.f, 1000.f);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
     markDirty();
 }
@@ -296,7 +297,6 @@ void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth,
 {
     float aspect = sensorWidth / sensorHeight;
     float fovy = 2.f*atan(0.5f*sensorHeight / focalLength);
-    // cameraStructs[id].proj = makeInfReversedZProjRH(fovy, aspect, near);
     cameraStructs[id].proj = glm::perspective(fovy, aspect, 1.f, 1000.f);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
     markDirty();
@@ -362,7 +362,22 @@ void Camera::setApertureDiameter(float diameter)
 // 	return maxRenderOrder;
 // }
 
-glm::mat4 Camera::getProjection() { 
+glm::mat3 Camera::getIntrinsicMatrix(uint32_t width, uint32_t height) { 
+    glm::mat3 intrinsics;
+    intrinsics = glm::column(intrinsics, 0, glm::vec3(glm::column(cameraStructs[id].proj, 0)));
+    intrinsics = glm::column(intrinsics, 1, glm::vec3(glm::column(cameraStructs[id].proj, 1)));
+    intrinsics = glm::column(intrinsics, 2, glm::vec3(0.f, 0.f, 1.f));
+    
+    // perspective is from -1 to 1. Make it go from 0 to 2.
+    glm::mat3 translation = glm::translate(glm::mat3(1.f), glm::vec2(.5f, .5f));
+    // from 0 to 2 to now 0 to 1
+    glm::mat3 scale1 = glm::scale(glm::mat3(1.f), glm::vec2(.5f, .5f));
+    // from 0 to 1 to now 0 to width/height
+    glm::mat3 scale2 = glm::scale(glm::mat3(1.f), glm::vec2(width, height));
+	return scale2 * scale1 * translation * intrinsics; 
+};
+
+glm::mat4 Camera::getProjection() {
 	return cameraStructs[id].proj; 
 };
 

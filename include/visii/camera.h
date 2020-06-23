@@ -184,6 +184,15 @@ private:
 		an orthographic view. */
 	glm::mat4 getProjection();
 
+	/**
+	 * The intrinsic matrix is a 3x3 matrix that transforms 3D (non-homogeneous) cooordinates in camera space into 2D (homogeneous) image coordinates. 
+	 * These types of matrices are commonly used for computer vision applications, but are less common in computer graphics.
+	 * @param width The width of the image (not tracked internally by the camera)
+	 * @param height The height of the image (not tracked internally by the camera)
+	 * @returns An intrinsic matrix representation of the camera's perspective.
+	*/
+	glm::mat3 getIntrinsicMatrix(uint32_t width, uint32_t height);
+
 	/** For internal use. Returns the mutex used to lock cameras for processing by the renderer. */
 	static std::shared_ptr<std::mutex> getEditMutex();
 };
