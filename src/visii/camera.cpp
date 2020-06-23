@@ -1,4 +1,5 @@
 #include <visii/camera.h>
+#include <glm/gtx/matrix_transform_2d.hpp>
 
 Camera Camera::cameras[MAX_CAMERAS];
 CameraStruct Camera::cameraStructs[MAX_CAMERAS];
@@ -38,6 +39,10 @@ std::string Camera::toString()
 	output += "\tname: \"" + name + "\",\n";
 	output += "}";
 	return output;
+}
+
+CameraStruct Camera::getStruct() {
+	return cameraStructs[id];
 }
 
 void Camera::initializeFactory()
@@ -156,42 +161,36 @@ void Camera::updateComponents()
     // 	mark_dirty();
 }
 
-void Camera::cleanUp()
+void Camera::clearAll()
 {
 	if (!isFactoryInitialized()) return;
 
 	for (auto &camera : cameras) {
 		if (camera.initialized) {
-			Camera::remove(camera.id);
+			Camera::remove(camera.name);
 		}
 	}
-
-	factoryInitialized = false;
 }
 
 /* Static Factory Implementations */
-Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, float aspect, float near)
+Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, float aspect)
 {
 	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	try {
-        camera->usePerspectiveFromFOV(fieldOfView, aspect, near);
-        camera->setView(glm::mat4(1.f));
-		// camera->setup(tex_width, tex_height, msaa_samples, max_views, use_depth_prepass, use_multiview);
-		return camera;
+        camera->usePerspectiveFromFOV(fieldOfView, aspect);
+        return camera;
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 		throw;
 	}
 }
 
-Camera* Camera::createPerspectiveFromFocalLength(std::string name, float focalLength, float sensorWidth, float sensorHeight, float near)
+Camera* Camera::createPerspectiveFromFocalLength(std::string name, float focalLength, float sensorWidth, float sensorHeight)
 {
 	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	try {
-        camera->usePerspectiveFromFocalLength(focalLength, sensorWidth, sensorHeight, near);
-        camera->setView(glm::mat4(1.f));
-		// camera->setup(tex_width, tex_height, msaa_samples, max_views, use_depth_prepass, use_multiview);
-		return camera;
+        camera->usePerspectiveFromFocalLength(focalLength, sensorWidth, sensorHeight);
+        return camera;
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 		throw;
@@ -207,17 +206,8 @@ Camera* Camera::get(std::string name) {
 	return StaticFactory::get(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
 }
 
-Camera* Camera::get(uint32_t id) {
-	return StaticFactory::get(editMutex, id, "Camera", lookupTable, cameras, MAX_CAMERAS);
-}
-
 void Camera::remove(std::string name) {
 	StaticFactory::remove(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
-	anyDirty = true;
-}
-
-void Camera::remove(uint32_t id) {
-	StaticFactory::remove(editMutex, id, "Camera", lookupTable, cameras, MAX_CAMERAS);
 	anyDirty = true;
 }
 
@@ -296,19 +286,18 @@ glm::mat4 makeProjRH(float fovY_radians, float aspectWbyH, float zNear)
 // 	mark_dirty();
 // };
 
-void Camera::usePerspectiveFromFOV(float fieldOfView, float aspect, float near)
+void Camera::usePerspectiveFromFOV(float fieldOfView, float aspect)
 {
-    cameraStructs[id].proj = glm::perspective(fieldOfView, aspect, near, 1000.f); //makeInfReversedZProjRH(fieldOfView, aspect, near);
+    cameraStructs[id].proj = glm::perspective(fieldOfView, aspect, 1.f, 1000.f);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
     markDirty();
 }
 
-void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth, float sensorHeight, float near)
+void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth, float sensorHeight)
 {
     float aspect = sensorWidth / sensorHeight;
     float fovy = 2.f*atan(0.5f*sensorHeight / focalLength);
-    // cameraStructs[id].proj = makeInfReversedZProjRH(fovy, aspect, near);
-    cameraStructs[id].proj = glm::perspective(fovy, aspect, near, 1000.f);
+    cameraStructs[id].proj = glm::perspective(fovy, aspect, 1.f, 1000.f);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
     markDirty();
 }
@@ -326,17 +315,6 @@ void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth,
 // 	check_multiview_index(multiview);
 // 	return camera_struct.multiviews[multiview].near_pos; 
 // }
-
-glm::mat4 Camera::getView() { 
-	return cameraStructs[id].view; 
-};
-
-void Camera::setView(glm::mat4 view)
-{
-	cameraStructs[id].view = view;
-	cameraStructs[id].viewinv = glm::inverse(view);
-	markDirty();
-};
 
 void Camera::setFocalDistance(float distance)
 {
@@ -384,7 +362,22 @@ void Camera::setApertureDiameter(float diameter)
 // 	return maxRenderOrder;
 // }
 
-glm::mat4 Camera::getProjection() { 
+glm::mat3 Camera::getIntrinsicMatrix(uint32_t width, uint32_t height) { 
+    glm::mat3 intrinsics;
+    intrinsics = glm::column(intrinsics, 0, glm::vec3(glm::column(cameraStructs[id].proj, 0)));
+    intrinsics = glm::column(intrinsics, 1, glm::vec3(glm::column(cameraStructs[id].proj, 1)));
+    intrinsics = glm::column(intrinsics, 2, glm::vec3(0.f, 0.f, 1.f));
+    
+    // perspective is from -1 to 1. Make it go from 0 to 2.
+    glm::mat3 translation = glm::translate(glm::mat3(1.f), glm::vec2(.5f, .5f));
+    // from 0 to 2 to now 0 to 1
+    glm::mat3 scale1 = glm::scale(glm::mat3(1.f), glm::vec2(.5f, .5f));
+    // from 0 to 1 to now 0 to width/height
+    glm::mat3 scale2 = glm::scale(glm::mat3(1.f), glm::vec2(width, height));
+	return scale2 * scale1 * translation * intrinsics; 
+};
+
+glm::mat4 Camera::getProjection() {
 	return cameraStructs[id].proj; 
 };
 

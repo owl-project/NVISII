@@ -39,20 +39,11 @@ private:
     /** The table of Entity components */
 	static Entity entities[MAX_ENTITIES];
 
-    /** The table of Entity Structs */
+    /** The table of Entity structs */
 	static EntityStruct entityStructs[MAX_ENTITIES];
 
     /** A lookup table where, given the name of a component, returns the primary key of that component */
 	static std::map<std::string, uint32_t> lookupTable;
-    
-    /**
-	 * If an entity has a camera component, a window can be uniquely mapped to a specific entity.
-     * Once mapped, the window will show the output image rendered by the camera. 
-	 */
-	static std::map<std::string, uint32_t> windowToEntity;
-
-    /** If a window is mapped to a particular entity, this mapping can be used to determine the window connected to a given entity. */
-	static std::map<uint32_t, std::string> entityToWindow;
 
     /**
 	 * Instantiates a null Entity. Used to mark a row in the table as null. 
