@@ -72,10 +72,10 @@ light = visii.entity.create(
     material = visii.material.create("light"),
     light = visii.light.create('light')
 )
-light.get_light().set_intensity(10000)
+light.get_light().set_intensity(1000000)
 light.get_light().set_temperature(5000)
 # light.get_transform().set_position(0,0,-0.1)
-light.get_transform().set_position(visii.vec3(-1.5,1.5,2))
+light.get_transform().set_position(visii.vec3(1.5,1.5,2))
 light.get_transform().set_scale(visii.vec3(0.3))
 light.get_transform().set_rotation(visii.quat(0,0,1,0))
 
@@ -131,9 +131,9 @@ floor.get_transform().set_scale(visii.vec3(10))
 # floor.get_material().set_roughness_texture(perlin)
 
 # random_material("floor")
-floor.get_material().set_transmission(0)
+floor.get_material().set_transmission(1.0)
 floor.get_material().set_metallic(1.0)
-floor.get_material().set_roughness(1.0)
+floor.get_material().set_roughness(0)
 
 floor.get_material().set_base_color(visii.vec3(1,0.3,1))
 
@@ -189,14 +189,29 @@ obj_mat.set_anisotropic(0)  # degault is 0
 #     visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here)
 # )
 
+for i in range(400):
 
-
-visii.render_to_png(
-            width=int(opt.width), 
-            height=int(opt.height), 
-            samples_per_pixel=int(opt.spp),
-            image_path=f"tmp.png"
+    random_translation(
+        'light',
+        x_lim = [-1.5,1.5],
+        y_lim = [1,2],
+        z_lim = [1.8,2.2],
+        speed_lim = [0.01,0.05]
+        )
+    camera_entity.get_transform().look_at(
+        visii.vec3(0,0,0.5),
+        visii.vec3(0,0,1),
+        # visii.vec3(5,0,2),
     )
+    # visii.vec3(1.5,1.5,2)
+    print(f"outf/{str(i).zfill(5)}.png")
+    visii.render_to_png(
+                width=int(opt.width), 
+                height=int(opt.height), 
+                samples_per_pixel=int(opt.spp),
+                # image_path=f"tmp.png"
+                image_path=f"outf/{str(i).zfill(5)}.png"
+        )
 
 p.disconnect()
 visii.cleanup()
