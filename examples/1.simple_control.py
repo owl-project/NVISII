@@ -1,35 +1,17 @@
 import visii
-import argparse
 
-parser = argparse.ArgumentParser()
-   
-parser.add_argument('--spp', 
-                    default=50,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=500,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=500,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--noise',
-                    action='store_true',
-                    default=False,
-                    help = "if added the output of the ray tracing is not sent to optix's denoiser")
-parser.add_argument('--out',
-                    default='tmp.png',
-                    help = 'the file output name, e.g., the image - it has to be a png')
-opt = parser.parse_args()
 
+SAMPLES_PER_PIXEL = 50
+WIDTH = 500 
+HEIGHT = 500 
+USE_DENOISER = True
+FILE_NAME = "tmp.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 visii.initialize_headless()
 
-if not opt.noise is True: 
+if USE_DENOISER is True: 
     visii.enable_denoiser()
 
 # Lets create an entity that will serve as our camera. 
@@ -43,7 +25,7 @@ camera.set_camera(
     visii.camera.create_perspective_from_fov(
         name = "camera_camera", 
         field_of_view = 0.785398, 
-        aspect = opt.width/float(opt.height)
+        aspect = float(WIDTH)/float(HEIGHT)
     )
 )
 
@@ -58,7 +40,7 @@ camera.get_transform().set_position(
 
 # Lets set the view camera, we only offer look_at
 camera.get_transform().look_at(
-    visii.vec3(0,0,0), # at
+    visii.vec3(0,0,0.9), # at
     visii.vec3(0,0,1), # up vector
 )
 
@@ -80,7 +62,8 @@ mat = visii.material.get("material_floor")
 # Lets change the color
 # the colors are RGB and the values are expected to be between 
 # 0 and 1.  
-mat.set_base_color(visii.vec3(0.9,0,0.7)) 
+mat.set_base_color(visii.vec3(0.9,0.7,0.9)) 
+mat.set_base_color(visii.vec3(0.19,0.16,0.19)) 
 
 # Lets now change the metallic propreties for shinyness
 mat.set_metallic(1) 
@@ -103,22 +86,24 @@ sphere = visii.entity.create(
 )
 # lets set the sphere up
 sphere.get_transform().set_position(
-    visii.vec3(0,0,0.2))
+    visii.vec3(0,0,0.41))
 sphere.get_transform().set_scale(
     visii.vec3(0.4))
 sphere.get_material().set_base_color(
-    visii.vec3(0,1,0))  
-sphere.get_material().set_roughness(1)   
+    visii.vec3(0.1,0.5,0.08))  
+sphere.get_material().set_roughness(0.7)   
+sphere.get_material().set_specular(1)   
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 # now that we have a simple scene set up let's render it 
 
 visii.render_to_png(
-    width=int(opt.width), 
-    height=int(opt.height), 
-    samples_per_pixel = int(opt.spp),   
-    image_path=f"{opt.out}")
+    width = WIDTH, 
+    height = HEIGHT, 
+    samples_per_pixel = SAMPLES_PER_PIXEL,   
+    image_path = FILE_NAME
+)
 
 # let's clean up the GPU
 visii.cleanup()
