@@ -97,7 +97,7 @@ public:
     /** @returns the number of allocated entities */
 	static uint32_t getCount();
 
-    /** @param name The name of the entity to remove */
+    /** @param name The name of the Entity to remove */
 	static void remove(std::string name);
 	
     /** Allocates the tables used to store all Entity components */
