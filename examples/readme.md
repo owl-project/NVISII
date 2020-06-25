@@ -43,5 +43,5 @@ All these examples were developed and tested on Ubuntu 18.04 with cuda 10.2, NVI
 
 
 ## TODO
-- loading an obj scene 
 - exporting data
+- textured light
