@@ -55,9 +55,9 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samples_per_
 void renderToHDR(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);
 void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);
 
-std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t frame, uint32_t bounce, std::string options);
-void renderDataToHDR(uint32_t width, uint32_t height, uint32_t frame, uint32_t bounce, std::string options, std::string image_path);
-void renderDataToPNG(uint32_t width, uint32_t height, uint32_t frame, uint32_t bounce, std::string options, std::string image_path);
+std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options);
+void renderDataToHDR(uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options, std::string image_path);
+void renderDataToPNG(uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options, std::string image_path);
 
 std::vector<Entity*> importOBJ(std::string name_prefix, std::string filepath, std::string mtl_base_dir, 
         glm::vec3 position = glm::vec3(0.0f), 

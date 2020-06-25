@@ -552,9 +552,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         accum_color.w
     );
     optixLaunchParams.frameBuffer[fbOfs] = vec4(
-        linear_to_srgb(accum_color.x),
-        linear_to_srgb(accum_color.y),
-        linear_to_srgb(accum_color.z),
+        /*linear_to_srgb*/(accum_color.x),
+        /*linear_to_srgb*/(accum_color.y),
+        /*linear_to_srgb*/(accum_color.z),
         1.0f
     );
     vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
@@ -571,6 +571,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     // Override framebuffer output if user requested to render metadata
     if (optixLaunchParams.renderDataMode != RenderDataFlags::NONE) {
+        accumNormal = abs(accumNormal + vec4(1.f));
+        if (optixLaunchParams.renderDataMode == RenderDataFlags::DENOISE_NORMAL) 
+            renderData = make_float3(accumNormal.x, accumNormal.y, accumNormal.z);
+        if (optixLaunchParams.renderDataMode == RenderDataFlags::DENOISE_ALBEDO) 
+            renderData = make_float3(accumAlbedo.x, accumAlbedo.y, accumAlbedo.z);
         optixLaunchParams.frameBuffer[fbOfs] = vec4( renderData.x, renderData.y, renderData.z, 1.0f);
     }
 }
