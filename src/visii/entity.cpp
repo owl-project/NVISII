@@ -151,10 +151,9 @@ Light* Entity::getLight()
 {
 	if ((entityStructs[id].light_id < 0) || (entityStructs[id].light_id >= MAX_LIGHTS)) 
 		return nullptr;
-	auto light = Light::get(entityStructs[id].light_id); 
-	if (!light->isFactoryInitialized())
-		return nullptr;
-	return light;
+	auto &light = Light::getFront()[entityStructs[id].light_id];
+	if (!light.isInitialized()) return nullptr;
+	return &light;
 }
 
 void Entity::setMesh(Mesh* mesh) 

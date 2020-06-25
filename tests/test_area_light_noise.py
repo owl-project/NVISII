@@ -13,15 +13,14 @@ v.initialize_interactive(window_on_top = True)
 camera_entity = v.entity.create(
     name="my_camera_entity",
     transform=v.transform.create("my_camera_transform"),
-    camera=v.camera.create_perspective_from_fov(name = "my_camera", field_of_view = 0.785398, aspect = 1., near = .1))
+    camera=v.camera.create_perspective_from_fov(name = "my_camera", field_of_view = 0.785398, aspect = 1.))
 v.set_camera_entity(camera_entity)
-camera_entity.get_camera().use_perspective_from_fov(0.785398, 1.0, .01)
 
 #%%
 from ipywidgets import interact
 def moveCamera(x=3,y=3,z=2):
     camera_entity.get_transform().look_at(
-        v.vec3(0,0,.5),
+        v.vec3(0,0,2.0),
         v.vec3(0,0,1),
         v.vec3(x,y,z),
     )
@@ -42,17 +41,23 @@ floor = v.entity.create(
 #%%
 mesh1 = v.entity.create(
     name="mesh1",
-    mesh = v.mesh.create_teapotahedron("sphere1", 32),
+    mesh = v.mesh.create_from_obj("mesh2", "../data/dragon.obj"),
     transform = v.transform.create("mesh1"),
     material = v.material.create("mesh1")
 )
 
+#%%
 mesh2 = v.entity.create(
     name="mesh2",
-    mesh = v.mesh.create_plane("sphere2"),
+    mesh = v.mesh.create_sphere("sphere2"),
     transform = v.transform.create("mesh2"),
     material = v.material.create("mesh2")
 )
+
+# %%
+mesh1.get_transform().set_scale(v.vec3(4))
+mesh1.get_transform().set_rotation(v.angleAxis(1.57, v.vec3(1,0,0)))
+mesh1.get_transform().set_position(v.vec3(0,0,1.0))
 
 #%%
 areaLight1 = v.entity.create(
@@ -72,7 +77,14 @@ floor.get_material().set_roughness(1.0)
 mesh1.get_material().set_base_color(v.vec3(1.0, 1.0, 1.0))
 mesh2.get_material().set_base_color(v.vec3(1.0, 1.0, 1.0))
 mesh1.get_transform().set_position(v.vec3(-1.0, 1.0, 0.0))
-mesh2.get_transform().set_position(v.vec3(1.0, -1.0, 1.0))
+mesh2.get_transform().set_position(v.vec3(-1.0, 3.0, 1.0))
+
+mesh1.get_transform().set_scale(v.vec3(4))
+mesh1.get_transform().set_rotation(v.angleAxis(1.57, v.vec3(1,0,0)))
+mesh1.get_transform().set_position(v.vec3(0,0,1.0))
+
+#%%
+#%%
 def changeRoughness(roughness=0): 
     mesh1.get_material().set_roughness(roughness)
     mesh2.get_material().set_roughness(roughness)
@@ -139,7 +151,7 @@ areaLight1.get_light().set_temperature(4000)
 # %%
 
 # %%
-v.render_to_png(1024,1024,4096,"test_area_light_noise.png")
+v.render_to_png(512,512,1024,"area_light_3.png")
 
 # %%
 v.enable_denoiser()
@@ -148,5 +160,108 @@ v.enable_denoiser()
 
 
 # %%
+
+# %%
+floor.get_material().set_base_color(v.vec3(1.0))
+mesh1.get_material().set_base_color(v.vec3(1.0))
+mesh2.get_material().set_base_color(v.vec3(1.0))
+
+# %%
+mesh1.get_material().set_base_color(v.vec3(1,0,0))
+
+# %%
+mesh2.get_material().set_base_color(v.vec3(0,1.,0))
+
+
+# %%
+
+
+teapot = v.entity.create(
+    name="teapot",
+    mesh = v.mesh.create_teapotahedron("teapot"),
+    transform = v.transform.create("teapot"),
+    material = v.material.create("teapot")
+)
+
+teapot.get_material().set_base_color(...)
+teapot.get_material().set_metallic(...)
+teapot.get_material().set_transmission(...)
+teapot.get_material().set_roughness(...)
+...
+
+
+#%%
+camera_entity.get_camera().set_aperture_diameter(10)
+camera_entity.get_camera().set_focal_distance(6)
+
+
+# %%
+teapot = v.mesh.create_teapotahedron("test")
+
+#%%
+areaLight1.set_mesh(teapot)
+
+# %%
+tex2 = v.texture.create_from_image("grid", "../data/grid.jpg")
+
+# %%
+mat = v.material.create("test")
+
+# %%
+areaLight1.set_material(mat)
+
+# %%
+mat.set_base_color_texture(tex2)
+
+# %%
+pl = v.mesh.create_plane("temp")
+
+# %%
+areaLight1.set_mesh(pl)
+
+# %%
+#%%
+import sys, os, math
+os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
+sys.path.append(os.path.join(os.getcwd(), "..", "install"))
+# %%
+
+import visii as v
+v.initialize_interactive() # Or headless
+
+camera_entity = v.entity.create(
+    name = "my camera",
+    transform = v.transform.create("my camera transform"),
+    camera = v.camera.create_perspective_from_fov("my perspective",  field_of_view = 0.785398, aspect = 1.0)
+)
+camera_entity.get_transform().look_at(
+    eye = v.vec3(3,3,3), at = v.vec3(0), up = v.vec3(0,0,1)
+)
+
+v.set_camera_entity(camera_entity)
+
+my_mesh = v.entity.create(
+    name = "my mesh",
+    transform = v.transform.create("my mesh transform"),
+    mesh = v.mesh.create_sphere("my mesh"),
+    material = v.material.create("my material")
+)
+
+my_mesh.get_material().set_base_color(v.vec3(1, 0, 0))
+
+v.render_to_png(width = 512, height = 512, samples_per_pixel = 1024, image_path = "my.png")
+
+
+
+
+# %%
+import visii
+
+# %%
+v.render_data_to_png(width = 512, height = 512, start_frame = 0, frame_count = 64, bounce = 0, options = "denoise_normal", image_path = "test.png")
+
+# %%
+v.render_data_to_png(width = 512, height = 512, start_frame = 0, frame_count = 64, bounce = 0, options = "denoise_albedo", image_path = "test.png")
+
 
 # %%

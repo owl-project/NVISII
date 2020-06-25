@@ -322,6 +322,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 v_x, v_y;
             float3 v_z = payload.normal;
             float3 v_gz = payload.gnormal;
+            float2 uv = payload.uv;
             if (mat.specular_transmission == 0.f) {
                 v_z = faceNormalForward(w_o, v_gz, v_z);
             }
@@ -353,8 +354,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 {
                     entityLight = optixLaunchParams.lights[entity.light_id];
                     float3 light_emission;
-                    if (entityMaterial.base_color_texture_id == -1) light_emission = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
-                    else light_emission = mat.base_color;// * entityLight.intensity;
+                    if (entityLight.color_texture_id == -1) light_emission = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
+                    else light_emission = make_float3(sampleTexture(entityLight.color_texture_id, uv, make_float4(entityLight.r, entityLight.g, entityLight.b, 1.f))); // * intensity; temporarily commenting out to show texture for bright lights in LDR
                     illum = light_emission; 
                     primaryNormal = payload.normal;
                     primaryAlbedo = mat.base_color;
@@ -402,17 +403,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 MeshStruct mesh;
                 
                 bool is_area_light = false;
-                bool is_light_textured = false;
                 if ((light_entity.mesh_id >= 0) && (light_entity.mesh_id < MAX_MESHES)) {
                     mesh = optixLaunchParams.meshes[light_entity.mesh_id];
                     is_area_light = true;
                 };
-                if ((light_entity.material_id >= 0) && (light_entity.material_id < MAX_MATERIALS)) {
-                    light_material = optixLaunchParams.materials[light_entity.material_id];
-                    if ((light_material.base_color_texture_id >= 0) && (light_material.base_color_texture_id < MAX_TEXTURES))
-                        is_light_textured = true;
-                };
-                        
+
                 const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
                     // | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
                     // | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT;
@@ -443,7 +438,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     float dotNWi = (dot(dir, normal));     
                     
                     float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
-                    float3 lightEmission = make_float3(sampleTexture(light_material.base_color_texture_id, make_float2(uv.x, uv.y), default_light_emission)) * light_light.intensity;
+                    float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, make_float2(uv.x, uv.y), default_light_emission)) * light_light.intensity;
         
                     if ((light_pdf > EPSILON) && (dotNWi > EPSILON)) {
                         float3 light_dir = make_float3(dir.x, dir.y, dir.z);
@@ -493,7 +488,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 bool visible = (payload.entityID == sampledLightID);
                 if (visible) {
                     float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
-                    float3 lightEmission = make_float3(sampleTexture(light_material.base_color_texture_id, make_float2(payload.uv.x, payload.uv.y), default_light_emission)) * light_light.intensity;
+                    float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, make_float2(payload.uv.x, payload.uv.y), default_light_emission)) * light_light.intensity;
 
                     float dist = distance(vec3(hit_p.x, hit_p.y, hit_p.z ), vec3(ray.origin.x, ray.origin.y, ray.origin.z));
                     float dotNWi = dot(payload.normal, ray.direction);
@@ -552,9 +547,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         accum_color.w
     );
     optixLaunchParams.frameBuffer[fbOfs] = vec4(
-        linear_to_srgb(accum_color.x),
-        linear_to_srgb(accum_color.y),
-        linear_to_srgb(accum_color.z),
+        /*linear_to_srgb*/(accum_color.x),
+        /*linear_to_srgb*/(accum_color.y),
+        /*linear_to_srgb*/(accum_color.z),
         1.0f
     );
     vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
@@ -571,6 +566,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     // Override framebuffer output if user requested to render metadata
     if (optixLaunchParams.renderDataMode != RenderDataFlags::NONE) {
+        accumNormal = abs(accumNormal + vec4(1.f));
+        if (optixLaunchParams.renderDataMode == RenderDataFlags::DENOISE_NORMAL) 
+            renderData = make_float3(accumNormal.x, accumNormal.y, accumNormal.z);
+        if (optixLaunchParams.renderDataMode == RenderDataFlags::DENOISE_ALBEDO) 
+            renderData = make_float3(accumAlbedo.x, accumAlbedo.y, accumAlbedo.z);
         optixLaunchParams.frameBuffer[fbOfs] = vec4( renderData.x, renderData.y, renderData.z, 1.0f);
     }
 }

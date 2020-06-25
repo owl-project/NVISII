@@ -57,4 +57,6 @@ enum RenderDataFlags : uint32_t {
   POSITION = 2,
   NORMAL = 3,
   ENTITY_ID = 4,
+  DENOISE_NORMAL = 5,
+  DENOISE_ALBEDO = 6,
 };

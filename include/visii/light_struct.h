@@ -25,5 +25,6 @@ struct LightStruct {
     float g = 0.f;
     float b = 0.f;
     float intensity = 0.f;
+    int32_t color_texture_id = -1;
     uint32_t flags = 0;
 };

@@ -632,7 +632,7 @@ void initializeOptix(bool headless)
 
     // Setup denoiser
     OptixDenoiserOptions options;
-    options.inputKind = OPTIX_DENOISER_INPUT_RGB;//_ALBEDO_NORMAL;
+    options.inputKind = OPTIX_DENOISER_INPUT_RGB;//_ALBEDO;//_NORMAL;
     options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
     auto optixContext = getOptixContext(OD.context, 0);
     auto cudaStream = getStream(OD.context, 0);
@@ -1143,7 +1143,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
             if (!ViSII.headlessMode) {
                 drawFrameBufferToWindow();
             }
-        }        
+        }      
 
         synchronizeDevices();
 
@@ -1172,11 +1172,11 @@ std::string trim(const std::string& line)
     return start == end ? std::string() : line.substr(start, end - start + 1);
 }
 
-std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t frame, uint32_t bounce, std::string _option)
+std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string _option)
 {
     std::vector<float> frameBuffer(width * height * 4);
 
-    auto readFrameBuffer = [&frameBuffer, width, height, frame, bounce, _option] () {
+    auto readFrameBuffer = [&frameBuffer, width, height, startFrame, frameCount, bounce, _option] () {
         if (!ViSII.headlessMode) {
             using namespace Libraries;
             auto glfw = GLFW::Get();
@@ -1204,18 +1204,46 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t frame, u
         else if (option == std::string("entity_id")) {
             OptixData.LP.renderDataMode = RenderDataFlags::ENTITY_ID;
         }
+        else if (option == std::string("denoise_normal")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_NORMAL;
+        }
+        else if (option == std::string("denoise_albedo")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_ALBEDO;
+        }
         else {
             throw std::runtime_error(std::string("Error, unknown option : \"") + _option + std::string("\". ")
             + std::string("Available options are \"none\", \"depth\", \"position\", ") 
-            + std::string("\"normal\", and \"entity_id\""));
+            + std::string("\"normal\", \"denoise_normal\", \"denoise_albedo\", and \"entity_id\""));
         }
         
         resizeOptixFrameBuffer(width, height);
-        OptixData.LP.frameID = frame;
+        OptixData.LP.frameID = startFrame;
         OptixData.LP.renderDataBounce = bounce;
         updateComponents();
-        updateLaunchParams();
-        traceRays();
+
+        for (uint32_t i = startFrame; i < frameCount; ++i) {
+            // std::cout<<i<<std::endl;
+            if (!ViSII.headlessMode) {
+                auto glfw = Libraries::GLFW::Get();
+                glfw->poll_events();
+                glfw->swap_buffers("ViSII");
+                glClearColor(1,1,1,1);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            }
+
+            updateLaunchParams();
+            traceRays();
+            // Dont run denoiser to raw data rendering
+            // if (OptixData.enableDenoiser)
+            // {
+            //     denoiseImage();
+            // }
+
+            if (!ViSII.headlessMode) {
+                drawFrameBufferToWindow();
+            }
+        }
+
         synchronizeDevices();
 
         const glm::vec4 *fb = (const glm::vec4*) bufferGetPointer(OptixData.frameBuffer,0);
@@ -1239,9 +1267,9 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t frame, u
     return frameBuffer;
 }
 
-void renderDataToHDR(uint32_t width, uint32_t height, uint32_t frame, uint32_t bounce, std::string field, std::string imagePath)
+void renderDataToHDR(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string field, std::string imagePath)
 {
-    std::vector<float> fb = renderData(width, height, frame, bounce, field);
+    std::vector<float> fb = renderData(width, height, startFrame, frameCount, bounce, field);
     stbi_flip_vertically_on_write(true);
     stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
 }
@@ -1267,9 +1295,9 @@ void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std:
     stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
 }
 
-void renderDataToPNG(uint32_t width, uint32_t height, uint32_t frame, uint32_t bounce, std::string field, std::string imagePath)
+void renderDataToPNG(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string field, std::string imagePath)
 {
-    std::vector<float> fb = renderData(width, height, frame, bounce, field);
+    std::vector<float> fb = renderData(width, height, startFrame, frameCount, bounce, field);
     std::vector<uint8_t> colors(4 * width * height);
     for (size_t i = 0; i < (width * height); ++i) {       
         colors[i * 4 + 0] = uint8_t(glm::clamp(fb[i * 4 + 0] * 255.f, 0.f, 255.f));
