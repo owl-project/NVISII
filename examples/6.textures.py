@@ -73,6 +73,9 @@ mat = visii.material.get("material_floor")
 
 mat.set_roughness(1)
 
+# Lets set the base color of the object to be a texture. 
+# but the textures could also be used to set other
+# material propreties
 mat.set_base_color_texture(floor_tex)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -103,6 +106,12 @@ visii.render_to_png(
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
     image_path=f"{opt.out}"
+)
+visii.render_to_hdr(
+    width=int(opt.width), 
+    height=int(opt.height), 
+    samples_per_pixel=int(opt.spp),
+    image_path=f"{(opt.out).replace('png', 'hdr')}"
 )
 
 # let's clean up the GPU
