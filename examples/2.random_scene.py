@@ -27,26 +27,23 @@ camera = visii.entity.create(
     )
 )
 
-
-# This is to set the camera internal parameters
-# camera.get_camera().set_aperture_diameter(20)
-# camera.get_camera().set_focal_distance(3.5)
-
-# Change the dome light intensity
-visii.set_dome_light_intensity(1)
-
 # set the view camera transform
 camera.get_transform().look_at(
     visii.vec3(0,0,0), # look at (world coordinate)
     visii.vec3(1,0,0), # up vector
     visii.vec3(0,0,5), # camera_origin    
 )
-
 # set the camera
 visii.set_camera_entity(camera)
 
+# Change the dome light intensity
+visii.set_dome_light_intensity(1)
 
-# lets create a random scene 
+# # # # # # # # # # # # # # # # # # # # # # # # #
+
+# lets create a random scene, first lets pre load some mesh
+# we are going to use the mesh.get() to retrieve the meshes
+
 visii.mesh.create_sphere('mesh_0')
 visii.mesh.create_torus_knot('mesh_1', 
     random.randint(2,6), 
@@ -67,6 +64,9 @@ visii.mesh.create_torus('mesh_14')
 visii.mesh.create_tube('mesh_15')
 
 def add_random_obj(name = "name"):
+    # this function adds a random object from the pre loaded meshes
+    # it will give it a random pose and an random material
+
     obj= visii.entity.create(
         name = name,
         transform = visii.transform.create(name),
@@ -155,7 +155,7 @@ def add_random_obj(name = "name"):
         obj_mat.set_anisotropic(random.uniform(0.9,1))  # degault is 0     
 
 
-# create a random scene, the function defines the values
+# create a random scene, the values are hard coded in the function defines the values
 for i in range(NB_OBJS):
     add_random_obj(str(i))
 

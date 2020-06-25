@@ -49,8 +49,6 @@ camera.get_transform().look_at(
 )
 visii.set_camera_entity(camera)
 
-visii.set_dome_light_intensity(1)
-
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # lets turn off the ambiant lights 
@@ -139,7 +137,6 @@ entity = visii.entity.create(
 )
 entity.get_transform().set_scale(visii.vec3(100))
 mat = visii.material.get("material_floor")
-mat.set_base_color(visii.vec3(0.9,0.7,0.9)) 
 mat.set_base_color(visii.vec3(0.19,0.16,0.19)) 
 mat.set_roughness(1)
 

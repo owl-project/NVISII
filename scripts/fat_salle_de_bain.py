@@ -162,6 +162,7 @@ for i_s, s in enumerate(sdb):
         s.get_light().set_temperature(5000)
         s.clear_material()
         light = s
+        
     vertices = []
     indices = s.get_mesh().get_triangle_indices()
 
