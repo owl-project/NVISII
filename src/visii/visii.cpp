@@ -1281,15 +1281,53 @@ void renderToHDR(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std:
     stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
 }
 
+float linearToSRGB(float x) {
+    if (x <= 0.0031308f) {
+		return 12.92f * x;
+	}
+	return 1.055f * pow(x, 1.f/2.4f) - 0.055f;
+}
+
+vec3 linearToSRGB(vec3 x) {
+	x.r = linearToSRGB(x.r);
+	x.g = linearToSRGB(x.g);
+	x.b = linearToSRGB(x.b);
+    return x;
+}
+
+// Tone Mapping
+// From http://filmicgames.com/archives/75
+vec3 Uncharted2Tonemap(vec3 x)
+{
+    x = max(x, vec3(0));
+	float A = 0.15f;
+	float B = 0.50f;
+	float C = 0.10f;
+	float D = 0.20f;
+	float E_ = 0.02f;
+	float F = 0.30f;
+	return max(vec3(0.0f), ((x*(A*x+C*B)+D*E_)/(x*(A*x+B)+D*F))-E_/F);
+}
+
 void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath)
 {
+    // float exposure = 2.f; // TODO: expose as a parameter
+
     std::vector<float> fb = render(width, height, samplesPerPixel);
     std::vector<uint8_t> colors(4 * width * height);
-    for (size_t i = 0; i < (width * height); ++i) {       
-        colors[i * 4 + 0] = uint8_t(glm::clamp(fb[i * 4 + 0] * 255.f, 0.f, 255.f));
-        colors[i * 4 + 1] = uint8_t(glm::clamp(fb[i * 4 + 1] * 255.f, 0.f, 255.f));
-        colors[i * 4 + 2] = uint8_t(glm::clamp(fb[i * 4 + 2] * 255.f, 0.f, 255.f));
-        colors[i * 4 + 3] = uint8_t(glm::clamp(fb[i * 4 + 3] * 255.f, 0.f, 255.f));
+    for (size_t i = 0; i < (width * height); ++i) {     
+        vec3 color = vec3(fb[i * 4 + 0], fb[i * 4 + 1], fb[i * 4 + 2]);
+        float alpha = fb[i * 4 + 3];
+
+        // color = Uncharted2Tonemap(color * exposure);
+        // color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
+
+        color = linearToSRGB(color);
+
+        colors[i * 4 + 0] = uint8_t(glm::clamp(color.r * 255.f, 0.f, 255.f));
+        colors[i * 4 + 1] = uint8_t(glm::clamp(color.g * 255.f, 0.f, 255.f));
+        colors[i * 4 + 2] = uint8_t(glm::clamp(color.b * 255.f, 0.f, 255.f));
+        colors[i * 4 + 3] = uint8_t(glm::clamp(alpha * 255.f, 0.f, 255.f));
     }
     stbi_flip_vertically_on_write(true);
     stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
