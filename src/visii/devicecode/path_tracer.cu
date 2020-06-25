@@ -546,10 +546,22 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         accum_color.z, 
         accum_color.w
     );
+
+    float exposure = 10.f; // todo: make variable
+
+    float3 color = make_float3(accum_color);
+    
+    // color = uncharted_2_tonemap(color * exposure);
+    // color = color * (1.0f / uncharted_2_tonemap(make_float3(11.2f)));
+
+    // color.x = linear_to_srgb(color.x);
+    // color.y = linear_to_srgb(color.y);
+    // color.z = linear_to_srgb(color.z);
+
     optixLaunchParams.frameBuffer[fbOfs] = vec4(
-        /*linear_to_srgb*/(accum_color.x),
-        /*linear_to_srgb*/(accum_color.y),
-        /*linear_to_srgb*/(accum_color.z),
+        color.x,
+        color.y,
+        color.z,
         1.0f
     );
     vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];

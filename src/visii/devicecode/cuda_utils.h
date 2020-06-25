@@ -5,6 +5,26 @@
 #include "float3.h"
 #include "types.h"
 
+// Tone Mapping
+// From http://filmicgames.com/archives/75
+__device__ float3 uncharted_2_tonemap(float3 x)
+{
+	if (x.x < 0) x.x = 0;
+	if (x.y < 0) x.y = 0;
+	if (x.z < 0) x.z = 0;
+	float A = 0.15f;
+	float B = 0.50f;
+	float C = 0.10f;
+	float D = 0.20f;
+	float E_ = 0.02f;
+	float F = 0.30f;
+	float3 result = ((x*(A*x+C*B)+D*E_)/(x*(A*x+B)+D*F)) -E_/F;
+	if (result.x < 0) result.x = 0;
+	if (result.y < 0) result.y = 0;
+	if (result.z < 0) result.z = 0;
+	return result;
+}
+
 __device__ float linear_to_srgb(float x) {
 	if (x <= 0.0031308f) {
 		return 12.92f * x;
