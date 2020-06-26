@@ -17,7 +17,7 @@ setup(
     packages = ['visii'], # include the package "visii" 
 
     # make sure the shared library is included
-    package_data = {'': ("*.dll", "*.pyd", ".so")},
+    package_data = {'': ("*.dll", "*.pyd", "*.so")},
     include_package_data=True,
 
     description='',
