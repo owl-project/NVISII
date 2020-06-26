@@ -70,7 +70,7 @@ floor = visii.entity.create(
     material = visii.material.create("floor")
 )
 
-floor.get_transform().set_scale(visii.visii.vec3(100))
+floor.get_transform().set_scale(visii.vec3(100))
 floor.get_material().set_roughness(1.0)
 
 areaLight1 = visii.entity.create(
