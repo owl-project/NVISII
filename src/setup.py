@@ -2,9 +2,7 @@
 # This work is licensed under the NVIDIA Source Code License - Non-commercial. Full
 # text can be found in LICENSE.md
 from setuptools import setup, dist
-import wheel
-
-import visii
+import wheel 
 
 # force setuptools to recognize that this is
 # actually a binary distribution
@@ -42,7 +40,5 @@ setup(
     maintainer='',
     maintainer_email='',
     
-
-    zip_safe=False,
-    python_requires = "~=" + str(visii._built_major_version) + "." + str(visii._built_minor_version),
+    python_requires = "~=2.7,~=3.5,~=3.6,~=3.7,~=3.8",
 )
