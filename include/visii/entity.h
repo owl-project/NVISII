@@ -63,6 +63,9 @@ private:
     /** Indicates this component has been edited */
     bool dirty = true;
 
+	/** Returns the simplified struct by reference, used to represent the current component */
+	EntityStruct &getStructRef();
+
 public:
     /**
 	 * Constructs an Entity with the given name.
