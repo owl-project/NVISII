@@ -40,5 +40,5 @@ setup(
     maintainer='',
     maintainer_email='',
     
-    python_requires = "~=2.7,~=3.5,~=3.6,~=3.7,~=3.8",
+    python_requires = ">=2.7",
 )
