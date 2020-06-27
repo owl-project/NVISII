@@ -4,4 +4,6 @@ import visii
 # only see gaussian noise pattern
 visii.initialize_interactive()
 
+input("Press Enter to continue...")
+
 visii.cleanup()
