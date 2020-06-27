@@ -13,6 +13,7 @@ class Texture;
 */
 class Light : public StaticFactory {
     friend class StaticFactory;
+    friend class Entity;
 public:
     /** 
      * Constructs a light with the given name.

@@ -36,6 +36,7 @@ enum MaterialFlags : uint32_t {
 class Material : public StaticFactory
 {
   friend class StaticFactory;
+  friend class Entity;
   public:
     /**
      * Constructs a material with the given name.

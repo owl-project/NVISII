@@ -26,6 +26,7 @@ class Vertex;
 class Mesh : public StaticFactory
 {
 	friend class StaticFactory;
+	friend class Entity;
 	public:
 		/** Creates a rectangular box centered at the origin aligned along the x, y, and z axis. 
 		 *

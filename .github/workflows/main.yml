@@ -41,6 +41,7 @@ jobs:
         echo ${pythonLocation}
         echo %pythonLocation%
         ls ${pythonLocation}
+        python -m pip install --upgrade pip setuptools setuptools_scm wheel
 
     # Download external dependencies
     - name: Download Ubuntu Dependencies
@@ -58,7 +59,7 @@ jobs:
     - name: Download Windows Dependencies
       if: matrix.os == 'windows-latest'
       run: |
-        choco install cuda
+        choco install cuda --version=10.2.89.20191206  
         refreshenv
         
     - name: Ubuntu configure/install cmake project
@@ -66,16 +67,22 @@ jobs:
       run: |
         cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="${{matrix.python-version}}"
         cmake --build . --config Release --target install 
+        cd install
+        python setup.py bdist_wheel
+
 
     - name: Windows configure/install cmake project
       if: matrix.os == 'windows-latest'
       run: |
-        cmake . -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.0" -DPYTHON_VERSION="${{matrix.python-version}}"
+        cmake . -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
         cmake --build . --config Release --target install 
+        cd install
+        python setup.py bdist_wheel
+
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
         name: visii-${{ matrix.os }}-python${{ matrix.python-version }}
-        path: install
+        path: install/dist/*.whl
         

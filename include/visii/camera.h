@@ -16,7 +16,7 @@
 class Camera : public StaticFactory
 {
 	friend class StaticFactory;
-    // friend class Scene;
+    friend class Entity;
 private:
   	/** Prevents multiple components from simultaneously being added and/or removed from the component list */
 	static std::shared_ptr<std::mutex> editMutex;

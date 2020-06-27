@@ -177,7 +177,7 @@ class StaticFactory {
     
     /* Inheriting factories should set these fields when a component is created. */
     std::string name = "";
-    uint32_t id = -1;
+    int32_t id = -1;
 
     /* All items keep track of the entities which use them. */
     std::set<uint32_t> entities;

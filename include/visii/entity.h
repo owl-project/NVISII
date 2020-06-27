@@ -134,7 +134,7 @@ public:
 	void markClean() { dirty = false; }
 
     /** Returns the simplified struct used to represent the current component */
-	EntityStruct getStruct();
+	EntityStruct &getStruct();
 
     /** Connects a transform component to the current entity */
 	void setTransform(Transform* transform);
