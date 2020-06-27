@@ -97,6 +97,9 @@ public:
     /** @returns the number of allocated entities */
 	static uint32_t getCount();
 
+	/** @returns A map whose key is an entity name and whose value is the ID for that entity */
+	static std::map<std::string, uint32_t> getNameToIdMap();
+
     /** @param name The name of the Entity to remove */
 	static void remove(std::string name);
 	

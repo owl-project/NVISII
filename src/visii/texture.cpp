@@ -201,3 +201,8 @@ TextureStruct* Texture::getFrontStruct() {
 uint32_t Texture::getCount() {
     return MAX_TEXTURES;
 }
+
+std::map<std::string, uint32_t> Texture::getNameToIdMap()
+{
+	return lookupTable;
+}

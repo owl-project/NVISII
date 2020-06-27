@@ -206,6 +206,11 @@ uint32_t Material::getCount() {
 	return MAX_MATERIALS;
 }
 
+std::map<std::string, uint32_t> Material::getNameToIdMap()
+{
+	return lookupTable;
+}
+
 void Material::setBaseColor(glm::vec3 color) {
 	materialStructs[id].base_color.r = color.r;
 	materialStructs[id].base_color.g = color.g;

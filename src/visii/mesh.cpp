@@ -2142,6 +2142,11 @@ uint32_t Mesh::getCount() {
 	return MAX_MESHES;
 }
 
+std::map<std::string, uint32_t> Mesh::getNameToIdMap()
+{
+	return lookupTable;
+}
+
 // uint64_t Mesh::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, vk::DeviceMemory &bufferMemory)
 // {
 // 	auto vulkan = Libraries::Vulkan::Get();

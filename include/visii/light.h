@@ -57,6 +57,9 @@ public:
     /** @returns the number of allocated lights */
     static uint32_t getCount();
 
+    /** @returns A map whose key is a light name and whose value is the ID for that light */
+	static std::map<std::string, uint32_t> getNameToIdMap();
+
     /** @param name The name of the Light to remove */
     static void remove(std::string name);
 

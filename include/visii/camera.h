@@ -96,6 +96,9 @@ private:
 	/** @returns the number of allocated cameras. */
 	static uint32_t getCount();
 
+	/** @returns A map whose key is a camera name and whose value is the ID for that camera */
+	static std::map<std::string, uint32_t> getNameToIdMap();
+
 	/** @param name The name of the camera to remove */
 	static void remove(std::string name);
 

@@ -293,3 +293,8 @@ Entity* Entity::getFront() {
 uint32_t Entity::getCount() {
 	return MAX_ENTITIES;
 }
+
+std::map<std::string, uint32_t> Entity::getNameToIdMap()
+{
+	return lookupTable;
+}

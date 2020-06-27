@@ -91,7 +91,7 @@ else:
 %include "std_vector.i"
 namespace std {
   %template(FloatVector) vector<float>;
-  %template(uInt32Vector) vector<uint32_t>;
+  %template(UINT32Vector) vector<uint32_t>;
   %template(EntityVector) vector<Entity*>;
   %template(TransformVector) vector<Transform*>;
   %template(MeshVector) vector<Mesh*>;
@@ -99,6 +99,12 @@ namespace std {
   %template(TextureVector) vector<Texture*>;
   %template(LightVector) vector<Light*>;
   %template(MaterialVector) vector<Material*>;
+}
+
+/* STD Maps */
+%include "std_map.i"
+namespace std {
+  %template(StringToUINT32Map) map<string, uint32_t>;
 }
 
 /* -------- Ignores --------------*/

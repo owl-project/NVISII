@@ -223,6 +223,11 @@ uint32_t Camera::getCount() {
 	return MAX_CAMERAS;
 }
 
+std::map<std::string, uint32_t> Camera::getNameToIdMap()
+{
+	return lookupTable;
+}
+
 
 
 // void Camera::update_used_views(uint32_t multiview) {
