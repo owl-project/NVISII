@@ -20,12 +20,13 @@ Entity::Entity(std::string name, uint32_t id) {
 	this->initialized = true;
 	this->name = name;
 	this->id = id;
-	getStructRef().initialized = true;
-	getStructRef().transform_id = -1;
-	getStructRef().camera_id = -1;
-	getStructRef().material_id = -1;
-	getStructRef().light_id = -1;
-	getStructRef().mesh_id = -1;
+	auto &entity = getStruct();
+	entity.initialized = true;
+	entity.transform_id = -1;
+	entity.camera_id = -1;
+	entity.material_id = -1;
+	entity.light_id = -1;
+	entity.mesh_id = -1;
 }
 
 std::string Entity::toString()
@@ -35,27 +36,23 @@ std::string Entity::toString()
 	output += "\ttype: \"Entity\",\n";
 	output += "\tname: \"" + name + "\",\n";
 	output += "\tid: \"" + std::to_string(id) + "\",\n";
-	output += "\ttransform_id: " + std::to_string(getStructRef().transform_id) + "\n";
-	output += "\tcamera_id: " + std::to_string(getStructRef().camera_id) + "\n";
-	output += "\tmaterial_id: " + std::to_string(getStructRef().material_id) + "\n";
-	output += "\tlight_id: " + std::to_string(getStructRef().light_id) + "\n";
-	output += "\tmesh_id: " + std::to_string(getStructRef().mesh_id) + "\n";
+	output += "\ttransform_id: " + std::to_string(getStruct().transform_id) + "\n";
+	output += "\tcamera_id: " + std::to_string(getStruct().camera_id) + "\n";
+	output += "\tmaterial_id: " + std::to_string(getStruct().material_id) + "\n";
+	output += "\tlight_id: " + std::to_string(getStruct().light_id) + "\n";
+	output += "\tmesh_id: " + std::to_string(getStruct().mesh_id) + "\n";
 	output += "}";
 	return output;
 }
 
-EntityStruct &Entity::getStructRef() {
+EntityStruct &Entity::getStruct() {
 	if (!isInitialized()) throw std::runtime_error("Error: entity is uninitialized.");
 	return entityStructs[id];
 }
 
-EntityStruct Entity::getStruct() {
-	return getStructRef();
-}
-
 void Entity::setTransform(Transform* transform) 
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	if (!transform) throw std::runtime_error( std::string("Invalid transform handle."));
 	if (!transform->isFactoryInitialized()) throw std::runtime_error("Error, transform not initialized");
 	entity.transform_id = transform->getId();
@@ -65,7 +62,7 @@ void Entity::setTransform(Transform* transform)
 
 void Entity::clearTransform()
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	auto transforms = Transform::getFront();
 	if (entity.transform_id != -1) transforms[entity.transform_id].entities.erase(id);
 	entity.transform_id = -1;
@@ -74,7 +71,7 @@ void Entity::clearTransform()
 
 Transform* Entity::getTransform()
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	if ((entity.transform_id < 0) || (entity.transform_id >= MAX_TRANSFORMS)) return nullptr;
 	auto transforms = Transform::getFront(); 
 	if (!transforms[entity.transform_id].isInitialized()) return nullptr;
@@ -83,7 +80,7 @@ Transform* Entity::getTransform()
 
 void Entity::setCamera(Camera *camera) 
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	if (!camera) throw std::runtime_error( std::string("Invalid camera handle."));
 	if (!camera->isFactoryInitialized()) throw std::runtime_error("Error, camera not initialized");
 	entity.camera_id = camera->getId();
@@ -93,7 +90,7 @@ void Entity::setCamera(Camera *camera)
 
 void Entity::clearCamera()
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	auto cameras = Camera::getFront();
 	if (entity.camera_id != -1) cameras[entity.camera_id].entities.erase(id);
 	entity.camera_id = -1;
@@ -102,7 +99,7 @@ void Entity::clearCamera()
 
 Camera* Entity::getCamera()
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	if ((entity.camera_id < 0) || (entity.camera_id >= MAX_CAMERAS)) return nullptr;
 	auto cameras = Camera::getFront(); 
 	if (!cameras[entity.camera_id].isInitialized()) return nullptr;
@@ -111,7 +108,7 @@ Camera* Entity::getCamera()
 
 void Entity::setMaterial(Material *material) 
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	if (!material) throw std::runtime_error( std::string("Invalid material handle."));
 	if (!material->isFactoryInitialized()) throw std::runtime_error("Error, material not initialized");
 	entity.material_id = material->getId();
@@ -121,7 +118,7 @@ void Entity::setMaterial(Material *material)
 
 void Entity::clearMaterial()
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	auto materials = Material::getFront();
 	if (entity.material_id != -1) materials[entity.material_id].entities.erase(id);
 	entity.material_id = -1;
@@ -130,7 +127,7 @@ void Entity::clearMaterial()
 
 Material* Entity::getMaterial()
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	if ((entity.material_id < 0) || (entity.material_id >= MAX_MATERIALS)) return nullptr;
 	auto &material = Material::getFront()[entity.material_id];
 	if (!material.isInitialized()) return nullptr;
@@ -139,7 +136,7 @@ Material* Entity::getMaterial()
 
 void Entity::setLight(Light* light) 
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	if (!light) throw std::runtime_error( std::string("Invalid light handle."));
 	if (!light->isFactoryInitialized()) throw std::runtime_error("Error, light not initialized");
 	entity.light_id = light->getId();
@@ -149,7 +146,7 @@ void Entity::setLight(Light* light)
 
 void Entity::clearLight()
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	auto lights = Light::getFront();
 	if (entity.light_id != -1) lights[entity.light_id].entities.erase(id);
 	entity.light_id = -1;
@@ -158,7 +155,7 @@ void Entity::clearLight()
 
 Light* Entity::getLight()
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	if ((entity.light_id < 0) || (entity.light_id >= MAX_LIGHTS)) return nullptr;
 	auto &light = Light::getFront()[entity.light_id];
 	if (!light.isInitialized()) return nullptr;
@@ -167,7 +164,7 @@ Light* Entity::getLight()
 
 void Entity::setMesh(Mesh* mesh) 
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	if (!mesh) throw std::runtime_error( std::string("Invalid mesh handle."));
 	if (!mesh->isFactoryInitialized()) throw std::runtime_error("Error, mesh not initialized");
 	entity.mesh_id = mesh->getId();
@@ -177,7 +174,7 @@ void Entity::setMesh(Mesh* mesh)
 
 void Entity::clearMesh()
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	auto meshes = Mesh::getFront();
 	if (entity.mesh_id != -1) meshes[entity.mesh_id].entities.erase(id);
 	entity.mesh_id = -1;
@@ -186,7 +183,7 @@ void Entity::clearMesh()
 
 Mesh* Entity::getMesh()
 {
-	auto entity = getStructRef();
+	auto &entity = getStruct();
 	if ((entity.mesh_id < 0) || (entity.mesh_id >= MAX_MESHES))  return nullptr;
 	auto mesh = Mesh::get(entity.mesh_id);
 	if (!mesh->isFactoryInitialized()) return nullptr;
