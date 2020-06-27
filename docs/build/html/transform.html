@@ -1,0 +1,949 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Transform &mdash; ViSII 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Material" href="material.html" />
+    <link rel="prev" title="Entity" href="entity.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> ViSII
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="entity.html">Entity</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Transform</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mesh.html">Mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="texture.html">Texture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="camera.html">Camera</a></li>
+<li class="toctree-l1"><a class="reference internal" href="all.html">Full Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ViSII</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Transform</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/transform.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="transform">
+<h1>Transform<a class="headerlink" href="#transform" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="visii.transform">
+<em class="property">class </em><code class="sig-prename descclassname">visii.</code><code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>The “Transform” component places an entity into the scene.
+These transform components represent a scale, a rotation, and a translation, in that order.</p>
+<dl class="py method">
+<dt id="visii.transform.thisown">
+<em class="property">property </em><code class="sig-name descname">thisown</code><a class="headerlink" href="#visii.transform.thisown" title="Permalink to this definition">¶</a></dt>
+<dd><p>The membership flag</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.create">
+<em class="property">static </em><code class="sig-name descname">create</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a transform with the given name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – A unique name for this transform.</p></li>
+<li><p><strong>scale</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The initial scale of the transform, applied first.</p></li>
+<li><p><strong>rotation</strong> (<a class="reference internal" href="all.html#visii.quat" title="visii.quat"><code class="xref py py-class docutils literal notranslate"><span class="pre">quat</span></code></a>) – The initial scale of the transform, applied after scale.</p></li>
+<li><p><strong>position</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The initial position of the transform, applied after rotation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to a transform component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get">
+<em class="property">static </em><code class="sig-name descname">get</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the transform to get</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a transform who’s name matches the given name</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_count">
+<em class="property">static </em><code class="sig-name descname">get_count</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_count" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of allocated transforms</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.remove">
+<em class="property">static </em><code class="sig-name descname">remove</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.remove" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the transform to remove</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.is_initialized">
+<code class="sig-name descname">is_initialized</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.is_initialized" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True the current transform is a valid, initialized transform, and False if the transform was cleared or removed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.clear_all">
+<em class="property">static </em><code class="sig-name descname">clear_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.clear_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears any existing transform components.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.are_any_dirty">
+<em class="property">static </em><code class="sig-name descname">are_any_dirty</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.are_any_dirty" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if any the transform has been modified since the previous frame, and False otherwise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.to_string">
+<code class="sig-name descname">to_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.to_string" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>string</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a json string representation of the current component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.transform_direction">
+<code class="sig-name descname">transform_direction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">direction</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.transform_direction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms direction from local to parent.
+This operation is not affected by scale or position of the transform.
+The returned vector has the same length as the input direction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>direction</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The direction to apply the transform to.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The transformed direction.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.transform_point">
+<code class="sig-name descname">transform_point</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">point</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.transform_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms position from local to parent. Note, affected by scale.
+The opposite conversion, from parent to local, can be done with Transform.inverse_transform_point</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>point</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The point to apply the transform to.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The transformed point.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.transform_vector">
+<code class="sig-name descname">transform_vector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vector</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.transform_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms vector from local to parent.
+This is not affected by position of the transform, but is affected by scale.
+The returned vector may have a different length that the input vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>vector</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The vector to apply the transform to.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The transformed vector.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.inverse_transform_direction">
+<code class="sig-name descname">inverse_transform_direction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">direction</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.inverse_transform_direction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms a direction from parent space to local space.
+The opposite of Transform.transform_direction.
+This operation is unaffected by scale.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>point</strong> – The direction to apply the inverse transform to.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The transformed direction.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.inverse_transform_point">
+<code class="sig-name descname">inverse_transform_point</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">point</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.inverse_transform_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms position from parent space to local space.
+Essentially the opposite of Transform.transform_point.
+Note, affected by scale.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>point</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The point to apply the inverse transform to.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The transformed point.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.inverse_transform_vector">
+<code class="sig-name descname">inverse_transform_vector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vector</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.inverse_transform_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms a vector from parent space to local space.
+The opposite of Transform.transform_vector.
+This operation is affected by scale.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>point</strong> – The vector to apply the inverse transform to.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The transformed vector.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.look_at">
+<code class="sig-name descname">look_at</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.look_at" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Rotates the transform so the forward vector points at the target’s current position.
+Then it rotates the transform to point its up direction vector in the direction hinted at
+by the parentUp vector.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>at</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The position to point the transform towards</p></li>
+<li><p><strong>up</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The unit direction pointing upwards</p></li>
+<li><p><strong>eye</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – (optional) The position to place the object</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.rotate_around">
+<code class="sig-name descname">rotate_around</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">point</span></em>, <em class="sig-param"><span class="n">quaternion</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.rotate_around" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotates the transform through the provided quaternion, passing through the provided point in parent
+coordinates.
+This modifies both the position and rotation of the transform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>point</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The pivot point in space to rotate around.</p></li>
+<li><p><strong>quaternion</strong> (<a class="reference internal" href="all.html#visii.quat" title="visii.quat"><code class="xref py py-class docutils literal notranslate"><span class="pre">quat</span></code></a>) – The quaternion to use for rotation.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.set_transform">
+<code class="sig-name descname">set_transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">transformation</span></em>, <em class="sig-param"><span class="n">decompose</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.set_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets an optional additional transform, useful for representing normally unsupported transformations
+like sheers and projections.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transformation</strong> (<a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a>) – a 4 by 4 column major transformation matrix</p></li>
+<li><p><strong>decompose</strong> (<em>boolean</em>) – attempts to use singular value decomposition to decompose the provided transform into a translation, rotation, and scale</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_rotation">
+<code class="sig-name descname">get_rotation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_rotation" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.quat" title="visii.quat"><code class="xref py py-class docutils literal notranslate"><span class="pre">quat</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A quaternion rotating the transform from local to parent</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.set_rotation">
+<code class="sig-name descname">set_rotation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">newRotation</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.set_rotation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the rotation of the transform from local to parent via a quaternion</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>newRotation</strong> (<a class="reference internal" href="all.html#visii.quat" title="visii.quat"><code class="xref py py-class docutils literal notranslate"><span class="pre">quat</span></code></a>) – The new rotation quaternion to set the current transform quaternion to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.add_rotation">
+<code class="sig-name descname">add_rotation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">additionalRotation</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.add_rotation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a rotation to the existing transform rotation from local to parent
+via a quaternion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>additionalRotation</strong> (<a class="reference internal" href="all.html#visii.quat" title="visii.quat"><code class="xref py py-class docutils literal notranslate"><span class="pre">quat</span></code></a>) – The rotation quaternion apply to the existing transform quaternion.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_position">
+<code class="sig-name descname">get_position</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_position" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a position vector describing where this transform will be translated to in its parent space.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_right">
+<code class="sig-name descname">get_right</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_right" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a vector pointing right relative to the current transform placed in its parent’s space.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_up">
+<code class="sig-name descname">get_up</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_up" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a vector pointing up relative to the current transform placed in its parent’s space.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_forward">
+<code class="sig-name descname">get_forward</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_forward" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a vector pointing forward relative to the current transform placed in its parent’s space.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.set_position">
+<code class="sig-name descname">set_position</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">newPosition</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.set_position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the position vector describing where this transform should be translated to when placed in its
+parent space.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>newPosition</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The new position to set the current transform position to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.add_position">
+<code class="sig-name descname">add_position</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">additionalPosition</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.add_position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds to the current the position vector describing where this transform should be translated to
+when placed in its parent space.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>additionalPosition</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The position (interpreted as a vector) to add onto the current transform position.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_scale">
+<code class="sig-name descname">get_scale</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_scale" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the scale of this transform from local to parent space along its right, up, and forward
+directions respectively</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.set_scale">
+<code class="sig-name descname">set_scale</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">newScale</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.set_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the scale of this transform from local to parent space along its right, up, and forward
+directions respectively.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>newScale</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The new scale to set the current transform scale to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.add_scale">
+<code class="sig-name descname">add_scale</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">additionalScale</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.add_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds to the current the scale of this transform from local to parent space along its right, up,
+and forward directions respectively</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>additionalScale</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – The scale to add onto the current transform scale.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_parent_to_local_matrix">
+<code class="sig-name descname">get_parent_to_local_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_parent_to_local_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the final matrix transforming this object from it’s parent coordinate space to it’s
+local coordinate space</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_local_to_parent_matrix">
+<code class="sig-name descname">get_local_to_parent_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_local_to_parent_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the final matrix transforming this object from it’s local coordinate space to it’s
+parents coordinate space</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_local_to_parent_translation_matrix">
+<code class="sig-name descname">get_local_to_parent_translation_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_local_to_parent_translation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the final matrix translating this object from it’s local coordinate space to it’s
+parent coordinate space</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_local_to_parent_scale_matrix">
+<code class="sig-name descname">get_local_to_parent_scale_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_local_to_parent_scale_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the final matrix translating this object from it’s local coordinate space to it’s
+parent coordinate space</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_local_to_parent_rotation_matrix">
+<code class="sig-name descname">get_local_to_parent_rotation_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_local_to_parent_rotation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the final matrix rotating this object in it’s local coordinate space to it’s
+parent coordinate space</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_parent_to_local_translation_matrix">
+<code class="sig-name descname">get_parent_to_local_translation_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_parent_to_local_translation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the final matrix translating this object from it’s parent coordinate space to it’s
+local coordinate space</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_parent_to_local_scale_matrix">
+<code class="sig-name descname">get_parent_to_local_scale_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_parent_to_local_scale_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the final matrix scaling this object from it’s parent coordinate space to it’s
+local coordinate space</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_parent_to_local_rotation_matrix">
+<code class="sig-name descname">get_parent_to_local_rotation_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_parent_to_local_rotation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the final matrix rotating this object from it’s parent coordinate space to it’s
+local coordinate space</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.set_parent">
+<code class="sig-name descname">set_parent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parent</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.set_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the parent of this transform, whose transformation will be applied after the current
+transform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>parent</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code>) – The transform component to constrain the current transform to. Any existing parent constraint is replaced.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.clear_parent">
+<code class="sig-name descname">clear_parent</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.clear_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the parent-child relationship affecting this node.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.add_child">
+<code class="sig-name descname">add_child</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">child</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.add_child" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a child to this transform, whose transformation will be applied before the current
+transform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>child</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code>) – The child transform component to constrain to the current transform. Any existing parent constraint is replaced.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.remove_child">
+<code class="sig-name descname">remove_child</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">child</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.remove_child" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes a child transform previously added to the current transform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>child</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code>) – The constrained child transform component to un-constrain from the current transform. Any existing parent constraint is replaced.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_world_to_local_matrix">
+<code class="sig-name descname">get_world_to_local_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_world_to_local_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a matrix transforming this component from world space to its local space, taking all
+parent transforms into account.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_local_to_world_matrix">
+<code class="sig-name descname">get_local_to_world_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_local_to_world_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a matrix transforming this component from its local space to world space, taking all
+parent transforms into account.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_world_scale">
+<code class="sig-name descname">get_world_scale</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_world_scale" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a (possibly approximate) scale scaling the current transform from
+local space to world space, taking all parent transforms into account</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_world_rotation">
+<code class="sig-name descname">get_world_rotation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_world_rotation" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.quat" title="visii.quat"><code class="xref py py-class docutils literal notranslate"><span class="pre">quat</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a (possibly approximate) rotation rotating the current transform from
+local space to world space, taking all parent transforms into account</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_world_translation">
+<code class="sig-name descname">get_world_translation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_world_translation" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a (possibly approximate) translation moving the current transform from
+local space to world space, taking all parent transforms into account</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_world_to_local_rotation_matrix">
+<code class="sig-name descname">get_world_to_local_rotation_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_world_to_local_rotation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a (possibly approximate) rotation matrix rotating the current transform from
+local space to world space, taking all parent transforms into account</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_local_to_world_rotation_matrix">
+<code class="sig-name descname">get_local_to_world_rotation_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_local_to_world_rotation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a (possibly approximate) rotation matrix rotating the current transform from
+world space to local space, taking all parent transforms into account</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_world_to_local_translation_matrix">
+<code class="sig-name descname">get_world_to_local_translation_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_world_to_local_translation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a (possibly approximate) translation matrix translating the current transform from
+local space to world space, taking all parent transforms into account</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_local_to_world_translation_matrix">
+<code class="sig-name descname">get_local_to_world_translation_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_local_to_world_translation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a (possibly approximate) translation matrix rotating the current transform from
+world space to local space</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_world_to_local_scale_matrix">
+<code class="sig-name descname">get_world_to_local_scale_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_world_to_local_scale_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a (possibly approximate) scale matrix scaling the current transform from
+local space to world space, taking all parent transforms into account</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.transform.get_local_to_world_scale_matrix">
+<code class="sig-name descname">get_local_to_world_scale_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.transform.get_local_to_world_scale_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.mat4" title="visii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a (possibly approximate) scale matrix scaling the current transform from
+world space to local space, taking all parent transforms into account</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="material.html" class="btn btn-neutral float-right" title="Material" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="entity.html" class="btn btn-neutral float-left" title="Entity" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Nate Morrical
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,479 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Texture &mdash; ViSII 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Camera" href="camera.html" />
+    <link rel="prev" title="Mesh" href="mesh.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> ViSII
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="entity.html">Entity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transform.html">Transform</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mesh.html">Mesh</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Texture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="camera.html">Camera</a></li>
+<li class="toctree-l1"><a class="reference internal" href="all.html">Full Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ViSII</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Texture</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/texture.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="texture">
+<h1>Texture<a class="headerlink" href="#texture" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="visii.texture">
+<em class="property">class </em><code class="sig-prename descclassname">visii.</code><code class="sig-name descname">texture</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture" title="Permalink to this definition">¶</a></dt>
+<dd><p>The “Texture” component describes a 2D pattern used to drive the “Material” component’s parameters.</p>
+<dl class="py method">
+<dt id="visii.texture.create">
+<em class="property">static </em><code class="sig-name descname">create</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.create" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Constructs a Texture with the given name.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a Texture allocated by the renderer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.create_from_data">
+<em class="property">static </em><code class="sig-name descname">create_from_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">width</span></em>, <em class="sig-param"><span class="n">height</span></em>, <em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.create_from_data" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Constructs a Texture with the given name from custom user data.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> (<em>int</em>) – The width of the image.</p></li>
+<li><p><strong>height</strong> (<em>int</em>) – The height of the image.</p></li>
+<li><p><strong>data</strong> (<em>std::vector&lt; glm::vec4</em><em>,</em><em>std::allocator&lt; glm::vec4 &gt; &gt;</em>) – A row major flattened vector of RGBA texels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a Texture allocated by the renderer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.create_from_image">
+<em class="property">static </em><code class="sig-name descname">create_from_image</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.create_from_image" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Constructs a Texture with the given name from a image located on the filesystem.</p>
+</div></blockquote>
+<p>Supported formats include JPEG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, and PNM
+:type path: string
+:param path: The path to the image.
+:rtype: <code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code>
+:return: a Texture allocated by the renderer.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.get">
+<em class="property">static </em><code class="sig-name descname">get</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.get" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt><em>Overload 1:</em></dt><dd><p>Gets a Texture by name</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a Texture who’s primary name key matches name</p>
+</dd>
+</dl>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<dl class="simple">
+<dt><em>Overload 2:</em></dt><dd><p>Gets a Texture by id</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a Texture who’s primary id key matches id</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.get_count">
+<em class="property">static </em><code class="sig-name descname">get_count</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.get_count" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of allocated textures</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.get_front">
+<em class="property">static </em><code class="sig-name descname">get_front</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.get_front" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a pointer to the table of Texture components</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.get_front_struct">
+<em class="property">static </em><code class="sig-name descname">get_front_struct</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.get_front_struct" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>TextureStruct</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a pointer to the table of TextureStructs</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.get_height">
+<code class="sig-name descname">get_height</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.get_height" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the height of the texture in texels</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.get_texels">
+<code class="sig-name descname">get_texels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.get_texels" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>std::vector&lt; glm::vec4,std::allocator&lt; glm::vec4 &gt; &gt;</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a flattened list of texels</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.get_width">
+<code class="sig-name descname">get_width</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.get_width" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the width of the texture in texels</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.initialize_factory">
+<em class="property">static </em><code class="sig-name descname">initialize_factory</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.initialize_factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allocates the tables used to store all Texture components</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.is_clean">
+<code class="sig-name descname">is_clean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.is_clean" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the material has not been modified since the previous frame, and False otherwise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.is_dirty">
+<code class="sig-name descname">is_dirty</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.is_dirty" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the material has been modified since the previous frame, and False otherwise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.is_factory_initialized">
+<em class="property">static </em><code class="sig-name descname">is_factory_initialized</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the tables used to store all Texture components have been allocated, and False otherwise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.is_initialized">
+<code class="sig-name descname">is_initialized</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.is_initialized" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True the current Texture is a valid, initialized Texture, and False if the Texture was cleared or removed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.mark_clean">
+<code class="sig-name descname">mark_clean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.mark_clean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tags the current component as being unmodified since the previous frame.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.mark_dirty">
+<code class="sig-name descname">mark_dirty</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.mark_dirty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tags the current component as being modified since the previous frame.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.remove">
+<em class="property">static </em><code class="sig-name descname">remove</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Overload 1:</em>
+Deletes the Texture who’s primary name key matches name</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><em>Overload 2:</em>
+Deletes the Texture who’s primary id key matches id</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.thisown">
+<em class="property">property </em><code class="sig-name descname">thisown</code><a class="headerlink" href="#visii.texture.thisown" title="Permalink to this definition">¶</a></dt>
+<dd><p>The membership flag</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.texture.to_string">
+<code class="sig-name descname">to_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.texture.to_string" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>string</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a json string representation of the current component</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="camera.html" class="btn btn-neutral float-right" title="Camera" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="mesh.html" class="btn btn-neutral float-left" title="Mesh" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Nate Morrical
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

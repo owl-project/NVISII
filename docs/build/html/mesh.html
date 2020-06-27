@@ -1,0 +1,1234 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Mesh &mdash; ViSII 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Texture" href="texture.html" />
+    <link rel="prev" title="Material" href="material.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> ViSII
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="entity.html">Entity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transform.html">Transform</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="texture.html">Texture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="camera.html">Camera</a></li>
+<li class="toctree-l1"><a class="reference internal" href="all.html">Full Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ViSII</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Mesh</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/mesh.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="mesh">
+<h1>Mesh<a class="headerlink" href="#mesh" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="visii.mesh">
+<em class="property">class </em><code class="sig-prename descclassname">visii.</code><code class="sig-name descname">mesh</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="visii.mesh.clean_up">
+<em class="property">static </em><code class="sig-name descname">clean_up</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.clean_up" title="Permalink to this definition">¶</a></dt>
+<dd><p>Frees any tables used to store mesh components</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_box">
+<em class="property">static </em><code class="sig-name descname">create_box</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_box" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a rectangular box centered at the origin aligned along the x, y, and z axis.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>size</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – Half of the side length in x (0), y (1) and z (2) direction.</p></li>
+<li><p><strong>segments</strong> (<a class="reference internal" href="all.html#visii.ivec3" title="visii.ivec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">ivec3</span></code></a>) – The number of segments in x (0), y (1) and z (2)
+directions. All should be &gt;= 1. If any one is zero, faces in that
+direction are not genereted. If more than one is zero the mesh is empty.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_capped_cone">
+<em class="property">static </em><code class="sig-name descname">create_capped_cone</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_capped_cone" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a cone with a cap centered at the origin and pointing towards the positive z-axis.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – Radius of the flat (negative z) end along the xy-plane.</p></li>
+<li><p><strong>size</strong> (<em>float</em>) – Half of the length of the cylinder along the z-axis.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Number of subdivisions around the z-axis.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Number of subdivisions along the z-axis.</p></li>
+<li><p><strong>rings</strong> (<em>int</em>) – Number of subdivisions of the cap.</p></li>
+<li><p><strong>start</strong> (<em>float</em>) – Counterclockwise angle around the z-axis relative to the positive x-axis.</p></li>
+<li><p><strong>sweep</strong> (<em>float</em>) – Counterclockwise angle around the z-axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_capped_cylinder">
+<em class="property">static </em><code class="sig-name descname">create_capped_cylinder</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_capped_cylinder" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a cylinder with a cap centered at the origin and aligned along the z-axis</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – Radius of the cylinder along the xy-plane.</p></li>
+<li><p><strong>size</strong> (<em>float</em>) – Half of the length cylinder along the z-axis.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Number of subdivisions around the z-axis.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Number of subdivisions along the z-axis.</p></li>
+<li><p><strong>rings</strong> (<em>int</em>) – Number of subdivisions on the caps.</p></li>
+<li><p><strong>start</strong> (<em>float</em>) – Counterclockwise angle around the z-axis relative to x-axis.</p></li>
+<li><p><strong>sweep</strong> (<em>float</em>) – Counterclockwise angle around the z-axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_capped_tube">
+<em class="property">static </em><code class="sig-name descname">create_capped_tube</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_capped_tube" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a tube (a cylinder with thickness) with caps on both ends, centered at the origin and aligned along the z-axis.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – The outer radius of the cylinder on the xy-plane.</p></li>
+<li><p><strong>innerRadius</strong> (<em>float</em>) – The inner radius of the cylinder on the xy-plane.</p></li>
+<li><p><strong>size</strong> (<em>float</em>) – Half of the length of the cylinder along the z-axis.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Number nubdivisions around the z-axis.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Number of subdivisions along the z-axis.</p></li>
+<li><p><strong>rings</strong> (<em>int</em>) – Number radial subdivisions in the cap.</p></li>
+<li><p><strong>start</strong> (<em>float</em>) – Counterclockwise angle around the z-axis relative to the x-axis.</p></li>
+<li><p><strong>sweep</strong> (<em>float</em>) – Counterclockwise angle around the z-axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_capsule">
+<em class="property">static </em><code class="sig-name descname">create_capsule</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_capsule" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a capsule (a cylinder with spherical caps) centered at the origin and aligned along the z-axis.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – Radius of the capsule on the xy-plane.</p></li>
+<li><p><strong>size</strong> (<em>float</em>) – Half of the length between centers of the caps along the z-axis.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Number of subdivisions around the z-axis in the caps.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Number radial subdivisions in the cylinder.</p></li>
+<li><p><strong>rings</strong> (<em>int</em>) – Number of radial subdivisions in the caps.</p></li>
+<li><p><strong>start</strong> (<em>float</em>) – Counterclockwise angle relative to the x-axis.</p></li>
+<li><p><strong>sweep</strong> (<em>float</em>) – Counterclockwise angle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_cone">
+<em class="property">static </em><code class="sig-name descname">create_cone</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_cone" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a cone centered at the origin, and whose tip points towards the z-axis.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – Radius of the negative z end on the xy-plane.</p></li>
+<li><p><strong>size</strong> (<em>float</em>) – Half of the length of the cylinder along the z-axis.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Number of subdivisions around the z-axis.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Number subdivisions along the z-axis.</p></li>
+<li><p><strong>start</strong> (<em>float</em>) – Counterclockwise angle around the z-axis relative to the x-axis.</p></li>
+<li><p><strong>sweep</strong> (<em>float</em>) – Counterclockwise angle around the z-axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_convex_polygon">
+<em class="property">static </em><code class="sig-name descname">create_convex_polygon</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">vertices</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">rings</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_convex_polygon" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a convex polygon from a set of corner vertices.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>vertices</strong> (<em>std::vector&lt; glm::vec2</em><em>,</em><em>std::allocator&lt; glm::vec2 &gt; &gt;</em>) – The corner coplanar vertex coordinates. Should form a convex polygon.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – The number of segments per side. Should be &gt;= 1. If zero an empty mesh is generated.</p></li>
+<li><p><strong>rings</strong> (<em>int</em>) – The number of radial segments. Should be &gt;= 1. = yields an empty mesh.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_convex_polygon_from_circle">
+<em class="property">static </em><code class="sig-name descname">create_convex_polygon_from_circle</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">radius</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">sides</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">rings</span><span class="o">=</span><span class="default_value">4</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_convex_polygon_from_circle" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a convex polygonal disk with an arbitrary number of corners.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – The radius the enclosing circle.</p></li>
+<li><p><strong>sides</strong> (<em>int</em>) – The number of sides. Should be &gt;= 3. If &lt;3 an empty mesh is generated.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – The number of segments per side. Should be &gt;= 1. If zero an empty mesh is generated.</p></li>
+<li><p><strong>rings</strong> (<em>int</em>) – The number of radial segments. Should be &gt;= 1. = yields an empty mesh.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_cylinder">
+<em class="property">static </em><code class="sig-name descname">create_cylinder</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_cylinder" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates an uncapped cylinder centered at the origin and aligned along the z-axis</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – Radius of the cylinder along the xy-plane.</p></li>
+<li><p><strong>size</strong> (<em>float</em>) – Half of the length of the cylinder along the z-axis.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Subdivisions around the z-axis.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Subdivisions along the z-axis.</p></li>
+<li><p><strong>start</strong> (<em>float</em>) – Counterclockwise angle around the z-axis relative to the x-axis.</p></li>
+<li><p><strong>sweep</strong> (<em>float</em>) – Counterclockwise angle around the z-axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_disk">
+<em class="property">static </em><code class="sig-name descname">create_disk</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_disk" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a circular disk centered at the origin and along the xy-plane</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – Outer radius of the disk on the xy-plane.</p></li>
+<li><p><strong>innerRadius</strong> (<em>float</em>) – radius of the inner circle on the xy-plane.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Number of subdivisions around the z-axis.</p></li>
+<li><p><strong>rings</strong> (<em>int</em>) – Number of subdivisions along the radius.</p></li>
+<li><p><strong>start</strong> (<em>float</em>) – Counterclockwise angle relative to the x-axis</p></li>
+<li><p><strong>sweep</strong> (<em>float</em>) – Counterclockwise angle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_dodecahedron">
+<em class="property">static </em><code class="sig-name descname">create_dodecahedron</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">radius</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">rings</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_dodecahedron" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a regular dodecahedron centered at the origin and with a given radius.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component
+Each face is optionally subdivided along the edges and/or radius.</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – The radius of the enclosing sphere.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – The number segments along each edge. Should be &gt;= 1. If &lt;1 empty mesh is generated.</p></li>
+<li><p><strong>rings</strong> (<em>int</em>) – The number of radial segments on each face. Should be &gt;= 1. If &lt;1 an empty mesh is generated.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_from_data">
+<em class="property">static </em><code class="sig-name descname">create_from_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_from_data" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates,     and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length      as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other  supplied per vertex data must be a multiple of 3 in length.  :type positions: std::vector&lt; glm::vec4,std::allocator&lt; glm::vec4 &gt; &gt;</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>positions</strong> – A list of 3D vertex positions. If indices aren’t supplied, this must be a multiple of 3. :type normals: std::vector&lt; glm::vec4,std::allocator&lt; glm::vec4 &gt; &gt;</p></li>
+<li><p><strong>normals</strong> – A list of 3D vertex normals. If indices aren’t supplied, this must be a multiple of 3. :type colors: std::vector&lt; glm::vec4,std::allocator&lt; glm::vec4 &gt; &gt;</p></li>
+<li><p><strong>colors</strong> – A list of per-vertex colors. If indices aren’t supplied, this must be a multiple of 3. :type texcoords: std::vector&lt; glm::vec2,std::allocator&lt; glm::vec2 &gt; &gt;</p></li>
+<li><p><strong>texcoords</strong> – A list of 2D per-vertex texture coordinates. If indices aren’t supplied, this must be a multiple of 3. :type indices: std::vector&lt; uint32_t,std::allocator&lt; uint32_t &gt; &gt;</p></li>
+<li><p><strong>indices</strong> – A list of integer indices connecting vertex positions in a counterclockwise ordering to form triangles. If supplied, indices must be a multiple of 3. :rtype: <code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_from_obj">
+<em class="property">static </em><code class="sig-name descname">create_from_obj</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_from_obj" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a mesh component from an OBJ file (ignoring any .mtl files)  :type name: string</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – The name (used as a primary key) for this mesh component :type path: string</p></li>
+<li><p><strong>path</strong> – A path to the OBJ file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_icosahedron">
+<em class="property">static </em><code class="sig-name descname">create_icosahedron</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">radius</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_icosahedron" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a regular icosahedron centered at the origin and with a given radius.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – The radius of the enclosing sphere.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – The number segments along each edge. Must be &gt;= 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_icosphere">
+<em class="property">static </em><code class="sig-name descname">create_icosphere</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">radius</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">4</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_icosphere" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates an icosphere, otherwise known as a spherical subdivided icosahedron.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – The radius of the containing sphere.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – The number of segments per icosahedron edge. Must be &gt;= 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_plane">
+<em class="property">static </em><code class="sig-name descname">create_plane</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_plane" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates a plane (a regular grid) on the xy-plane whose normal points towards the z-axis.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>size</strong> (<a class="reference internal" href="all.html#visii.vec2" title="visii.vec2"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec2</span></code></a>) – Half of the side length in x (0) and y (1) direction.</p></li>
+<li><p><strong>segments</strong> (<a class="reference internal" href="all.html#visii.ivec2" title="visii.ivec2"><code class="xref py py-class docutils literal notranslate"><span class="pre">ivec2</span></code></a>) – Number of subdivisions in the x (0) and y (1) direction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_rectangle_tube_from_polyline">
+<em class="property">static </em><code class="sig-name descname">create_rectangle_tube_from_polyline</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_rectangle_tube_from_polyline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a tube from a rounded rectangle extruded linearly along the specified path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>path</strong> (<em>std::vector&lt; glm::vec3</em><em>,</em><em>std::allocator&lt; glm::vec3 &gt; &gt;</em>) – A set of vertices describing a linear path.</p></li>
+<li><p><strong>size</strong> (<a class="reference internal" href="all.html#visii.vec2" title="visii.vec2"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec2</span></code></a>) – Half of the length of an edge</p></li>
+<li><p><strong>segments</strong> (<a class="reference internal" href="all.html#visii.ivec2" title="visii.ivec2"><code class="xref py py-class docutils literal notranslate"><span class="pre">ivec2</span></code></a>) – Number of subdivisions along each edge</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_rounded_box">
+<em class="property">static </em><code class="sig-name descname">create_rounded_box</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_rounded_box" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><dl class="simple">
+<dt>Creates a mesh component from a procedural parametric mesh. (TODO: accept a callback which given an x and y position</dt><dd><p>returns a Z hightfield)  Creates a rectangular box with rounded edges, centered at the origin and aligned along the x, y, and z axis.</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – Radius of the rounded edges.</p></li>
+<li><p><strong>size</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – Half of the side length in x (0), y (1) and z (2) direction.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Number subdivions around in the rounded edges.</p></li>
+<li><p><strong>segments</strong> (<a class="reference internal" href="all.html#visii.ivec3" title="visii.ivec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">ivec3</span></code></a>) – Number of subdivisions in x (0), y (1) and z (2) direction for the flat faces.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_rounded_rectangle_tube_from_polyline">
+<em class="property">static </em><code class="sig-name descname">create_rounded_rectangle_tube_from_polyline</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_rounded_rectangle_tube_from_polyline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a tube from a rounded rectangle extruded linearly along the specified path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>path</strong> (<em>std::vector&lt; glm::vec3</em><em>,</em><em>std::allocator&lt; glm::vec3 &gt; &gt;</em>) – A set of vertices describing a linear path.</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – The radius of the rounded corners</p></li>
+<li><p><strong>size</strong> (<a class="reference internal" href="all.html#visii.vec2" title="visii.vec2"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec2</span></code></a>) – Half of the length of an edge</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Number of subdivisions in each rounded corner</p></li>
+<li><p><strong>segments</strong> (<a class="reference internal" href="all.html#visii.ivec2" title="visii.ivec2"><code class="xref py py-class docutils literal notranslate"><span class="pre">ivec2</span></code></a>) – Number of subdivisions along each edge</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_sphere">
+<em class="property">static </em><code class="sig-name descname">create_sphere</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_sphere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a sphere of the given radius, centered around the origin, subdivided around the z-axis in slices and along the z-axis in segments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – The radius of the sphere</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Subdivisions around the z-axis (longitudes).</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Subdivisions along the z-axis (latitudes).</p></li>
+<li><p><strong>sliceStart</strong> (<em>float</em>) – Counterclockwise angle around the z-axis relative to x-axis.</p></li>
+<li><p><strong>sliceSweep</strong> (<em>float</em>) – Counterclockwise angle.</p></li>
+<li><p><strong>segmentStart</strong> (<em>float</em>) – Counterclockwise angle relative to the z-axis.</p></li>
+<li><p><strong>segmentSweep</strong> (<em>float</em>) – Counterclockwise angle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_spherical_cone">
+<em class="property">static </em><code class="sig-name descname">create_spherical_cone</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_spherical_cone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a cone with a spherical cap, centered at the origin and whose tip points towards the z-axis.
+Each point on the cap has equal distance from the tip.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – Radius of the negative z end on the xy-plane.</p></li>
+<li><p><strong>size</strong> (<em>float</em>) – Half of the distance between cap and tip along the z-axis.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Number of subdivisions around the z-axis.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Number subdivisions along the z-axis.</p></li>
+<li><p><strong>rings</strong> (<em>int</em>) – Number subdivisions in the cap.</p></li>
+<li><p><strong>start</strong> (<em>float</em>) – Counterclockwise angle around the z-axis relative to the positive x-axis.</p></li>
+<li><p><strong>sweep</strong> (<em>float</em>) – Counterclockwise angle around the z-axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_spherical_triangle_from_sphere">
+<em class="property">static </em><code class="sig-name descname">create_spherical_triangle_from_sphere</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">radius</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">4</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_spherical_triangle_from_sphere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a triangular region on the surface of a sphere.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – Radius of the containing sphere.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Number of subdivisions along each edge.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_spherical_triangle_from_triangle">
+<em class="property">static </em><code class="sig-name descname">create_spherical_triangle_from_triangle</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">v0</span></em>, <em class="sig-param"><span class="n">v1</span></em>, <em class="sig-param"><span class="n">v2</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">4</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_spherical_triangle_from_triangle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a triangular region on the surface of a sphere.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>v0</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – First of the three counter-clockwise triangle vertices</p></li>
+<li><p><strong>v1</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – Second of the three counter-clockwise triangle vertices</p></li>
+<li><p><strong>v2</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – Third of the three counter-clockwise triangle vertices</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Number of subdivisions along each edge.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_spring">
+<em class="property">static </em><code class="sig-name descname">create_spring</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_spring" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a spring aligned along the z-axis and with a counter-clockwise winding.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>minor</strong> (<em>float</em>) – Radius of the spring it self.</p></li>
+<li><p><strong>major</strong> (<em>float</em>) – Radius from the z-axis</p></li>
+<li><p><strong>size</strong> (<em>float</em>) – Half of the length along the z-axis.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Subdivisions around the spring.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Subdivisions along the path.</p></li>
+<li><p><strong>majorStart</strong> (<em>float</em>) – Counterclockwise angle around the z-axis relative to the x-axis.</p></li>
+<li><p><strong>majorSweep</strong> (<em>float</em>) – Counterclockwise angle around the z-axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_teapotahedron">
+<em class="property">static </em><code class="sig-name descname">create_teapotahedron</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">8</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_teapotahedron" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the Utah Teapot using the original b-spline surface data. (<a class="reference external" href="https://en.wikipedia.org/wiki/Utah_teapot">https://en.wikipedia.org/wiki/Utah_teapot</a>)
+The lid is points towards the z axis and the spout points towards the x axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – The number segments along each patch. Should be &gt;= 1. If zero empty mesh is generated.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_torus">
+<em class="property">static </em><code class="sig-name descname">create_torus</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_torus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a torus centered at the origin and along the xy-plane.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>minor</strong> (<em>float</em>) – Radius of the minor (inner) ring</p></li>
+<li><p><strong>major</strong> (<em>float</em>) – Radius of the major (outer) ring</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Subdivisions around the minor ring</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Subdivisions around the major ring</p></li>
+<li><p><strong>minorStart</strong> (<em>float</em>) – Counterclockwise angle relative to the xy-plane.</p></li>
+<li><p><strong>minorSweep</strong> (<em>float</em>) – Counterclockwise angle around the circle.</p></li>
+<li><p><strong>majorStart</strong> (<em>float</em>) – Counterclockwise angle around the z-axis relative to the x-axis.</p></li>
+<li><p><strong>majorSweep</strong> (<em>float</em>) – Counterclockwise angle around the z-axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_torus_knot">
+<em class="property">static </em><code class="sig-name descname">create_torus_knot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">p</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">q</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">slices</span><span class="o">=</span><span class="default_value">8</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">96</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_torus_knot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a circle extruded along the path of a knot. (<a class="reference external" href="https://en.wikipedia.org/wiki/Torus_knot">https://en.wikipedia.org/wiki/Torus_knot</a>)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>p</strong> (<em>int</em>) – First coprime integer.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Second coprime integer.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Number subdivisions around the circle.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Number of subdivisions around the path.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_triangle">
+<em class="property">static </em><code class="sig-name descname">create_triangle</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">v0</span></em>, <em class="sig-param"><span class="n">v1</span></em>, <em class="sig-param"><span class="n">v2</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">4</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_triangle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a triangle from the specified vertices</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>v0</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – First of the vertex positions of the triangle.</p></li>
+<li><p><strong>v1</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – Second of the vertex positions of the triangle.</p></li>
+<li><p><strong>v2</strong> (<a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>) – Third of the vertex positions of the triangle.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – The number of segments along each edge. Must be &gt;= 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_triangle_from_circumscribed_circle">
+<em class="property">static </em><code class="sig-name descname">create_triangle_from_circumscribed_circle</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">radius</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">4</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_triangle_from_circumscribed_circle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a triangle centered at the origin and contained within the circumscribed circle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – The radius of the containing circle.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – The number of segments along each edge. Must be &gt;= 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_tube">
+<em class="property">static </em><code class="sig-name descname">create_tube</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_tube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an uncapped tube (a cylinder with thickness) centered at the origin and aligned along the z-axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – The outer radius of the cylinder on the xy-plane.</p></li>
+<li><p><strong>innerRadius</strong> (<em>float</em>) – The inner radius of the cylinder on the xy-plane.</p></li>
+<li><p><strong>size</strong> (<em>float</em>) – Half of the length of the cylinder along the z-axis.</p></li>
+<li><p><strong>slices</strong> (<em>int</em>) – Subdivisions around the z-axis.</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Subdivisions along the z-axis.</p></li>
+<li><p><strong>start</strong> (<em>float</em>) – Counterclockwise angle around the z-axis relative to the x-axis.</p></li>
+<li><p><strong>sweep</strong> (<em>float</em>) – Counterclockwise angle around the z-axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.create_tube_from_polyline">
+<em class="property">static </em><code class="sig-name descname">create_tube_from_polyline</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">radius</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">segments</span><span class="o">=</span><span class="default_value">16</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.create_tube_from_polyline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a tube from a circle extruded linearly along the specified path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – The name (used as a primary key) for this mesh component</p></li>
+<li><p><strong>path</strong> (<em>std::vector&lt; glm::vec3</em><em>,</em><em>std::allocator&lt; glm::vec3 &gt; &gt;</em>) – A set of vertices describing a linear path.</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – The radius of the extruded circle</p></li>
+<li><p><strong>segments</strong> (<em>int</em>) – Number of subdivisions around the circle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a reference to the mesh component</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.generate_smooth_normals">
+<code class="sig-name descname">generate_smooth_normals</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.generate_smooth_normals" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Replaces any existing normals with per-vertex smooth normals computed by</p>
+</div></blockquote>
+<p>averaging neighboring geometric face normals together.
+Note that this does not take into account the surface area of each triangular face.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.get">
+<em class="property">static </em><code class="sig-name descname">get</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.get" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt><em>Overload 1:</em></dt><dd><p>Gets a mesh by name</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a mesh who’s primary name key matches name</p>
+</dd>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – A unique name used to lookup this mesh.</p>
+</dd>
+</dl>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<dl class="simple">
+<dt><em>Overload 2:</em></dt><dd><p>Gets a mesh by id</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a mesh who’s primary id key matches id</p>
+</dd>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>id</strong> (<em>int</em>) – A unique id used to lookup this mesh.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.get_aabb_center">
+<code class="sig-name descname">get_aabb_center</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.get_aabb_center" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the center of the aligned bounding box</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.get_centroid">
+<code class="sig-name descname">get_centroid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.get_centroid" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the last computed mesh centroid.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.get_count">
+<em class="property">static </em><code class="sig-name descname">get_count</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.get_count" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of allocated meshes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.get_front">
+<em class="property">static </em><code class="sig-name descname">get_front</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.get_front" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a pointer to the table of mesh components</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.get_front_struct">
+<em class="property">static </em><code class="sig-name descname">get_front_struct</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.get_front_struct" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>MeshStruct</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a pointer to the table of MeshStructs required for rendering</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.get_max_aabb_corner">
+<code class="sig-name descname">get_max_aabb_corner</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.get_max_aabb_corner" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the maximum axis aligned bounding box position</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.get_min_aabb_corner">
+<code class="sig-name descname">get_min_aabb_corner</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.get_min_aabb_corner" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#visii.vec3" title="visii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the minimum axis aligned bounding box position</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.initialize_factory">
+<em class="property">static </em><code class="sig-name descname">initialize_factory</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.initialize_factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allocates the tables used to store all mesh components</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.is_clean">
+<code class="sig-name descname">is_clean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.is_clean" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the mesh has not been modified since the previous frame, and False otherwise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.is_dirty">
+<code class="sig-name descname">is_dirty</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.is_dirty" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the mesh has been modified since the previous frame, and False otherwise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.is_factory_initialized">
+<em class="property">static </em><code class="sig-name descname">is_factory_initialized</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the tables used to store all mesh components have been allocated, and False otherwise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.is_initialized">
+<code class="sig-name descname">is_initialized</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.is_initialized" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True the current mesh is a valid, initialized mesh, and False if the mesh was cleared or removed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.mark_clean">
+<code class="sig-name descname">mark_clean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.mark_clean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tags the current component as being unmodified since the previous frame.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.mark_dirty">
+<code class="sig-name descname">mark_dirty</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.mark_dirty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tags the current component as being modified since the previous frame.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.remove">
+<em class="property">static </em><code class="sig-name descname">remove</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.remove" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt><em>Overload 1:</em></dt><dd><p>Deletes the mesh who’s primary name key matches name</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – A unique name used to lookup the mesh for deletion.</p>
+</dd>
+</dl>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<dl class="simple">
+<dt><em>Overload 2:</em></dt><dd><p>Deletes the mesh who’s primary id key matches id</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>id</strong> (<em>int</em>) – A unique id used to lookup the mesh for deletion.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.thisown">
+<em class="property">property </em><code class="sig-name descname">thisown</code><a class="headerlink" href="#visii.mesh.thisown" title="Permalink to this definition">¶</a></dt>
+<dd><p>The membership flag</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.to_string">
+<code class="sig-name descname">to_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.to_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a json string representation of the current component</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="visii.mesh.update_components">
+<em class="property">static </em><code class="sig-name descname">update_components</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#visii.mesh.update_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates through all mesh components, computing mesh metadata for rendering purposes.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="texture.html" class="btn btn-neutral float-right" title="Texture" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="material.html" class="btn btn-neutral float-left" title="Material" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Nate Morrical
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
