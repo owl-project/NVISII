@@ -52,7 +52,7 @@ foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
 endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
 
 # Default RPATH settings for *NIX distros
-set(RPATHS "${CMAKE_INSTALL_PREFIX};${CMAKE_INSTALL_PREFIX}/visii;${CMAKE_INSTALL_PREFIX}/visii/lib;")
+set(RPATHS "./")
 set(CMAKE_INSTALL_RPATH "${RPATHS}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 set(CMAKE_INSTALL_NAME_DIR "${RPATHS}")
@@ -191,8 +191,8 @@ find_package(OpenGL)
 # stb
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/stb/)
 
-# # tiny obj
-# include_directories(SYSTEM external/tinyobj)
+# tiny things
+include_directories(SYSTEM externals/tiny/)
 
 # ImGUI
 add_definitions(-D IMGUI_IMPL_OPENGL_LOADER_GLAD)
@@ -222,6 +222,10 @@ set(IMGUI_SRC
 # include_directories(${TBB_INCLUDE_DIR})
 
 # cuda
+if (${CUDA_TOOLKIT_ROOT_DIR})
+message(INFO " CUDA_TOOLKIT_DIR set to ${CUDA_TOOLKIT_ROOT_DIR}")
+endif()
+
 find_package(CUDA REQUIRED)
 include_directories(${CUDA_TOOLKIT_INCLUDE})
 find_program(BIN2C bin2c 
@@ -234,7 +238,7 @@ set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
 find_package(OptiX REQUIRED VERSION 7)
 include_directories(${OptiX_INCLUDE})
 
-# # owl
+# owl
 set(SET_UP_CONFIGURATIONS_DONE 1)
 set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
 set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
@@ -345,7 +349,7 @@ cuda_add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode} OPTIONS -Xcudafe --di
 target_link_libraries(visii_lib ${LIBRARIES})
 set_target_properties(visii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 install(TARGETS visii_lib 
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/
     RENAME "visii_lib"
 )
 
@@ -357,7 +361,10 @@ set_property(SOURCE ${VISII_INTERFACE} PROPERTY CPLUSPLUS ON)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen") # -builtin seems to remove kwargs...
 swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
-set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME}  PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
+if (WIN32) 
+set_property(TARGET visii PROPERTY SWIG_GENERATED_COMPILE_OPTIONS -bigobj)
+endif()
+set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
 target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
 set(SWIG_DEFS 
   Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
@@ -371,11 +378,12 @@ set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINIT
 # └──────────────────────────────────────────────────────────────────┘
 
 # Install
-install(FILES ${CMAKE_BINARY_DIR}/visii.py DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
-install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
-install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL RENAME _visii_d.pyd)
-install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL RENAME _visii_d.pdb)
+install(FILES ${CMAKE_BINARY_DIR}/visii.py DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ RENAME __init__.py)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL)
+install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL RENAME _visii_d.pyd)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL RENAME _visii_d.pdb)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/setup.py DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 # # TBB DLL for windows
 # if (WIN32) 

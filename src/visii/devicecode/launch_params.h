@@ -12,6 +12,7 @@
 #include <visii/camera_struct.h>
 #include <visii/mesh_struct.h>
 #include <visii/light_struct.h>
+#include <visii/texture_struct.h>
 
 struct LaunchParams {
     glm::ivec2 frameSize;
@@ -30,10 +31,32 @@ struct LaunchParams {
     CameraStruct    *cameras = nullptr;
     MeshStruct      *meshes = nullptr;
     LightStruct     *lights = nullptr;
+    TextureStruct   *textures = nullptr;
     uint32_t        *lightEntities = nullptr;
     uint32_t        *instanceToEntityMap = nullptr;
     uint32_t         numLightEntities = 0;
 
     vec4 **vertexLists = nullptr;
+    vec2 **texCoordLists = nullptr;
     ivec3 **indexLists = nullptr;
+
+    int32_t environmentMapID = -1;
+    cudaTextureObject_t *textureObjects = nullptr;
+
+    cudaTextureObject_t GGX_E_AVG_LOOKUP;
+    cudaTextureObject_t GGX_E_LOOKUP;
+
+    // Used to extract metadata from the renderer.
+    uint32_t renderDataMode = 0;
+    uint32_t renderDataBounce = 0;
+};
+
+enum RenderDataFlags : uint32_t { 
+  NONE = 0, 
+  DEPTH = 1, 
+  POSITION = 2,
+  NORMAL = 3,
+  ENTITY_ID = 4,
+  DENOISE_NORMAL = 5,
+  DENOISE_ALBEDO = 6,
 };

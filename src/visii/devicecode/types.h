@@ -9,12 +9,17 @@
 #endif
 
 #define EPSILON 0.0001f
+#define SMALL_EPSILON 0.00000000001f
+#define MIN_ROUGHNESS .04f
+#define MIN_ALPHA MIN_ROUGHNESS * MIN_ROUGHNESS
 
 #define PRIMARY_RAY 0
 #define OCCLUSION_RAY 1
 #define NUM_RAY_TYPES 2
-#define MAX_PATH_DEPTH 5
+#define MAX_PATH_DEPTH 10
 
+#define FLT_MIN 1.175494e-38
+#define FLT_MAX 3.402823e+38
 // #ifdef __CUDA_ARCH__
 // typedef unsigned long long uint64_t;
 // typedef unsigned int uint32_t;

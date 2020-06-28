@@ -5,6 +5,7 @@
 #include <visii/mesh.h>
 #include <visii/camera.h>
 #include <visii/light.h>
+#include <visii/texture.h>
 
 /**
    Initializes various backend systems required to render scene data.
@@ -34,16 +35,31 @@ void setCameraEntity(Entity* camera_entity);
  */ 
 void setDomeLightIntensity(float intensity);
 
+/** Sets the texture used to color the dome light (aka the environment). 
+ * Textures are sampled using a 2D to 3D latitude/longitude strategy.
+ * \param texture The texture to sample for the dome light.
+ */ 
+void setDomeLightTexture(Texture* texture);
+
 /**
    If using interactive mode, resizes the window to the specified dimentions.
 */
 void resizeWindow(uint32_t width, uint32_t height);
 
-std::vector<float> readFrameBuffer();
-
-std::vector<float> render(uint32_t width, uint32_t height, uint32_t samples_per_pixel);
+// std::vector<float> readFrameBuffer();
 
 void enableDenoiser();
 void disableDenoiser();
+
+std::vector<float> render(uint32_t width, uint32_t height, uint32_t samples_per_pixel);
 void renderToHDR(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);
 void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);
+
+std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options);
+void renderDataToHDR(uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options, std::string image_path);
+void renderDataToPNG(uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options, std::string image_path);
+
+std::vector<Entity*> importOBJ(std::string name_prefix, std::string filepath, std::string mtl_base_dir, 
+        glm::vec3 position = glm::vec3(0.0f), 
+        glm::vec3 scale = glm::vec3(1.0f),
+        glm::quat rotation = glm::angleAxis(0.0f, glm::vec3(1.0f, 0.0f, 0.0f)));

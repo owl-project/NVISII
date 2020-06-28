@@ -5,9 +5,11 @@ set (
     ${CMAKE_CURRENT_SOURCE_DIR}/light.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/material.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/mesh.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/texture.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/transform.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/visii.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/visii.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/visii_import_obj.cpp
     PARENT_SCOPE
 )
 

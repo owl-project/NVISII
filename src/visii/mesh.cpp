@@ -3,8 +3,8 @@
 #endif
 
 #define TINYGLTF_IMPLEMENTATION
-// #define TINYGLTF_NO_FS
-// #define TINYGLTF_NO_STB_IMAGE_WRITE
+#define TINYGLTF_NO_FS
+#define TINYGLTF_NO_STB_IMAGE_WRITE
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -23,9 +23,10 @@
 #include <visii/mesh.h>
 
 // #include "Foton/Tools/Options.hxx"
-// #include "Foton/Tools/HashCombiner.hxx"
-// #include <tiny_stl.h>
-// #include <tiny_gltf.h>
+#include <visii/utilities/hash_combiner.h>
+#include <tiny_obj_loader.h>
+#include <tiny_stl.h>
+#include <tiny_gltf.h>
 
 #include <generator/generator.hpp>
 
@@ -74,22 +75,22 @@ void buildOrthonormalBasis(glm::vec3 n, glm::vec3 &b1, glm::vec3 &b2)
     b2 = glm::vec3(b, 1.0 - n.y*n.y*a, -n.y);
 }
 
-// namespace std
-// {
-// template <>
-// struct hash<Vertex>
-// {
-// 	size_t operator()(const Vertex &k) const
-// 	{
-// 		std::size_t h = 0;
-// 		hash_combine(h, k.point.x, k.point.y, k.point.z,
-// 					 k.color.x, k.color.y, k.color.z, k.color.a,
-// 					 k.normal.x, k.normal.y, k.normal.z,
-// 					 k.texcoord.x, k.texcoord.y);
-// 		return h;
-// 	}
-// };
-// } // namespace std
+namespace std
+{
+template <>
+struct hash<Vertex>
+{
+	size_t operator()(const Vertex &k) const
+	{
+		std::size_t h = 0;
+		hash_combine(h, k.point.x, k.point.y, k.point.z,
+					 k.color.x, k.color.y, k.color.z, k.color.a,
+					 k.normal.x, k.normal.y, k.normal.z,
+					 k.texcoord.x, k.texcoord.y);
+		return h;
+	}
+};
+} // namespace std
 
 Mesh::Mesh() {
 	this->initialized = false;
@@ -112,7 +113,7 @@ std::string Mesh::toString() {
 	output += "\tname: \"" + name + "\",\n";
 	// output += "\tnum_positions: \"" + std::to_string(positions.size()) + "\",\n";
 	// output += "\tnum_edge_indices: \"" + std::to_string(edge_indices.size()) + "\",\n";
-	// output += "\tnum_triangle_indices: \"" + std::to_string(triangle_indices.size()) + "\",\n";
+	// output += "\tnum_triangleIndices: \"" + std::to_string(triangleIndices.size()) + "\",\n";
 	// output += "\tnum_tetrahedra_indices: \"" + std::to_string(tetrahedra_indices.size()) + "\",\n";
 	output += "}";
 	return output;
@@ -185,9 +186,9 @@ std::vector<uint32_t> Mesh::getTriangleIndices() {
 // 	return (uint32_t)edge_indices.size();
 // }
 
-// uint32_t Mesh::get_total_triangle_indices()
+// uint32_t Mesh::get_total_triangleIndices()
 // {
-// 	return (uint32_t)triangle_indices.size();
+// 	return (uint32_t)triangleIndices.size();
 // }
 
 // uint32_t Mesh::get_total_tetrahedra_indices()
@@ -254,11 +255,11 @@ void Mesh::computeMetadata()
 // 			in.pointlist[i * 3 + 2] = this->positions[i].z;
 // 		}
 
-// 		in.numberoffacets = this->triangle_indices.size() / 3; 
+// 		in.numberoffacets = this->triangleIndices.size() / 3; 
 // 		in.facetlist = new tetgenio::facet[in.numberoffacets];
 // 		in.facetmarkerlist = new int[in.numberoffacets];
 
-// 		for (uint32_t i = 0; i < this->triangle_indices.size() / 3; ++i) {
+// 		for (uint32_t i = 0; i < this->triangleIndices.size() / 3; ++i) {
 // 			f = &in.facetlist[i];
 // 			f->numberofpolygons = 1;
 // 			f->polygonlist = new tetgenio::polygon[f->numberofpolygons];
@@ -268,9 +269,9 @@ void Mesh::computeMetadata()
 // 			p->numberofvertices = 3;
 // 			p->vertexlist = new int[p->numberofvertices];
 // 			// Note, tetgen indices start at one.
-// 			p->vertexlist[0] = triangle_indices[i * 3 + 0] + 1; 
-// 			p->vertexlist[1] = triangle_indices[i * 3 + 1] + 1; 
-// 			p->vertexlist[2] = triangle_indices[i * 3 + 2] + 1; 
+// 			p->vertexlist[0] = triangleIndices[i * 3 + 0] + 1; 
+// 			p->vertexlist[1] = triangleIndices[i * 3 + 1] + 1; 
+// 			p->vertexlist[2] = triangleIndices[i * 3 + 2] + 1; 
 // 			in.facetmarkerlist[i] = 0; // ?
 // 		}
 
@@ -307,25 +308,30 @@ void Mesh::computeMetadata()
 // 	}
 // }
 
-// glm::vec3 Mesh::get_centroid()
-// {
-// 	return vec3(mesh_struct.center);
-// }
+glm::vec3 Mesh::getCentroid()
+{
+	return vec3(meshStructs[id].center);
+}
 
-// float Mesh::get_bounding_sphere_radius()
-// {
-// 	return mesh_struct.bounding_sphere_radius;
-// }
+float Mesh::getBoundingSphereRadius()
+{
+	return meshStructs[id].bounding_sphere_radius;
+}
 
-// glm::vec3 Mesh::get_min_aabb_corner()
-// {
-// 	return mesh_struct.bbmin;
-// }
+glm::vec3 Mesh::getMinAabbCorner()
+{
+	return meshStructs[id].bbmin;
+}
 
-// glm::vec3 Mesh::get_max_aabb_corner()
-// {
-// 	return mesh_struct.bbmax;
-// }
+glm::vec3 Mesh::getMaxAabbCorner()
+{
+	return meshStructs[id].bbmax;
+}
+
+glm::vec3 Mesh::getAabbCenter()
+{
+	return meshStructs[id].bbmin + (meshStructs[id].bbmax - meshStructs[id].bbmin) * .5f;
+}
 
 
 // void Mesh::cleanup()
@@ -543,129 +549,120 @@ void Mesh::updateComponents()
 // 	return ssbo_sizes;
 // }
 
-// void Mesh::load_obj(std::string objPath)
-// {
-// 	allowEdits = allow_edits;
+void Mesh::loadObj(std::string objPath)
+{
+	struct stat st;
+	if (stat(objPath.c_str(), &st) != 0)
+		throw std::runtime_error(std::string(objPath + " does not exist!"));
 
-// 	struct stat st;
-// 	if (stat(objPath.c_str(), &st) != 0)
-// 		throw std::runtime_error( std::string(objPath + " does not exist!"));
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string err;
 
-// 	std::vector<tinyobj::shape_t> shapes;
-// 	std::vector<tinyobj::material_t> materials;
-// 	std::string err;
+	tinyobj::attrib_t attrib;
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, objPath.c_str()))
+		throw std::runtime_error( std::string("Error: Unable to load " + objPath));
 
-// 	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, objPath.c_str()))
-// 		throw std::runtime_error( std::string("Error: Unable to load " + objPath));
+	std::vector<Vertex> vertices;
 
-// 	std::vector<Vertex> vertices;
+	bool has_normals = false;
 
-// 	bool has_normals = false;
+	/* If the mesh has a set of shapes, merge them all into one */
+	if (shapes.size() > 0)
+	{
+		for (const auto &shape : shapes)
+		{
+			for (const auto &index : shape.mesh.indices)
+			{
+				Vertex vertex = Vertex();
+				vertex.point = {
+					attrib.vertices[3 * index.vertex_index + 0],
+					attrib.vertices[3 * index.vertex_index + 1],
+					attrib.vertices[3 * index.vertex_index + 2],
+					1.0f};
+				if (attrib.colors.size() != 0)
+				{
+					vertex.color = {
+						attrib.colors[3 * index.vertex_index + 0],
+						attrib.colors[3 * index.vertex_index + 1],
+						attrib.colors[3 * index.vertex_index + 2],
+						1.f};
+				}
+				if (attrib.normals.size() != 0)
+				{
+					vertex.normal = {
+						attrib.normals[3 * index.normal_index + 0],
+						attrib.normals[3 * index.normal_index + 1],
+						attrib.normals[3 * index.normal_index + 2],
+						0.0f};
+					has_normals = true;
+				}
+				if (attrib.texcoords.size() != 0)
+				{
+					vertex.texcoord = {
+						attrib.texcoords[2 * index.texcoord_index + 0],
+						attrib.texcoords[2 * index.texcoord_index + 1]};
+				}
+				vertices.push_back(vertex);
+			}
+		}
+	}
 
-// 	/* If the mesh has a set of shapes, merge them all into one */
-// 	if (shapes.size() > 0)
-// 	{
-// 		for (const auto &shape : shapes)
-// 		{
-// 			for (const auto &index : shape.mesh.indices)
-// 			{
-// 				Vertex vertex = Vertex();
-// 				vertex.point = {
-// 					attrib.vertices[3 * index.vertex_index + 0],
-// 					attrib.vertices[3 * index.vertex_index + 1],
-// 					attrib.vertices[3 * index.vertex_index + 2],
-// 					1.0f};
-// 				if (attrib.colors.size() != 0)
-// 				{
-// 					vertex.color = {
-// 						attrib.colors[3 * index.vertex_index + 0],
-// 						attrib.colors[3 * index.vertex_index + 1],
-// 						attrib.colors[3 * index.vertex_index + 2],
-// 						1.f};
-// 				}
-// 				if (attrib.normals.size() != 0)
-// 				{
-// 					vertex.normal = {
-// 						attrib.normals[3 * index.normal_index + 0],
-// 						attrib.normals[3 * index.normal_index + 1],
-// 						attrib.normals[3 * index.normal_index + 2],
-// 						0.0f};
-// 					has_normals = true;
-// 				}
-// 				if (attrib.texcoords.size() != 0)
-// 				{
-// 					vertex.texcoord = {
-// 						attrib.texcoords[2 * index.texcoord_index + 0],
-// 						attrib.texcoords[2 * index.texcoord_index + 1]};
-// 				}
-// 				vertices.push_back(vertex);
-// 			}
-// 		}
-// 	}
+	/* If the obj has no shapes, eg polylines, then try looking for per vertex data */
+	else if (shapes.size() == 0)
+	{
+		for (int idx = 0; idx < attrib.vertices.size() / 3; ++idx)
+		{
+			Vertex v = Vertex();
+			v.point = glm::vec4(attrib.vertices[(idx * 3)], attrib.vertices[(idx * 3) + 1], attrib.vertices[(idx * 3) + 2], 1.0f);
+			if (attrib.normals.size() != 0)
+			{
+				v.normal = glm::vec4(attrib.normals[(idx * 3)], attrib.normals[(idx * 3) + 1], attrib.normals[(idx * 3) + 2], 0.0f);
+				has_normals = true;
+			}
+			if (attrib.colors.size() != 0)
+			{
+				v.normal = glm::vec4(attrib.colors[(idx * 3)], attrib.colors[(idx * 3) + 1], attrib.colors[(idx * 3) + 2], 0.0f);
+			}
+			if (attrib.texcoords.size() != 0)
+			{
+				v.texcoord = glm::vec2(attrib.texcoords[(idx * 2)], attrib.texcoords[(idx * 2) + 1]);
+			}
+			vertices.push_back(v);
+		}
+	}
 
-// 	/* If the obj has no shapes, eg polylines, then try looking for per vertex data */
-// 	else if (shapes.size() == 0)
-// 	{
-// 		for (int idx = 0; idx < attrib.vertices.size() / 3; ++idx)
-// 		{
-// 			Vertex v = Vertex();
-// 			v.point = glm::vec4(attrib.vertices[(idx * 3)], attrib.vertices[(idx * 3) + 1], attrib.vertices[(idx * 3) + 2], 1.0f);
-// 			if (attrib.normals.size() != 0)
-// 			{
-// 				v.normal = glm::vec4(attrib.normals[(idx * 3)], attrib.normals[(idx * 3) + 1], attrib.normals[(idx * 3) + 2], 0.0f);
-// 				has_normals = true;
-// 			}
-// 			if (attrib.colors.size() != 0)
-// 			{
-// 				v.normal = glm::vec4(attrib.colors[(idx * 3)], attrib.colors[(idx * 3) + 1], attrib.colors[(idx * 3) + 2], 0.0f);
-// 			}
-// 			if (attrib.texcoords.size() != 0)
-// 			{
-// 				v.texcoord = glm::vec2(attrib.texcoords[(idx * 2)], attrib.texcoords[(idx * 2) + 1]);
-// 			}
-// 			vertices.push_back(v);
-// 		}
-// 	}
+	/* Eliminate duplicate positions */
+	std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
+	std::vector<Vertex> uniqueVertices;
+	for (int i = 0; i < vertices.size(); ++i)
+	{
+		Vertex vertex = vertices[i];
+		if (uniqueVertexMap.count(vertex) == 0)
+		{
+			uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
+			uniqueVertices.push_back(vertex);
+		}
+		triangleIndices.push_back(uniqueVertexMap[vertex]);
+	}
 
-// 	/* Eliminate duplicate positions */
-// 	std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
-// 	std::vector<Vertex> uniqueVertices;
-// 	for (int i = 0; i < vertices.size(); ++i)
-// 	{
-// 		Vertex vertex = vertices[i];
-// 		if (uniqueVertexMap.count(vertex) == 0)
-// 		{
-// 			uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
-// 			uniqueVertices.push_back(vertex);
-// 		}
-// 		triangle_indices.push_back(uniqueVertexMap[vertex]);
-// 	}
+	if (!has_normals) {
+		generateSmoothNormals();
+	}
 
-// 	if (!has_normals) {
-// 		compute_smooth_normals(false);
-// 	}
+	/* Map vertices to buffers */
+	for (int i = 0; i < uniqueVertices.size(); ++i)
+	{
+		Vertex v = uniqueVertices[i];
+		positions.push_back(v.point);
+		colors.push_back(v.color);
+		normals.push_back(v.normal);
+		texCoords.push_back(v.texcoord);
+	}
 
-
-// 	/* Map vertices to buffers */
-// 	for (int i = 0; i < uniqueVertices.size(); ++i)
-// 	{
-// 		Vertex v = uniqueVertices[i];
-// 		positions.push_back(v.point);
-// 		colors.push_back(v.color);
-// 		normals.push_back(v.normal);
-// 		texcoords.push_back(v.texcoord);
-// 	}
-
-	
-
-// 	cleanup();
-// 	createPointBuffer(allow_edits, submit_immediately);
-// 	createColorBuffer(allow_edits, submit_immediately);
-// 	createTriangleIndexBuffer(allow_edits, submit_immediately);
-// 	createNormalBuffer(allow_edits, submit_immediately);
-// 	createTexCoordBuffer(allow_edits, submit_immediately);
-// 	compute_metadata(submit_immediately);
-// }
+	computeMetadata();
+	markDirty();
+}
 
 
 // void Mesh::load_stl(std::string stlPath) {
@@ -712,7 +709,7 @@ void Mesh::updateComponents()
 // 			uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
 // 			uniqueVertices.push_back(vertex);
 // 		}
-// 		triangle_indices.push_back(uniqueVertexMap[vertex]);
+// 		triangleIndices.push_back(uniqueVertexMap[vertex]);
 // 	}
 
 // 	/* Map vertices to buffers */
@@ -834,7 +831,7 @@ void Mesh::updateComponents()
 // 			uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
 // 			uniqueVertices.push_back(vertex);
 // 		}
-// 		triangle_indices.push_back(uniqueVertexMap[vertex]);
+// 		triangleIndices.push_back(uniqueVertexMap[vertex]);
 // 	}
 
 // 	/* Map vertices to buffers */
@@ -948,7 +945,7 @@ void Mesh::updateComponents()
 // 	/* Eliminate duplicate positions */
 // 	std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
 // 	std::vector<Vertex> uniqueVertices;
-// 	std::vector<uint32_t> all_triangle_indices;
+// 	std::vector<uint32_t> all_triangleIndices;
 // 	for (int i = 0; i < tri_vertices.size(); ++i)
 // 	{
 // 		Vertex vertex = tri_vertices[i];
@@ -957,18 +954,18 @@ void Mesh::updateComponents()
 // 			uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
 // 			uniqueVertices.push_back(vertex);
 // 		}
-// 		all_triangle_indices.push_back(uniqueVertexMap[vertex]);
+// 		all_triangleIndices.push_back(uniqueVertexMap[vertex]);
 // 	}
 
 // 	/* Only add outside triangles to triangle indices. 
 // 	We do this by removing all triangles which contain duplicates. */
 // 	std::unordered_map<Triangle, uint32_t> triangleCount = {};
-// 	for (int i = 0; i < all_triangle_indices.size(); i+=3)
+// 	for (int i = 0; i < all_triangleIndices.size(); i+=3)
 // 	{
 // 		Triangle t;
-// 		t.idx[0] = all_triangle_indices[i + 0];
-// 		t.idx[1] = all_triangle_indices[i + 1];
-// 		t.idx[2] = all_triangle_indices[i + 2];
+// 		t.idx[0] = all_triangleIndices[i + 0];
+// 		t.idx[1] = all_triangleIndices[i + 1];
+// 		t.idx[2] = all_triangleIndices[i + 2];
 // 		if (triangleCount.find(t) != triangleCount.end())
 // 			triangleCount[t]++;
 // 		else
@@ -977,9 +974,9 @@ void Mesh::updateComponents()
 
 // 	for (auto &item : triangleCount) {
 // 		if (item.second == 1) {
-// 			triangle_indices.push_back(item.first.idx[0]);
-// 			triangle_indices.push_back(item.first.idx[1]);
-// 			triangle_indices.push_back(item.first.idx[2]);
+// 			triangleIndices.push_back(item.first.idx[0]);
+// 			triangleIndices.push_back(item.first.idx[1]);
+// 			triangleIndices.push_back(item.first.idx[2]);
 // 		}
 // 	}
 
@@ -1010,109 +1007,103 @@ void Mesh::updateComponents()
 // 	compute_metadata(submit_immediately);
 // }
 
-// void Mesh::load_raw(
-// 	std::vector<glm::vec4> &positions_, 
-// 	std::vector<glm::vec4> &normals_, 
-// 	std::vector<glm::vec4> &colors_, 
-// 	std::vector<glm::vec2> &texcoords_, 
-// 	std::vector<uint32_t> indices_,
-// 	bool allow_edits, bool submit_immediately
-// )
-// {
-// 	allowEdits = allow_edits;
-// 	bool reading_normals = normals_.size() > 0;
-// 	bool reading_colors = colors_.size() > 0;
-// 	bool reading_texcoords = texcoords_.size() > 0;
-// 	bool reading_indices = indices_.size() > 0;
+void Mesh::loadData(
+	std::vector<glm::vec4> &positions_, 
+	std::vector<glm::vec4> &normals_, 
+	std::vector<glm::vec4> &colors_, 
+	std::vector<glm::vec2> &texcoords_, 
+	std::vector<uint32_t> indices_
+)
+{
+	bool readingNormals = normals_.size() > 0;
+	bool readingColors = colors_.size() > 0;
+	bool readingTexCoords = texcoords_.size() > 0;
+	bool readingIndices = indices_.size() > 0;
 
-// 	if (positions_.size() == 0)
-// 		throw std::runtime_error( std::string("Error, no positions supplied. "));
+	if (positions_.size() == 0)
+		throw std::runtime_error( std::string("Error, no positions supplied. "));
 
-// 	if ((!reading_indices) && ((positions_.size() % 3) != 0))
-// 		throw std::runtime_error( std::string("Error: No indices provided, and length of positions (") + std::to_string(positions_.size()) + std::string(") is not a multiple of 3."));
+	if ((!readingIndices) && ((positions_.size() % 3) != 0))
+		throw std::runtime_error( std::string("Error: No indices provided, and length of positions (") + std::to_string(positions_.size()) + std::string(") is not a multiple of 3."));
 
-// 	if ((reading_indices) && ((indices_.size() % 3) != 0))
-// 		throw std::runtime_error( std::string("Error: Length of indices (") + std::to_string(triangle_indices.size()) + std::string(") is not a multiple of 3."));
+	if ((readingIndices) && ((indices_.size() % 3) != 0))
+		throw std::runtime_error( std::string("Error: Length of indices (") + std::to_string(triangleIndices.size()) + std::string(") is not a multiple of 3."));
 	
-// 	if (reading_normals && (normals_.size() != positions_.size()))
-// 		throw std::runtime_error( std::string("Error, length mismatch. Total normals: " + std::to_string(normals_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingNormals && (normals_.size() != positions_.size()))
+		throw std::runtime_error( std::string("Error, length mismatch. Total normals: " + std::to_string(normals_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
 
-// 	if (reading_colors && (colors_.size() != positions_.size()))
-// 		throw std::runtime_error( std::string("Error, length mismatch. Total colors: " + std::to_string(colors_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingColors && (colors_.size() != positions_.size()))
+		throw std::runtime_error( std::string("Error, length mismatch. Total colors: " + std::to_string(colors_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
 		
-// 	if (reading_texcoords && (texcoords_.size() != positions_.size()))
-// 		throw std::runtime_error( std::string("Error, length mismatch. Total texcoords: " + std::to_string(texcoords_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingTexCoords && (texcoords_.size() != positions_.size()))
+		throw std::runtime_error( std::string("Error, length mismatch. Total texcoords: " + std::to_string(texcoords_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
 	
-// 	if (reading_indices) {
-// 		for (uint32_t i = 0; i < indices_.size(); ++i) {
-// 			if (indices_[i] >= positions_.size())
-// 				throw std::runtime_error( std::string("Error, index out of bounds. Index " + std::to_string(i) + " is greater than total positions: " + std::to_string(positions_.size())));
-// 		}
-// 	}
+	if (readingIndices) {
+		for (uint32_t i = 0; i < indices_.size(); ++i) {
+			if (indices_[i] >= positions_.size())
+				throw std::runtime_error( std::string("Error, index out of bounds. Index " + std::to_string(i) + " is greater than total positions: " + std::to_string(positions_.size())));
+		}
+	}
 		
-// 	std::vector<Vertex> vertices;
+	std::vector<Vertex> vertices;
 
-// 	/* For each vertex */
-// 	for (int i = 0; i < positions_.size(); ++ i) {
-// 		Vertex vertex = Vertex();
-// 		vertex.point = positions_[i];
-// 		if (reading_normals) vertex.normal = normals_[i];
-// 		if (reading_colors) vertex.color = colors_[i];
-// 		if (reading_texcoords) vertex.texcoord = texcoords_[i];        
-// 		vertices.push_back(vertex);
-// 	}
+	/* For each vertex */
+	for (int i = 0; i < positions_.size(); ++ i) {
+		Vertex vertex = Vertex();
+		vertex.point = positions_[i];
+		if (readingNormals) vertex.normal = normals_[i];
+		if (readingColors) vertex.color = colors_[i];
+		if (readingTexCoords) vertex.texcoord = texcoords_[i];        
+		vertices.push_back(vertex);
+	}
 
-// 	/* Eliminate duplicate positions */
-// 	std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
-// 	std::vector<Vertex> uniqueVertices;
+	/* Eliminate duplicate positions */
+	std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
+	std::vector<Vertex> uniqueVertices;
 
-// 	/* Don't bin positions as unique when editing, since it's unexpected for a user to lose positions */
-// 	if ((allow_edits && !reading_indices) || (!reading_normals)) {
-// 		uniqueVertices = vertices;
-// 		for (int i = 0; i < vertices.size(); ++i) {
-// 			triangle_indices.push_back(i);
-// 		}
-// 	}
-// 	else if (reading_indices) {
-// 		triangle_indices = indices_;
-// 		uniqueVertices = vertices;
-// 	}
-// 	/* If indices werent supplied and editing isn't allowed, optimize by binning unique verts */
-// 	else {    
-// 		for (int i = 0; i < vertices.size(); ++i)
-// 		{
-// 			Vertex vertex = vertices[i];
-// 			if (uniqueVertexMap.count(vertex) == 0)
-// 			{
-// 				uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
-// 				uniqueVertices.push_back(vertex);
-// 			}
-// 			triangle_indices.push_back(uniqueVertexMap[vertex]);
-// 		}
-// 	}
+	/* Don't bin positions as unique when editing, since it's unexpected for a user to lose positions */
+	bool allow_edits = false; // temporary...
+	if ((allow_edits && !readingIndices) || (!readingNormals)) {
+		uniqueVertices = vertices;
+		for (int i = 0; i < vertices.size(); ++i) {
+			triangleIndices.push_back(i);
+		}
+	}
+	else if (readingIndices) {
+		triangleIndices = indices_;
+		uniqueVertices = vertices;
+	}
+	/* If indices werent supplied and editing isn't allowed, optimize by binning unique verts */
+	else {    
+		for (int i = 0; i < vertices.size(); ++i)
+		{
+			Vertex vertex = vertices[i];
+			if (uniqueVertexMap.count(vertex) == 0)
+			{
+				uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
+				uniqueVertices.push_back(vertex);
+			}
+			triangleIndices.push_back(uniqueVertexMap[vertex]);
+		}
+	}
 
-// 	/* Map vertices to buffers */
-// 	for (int i = 0; i < uniqueVertices.size(); ++i)
-// 	{
-// 		Vertex v = uniqueVertices[i];
-// 		positions.push_back(v.point);
-// 		colors.push_back(v.color);
-// 		normals.push_back(v.normal);
-// 		texcoords.push_back(v.texcoord);
-// 	}
+	/* Map vertices to buffers */
+	for (int i = 0; i < uniqueVertices.size(); ++i)
+	{
+		Vertex v = uniqueVertices[i];
+		positions.push_back(v.point);
+		colors.push_back(v.color);
+		normals.push_back(v.normal);
+		texCoords.push_back(v.texcoord);
+	}
 
-// 	if (!reading_normals) {
-// 		compute_smooth_normals(false);
-// 	}
+	if (!readingNormals) {
+		generateSmoothNormals();
+	}
 
-// 	cleanup();
-// 	createPointBuffer(allow_edits, submit_immediately);
-// 	createColorBuffer(allow_edits, submit_immediately);
-// 	createTriangleIndexBuffer(allow_edits, submit_immediately);
-// 	createNormalBuffer(allow_edits, submit_immediately);
-// 	createTexCoordBuffer(allow_edits, submit_immediately);
-// 	compute_metadata(submit_immediately);
-// }
+	computeMetadata();
+	markDirty();
+}
 
 // void Mesh::edit_position(uint32_t index, glm::vec4 new_position)
 // {
@@ -1202,64 +1193,62 @@ void Mesh::updateComponents()
 // 	device.unmapMemory(normalBufferMemory);
 // }
 
-// void Mesh::compute_smooth_normals(bool upload)
-// {
-// 	std::vector<std::vector<glm::vec4>> w_normals(positions.size());
+void Mesh::generateSmoothNormals()
+{
+	std::vector<std::vector<glm::vec4>> w_normals(positions.size());
 
-// 	for (uint32_t f = 0; f < triangle_indices.size(); f += 3)
-// 	{
-// 		uint32_t i1 = triangle_indices[f + 0];
-// 		uint32_t i2 = triangle_indices[f + 1];
-// 		uint32_t i3 = triangle_indices[f + 2];
+	for (uint32_t f = 0; f < triangleIndices.size(); f += 3)
+	{
+		uint32_t i1 = triangleIndices[f + 0];
+		uint32_t i2 = triangleIndices[f + 1];
+		uint32_t i3 = triangleIndices[f + 2];
 
-// 		// p1, p2 and p3 are the positions in the face (f)
-// 		auto p1 = glm::vec3(positions[i1]);
-// 		auto p2 = glm::vec3(positions[i2]);
-// 		auto p3 = glm::vec3(positions[i3]);
+		// p1, p2 and p3 are the positions in the face (f)
+		auto p1 = glm::vec3(positions[i1]);
+		auto p2 = glm::vec3(positions[i2]);
+		auto p3 = glm::vec3(positions[i3]);
 
-// 		// calculate facet normal of the triangle  using cross product;
-// 		// both components are "normalized" against a common point chosen as the base
-// 		auto n = glm::cross((p2 - p1), (p3 - p1));    // p1 is the 'base' here
+		// calculate facet normal of the triangle  using cross product;
+		// both components are "normalized" against a common point chosen as the base
+		auto n = glm::cross((p2 - p1), (p3 - p1));    // p1 is the 'base' here
 
-// 		// get the angle between the two other positions for each point;
-// 		// the starting point will be the 'base' and the two adjacent positions will be normalized against it
-// 		auto a1 = glm::angle(glm::normalize(p2 - p1), glm::normalize(p3 - p1));    // p1 is the 'base' here
-// 		auto a2 = glm::angle(glm::normalize(p3 - p2), glm::normalize(p1 - p2));    // p2 is the 'base' here
-// 		auto a3 = glm::angle(glm::normalize(p1 - p3), glm::normalize(p2 - p3));    // p3 is the 'base' here
+		// get the angle between the two other positions for each point;
+		// the starting point will be the 'base' and the two adjacent positions will be normalized against it
+		auto a1 = glm::angle(glm::normalize(p2 - p1), glm::normalize(p3 - p1));    // p1 is the 'base' here
+		auto a2 = glm::angle(glm::normalize(p3 - p2), glm::normalize(p1 - p2));    // p2 is the 'base' here
+		auto a3 = glm::angle(glm::normalize(p1 - p3), glm::normalize(p2 - p3));    // p3 is the 'base' here
 
-// 		// normalize the initial facet normals if you want to ignore surface area
-// 		// if (!area_weighting)
-// 		// {
-// 		//    n = glm::normalize(n);
-// 		// }
+		// normalize the initial facet normals if you want to ignore surface area
+		// if (!area_weighting)
+		// {
+		//    n = glm::normalize(n);
+		// }
 
-// 		// store the weighted normal in an structured array
-// 		auto wn1 = n * a1;
-// 		auto wn2 = n * a2;
-// 		auto wn3 = n * a3;
-// 		w_normals[i1].push_back(glm::vec4(wn1.x, wn1.y, wn1.z, 0.f));
-// 		w_normals[i2].push_back(glm::vec4(wn2.x, wn2.y, wn2.z, 0.f));
-// 		w_normals[i3].push_back(glm::vec4(wn3.x, wn3.y, wn3.z, 0.f));
-// 	}
-// 	for (uint32_t v = 0; v < w_normals.size(); v++)
-// 	{
-// 		glm::vec4 N = glm::vec4(0.0);
+		// store the weighted normal in an structured array
+		auto wn1 = n * a1;
+		auto wn2 = n * a2;
+		auto wn3 = n * a3;
+		w_normals[i1].push_back(glm::vec4(wn1.x, wn1.y, wn1.z, 0.f));
+		w_normals[i2].push_back(glm::vec4(wn2.x, wn2.y, wn2.z, 0.f));
+		w_normals[i3].push_back(glm::vec4(wn3.x, wn3.y, wn3.z, 0.f));
+	}
+	for (uint32_t v = 0; v < w_normals.size(); v++)
+	{
+		glm::vec4 N = glm::vec4(0.0);
 
-// 		// run through the normals in each vertex's array and interpolate them
-// 		// vertex(v) here fetches the data of the vertex at index 'v'
-// 		for (uint32_t n = 0; n < w_normals[v].size(); n++)
-// 		{
-// 			N += w_normals[v][n];
-// 		}
+		// run through the normals in each vertex's array and interpolate them
+		// vertex(v) here fetches the data of the vertex at index 'v'
+		for (uint32_t n = 0; n < w_normals[v].size(); n++)
+		{
+			N += w_normals[v][n];
+		}
 
-// 		// normalize the final normal
-// 		normals[v] = glm::normalize(glm::vec4(N.x, N.y, N.z, 0.0f));
-// 	}
+		// normalize the final normal
+		normals[v] = glm::normalize(glm::vec4(N.x, N.y, N.z, 0.0f));
+	}
 
-// 	if (upload) {
-// 		edit_normals(0, normals);
-// 	}
-// }
+	markDirty();
+}
 
 // void Mesh::edit_vertex_color(uint32_t index, glm::vec4 new_color)
 // {
@@ -1370,7 +1359,7 @@ void Mesh::updateComponents()
 // 		tris.vertexFormat = vk::Format::eR32G32B32Sfloat;
 // 		tris.indexData = this->triangleIndexBuffer;
 // 		tris.indexOffset = 0;
-// 		tris.indexCount = this->get_total_triangle_indices();
+// 		tris.indexCount = this->get_total_triangleIndices();
 // 		tris.indexType = vk::IndexType::eUint32;
 // 		tris.transformData = vk::Buffer();
 // 		tris.transformOffset = 0;
@@ -1905,7 +1894,7 @@ Mesh* Mesh::createTube(std::string name, float radius, float innerRadius, float 
 	}
 }
 
-Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius, uint32_t segments)
+Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius, int segments)
 {
 	if (positions.size() <= 1)
 		throw std::runtime_error("Error: positions must be greater than 1!");
@@ -2057,18 +2046,19 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 }
 
 
-// Mesh* Mesh::createFromObj(std::string name, std::string objPath)
-// {
-// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-// 	try {
-// 		mesh->load_obj(objPath, allow_edits, submit_immediately);
-// 		anyDirty = true;
-// 		return mesh;
-// 	} catch (...) {
-// 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-// 		throw;
-// 	}
-// }
+Mesh* Mesh::createFromObj(std::string name, std::string path)
+{
+	auto create = [path] (Mesh* mesh) {
+		mesh->loadObj(path);
+	};
+	
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		throw;
+	}
+}
 
 // Mesh* Mesh::createFromStl(std::string name, std::string stlPath)
 // {
@@ -2109,26 +2099,25 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 // 	}
 // }
 
-// Mesh* Mesh::createFromRaw (
-// 	std::string name,
-// 	std::vector<glm::vec4> positions, 
-// 	std::vector<glm::vec4> normals, 
-// 	std::vector<glm::vec4> colors, 
-// 	std::vector<glm::vec2> texcoords, 
-// 	std::vector<uint32_t> indices, 
-// 	bool allow_edits, 
-// 	bool submit_immediately)
-// {
-// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-// 	try {
-// 		mesh->load_raw(positions, normals, colors, texcoords, indices, allow_edits, submit_immediately);
-// 		anyDirty = true;
-// 		return mesh;
-// 	} catch (...) {
-// 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-// 		throw;
-// 	}
-// }
+Mesh* Mesh::createFromData (
+	std::string name,
+	std::vector<glm::vec4> positions, 
+	std::vector<glm::vec4> normals, 
+	std::vector<glm::vec4> colors, 
+	std::vector<glm::vec2> texcoords, 
+	std::vector<uint32_t> indices
+) {
+	auto create = [&positions, &normals, &colors, &texcoords, &indices] (Mesh* mesh) {
+		mesh->loadData(positions, normals, colors, texcoords, indices);
+	};
+	
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		throw;
+	}
+}
 
 void Mesh::remove(std::string name) {
 	StaticFactory::remove(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
@@ -2151,6 +2140,11 @@ Mesh* Mesh::getFront() {
 
 uint32_t Mesh::getCount() {
 	return MAX_MESHES;
+}
+
+std::map<std::string, uint32_t> Mesh::getNameToIdMap()
+{
+	return lookupTable;
 }
 
 // uint64_t Mesh::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, vk::DeviceMemory &bufferMemory)
@@ -2277,14 +2271,14 @@ uint32_t Mesh::getCount() {
 // 	auto vulkan = Libraries::Vulkan::Get();
 // 	auto device = vulkan->get_device();
 
-// 	vk::DeviceSize bufferSize = triangle_indices.size() * sizeof(uint32_t);
+// 	vk::DeviceSize bufferSize = triangleIndices.size() * sizeof(uint32_t);
 // 	triangleIndexBufferSize = bufferSize;
 // 	vk::Buffer stagingBuffer;
 // 	vk::DeviceMemory stagingBufferMemory;
 // 	createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, stagingBuffer, stagingBufferMemory);
 
 // 	void *data = device.mapMemory(stagingBufferMemory, 0, bufferSize, vk::MemoryMapFlags());
-// 	memcpy(data, triangle_indices.data(), (size_t)bufferSize);
+// 	memcpy(data, triangleIndices.data(), (size_t)bufferSize);
 // 	device.unmapMemory(stagingBufferMemory);
 
 // 	vk::MemoryPropertyFlags memoryProperties;

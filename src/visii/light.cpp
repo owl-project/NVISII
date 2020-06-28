@@ -1,9 +1,10 @@
 #include <visii/light.h>
+#include <visii/texture.h>
 
 Light Light::lights[MAX_LIGHTS];
 LightStruct Light::lightStructs[MAX_LIGHTS];
 std::map<std::string, uint32_t> Light::lookupTable;
-std::shared_ptr<std::mutex> Light::creationMutex;
+std::shared_ptr<std::mutex> Light::editMutex;
 bool Light::factoryInitialized = false;
 bool Light::anyDirty = true;
 
@@ -23,6 +24,7 @@ Light::Light(std::string name, uint32_t id)
     this->lightStructs[id].b = 1.f;
     this->lightStructs[id].intensity = 1.0;
     this->lightStructs[id].flags = 0;
+    this->lightStructs[id].color_texture_id = -1;
 }
 
 std::string Light::toString() {
@@ -34,20 +36,24 @@ std::string Light::toString() {
     return output;
 }
 
-void Light::setColor(float r, float g, float b)
-{
-    lightStructs[id].r = max(0.f, min(r, 1.f));
-    lightStructs[id].g = max(0.f, min(g, 1.f));
-    lightStructs[id].b = max(0.f, min(b, 1.f));
-    markDirty();
-}
-
 void Light::setColor(glm::vec3 color)
 {
     lightStructs[id].r = max(0.f, min(color.r, 1.f));
     lightStructs[id].g = max(0.f, min(color.g, 1.f));
     lightStructs[id].b = max(0.f, min(color.b, 1.f));
     markDirty();
+}
+
+void Light::setColorTexture(Texture *texture) 
+{
+	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
+	lightStructs[id].color_texture_id = texture->getId();
+	markDirty();
+}
+
+void Light::clearColorTexture() {
+	lightStructs[id].color_texture_id = -1;
+	markDirty();
 }
 
 void Light::setTemperature(float kelvin)
@@ -95,13 +101,18 @@ void Light::setIntensity(float intensity)
 void Light::initializeFactory()
 {
     if (isFactoryInitialized()) return;
-    creationMutex = std::make_shared<std::mutex>();
+    editMutex = std::make_shared<std::mutex>();
     factoryInitialized = true;
 }
 
 bool Light::isFactoryInitialized()
 {
     return factoryInitialized;
+}
+
+bool Light::isInitialized()
+{
+	return initialized;
 }
 
 bool Light::areAnyDirty()
@@ -126,55 +137,49 @@ void Light::updateComponents()
 	anyDirty = false;
 } 
 
-void Light::cleanUp()
+void Light::clearAll()
 {
     if (!isFactoryInitialized()) return;
 
     for (auto &light : lights) {
 		if (light.initialized) {
-			Light::remove(light.id);
+			Light::remove(light.name);
 		}
 	}
-
-    factoryInitialized = false;
 }	
 
 /* Static Factory Implementations */
 Light* Light::create(std::string name) {
-    auto l = StaticFactory::create(creationMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
+    auto l = StaticFactory::create(editMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
     anyDirty = true;
     return l;
 }
 
 Light* Light::createFromTemperature(std::string name, float kelvin, float intensity) {
-    auto light = StaticFactory::create(creationMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
+    auto light = StaticFactory::create(editMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
     light->setTemperature(kelvin);
     light->setIntensity(intensity);
     return light;
 }
 
 Light* Light::createFromRGB(std::string name, glm::vec3 color, float intensity) {
-    auto light = StaticFactory::create(creationMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
+    auto light = StaticFactory::create(editMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
     light->setColor(color);
     light->setIntensity(intensity);
     return light;
 }
 
-Light* Light::get(std::string name) {
-    return StaticFactory::get(creationMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
+std::shared_ptr<std::mutex> Light::getEditMutex()
+{
+	return editMutex;
 }
 
-Light* Light::get(uint32_t id) {
-    return StaticFactory::get(creationMutex, id, "Light", lookupTable, lights, MAX_LIGHTS);
+Light* Light::get(std::string name) {
+    return StaticFactory::get(editMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
 }
 
 void Light::remove(std::string name) {
-    StaticFactory::remove(creationMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
-    anyDirty = true;
-}
-
-void Light::remove(uint32_t id) {
-    StaticFactory::remove(creationMutex, id, "Light", lookupTable, lights, MAX_LIGHTS);
+    StaticFactory::remove(editMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
     anyDirty = true;
 }
 
@@ -188,4 +193,9 @@ LightStruct* Light::getFrontStruct() {
 
 uint32_t Light::getCount() {
     return MAX_LIGHTS;
+}
+
+std::map<std::string, uint32_t> Light::getNameToIdMap()
+{
+	return lookupTable;
 }

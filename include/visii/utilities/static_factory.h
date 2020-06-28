@@ -39,6 +39,8 @@
 
 #include <exception>
 #include <mutex>
+#include <thread>
+#include <future>
 
 class StaticFactory {
     public:
@@ -71,7 +73,7 @@ class StaticFactory {
     
     /* Reserves a location in items and adds an entry in the lookup table */
     template<class T>
-    static T* create(std::shared_ptr<std::mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems) 
+    static T* create(std::shared_ptr<std::mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems, std::function<void(T*)> function = nullptr) 
     {
         auto mutex = factory_mutex.get();
         std::lock_guard<std::mutex> lock(*mutex);
@@ -89,6 +91,10 @@ class StaticFactory {
         #endif
         items[id] = T(name, id);
         lookupTable[name] = id;
+
+        // callback for creation before releasing mutex
+        if (function != nullptr) function(&items[id]);
+
         return &items[id];
     }
 
@@ -103,8 +109,9 @@ class StaticFactory {
             if (!items[id].initialized) return nullptr;
             return &items[id];
         }
-
-        throw std::runtime_error(std::string("Error: " + type + " \"" + name + "\" does not exist."));
+        
+        // Finding it's more useful to catch this by finding something == None/nullptr
+        // throw std::runtime_error(std::string("Error: " + type + " \"" + name + "\" does not exist."));
         return nullptr;
     }
 
@@ -170,7 +177,7 @@ class StaticFactory {
     
     /* Inheriting factories should set these fields when a component is created. */
     std::string name = "";
-    uint32_t id = -1;
+    int32_t id = -1;
 
     /* All items keep track of the entities which use them. */
     std::set<uint32_t> entities;
