@@ -32,6 +32,9 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     # Note, checkout v2 doesn't work with setuptools_scm
     - uses: actions/checkout@v1
+
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v2
       
     - name: Set up Python
       uses: actions/setup-python@v2
