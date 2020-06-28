@@ -286,6 +286,7 @@ for i in range (int(opt.nb_frames)):
                                                 rot[2]
                                                 )   
                                             )
+<<<<<<< HEAD
     if i % 2 == 0 : 
         print(f'rendering frame {str(i).zfill(5)}/{str(opt.nb_frames).zfill(5)}')
         visii.render_to_png(
@@ -294,10 +295,23 @@ for i in range (int(opt.nb_frames)):
             samples_per_pixel=int(opt.spp),
             image_path=f"{opt.outf}/{str(i).zfill(5)}.png"
         )
+=======
+    print(f'rendering frame {str(i).zfill(5)}/{str(opt.nb_frames).zfill(5)}')
+    visii.render_to_png(
+        width=int(opt.width), 
+        height=int(opt.height), 
+        samples_per_pixel=int(opt.spp),
+        image_path=f"{opt.outf}/{str(i).zfill(5)}.png"
+    )
+>>>>>>> development
 
 p.disconnect()
 visii.cleanup()
 
+<<<<<<< HEAD
 subprocess.call(['ffmpeg', '-y',\
     '-framerate', '30', '-pattern_type', 'glob', '-i',\
     f"{opt.outf}/*.png", 'output.mp4'])
+=======
+subprocess.call(['ffmpeg', '-y', '-framerate', '30', '-i', r"%05d.png",  '-vcodec', 'libx264', '-pix_fmt', 'yuv420p', '../output.mp4'], cwd=os.path.realpath(opt.outf))
+>>>>>>> development

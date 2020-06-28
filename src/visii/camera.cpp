@@ -223,6 +223,11 @@ uint32_t Camera::getCount() {
 	return MAX_CAMERAS;
 }
 
+std::map<std::string, uint32_t> Camera::getNameToIdMap()
+{
+	return lookupTable;
+}
+
 
 
 // void Camera::update_used_views(uint32_t multiview) {
@@ -367,13 +372,17 @@ glm::mat3 Camera::getIntrinsicMatrix(uint32_t width, uint32_t height) {
     intrinsics = glm::column(intrinsics, 0, glm::vec3(glm::column(cameraStructs[id].proj, 0)));
     intrinsics = glm::column(intrinsics, 1, glm::vec3(glm::column(cameraStructs[id].proj, 1)));
     intrinsics = glm::column(intrinsics, 2, glm::vec3(0.f, 0.f, 1.f));
-    
+
     // perspective is from -1 to 1. Make it go from 0 to 2.
     glm::mat3 translation = glm::translate(glm::mat3(1.f), glm::vec2(.5f, .5f));
     // from 0 to 2 to now 0 to 1
     glm::mat3 scale1 = glm::scale(glm::mat3(1.f), glm::vec2(.5f, .5f));
     // from 0 to 1 to now 0 to width/height
     glm::mat3 scale2 = glm::scale(glm::mat3(1.f), glm::vec2(width, height));
+    
+    // finding we need these multiplies to match opencv...
+    intrinsics[0][2] *= 2;
+    intrinsics[1][2] *= 2;
 	return scale2 * scale1 * translation * intrinsics; 
 };
 

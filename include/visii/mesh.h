@@ -26,6 +26,7 @@ class Vertex;
 class Mesh : public StaticFactory
 {
 	friend class StaticFactory;
+	friend class Entity;
 	public:
 		/** Creates a rectangular box centered at the origin aligned along the x, y, and z axis. 
 		 *
@@ -590,6 +591,9 @@ class Mesh : public StaticFactory
 
         /** \returns the number of allocated meshes */
         static uint32_t getCount();
+		
+		/** @returns A map whose key is a mesh name and whose value is the ID for that mesh */
+		static std::map<std::string, uint32_t> getNameToIdMap();
 
         /** Deletes the mesh who's primary name key matches \p name 
 		 * 

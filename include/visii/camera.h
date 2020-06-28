@@ -16,7 +16,7 @@
 class Camera : public StaticFactory
 {
 	friend class StaticFactory;
-    // friend class Scene;
+    friend class Entity;
 private:
   	/** Prevents multiple components from simultaneously being added and/or removed from the component list */
 	static std::shared_ptr<std::mutex> editMutex;
@@ -95,6 +95,9 @@ private:
 
 	/** @returns the number of allocated cameras. */
 	static uint32_t getCount();
+
+	/** @returns A map whose key is a camera name and whose value is the ID for that camera */
+	static std::map<std::string, uint32_t> getNameToIdMap();
 
 	/** @param name The name of the camera to remove */
 	static void remove(std::string name);

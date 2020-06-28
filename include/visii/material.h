@@ -36,6 +36,7 @@ enum MaterialFlags : uint32_t {
 class Material : public StaticFactory
 {
   friend class StaticFactory;
+  friend class Entity;
   public:
     /**
      * Constructs a material with the given name.
@@ -97,6 +98,9 @@ class Material : public StaticFactory
 
     /** @returns the number of allocated materials */
 	  static uint32_t getCount();
+
+    /** @returns A map whose key is a material name and whose value is the ID for that material */
+	  static std::map<std::string, uint32_t> getNameToIdMap();
 
     /** @param name The name of the material to remove */
     static void remove(std::string name);

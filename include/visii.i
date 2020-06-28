@@ -37,6 +37,28 @@ if hasattr(sys, 'gettotalrefcount'):
 %}
 #endif
 
+/* -------- Path Stuff --------------*/
+%pythonbegin %{
+
+import os, sys, platform, math
+
+__this_dir__= os.path.dirname(os.path.abspath(__file__))
+
+WIN32=platform.system()=="Windows" or platform.system()=="win32"
+if WIN32:
+	def AddSysPath(value):
+		os.environ['PATH'] = value + os.pathsep + os.environ['PATH']
+		sys.path.insert(0, value)
+		if hasattr(os,'add_dll_directory'): 
+			os.add_dll_directory(value) # this is needed for python 38  
+
+	AddSysPath(__this_dir__)
+
+else:
+	sys.path.append(__this_dir__)
+
+%}
+
 /* -------- Features --------------*/
 %include "exception.i"
 %exception {
@@ -69,7 +91,7 @@ if hasattr(sys, 'gettotalrefcount'):
 %include "std_vector.i"
 namespace std {
   %template(FloatVector) vector<float>;
-  %template(uInt32Vector) vector<uint32_t>;
+  %template(UINT32Vector) vector<uint32_t>;
   %template(EntityVector) vector<Entity*>;
   %template(TransformVector) vector<Transform*>;
   %template(MeshVector) vector<Mesh*>;
@@ -77,6 +99,12 @@ namespace std {
   %template(TextureVector) vector<Texture*>;
   %template(LightVector) vector<Light*>;
   %template(MaterialVector) vector<Material*>;
+}
+
+/* STD Maps */
+%include "std_map.i"
+namespace std {
+  %template(StringToUINT32Map) map<string, uint32_t>;
 }
 
 /* -------- Ignores --------------*/
