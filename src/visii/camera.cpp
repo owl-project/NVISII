@@ -380,10 +380,12 @@ glm::mat3 Camera::getIntrinsicMatrix(uint32_t width, uint32_t height) {
     // from 0 to 1 to now 0 to width/height
     glm::mat3 scale2 = glm::scale(glm::mat3(1.f), glm::vec2(width, height));
     
+	intrinsics = scale2 * scale1 * translation * intrinsics; 
+    
     // finding we need these multiplies to match opencv...
     intrinsics[0][2] *= 2;
     intrinsics[1][2] *= 2;
-	return scale2 * scale1 * translation * intrinsics; 
+    return intrinsics;
 };
 
 glm::mat4 Camera::getProjection() {
