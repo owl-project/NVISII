@@ -134,4 +134,5 @@ jobs:
         TWINE_USERNAME: '__token__'
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
       run: |
-        twine upload */*.whl
+        # Upload windows bdistwheels directly
+        twine upload */*win*.whl
