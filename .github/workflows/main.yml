@@ -30,11 +30,8 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
-    - name: Get history and tags for SCM versioning to work
-      run: |
-        git fetch --prune --unshallow
-        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+    # Note, checkout v2 doesn't work with setuptools_scm
+    - uses: actions/checkout@v1
       
     - name: Set up Python
       uses: actions/setup-python@v2
