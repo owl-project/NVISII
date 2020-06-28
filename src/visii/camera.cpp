@@ -383,8 +383,8 @@ glm::mat3 Camera::getIntrinsicMatrix(uint32_t width, uint32_t height) {
 	intrinsics = scale2 * scale1 * translation * intrinsics; 
     
     // finding we need these multiplies to match opencv...
-    intrinsics[0][2] *= 2;
-    intrinsics[1][2] *= 2;
+    intrinsics[2][0] *= 2;
+    intrinsics[2][1] *= 2;
     return intrinsics;
 };
 
