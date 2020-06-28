@@ -32,9 +32,6 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     # Note, checkout v2 doesn't work with setuptools_scm
     - uses: actions/checkout@v1
-
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v2
       
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -72,7 +69,9 @@ jobs:
       if: matrix.os == 'ubuntu-18.04'
       run: |
         cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="${{matrix.python-version}}"
-        cmake --build . --config Release --target install 
+        cmake --build . --config Release --target install
+        # Reset before running setup. Important for version detection
+        git reset --hard 
         cd install
         python setup.py bdist_wheel
 
@@ -82,6 +81,8 @@ jobs:
       run: |
         cmake . -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
         cmake --build . --config Release --target install 
+        # Reset before running setup. Important for version detection
+        git reset --hard
         cd install
         python setup.py bdist_wheel
 
@@ -91,6 +92,9 @@ jobs:
       with:
         name: visii-${{ matrix.os }}-python${{ matrix.python-version }}
         path: install/dist/*.whl
+        
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v2
   
   deploy:
     if: github.event_name == 'release' && github.event.action == 'created'
