@@ -9,6 +9,8 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  release:
+    types: [created]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -28,7 +30,8 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+    # Note, checkout v2 doesn't work with setuptools_scm
+    - uses: actions/checkout@v1
       
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -65,8 +68,11 @@ jobs:
     - name: Ubuntu configure/install cmake project
       if: matrix.os == 'ubuntu-18.04'
       run: |
-        cmake . -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="${{matrix.python-version}}"
-        cmake --build . --config Release --target install 
+        mkdir build
+        cd build
+        cmake ../ -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="${{matrix.python-version}}"
+        cmake --build . --config Release --target install
+        cd ..
         cd install
         python setup.py bdist_wheel
 
@@ -74,8 +80,11 @@ jobs:
     - name: Windows configure/install cmake project
       if: matrix.os == 'windows-latest'
       run: |
-        cmake . -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
+        mkdir build
+        cd build
+        cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
         cmake --build . --config Release --target install 
+        cd ..
         cd install
         python setup.py bdist_wheel
 
@@ -86,3 +95,44 @@ jobs:
         name: visii-${{ matrix.os }}-python${{ matrix.python-version }}
         path: install/dist/*.whl
         
+#     - name: Setup tmate session
+#       uses: mxschmitt/action-tmate@v2
+  
+  deploy:
+    if: github.event_name == 'release' && github.event.action == 'created'
+    
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
+
+    - name: Display structure of downloaded files
+      run: ls -R
+  
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install twine
+    
+    - name: Upload to test pypi
+      env:
+        TWINE_USERNAME: '__token__'
+        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+      run: |
+        twine upload --repository-url https://test.pypi.org/legacy/ */*.whl
+        
+    - name: Upload to pypi
+      if: success() && !github.event.release.prerelease
+      env:
+        TWINE_USERNAME: '__token__'
+        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+      run: |
+        # Upload windows bdistwheels directly
+        twine upload */*win*.whl
