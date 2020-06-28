@@ -95,8 +95,8 @@ jobs:
         name: visii-${{ matrix.os }}-python${{ matrix.python-version }}
         path: install/dist/*.whl
         
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v2
+#     - name: Setup tmate session
+#       uses: mxschmitt/action-tmate@v2
   
   deploy:
     if: github.event_name == 'release' && github.event.action == 'created'
