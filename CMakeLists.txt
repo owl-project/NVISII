@@ -26,9 +26,8 @@ if(MSVC)
   add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif(MSVC)
 
-# If on unix, use c++11 (supported on centos 7)
 if(UNIX)
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 endif(UNIX)
 
 # Set the default install prefix path
