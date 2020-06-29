@@ -99,7 +99,9 @@ jobs:
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
-          -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYM/
+          -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYM/ \
+          -DPython_VERSION_MAJOR=${PY:2:1} \
+          -DPython_VERSION_MINOR=${PY:3:1} \
  
           cmake --build . --config Release --target install
           cd ..
@@ -107,13 +109,13 @@ jobs:
           $PYEXEC -m pip install auditwheel
           $PYEXEC setup.py bdist_wheel
           cd dist
-          $PYEXEC -m auditwheel repair *.whl    
+          $PYEXEC -m auditwheel repair -L "" *.whl    
           
           # tmate for debugging
-          wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
-          tar xf tmate-2.4.0-static-linux-amd64.tar.xz
-          cd tmate-2.4.0-static-linux-amd64
-          ./tmate -F
+          #wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+          #tar xf tmate-2.4.0-static-linux-amd64.tar.xz
+          #cd tmate-2.4.0-static-linux-amd64
+          #./tmate -F
         
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
