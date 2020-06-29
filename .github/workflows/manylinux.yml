@@ -31,15 +31,18 @@ jobs:
       - name: Download Dependencies
         run: |
             # list contents of python folder
-            ls -R /opt/python/${{ matrix.python-version }}
+            #ls -R /opt/python/${{ matrix.python-version }}
             
             PY=${{ matrix.python-version }}
             PYVER=${PY:2:1}.${PY:3:1}
           
             PYTHONXDOTYM=python${PY:2:1}.${PY:8:2}
+            echo "This is python xdotym: "
             echo $PYTHONXDOTYM
-            
+
             PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
+            $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
+            $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
           
             ls /opt/
             ls /opt/python/
@@ -75,11 +78,14 @@ jobs:
             
       - name: Configure and install cmake project
         run: |
-          # -DPython_INCLUDE_DIRS="/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYM"
-          # -DPython_ROOT_DIR="/opt/python/${{ matrix.python-version }}/"
-          
-          $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"
-          
+          PY=${{ matrix.python-version }}
+          PYVER=${PY:2:1}.${PY:3:1}
+          PYTHONXDOTYM=python${PY:2:1}.${PY:8:2}
+          echo $PYTHONXDOTYM
+          PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
+          echo $PYTHONXDOTYM
+
+          $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
           $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
           
           cd build
