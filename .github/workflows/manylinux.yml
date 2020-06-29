@@ -90,6 +90,7 @@ jobs:
           
           cd build
           /opt/_internal/cpython-3.8.3/bin/cmake ../ \
+          cmake -D CMAKE_FIND_DEBUG_MODE=ON \
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
