@@ -257,7 +257,6 @@ include(configure_cuda)
 # add libraries to a list for linking
 set (
   LIBRARIES
-  ${Python_LIBRARIES}
   generator
   ${GLFW_LIBRARIES}
   glfw
@@ -265,6 +264,14 @@ set (
   # ${TBB_LIBRARIES}
   owl
   )
+
+set (
+  PY_LIBRARY
+  
+)
+
+if (WIN32)
+set(LIBRARIES ${LIBRARIES} ${Python_LIBRARIES})
 
 # If debug lib for python exists, add it to the list.
 if (${Python_LIBRARY_DEBUG})
@@ -289,6 +296,8 @@ if(NOT WIN32)
     ${LIBRARIES}
     -latomic
   )
+endif()
+
 endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
@@ -376,7 +385,9 @@ set(SWIG_DEFS
   Python_VERSION_MINOR=${Python_VERSION_MINOR})
 set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python_DEBUG>)
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
-
+if(UNIX)
+set_target_properties(${SWIG_MODULE_visii_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Install                                                         │
