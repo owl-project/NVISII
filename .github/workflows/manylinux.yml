@@ -30,6 +30,9 @@ jobs:
       # Download external dependencies
       - name: Download Dependencies
         run: |
+            ls /opt/
+            ls /opt/python/
+            
             # Get cmake
             /opt/python/${{ matrix.python-version }}/bin/pip install cmake
             
