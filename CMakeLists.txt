@@ -379,14 +379,21 @@ if (WIN32)
 set_property(TARGET visii PROPERTY SWIG_GENERATED_COMPILE_OPTIONS -bigobj)
 endif()
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
-target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
 set(SWIG_DEFS 
-  Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
-  Python_VERSION_MINOR=${Python_VERSION_MINOR})
+Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
+Python_VERSION_MINOR=${Python_VERSION_MINOR})
 set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python_DEBUG>)
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
+
+if(WIN32)
+target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
+endif()
+
 if(UNIX)
-set_target_properties(${SWIG_MODULE_visii_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+# On linux, in order to be complient with PEP 513, we cannot link against libpython.so. However, that results 
+# in undefined symbols. These symbols will be defined by the python interpreter before this module is imported,
+# so we're ignoring undefined symbols, making the assumption they'll be defined by the interpreter beforehand.
+target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib INTERFACE "-undefined dynamic_lookup")
 endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
