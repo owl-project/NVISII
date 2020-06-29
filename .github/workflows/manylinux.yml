@@ -48,27 +48,28 @@ jobs:
             ls /opt/python/
             
             # Get cmake
-            /opt/python/cp38-cp38/bin/pip install cmake
-            find / -iname "cmake"
+            #/opt/python/cp38-cp38/bin/pip install cmake
+            #find / -iname "cmake"
             
-            /opt/_internal/cpython-3.8.3/bin/cmake --version
+            #/opt/_internal/cpython-3.8.3/bin/cmake --version
             
             # Setuptools scm
-            /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm
+            #/opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm
             
             # Install CUDA
             yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             yum clean all
-            yum -y install cuda-10-2
-            yum -y install xorg-x11-server-devel
+            #yum -y install cuda-10-2
+            #yum -y install xorg-x11-server-devel
+            #yum -y install tmux
             yum -y install wget
-            yum -y install pcre-devel
+            #yum -y install pcre-devel
             
             # tmate
             wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
             tar xf tmate-2.4.0-static-linux-amd64.tar.xz
             cd tmate-2.4.0-static-linux-amd64
-            ./tmate
+            ./tmate -F
             
     
             # Build a version of SWIG we can use
