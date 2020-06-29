@@ -102,7 +102,6 @@ jobs:
             
           cd build
            cmake ../ \
-          -DCMAKE_FIND_DEBUG_MODE=ON \
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
