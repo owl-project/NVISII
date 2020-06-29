@@ -38,6 +38,8 @@ jobs:
           
             PYTHONXDOTYM=python${PY:2:1}.${PY:8:2}
             echo $PYTHONXDOTYM
+            
+            PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
           
             ls /opt/
             ls /opt/python/
@@ -54,7 +56,7 @@ jobs:
             # Install CUDA
             yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             yum clean all
-            yum -y install cuda
+            yum -y install cuda-10-2
             yum -y install xorg-x11-server-devel
             yum -y install wget
             yum -y install pcre-devel
@@ -73,9 +75,16 @@ jobs:
             
       - name: Configure and install cmake project
         run: |
-          #  -DPython_INCLUDE_DIRS="/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYM"
+          # -DPython_INCLUDE_DIRS="/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYM"
+          # -DPython_ROOT_DIR="/opt/python/${{ matrix.python-version }}/" \
           cd build
-          /opt/_internal/cpython-3.8.3/bin/cmake ../ -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPython_ROOT_DIR="/opt/python/${{ matrix.python-version }}/" -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig"
+          /opt/_internal/cpython-3.8.3/bin/cmake ../ \
+          -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
+          -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
+          -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
+          -DPYTHON_INCLUDE_DIR=$( $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  \
+          -DPYTHON_LIBRARY=$( $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+ 
           /opt/_internal/cpython-3.8.3/bin/cmake --build . --config Release --target install
           cd ..
           cd install
