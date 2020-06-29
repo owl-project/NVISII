@@ -139,15 +139,17 @@ message(WARN "PYTHON_INCLUDE_DIR SET TO " ${PYTHON_INCLUDE_DIR})
 message(WARN "PYTHON_LIBRARY SET TO " ${PYTHON_LIBRARY})
 message(WARN "PYTHON_EXECUTABLE SET TO " ${PYTHON_EXECUTABLE})
 
+if(WIN32 OR NOT Python_INCLUDE_DIRS)
 set(PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
 if(PYTHON_VERSION)
   find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development)
 else()
   find_package(Python  COMPONENTS Development)
 endif()
+endif()
 
-message(WARN "PYTHON_INCLUDE_DIRS SET TO " ${PYTHON_INCLUDE_DIRS})
-message(WARN "PYTHON_LIBRARIES SET TO " ${PYTHON_LIBRARIES})
+message(WARN "PYTHON_INCLUDE_DIRS SET TO " ${Python_INCLUDE_DIRS})
+message(WARN "PYTHON_LIBRARIES SET TO " ${Python_LIBRARIES})
 
 if (UNIX AND NOT Python_INCLUDE_DIRS)
   message(FATAL_ERROR "Python development headers missing!"
