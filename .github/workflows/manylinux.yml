@@ -30,8 +30,8 @@ jobs:
       # Download external dependencies
       - name: Download Dependencies
         run: |
-            PY = ${{ matrix.python-version }}
-            PYVER = ${PY:2:1}.${PY:3:1}
+            PY=${{ matrix.python-version }}
+            PYVER=${PY:2:1}.${PY:3:1}
           
             ls /opt/
             ls /opt/python/
