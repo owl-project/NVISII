@@ -30,6 +30,9 @@ jobs:
       # Download external dependencies
       - name: Download Dependencies
         run: |
+            # Add directory containing cmake
+            export PATH=$PATH:/opt/_internal/cpython-3.8.3/bin/
+            
             # list contents of python folder
             #ls -R /opt/python/${{ matrix.python-version }}
             
@@ -43,8 +46,7 @@ jobs:
             PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
             $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
             $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
-          
-            ls /opt/
+            
             ls /opt/python/
             
             # Get cmake
@@ -59,10 +61,12 @@ jobs:
             # Install CUDA
             yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             yum clean all
-            #yum -y install cuda-10-2
+            yum -y install cuda-toolkit-11-0
             yum -y install xorg-x11-server-devel
+            yum -y install libXinerama-devel
+            yum -y install glfw-devel
             yum -y install wget
-            yum -y install pcre-devel
+            yum -y install pcre-devel            
     
             # Build a version of SWIG we can use
             mkdir build
@@ -78,6 +82,8 @@ jobs:
             
       - name: Configure and install cmake project
         run: |
+          export PATH=$PATH:/opt/_internal/cpython-3.8.3/bin/
+          
           PY=${{ matrix.python-version }}
           PYVER=${PY:2:1}.${PY:3:1}
           PYTHONXDOTYM=python${PY:2:1}.${PY:8:2}
@@ -88,21 +94,30 @@ jobs:
           $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
           $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
           
+          # tmate for debugging
+          #wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+          #tar xf tmate-2.4.0-static-linux-amd64.tar.xz
+          #cd tmate-2.4.0-static-linux-amd64
+          #./tmate -F
+            
           cd build
-          /opt/_internal/cpython-3.8.3/bin/cmake ../ \
+           cmake ../ \
+          -DCMAKE_FIND_DEBUG_MODE=ON \
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
-          -DPYTHON_INCLUDE_DIR=$( $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  \
-          -DPYTHON_LIBRARY=$( $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+          -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYM/
  
-          /opt/_internal/cpython-3.8.3/bin/cmake --build . --config Release --target install
+          cmake --build . --config Release --target install
           cd ..
           cd install
-          python setup.py bdist_wheel
+          $PYEXEC -m pip install auditwheel
+          $PYEXEC setup.py bdist_wheel
+          cd dist
+          $PYEXEC -m auditwheel repair *.whl          
         
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: visii-${{ matrix.os }}-python$PYVER
-          path: install/dist/*.whl
+          path: install/dist/wheelhouse/*.whl
