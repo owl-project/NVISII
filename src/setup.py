@@ -4,9 +4,19 @@
 from setuptools import setup, dist
 import wheel 
 
+# required to geneerate a platlib folder required by audittools
+from setuptools.command.install import install
+class InstallPlatlib(install):
+    def finalize_options(self):
+        install.finalize_options(self)
+        if self.distribution.has_ext_modules():
+            self.install_lib = self.install_platlib
+
 # force setuptools to recognize that this is
 # actually a binary distribution
 class BinaryDistribution(dist.Distribution):
+    def is_pure(self):
+        return False
     def has_ext_modules(foo):
         return True
 
@@ -41,4 +51,5 @@ setup(
     maintainer_email='',
     
     python_requires = ">=2.7",
+    cmdclass={'install': InstallPlatlib},
 )
