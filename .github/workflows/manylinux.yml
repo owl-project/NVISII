@@ -38,6 +38,8 @@ jobs:
             
             # Get cmake
             /opt/python/${{ matrix.python-version }}/bin/pip install cmake
+            find / -iname "cmake"
+            
             cmake --version
             
             # Setuptools scm
