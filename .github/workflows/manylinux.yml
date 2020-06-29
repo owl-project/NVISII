@@ -36,6 +36,9 @@ jobs:
             PY=${{ matrix.python-version }}
             PYVER=${PY:2:1}.${PY:3:1}
           
+            PYTHONXDOTYM=python${PY:2:1}.${PY:8:2}
+            echo $PYTHONXDOTYM
+          
             ls /opt/
             ls /opt/python/
             
@@ -71,7 +74,7 @@ jobs:
       - name: Configure and install cmake project
         run: |
           cd build
-          /opt/_internal/cpython-3.8.3/bin/cmake ../ -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="$PYVER" -DPython_ROOT_DIR="/opt/python/${{ matrix.python-version }}/" -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig"
+          /opt/_internal/cpython-3.8.3/bin/cmake ../ -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="$PYVER" -DPython_ROOT_DIR="/opt/python/${{ matrix.python-version }}/" -DPYTHON_INCLUDE_DIR="/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYM"  -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig"
           /opt/_internal/cpython-3.8.3/bin/cmake --build . --config Release --target install
           cd ..
           cd install
