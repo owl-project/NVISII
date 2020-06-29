@@ -24,7 +24,6 @@ jobs:
       matrix:	
         os:	
           - ubuntu-18.04
-          - windows-latest
         python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -47,8 +46,7 @@ jobs:
         python -m pip install --upgrade pip setuptools setuptools_scm wheel
 
     # Download external dependencies
-    - name: Download Ubuntu Dependencies
-      if: matrix.os == 'ubuntu-18.04'
+    - name: Download Dependencies
       run: |
           # Install CUDA
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
@@ -59,13 +57,7 @@ jobs:
           sudo apt-get --no-install-recommends -y install cuda-toolkit-10-2
           sudo apt-get --no-install-recommends -y install xorg-dev
           
-    - name: Download Windows Dependencies
-      if: matrix.os == 'windows-latest'
-      run: |
-        choco install cuda --version=10.2.89.20191206  
-        refreshenv
-        
-    - name: Ubuntu configure/install cmake project
+    - name: Configure and install cmake project
       if: matrix.os == 'ubuntu-18.04'
       run: |
         mkdir build
@@ -76,19 +68,6 @@ jobs:
         cd install
         python setup.py bdist_wheel
 
-
-    - name: Windows configure/install cmake project
-      if: matrix.os == 'windows-latest'
-      run: |
-        mkdir build
-        cd build
-        cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
-        cmake --build . --config Release --target install 
-        cd ..
-        cd install
-        python setup.py bdist_wheel
-
-
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -98,41 +77,41 @@ jobs:
 #     - name: Setup tmate session
 #       uses: mxschmitt/action-tmate@v2
   
-  deploy:
-    if: github.event_name == 'release' && github.event.action == 'created'
+#   deploy:
+#     if: github.event_name == 'release' && github.event.action == 'created'
     
-    runs-on: ubuntu-latest
-    needs: build
+#     runs-on: ubuntu-latest
+#     needs: build
     
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/download-artifact@v2
+#     steps:
+#     - uses: actions/checkout@v2
+#     - uses: actions/download-artifact@v2
 
-    - name: Display structure of downloaded files
-      run: ls -R
+#     - name: Display structure of downloaded files
+#       run: ls -R
   
-    - name: Set up Python
-      uses: actions/setup-python@v1
-      with:
-        python-version: '3.8'
+#     - name: Set up Python
+#       uses: actions/setup-python@v1
+#       with:
+#         python-version: '3.8'
     
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install twine
+#     - name: Install dependencies
+#       run: |
+#         python -m pip install --upgrade pip
+#         pip install twine
     
-    - name: Upload to test pypi
-      env:
-        TWINE_USERNAME: '__token__'
-        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
-      run: |
-        twine upload --repository-url https://test.pypi.org/legacy/ */*.whl
+#     - name: Upload to test pypi
+#       env:
+#         TWINE_USERNAME: '__token__'
+#         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+#       run: |
+#         twine upload --repository-url https://test.pypi.org/legacy/ */*.whl
         
-    - name: Upload to pypi
-      if: success() && !github.event.release.prerelease
-      env:
-        TWINE_USERNAME: '__token__'
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-      run: |
-        # Upload windows bdistwheels directly
-        twine upload */*win*.whl
+#     - name: Upload to pypi
+#       if: success() && !github.event.release.prerelease
+#       env:
+#         TWINE_USERNAME: '__token__'
+#         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+#       run: |
+#         # Upload windows bdistwheels directly
+#         twine upload */*win*.whl
