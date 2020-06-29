@@ -23,16 +23,18 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth : 0
-          
+      
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v2
+        
       # Download external dependencies
       - name: Download Dependencies
         run: |
             # Install CUDA
-            yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
-            yum clean all
-            yum -y install cuda
-            yum -y install xorg-x11-server-devel
+            # yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
+            # yum clean all
+            # yum -y install cuda
+            # yum -y install xorg-x11-server-devel
+            yum -y install wget
+            yum -y install pcre-devel
             wget http://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz
-      
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v2
