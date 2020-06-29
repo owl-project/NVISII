@@ -27,9 +27,6 @@ jobs:
         run: |
           g++ --version
           
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v2
-        
       # Download external dependencies
       - name: Download Dependencies
         run: |
@@ -40,4 +37,17 @@ jobs:
             # yum -y install xorg-x11-server-devel
             yum -y install wget
             yum -y install pcre-devel
+    
+            # Build a version of SWIG we can use
+            mkdir build
+            cd build
             wget http://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz
+            tar xzf swig-4.0.2.tar.gz
+            cd swig-4.0.2
+            ./configure
+            make
+            cd ../
+            
+            # Get cmake
+            pip install cmake
+            
