@@ -60,7 +60,7 @@ jobs:
             # Install CUDA
             yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             yum clean all
-            yum erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gfortran 
+            yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
             yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
             yum -y install cuda-10-2
             yum -y install xorg-x11-server-devel
