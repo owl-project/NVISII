@@ -56,7 +56,7 @@ jobs:
             # Install CUDA
             yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             yum clean all
-            yum -y install cuda-10-2
+            #yum -y install cuda-10-2
             yum -y install xorg-x11-server-devel
             yum -y install wget
             yum -y install pcre-devel
@@ -76,7 +76,12 @@ jobs:
       - name: Configure and install cmake project
         run: |
           # -DPython_INCLUDE_DIRS="/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYM"
-          # -DPython_ROOT_DIR="/opt/python/${{ matrix.python-version }}/" \
+          # -DPython_ROOT_DIR="/opt/python/${{ matrix.python-version }}/"
+          
+          $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"
+          
+          $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
+          
           cd build
           /opt/_internal/cpython-3.8.3/bin/cmake ../ \
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
