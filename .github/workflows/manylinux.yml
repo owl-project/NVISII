@@ -11,24 +11,24 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:	
-      matrix:	
-      os:	
-        - ubuntu-18.04
-      python-version: [cp27-cp27mu, cp35-cp35m, cp36-cp36m, cp37-cp37m, cp38-cp38]
+      matrix:
+        os:
+          - ubuntu-18.04
+        python-version: [cp27-cp27mu, cp35-cp35m, cp36-cp36m, cp37-cp37m, cp38-cp38]
 
     container:
       quay.io/pypa/manylinux2014_x86_64
     
     steps:
       - uses: actions/checkout@v2
-        with
+        with:
           fetch-depth : 0
           
-    # Download external dependencies
-    - name: Download Dependencies
-      run: |
-          # Install CUDA
-          sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
-          sudo yum clean all
-          sudo yum -y install cuda
-          sudo yum -y install xorg-x11-server-devel
+      # Download external dependencies
+      - name: Download Dependencies
+        run: |
+            # Install CUDA
+            sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
+            sudo yum clean all
+            sudo yum -y install cuda
+            sudo yum -y install xorg-x11-server-devel
