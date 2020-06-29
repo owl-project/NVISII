@@ -28,7 +28,11 @@ jobs:
       - name: Download Dependencies
         run: |
             # Install CUDA
-            sudo yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
-            sudo yum clean all
-            sudo yum -y install cuda
-            sudo yum -y install xorg-x11-server-devel
+            yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
+            yum clean all
+            yum -y install cuda
+            yum -y install xorg-x11-server-devel
+            wget http://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz
+      
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v2
