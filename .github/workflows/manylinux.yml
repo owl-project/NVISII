@@ -40,7 +40,7 @@ jobs:
             /opt/python/cp38-cp38/bin/pip install cmake
             find / -iname "cmake"
             
-            cmake --version
+            /opt/_internal/cpython-3.8.3/bin/cmake --version
             
             # Setuptools scm
             /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm
@@ -66,8 +66,8 @@ jobs:
       - name: Configure and install cmake project
         run: |
           cd build
-          cmake ../ -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="$PYVER" -DSWIG_DIR="./swig-4.0.1/linux64/share/swig/4.0.1/" -DSWIG_EXECUTABLE="swig-4.0.1/linux64/bin/swig"
-          cmake --build . --config Release --target install
+          /opt/_internal/cpython-3.8.3/bin/cmake ../ -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="$PYVER" -DSWIG_DIR="./swig-4.0.1/linux64/share/swig/4.0.1/" -DSWIG_EXECUTABLE="swig-4.0.1/linux64/bin/swig"
+          /opt/_internal/cpython-3.8.3/bin/cmake --build . --config Release --target install
           cd ..
           cd install
           python setup.py bdist_wheel
