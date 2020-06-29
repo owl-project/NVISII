@@ -135,12 +135,18 @@ if (EXISTS ${Python_ROOT_DIR})
   message(WARN "${Python_ROOT_DIR}") 
 endif()
 
+message(WARN "PYTHON_INCLUDE_DIR SET TO " ${PYTHON_INCLUDE_DIR})
+message(WARN "PYTHON_LIBRARY SET TO " ${PYTHON_LIBRARY})
+
 set(PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
 if(PYTHON_VERSION)
   find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development)
 else()
   find_package(Python  COMPONENTS Development)
 endif()
+
+message(WARN "PYTHON_INCLUDE_DIRS SET TO " ${PYTHON_INCLUDE_DIRS})
+message(WARN "PYTHON_LIBRARIES SET TO " ${PYTHON_LIBRARIES})
 
 if (UNIX AND NOT Python_INCLUDE_DIRS)
   message(FATAL_ERROR "Python development headers missing!"
