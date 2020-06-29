@@ -30,6 +30,9 @@ jobs:
       # Download external dependencies
       - name: Download Dependencies
         run: |
+            # Get cmake
+            /opt/python/${{ matrix.python-version }}/bin/pip install cmake
+            
             # Install CUDA
             # yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             # yum clean all
@@ -47,7 +50,4 @@ jobs:
             ./configure
             make
             cd ../
-            
-            # Get cmake
-            pip install cmake
             
