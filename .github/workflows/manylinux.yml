@@ -30,6 +30,9 @@ jobs:
       # Download external dependencies
       - name: Download Dependencies
         run: |
+            # list contents of python folder
+            ls -r /opt/python/${{ matrix.python-version }}
+            
             PY=${{ matrix.python-version }}
             PYVER=${PY:2:1}.${PY:3:1}
           
