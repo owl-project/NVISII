@@ -9,11 +9,6 @@ project(ViSII CXX C)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
-# Use c++17
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)
-
 # Force 64 bit builds
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
   MESSAGE(FATAL_ERROR "32 bit build detected. Please switch to a 64 bit build")
@@ -24,11 +19,17 @@ if(APPLE)
   MESSAGE(FATAL_ERROR "Apple platform detected, but not currently supported.")
 endif(APPLE)
 
+# If on windows, use c++14 (oldest available by modern msvc)
 if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14")
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif(MSVC)
+
+# If on unix, use c++11 (supported on centos 7)
+if(UNIX)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif(UNIX)
 
 # Set the default install prefix path
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
