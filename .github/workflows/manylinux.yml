@@ -59,7 +59,7 @@ jobs:
             # Install CUDA
             yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             yum clean all
-            #yum -y install cuda-10-2
+            yum -y install cuda-10-2
             yum -y install xorg-x11-server-devel
             yum -y install wget
             yum -y install pcre-devel
