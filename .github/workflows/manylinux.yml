@@ -37,7 +37,7 @@ jobs:
             ls /opt/python/
             
             # Get cmake
-            /opt/python/${{ matrix.python-version }}/bin/pip install cmake
+            /opt/python/cp38-cp38/bin/pip install cmake
             find / -iname "cmake"
             
             cmake --version
