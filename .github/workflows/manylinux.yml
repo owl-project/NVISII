@@ -14,10 +14,10 @@ jobs:
       matrix:
         os:
           - ubuntu-18.04
-        python-version: [cp35-cp35m, cp36-cp36m, cp37-cp37m, cp38-cp38]
+        python-version: [cp27-cp27mu, cp35-cp35m, cp36-cp36m, cp37-cp37m, cp38-cp38]
 
     container:
-      quay.io/pypa/manylinux2014_x86_64
+      quay.io/pypa/manylinux2010_x86_64
     
     steps:
       - uses: actions/checkout@v2
@@ -38,10 +38,9 @@ jobs:
             
             PY=${{ matrix.python-version }}
             PYVER=${PY:2:1}.${PY:3:1}
-          
-            PYTHONXDOTYM=python${PY:2:1}.${PY:8:2}
-            echo "This is python xdotym: "
-            echo $PYTHONXDOTYM
+            PYTHONXDOTYMU=python${PY:2:1}.${PY:8:3}
+            echo "This is python xdotymu: "
+            echo $PYTHONXDOTYMU
 
             PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
             $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
@@ -61,7 +60,7 @@ jobs:
             # Install CUDA
             yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             yum clean all
-            yum -y install cuda-11-0
+            yum -y install cuda-10-2
             yum -y install xorg-x11-server-devel
             yum -y install libXinerama-devel
             yum -y install glfw-devel
@@ -86,10 +85,10 @@ jobs:
           
           PY=${{ matrix.python-version }}
           PYVER=${PY:2:1}.${PY:3:1}
-          PYTHONXDOTYM=python${PY:2:1}.${PY:8:2}
-          echo $PYTHONXDOTYM
+          PYTHONXDOTYMU=python${PY:2:1}.${PY:8:3}
+          echo $PYTHONXDOTYMU
           PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
-          echo $PYTHONXDOTYM
+          echo $PYTHONXDOTYMU
 
           $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
           $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
@@ -99,7 +98,7 @@ jobs:
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
-          -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYM/ \
+          -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYMU/ \
           -DPython_VERSION_MAJOR=${PY:2:1} \
           -DPython_VERSION_MINOR=${PY:3:1} \
  
