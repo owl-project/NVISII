@@ -14,7 +14,7 @@ jobs:
       matrix:
         os:
           - ubuntu-18.04
-        python-version: [cp35-cp35m] #, cp36-cp36m, cp37-cp37m, cp38-cp38]
+        python-version: [cp35-cp35m, cp36-cp36m, cp37-cp37m, cp38-cp38]
 
     container:
       quay.io/pypa/manylinux2014_x86_64
@@ -67,7 +67,9 @@ jobs:
             yum -y install libXinerama-devel
             yum -y install glfw-devel
             yum -y install wget
-            yum -y install pcre-devel      
+            yum -y install pcre-devel
+            yum -y install unar  
+            yum -y install zip      
             
             source /opt/rh/devtoolset-8/enable
     
@@ -117,12 +119,33 @@ jobs:
           cmake --build . --config Release --target install
           cd ..
           cd install
-          $PYEXEC -m pip install auditwheel
+          
+          # need to temporarily remove libcuda.so.1 from library
+          cd visii
+          patchelf --remove-needed libcuda.so.1 libvisii_lib.so
+          patchelf --remove-needed libcuda.so.1 _visii.so
+          cd ../
+          
+          # now make the bdistwheel
           $PYEXEC setup.py bdist_wheel
           cd dist
-          $PYEXEC -m auditwheel repair -L "" *.whl    
           
+          # audit the bdistwheel for use on all linux distros
+          # and use the same dir for both .py and .so files
+          auditwheel repair -L "" *.whl  
           
+          # add back on the libcuda.so.1 to the library
+          cd wheelhouse
+          unar -d *.whl
+          cd visii*
+          cd visii
+          patchelf --add-needed libcuda.so.1 libvisii_lib.so
+          patchelf --add-needed libcuda.so.1 _visii.so
+          cd ..
+          cd ..
+          rm *.whl
+          NAME=$(ls -1 .)
+          zip -r ${NAME}.whl visii*
         
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
