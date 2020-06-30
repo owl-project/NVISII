@@ -14,7 +14,7 @@ jobs:
       matrix:
         os:
           - ubuntu-18.04
-        python-version: [cp35-cp35m, cp36-cp36m, cp37-cp37m, cp38-cp38]
+        python-version: [cp35-cp35m] #, cp36-cp36m, cp37-cp37m, cp38-cp38]
 
     container:
       quay.io/pypa/manylinux2014_x86_64
@@ -116,10 +116,10 @@ jobs:
           $PYEXEC -m auditwheel repair -L "" *.whl    
           
           # tmate for debugging
-          #wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
-          #tar xf tmate-2.4.0-static-linux-amd64.tar.xz
-          #cd tmate-2.4.0-static-linux-amd64
-          #./tmate -F
+          wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+          tar xf tmate-2.4.0-static-linux-amd64.tar.xz
+          cd tmate-2.4.0-static-linux-amd64
+          ./tmate -F
         
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
