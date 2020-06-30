@@ -86,6 +86,7 @@ jobs:
       - name: Configure and install cmake project
         run: |
           export PATH=$PATH:/opt/_internal/cpython-3.8.3/bin/
+          source /opt/rh/devtoolset-8/enable
           
           PY=${{ matrix.python-version }}
           PYVER=${PY:2:1}.${PY:3:1}
