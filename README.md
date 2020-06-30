@@ -56,8 +56,9 @@ If you use this tool in your research project, please cite as follows:
 
 ## Extra examples
 
-[Falling teapots](https://imgur.com/aIqd9xP)
-[Falling objects dans une salle de bain]()
+[Falling teapots](https://imgur.com/Fzjg7ZQ)
+
+[Falling objects dans une salle de bain](https://imgur.com/BqSKTO7)
 
 <!-- ## Code Structure
 
