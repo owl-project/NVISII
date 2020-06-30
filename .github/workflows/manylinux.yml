@@ -1,0 +1,116 @@
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types: [created]
+    
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:	
+      matrix:
+        os:
+          - ubuntu-18.04
+        python-version: [cp35-cp35m, cp36-cp36m, cp37-cp37m, cp38-cp38]
+
+    container:
+      quay.io/pypa/manylinux2014_x86_64
+    
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth : 0
+      - name: What version of GCC do we have?
+        run: |
+          g++ --version
+          
+      # Download external dependencies
+      - name: Download Dependencies
+        run: |
+            # list contents of python folder
+            #ls -R /opt/python/${{ matrix.python-version }}
+            
+            PY=${{ matrix.python-version }}
+            PYVER=${PY:2:1}.${PY:3:1}
+          
+            PYTHONXDOTYM=python${PY:2:1}.${PY:8:2}
+            echo "This is python xdotym: "
+            echo $PYTHONXDOTYM
+
+            PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
+            $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
+            $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
+          
+            
+            ls /opt/python/
+            
+            # Get cmake
+            /opt/python/cp38-cp38/bin/pip install cmake
+            find / -iname "cmake"
+            
+            /opt/_internal/cpython-3.8.3/bin/cmake --version
+            
+            # Setuptools scm
+            /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm
+            
+            # Install CUDA
+            yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
+            yum clean all
+            yum -y install cuda-10-2
+            yum -y install xorg-x11-server-devel
+            yum -y install wget
+            yum -y install pcre-devel            
+    
+            # Build a version of SWIG we can use
+            mkdir build
+            cd build
+            wget http://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz
+            tar xzf swig-4.0.2.tar.gz
+            cd swig-4.0.2
+            ./configure --prefix $(pwd)
+            make
+            make install
+            ls
+            cd ../
+            
+      - name: Configure and install cmake project
+        run: |
+          PY=${{ matrix.python-version }}
+          PYVER=${PY:2:1}.${PY:3:1}
+          PYTHONXDOTYM=python${PY:2:1}.${PY:8:2}
+          echo $PYTHONXDOTYM
+          PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
+          echo $PYTHONXDOTYM
+
+          $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
+          $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
+          
+          # tmate for debugging
+          wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+          tar xf tmate-2.4.0-static-linux-amd64.tar.xz
+          cd tmate-2.4.0-static-linux-amd64
+          ./tmate -F
+            
+          cd build
+          /opt/_internal/cpython-3.8.3/bin/cmake ../ \
+          -DCMAKE_FIND_DEBUG_MODE=ON \
+          -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
+          -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
+          -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
+          -DPYTHON_INCLUDE_DIR=$( $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  \
+          -DPYTHON_LIBRARY=$( $PYEXEC -c "import distutils.sysconfig as sysconfig; import os; print(os.path.join(sysconfig.get_config_var('LIBDIR'), sysconfig.get_config_var('LDLIBRARY')))") \
+          -DPYTHON_EXECUTABLE:FILEPATH="/opt/python/${{ matrix.python-version }}/bin/python"
+ 
+          /opt/_internal/cpython-3.8.3/bin/cmake --build . --config Release --target install
+          cd ..
+          cd install
+          python setup.py bdist_wheel
+        
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: visii-${{ matrix.os }}-python$PYVER
+          path: install/dist/*.whl

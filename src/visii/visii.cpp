@@ -340,31 +340,31 @@ void instanceGroupSetTransform(OWLGroup group, size_t childID, glm::mat4 m44xfm)
 
 OWLLaunchParams launchParamsCreate(OWLContext context, size_t size, OWLVarDecl *vars, size_t numVars)
 {
-    return owlLaunchParamsCreate(context, size, vars, numVars);
+    return owlParamsCreate(context, size, vars, numVars);
 }
 
 void launchParamsSetBuffer(OWLLaunchParams params, const char* varName, OWLBuffer buffer)
 {
-    owlLaunchParamsSetBuffer(params, varName, buffer);
+    owlParamsSetBuffer(params, varName, buffer);
 }
 
 void launchParamsSetRaw(OWLLaunchParams params, const char* varName, const void* data)
 {
-    owlLaunchParamsSetRaw(params, varName, data);
+    owlParamsSetRaw(params, varName, data);
 }
 
 void launchParamsSetTexture(OWLLaunchParams params, const char* varName, OWLTexture texture)
 {
-    owlLaunchParamsSetTexture(params, varName, texture);
+    owlParamsSetTexture(params, varName, texture);
 }
 
 void launchParamsSetGroup(OWLLaunchParams params, const char *varName, OWLGroup group) {
-    owlLaunchParamsSetGroup(params, varName, group);
+    owlParamsSetGroup(params, varName, group);
 }
 
 void paramsLaunch2D(OWLRayGen rayGen, int dims_x, int dims_y, OWLLaunchParams launchParams)
 {
-    owlParamsLaunch2D(rayGen, dims_x, dims_y, launchParams);
+    owlLaunch2D(rayGen, dims_x, dims_y, launchParams);
 }
 
 void synchronizeDevices()

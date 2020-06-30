@@ -9,11 +9,6 @@ project(ViSII CXX C)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
-# Use c++17
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)
-
 # Force 64 bit builds
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
   MESSAGE(FATAL_ERROR "32 bit build detected. Please switch to a 64 bit build")
@@ -24,11 +19,16 @@ if(APPLE)
   MESSAGE(FATAL_ERROR "Apple platform detected, but not currently supported.")
 endif(APPLE)
 
+# If on windows, use c++14 (oldest available by modern msvc)
 if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14")
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif(MSVC)
+
+if(UNIX)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+endif(UNIX)
 
 # Set the default install prefix path
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -119,8 +119,12 @@ if(MSVC)
   # include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/win64/Lib/python)
 endif()
 if(UNIX)
-  set(SWIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/share/swig/4.0.1/")
-  set(SWIG_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/bin/swig")
+  if (NOT SWIG_DIR)
+    set(SWIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/share/swig/4.0.1/")
+  endif()
+  if (NOT SWIG_EXECUTABLE)
+    set(SWIG_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/bin/swig")
+  endif()
 endif()
 find_package(SWIG 4.0.1)
 include(${SWIG_USE_FILE})
@@ -131,19 +135,31 @@ if (EXISTS ${Python_ROOT_DIR})
   message(WARN "${Python_ROOT_DIR}") 
 endif()
 
+message(WARN "PYTHON_INCLUDE_DIR SET TO " ${PYTHON_INCLUDE_DIR})
+message(WARN "PYTHON_LIBRARY SET TO " ${PYTHON_LIBRARY})
+
 set(PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
 if(PYTHON_VERSION)
-  find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development REQUIRED)
+  find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development)
 else()
-  find_package(Python  COMPONENTS Development REQUIRED)
+  find_package(Python  COMPONENTS Development)
 endif()
 
-if (UNIX AND NOT Python_FOUND)
-  message(FATAL_ERROR "Python development libraries missing!"
-    "You probably dont have python 2.7 or later development libraries installed on your system. It is possible to recover "
+message(WARN "PYTHON_INCLUDE_DIRS SET TO " ${PYTHON_INCLUDE_DIRS})
+message(WARN "PYTHON_LIBRARIES SET TO " ${PYTHON_LIBRARIES})
+
+if (UNIX AND NOT Python_INCLUDE_DIRS)
+  message(FATAL_ERROR "Python development headers missing!"
+    "You probably dont have python 2.7 or later development headers installed on your system. It is possible to recover "
     "by running \"sudo apt install python3-dev\" (or equivalent on your unix distro)")
 endif()
-if (MSVC AND NOT Python_FOUND)
+if (MSVC AND NOT Python_INCLUDE_DIRS)
+  message(FATAL_ERROR "Python development headers missing!"
+    "You probably dont have python 2.7 or later development headers installed on your system. It is possible to recover "
+    "by downloading python from https://www.python.org/downloads/. NOTE: for debug builds, make sure to check \"Download debug binaries\" "
+    "in the \"Advanced Options\" tab of the Python installation wizard, and to run with python_d.exe")
+endif()
+if (MSVC AND NOT Python_LIBRARIES)
   message(FATAL_ERROR "Python development libraries missing!"
     "You probably dont have python 2.7 or later development libraries installed on your system. It is possible to recover "
     "by downloading python from https://www.python.org/downloads/. NOTE: for debug builds, make sure to check \"Download debug binaries\" "
@@ -253,7 +269,6 @@ include(configure_cuda)
 # add libraries to a list for linking
 set (
   LIBRARIES
-  ${Python_LIBRARIES}
   generator
   ${GLFW_LIBRARIES}
   glfw
@@ -261,6 +276,14 @@ set (
   # ${TBB_LIBRARIES}
   owl
   )
+
+set (
+  PY_LIBRARY
+  
+)
+
+if (WIN32)
+set(LIBRARIES ${LIBRARIES} ${Python_LIBRARIES})
 
 # If debug lib for python exists, add it to the list.
 if (${Python_LIBRARY_DEBUG})
@@ -285,6 +308,8 @@ if(NOT WIN32)
     ${LIBRARIES}
     -latomic
   )
+endif()
+
 endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
@@ -366,13 +391,22 @@ if (WIN32)
 set_property(TARGET visii PROPERTY SWIG_GENERATED_COMPILE_OPTIONS -bigobj)
 endif()
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
-target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
 set(SWIG_DEFS 
-  Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
-  Python_VERSION_MINOR=${Python_VERSION_MINOR})
+Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
+Python_VERSION_MINOR=${Python_VERSION_MINOR})
 set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python_DEBUG>)
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
 
+if(WIN32)
+target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
+endif()
+
+if(UNIX)
+# On linux, in order to be complient with PEP 513, we cannot link against libpython.so. However, that results 
+# in undefined symbols. These symbols will be defined by the python interpreter before this module is imported,
+# so we're ignoring undefined symbols, making the assumption they'll be defined by the interpreter beforehand.
+target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib INTERFACE "-undefined dynamic_lookup")
+endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Install                                                         │

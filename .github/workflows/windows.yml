@@ -23,7 +23,6 @@ jobs:
     strategy:	
       matrix:	
         os:	
-          - ubuntu-18.04
           - windows-latest
         python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
 
@@ -46,39 +45,12 @@ jobs:
         ls ${pythonLocation}
         python -m pip install --upgrade pip setuptools setuptools_scm wheel
 
-    # Download external dependencies
-    - name: Download Ubuntu Dependencies
-      if: matrix.os == 'ubuntu-18.04'
-      run: |
-          # Install CUDA
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
-          sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
-          sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-          sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
-          sudo apt-get update
-          sudo apt-get --no-install-recommends -y install cuda-toolkit-10-2
-          sudo apt-get --no-install-recommends -y install xorg-dev
-          
-    - name: Download Windows Dependencies
-      if: matrix.os == 'windows-latest'
+    - name: Download Dependencies
       run: |
         choco install cuda --version=10.2.89.20191206  
         refreshenv
-        
-    - name: Ubuntu configure/install cmake project
-      if: matrix.os == 'ubuntu-18.04'
-      run: |
-        mkdir build
-        cd build
-        cmake ../ -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="${{matrix.python-version}}"
-        cmake --build . --config Release --target install
-        cd ..
-        cd install
-        python setup.py bdist_wheel
-
 
     - name: Windows configure/install cmake project
-      if: matrix.os == 'windows-latest'
       run: |
         mkdir build
         cd build
@@ -94,10 +66,7 @@ jobs:
       with:
         name: visii-${{ matrix.os }}-python${{ matrix.python-version }}
         path: install/dist/*.whl
-        
-#     - name: Setup tmate session
-#       uses: mxschmitt/action-tmate@v2
-  
+          
   deploy:
     if: github.event_name == 'release' && github.event.action == 'created'
     
