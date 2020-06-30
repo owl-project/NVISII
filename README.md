@@ -56,7 +56,7 @@ If you use this tool in your research project, please cite as follows:
 
 ## Extra examples
 
-![Using pybullet to simulate falling objects]()
+![Using pybullet to simulate falling objects](https://imgur.com/aIqd9xP)
 
 <!-- ## Code Structure
 
