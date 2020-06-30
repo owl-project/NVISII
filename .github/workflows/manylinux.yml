@@ -67,7 +67,9 @@ jobs:
             yum -y install libXinerama-devel
             yum -y install glfw-devel
             yum -y install wget
-            yum -y install pcre-devel            
+            yum -y install pcre-devel      
+            
+            source /opt/rh/devtoolset-8/enable
     
             # Build a version of SWIG we can use
             mkdir build
