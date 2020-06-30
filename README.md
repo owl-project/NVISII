@@ -1,8 +1,6 @@
 # ViSII - A VIrtual Scene Imaging Interface
 
-![ViSII domain randomization example](https://i.imgur.com/iZrMLuo.png)
-![ViSII simple scene example](https://i.imgur.com/z4mamZv.png)
-
+![ViSII domain randomization examples](https://i.imgur.com/r4yJhfa.jpg)
 ViSII is a python based ray tracer render built on top of NVIDIA OptiX. 
 The tool allows you to define complex scenes: 3d meshes, object materials, lights, loading textures, _etc._, and render 
 them using ray tracing techniques. 
@@ -27,10 +25,10 @@ We highly recommend hat you used the pre-built wheels for python as follow:
 ```
 pip install visii
 ```
-Also make sure the latest NVIDIA drivers (R451) are installed as well as at least CUDA 10.2 (or above) installed.  
+Also make sure the latest NVIDIA drivers R451 (or above) are installed as well as CUDA 10.2 (or above) is installed.  
 If you need more information about how to install NVIDIA drivers and CUDA on Ubuntu please consult
 [this](https://ingowald.blog/installing-the-latest-nvidia-driver-cuda-and-optix-on-linux-ubuntu-18-04/).
-You can 
+
 
 ## Getting Started 
 
@@ -46,7 +44,7 @@ requirements:
 -->
 ## Citation
 
-If you use this tool in a research project, please cite as follows:
+If you use this tool in your research project, please cite as follows:
 
     @misc{Morrical20visii,
     author = {Nathan Morrical and Jonathan Tremblay and Stan Birchfield and Ingo Wald},
