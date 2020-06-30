@@ -22,18 +22,18 @@ the goal of _this_ project is to offer something that's easy to get started with
  -->
 ## Installing
 
-We highly recommend hat you used the pre-built wheels for python as follow: 
+We highly recommend that you use the pre-built wheels for python as follow: 
 ```
 pip install visii
 ```
-Also make sure the latest NVIDIA drivers R451 (or above) are installed as well as CUDA 10.2 (or above) is installed.  
+Also make sure the NVIDIA drivers 451 (or above) are installed as well as CUDA 10.2 (or above) is installed.  
 If you need more information about how to install NVIDIA drivers and CUDA on Ubuntu please consult
 [this](https://ingowald.blog/installing-the-latest-nvidia-driver-cuda-and-optix-on-linux-ubuntu-18-04/).
 
 
 ## Getting Started 
 
-We wrote 10 basic examples covering most of the functionalities of visii, [here](examples/). 
+We wrote 10 basic examples covering most of the functionalities of ViSII, [here](examples/). 
 You can also find more extensive documentation [here](https://owl-project.github.io/ViSII/).
 
 ## Building 
