@@ -145,7 +145,8 @@ jobs:
           cd ..
           rm *.whl
           NAME=$(ls -1 .)
-          zip -r ${NAME}.whl visii*
+          cd ${NAME}
+          zip -r ../${NAME}.whl ./*
         
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
