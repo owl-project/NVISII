@@ -166,7 +166,7 @@ void Entity::setMesh(Mesh* mesh)
 {
 	auto &entity = getStruct();
 	if (!mesh) throw std::runtime_error( std::string("Invalid mesh handle."));
-	if (!mesh->isFactoryInitialized()) throw std::runtime_error("Error, mesh not initialized");
+	if (!mesh->isInitialized()) throw std::runtime_error("Error, mesh not initialized");
 	entity.mesh_id = mesh->getId();
 	mesh->entities.insert(id);
 	markDirty();
@@ -185,9 +185,9 @@ Mesh* Entity::getMesh()
 {
 	auto &entity = getStruct();
 	if ((entity.mesh_id < 0) || (entity.mesh_id >= MAX_MESHES))  return nullptr;
-	auto mesh = Mesh::get(entity.mesh_id);
-	if (!mesh->isFactoryInitialized()) return nullptr;
-	return mesh;
+	auto mesh = Mesh::getFront()[entity.mesh_id];
+	if (!mesh.isInitialized()) return nullptr;
+	return &mesh;
 }
 
 void Entity::initializeFactory()

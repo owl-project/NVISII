@@ -28,7 +28,8 @@ class Mesh : public StaticFactory
 	friend class StaticFactory;
 	friend class Entity;
 	public:
-		/** Creates a rectangular box centered at the origin aligned along the x, y, and z axis. 
+		/** 
+		 * Creates a rectangular box centered at the origin aligned along the x, y, and z axis. 
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param size Half of the side length in x (0), y (1) and z (2) direction. 
@@ -42,7 +43,8 @@ class Mesh : public StaticFactory
 			glm::vec3  size = glm::vec3(1.0), 
 			glm::ivec3 segments = glm::ivec3(1));
 		
-        /** Creates a cone with a cap centered at the origin and pointing towards the positive z-axis. 
+        /** 
+		 * Creates a cone with a cap centered at the origin and pointing towards the positive z-axis. 
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param radius Radius of the flat (negative z) end along the xy-plane.
@@ -64,7 +66,8 @@ class Mesh : public StaticFactory
 			float start    = 0.0, 
 			float sweep    = radians(360.0));
 		
-		/** Creates a cylinder with a cap centered at the origin and aligned along the z-axis
+		/** 
+		 * Creates a cylinder with a cap centered at the origin and aligned along the z-axis
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param radius Radius of the cylinder along the xy-plane.
@@ -86,7 +89,8 @@ class Mesh : public StaticFactory
 			float start    = 0.0f, 
 			float sweep    = radians(360.0));
 		
-		/** Creates a tube (a cylinder with thickness) with caps on both ends, centered at the origin and aligned along the z-axis.
+		/** 
+		 * Creates a tube (a cylinder with thickness) with caps on both ends, centered at the origin and aligned along the z-axis.
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param radius The outer radius of the cylinder on the xy-plane.
@@ -110,7 +114,8 @@ class Mesh : public StaticFactory
 			float start       = 0.0, 
 			float sweep       = radians(360.0));
 		
-		/** Creates a capsule (a cylinder with spherical caps) centered at the origin and aligned along the z-axis.
+		/** 
+		 * Creates a capsule (a cylinder with spherical caps) centered at the origin and aligned along the z-axis.
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param radius Radius of the capsule on the xy-plane.
@@ -132,7 +137,8 @@ class Mesh : public StaticFactory
 			float start    = 0.0, 
 			float sweep    = radians(360.0));
 		
-		/** Creates a cone centered at the origin, and whose tip points towards the z-axis.
+		/** 
+		 * Creates a cone centered at the origin, and whose tip points towards the z-axis.
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param radius Radius of the negative z end on the xy-plane.
@@ -152,7 +158,8 @@ class Mesh : public StaticFactory
 			float start    = 0.0, 
 			float sweep    = radians(360.0));
 		
-		/** Creates a convex polygonal disk with an arbitrary number of corners. 
+		/** 
+		 * Creates a convex polygonal disk with an arbitrary number of corners. 
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param radius The radius the enclosing circle.
@@ -168,7 +175,8 @@ class Mesh : public StaticFactory
 			int   segments = 4,
 			int   rings    = 4);
 
-		/** Creates a convex polygon from a set of corner vertices.
+		/** 
+		 * Creates a convex polygon from a set of corner vertices.
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param vertices The corner coplanar vertex coordinates. Should form a convex polygon.
@@ -183,7 +191,8 @@ class Mesh : public StaticFactory
 			int rings    = 1 
 			);
 		
-		/** Creates an uncapped cylinder centered at the origin and aligned along the z-axis
+		/** 
+		 * Creates an uncapped cylinder centered at the origin and aligned along the z-axis
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param radius Radius of the cylinder along the xy-plane.
@@ -204,7 +213,8 @@ class Mesh : public StaticFactory
 			float sweep    = radians(360.0)
 		);
 
-		/** Creates a circular disk centered at the origin and along the xy-plane
+		/** 
+		 * Creates a circular disk centered at the origin and along the xy-plane
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param radius Outer radius of the disk on the xy-plane.
@@ -224,7 +234,8 @@ class Mesh : public StaticFactory
 			float start       = 0.0,
 			float sweep       = radians(360.0));
 
-		/** Creates a regular dodecahedron centered at the origin and with a given radius.
+		/** 
+		 * Creates a regular dodecahedron centered at the origin and with a given radius.
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * Each face is optionally subdivided along the edges and/or radius.
@@ -239,7 +250,8 @@ class Mesh : public StaticFactory
 			int   segments = 1, 
 			int   rings    = 1);
 
-		/** Creates a plane (a regular grid) on the xy-plane whose normal points towards the z-axis.
+		/** 
+		 * Creates a plane (a regular grid) on the xy-plane whose normal points towards the z-axis.
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param size Half of the side length in x (0) and y (1) direction.
@@ -251,7 +263,8 @@ class Mesh : public StaticFactory
 			vec2 size     = vec2(1.0, 1.0),
 			ivec2 segments = ivec2(8, 8));
 
-		/** Creates a regular icosahedron centered at the origin and with a given radius.
+		/** 
+		 * Creates a regular icosahedron centered at the origin and with a given radius.
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param radius The radius of the enclosing sphere.
@@ -263,7 +276,8 @@ class Mesh : public StaticFactory
 			float radius   = 1.0, 
 			int   segments = 1);
 
-		/** Creates an icosphere, otherwise known as a spherical subdivided icosahedron.
+		/** 
+		 * Creates an icosphere, otherwise known as a spherical subdivided icosahedron.
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param radius The radius of the containing sphere.
@@ -275,11 +289,13 @@ class Mesh : public StaticFactory
 			float radius  = 1.0, 
 			int  segments = 4);
 
-		/** Creates a mesh component from a procedural parametric mesh. (TODO: accept a callback which given an x and y position 
-			returns a Z hightfield) */
+		// /** 
+		//  * Creates a mesh component from a procedural parametric mesh. (TODO: accept a callback which given an x and y position 
+		// 	returns a Z hightfield) */
 		// static Mesh* createParametricMesh(std::string name);
 
-		/** Creates a rectangular box with rounded edges, centered at the origin and aligned along the x, y, and z axis.
+		/** 
+		 * Creates a rectangular box with rounded edges, centered at the origin and aligned along the x, y, and z axis.
 		 *
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param radius Radius of the rounded edges.
@@ -295,7 +311,8 @@ class Mesh : public StaticFactory
 			int   slices   = 4, 
 			ivec3 segments = ivec3(1,1,1));
 	
-		/** Creates a sphere of the given radius, centered around the origin, subdivided around the z-axis in slices and along the z-axis in segments.
+		/** 
+		 * Creates a sphere of the given radius, centered around the origin, subdivided around the z-axis in slices and along the z-axis in segments.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param radius The radius of the sphere
@@ -318,7 +335,8 @@ class Mesh : public StaticFactory
 			float segmentSweep = radians(180.0)
 		);
 
-		/** Creates a cone with a spherical cap, centered at the origin and whose tip points towards the z-axis.
+		/** 
+		 * Creates a cone with a spherical cap, centered at the origin and whose tip points towards the z-axis.
 		 *  Each point on the cap has equal distance from the tip.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
@@ -341,7 +359,8 @@ class Mesh : public StaticFactory
 			float start    = 0.0,
 			float sweep    = radians(360.0));
 
-		/** Creates a triangular region on the surface of a sphere.
+		/** 
+		 * Creates a triangular region on the surface of a sphere.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param radius Radius of the containing sphere.
@@ -353,7 +372,8 @@ class Mesh : public StaticFactory
 			float radius   = 1.0,
 			int   segments = 4);
 
-		/** Creates a triangular region on the surface of a sphere.
+		/** 
+		 * Creates a triangular region on the surface of a sphere.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param v0 First of the three counter-clockwise triangle vertices
@@ -367,7 +387,8 @@ class Mesh : public StaticFactory
 			vec3 v0, vec3 v1, vec3 v2,
 			int segments = 4);
 
-		/** Creates a spring aligned along the z-axis and with a counter-clockwise winding.
+		/** 
+		 * Creates a spring aligned along the z-axis and with a counter-clockwise winding.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param minor Radius of the spring it self.
@@ -391,7 +412,8 @@ class Mesh : public StaticFactory
 			float majorStart = 0.0,
 			float majorSweep = radians(720.0));
 
-		/** Creates the Utah Teapot using the original b-spline surface data. (https://en.wikipedia.org/wiki/Utah_teapot)
+		/** 
+		 * Creates the Utah Teapot using the original b-spline surface data. (https://en.wikipedia.org/wiki/Utah_teapot)
 		 *  The lid is points towards the z axis and the spout points towards the x axis.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
@@ -402,7 +424,8 @@ class Mesh : public StaticFactory
 			std::string name, 
 			int segments = 8);
 
-		/** Creates a torus centered at the origin and along the xy-plane.
+		/** 
+		 * Creates a torus centered at the origin and along the xy-plane.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param minor Radius of the minor (inner) ring
@@ -426,7 +449,8 @@ class Mesh : public StaticFactory
 			float majorStart = 0.0,
 			float majorSweep = radians(360.0));
 
-		/** Creates a circle extruded along the path of a knot. (https://en.wikipedia.org/wiki/Torus_knot)
+		/** 
+		 * Creates a circle extruded along the path of a knot. (https://en.wikipedia.org/wiki/Torus_knot)
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param p First coprime integer.
@@ -443,7 +467,8 @@ class Mesh : public StaticFactory
 			int segments = 96);
 
 
-		/** Creates a triangle centered at the origin and contained within the circumscribed circle.
+		/** 
+		 * Creates a triangle centered at the origin and contained within the circumscribed circle.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param radius The radius of the containing circle.
@@ -455,7 +480,8 @@ class Mesh : public StaticFactory
 			float radius   = 1.0, 
 			int   segments = 4);
 
-		/** Creates a triangle from the specified vertices
+		/** 
+		 * Creates a triangle from the specified vertices
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param v0 First of the vertex positions of the triangle.
@@ -469,7 +495,8 @@ class Mesh : public StaticFactory
 			vec3 v0, vec3 v1, vec3 v2,
 			int segments = 4);
 
-		/** Creates an uncapped tube (a cylinder with thickness) centered at the origin and aligned along the z-axis.
+		/** 
+		 * Creates an uncapped tube (a cylinder with thickness) centered at the origin and aligned along the z-axis.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param radius The outer radius of the cylinder on the xy-plane.
@@ -491,7 +518,8 @@ class Mesh : public StaticFactory
 			float start       = 0.0,
 			float sweep       = radians(360.0));
 
-		/** Creates a tube from a circle extruded linearly along the specified path.
+		/** 
+		 * Creates a tube from a circle extruded linearly along the specified path.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param path A set of vertices describing a linear path.
@@ -505,7 +533,8 @@ class Mesh : public StaticFactory
 			float     radius = 1.0, 
 			int  segments = 16);
 
-		/** Creates a tube from a rounded rectangle extruded linearly along the specified path.
+		/** 
+		 * Creates a tube from a rounded rectangle extruded linearly along the specified path.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param path A set of vertices describing a linear path.
@@ -523,7 +552,8 @@ class Mesh : public StaticFactory
 			int slices = 4,
 			ivec2 segments = ivec2(8, 8));
 
-		/** Creates a tube from a rounded rectangle extruded linearly along the specified path.
+		/** 
+		 * Creates a tube from a rounded rectangle extruded linearly along the specified path.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
 		 *  @param path A set of vertices describing a linear path.
@@ -550,17 +580,19 @@ class Mesh : public StaticFactory
 
 		// /* Creates a mesh component from TetGen node/element files (Can be made using "Mesh::tetrahedrahedralize") */
 		// static Mesh* createFromTetgen(std::string name, std::string path);
-
-		/// Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates, 
-		///	and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length
-		///	as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other
-		///	supplied per vertex data must be a multiple of 3 in length. 
-		/// @param positions A list of 3D vertex positions. If indices aren't supplied, this must be a multiple of 3.
-		/// @param normals A list of 3D vertex normals. If indices aren't supplied, this must be a multiple of 3.
-		/// @param colors A list of per-vertex colors. If indices aren't supplied, this must be a multiple of 3.
-		/// @param texcoords A list of 2D per-vertex texture coordinates. If indices aren't supplied, this must be a multiple of 3.
-		/// @param indices A list of integer indices connecting vertex positions in a counterclockwise ordering to form triangles. If supplied, indices must be a multiple of 3.
-		/// @returns a reference to the mesh component
+		
+		/**
+		 * Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates, 
+		 *	and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length
+		 *	as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other
+		 *	supplied per vertex data must be a multiple of 3 in length. 
+		 * @param positions A list of 3D vertex positions. If indices aren't supplied, this must be a multiple of 3.
+		 * @param normals A list of 3D vertex normals. If indices aren't supplied, this must be a multiple of 3.
+		 * @param colors A list of per-vertex colors. If indices aren't supplied, this must be a multiple of 3.
+		 * @param texcoords A list of 2D per-vertex texture coordinates. If indices aren't supplied, this must be a multiple of 3.
+		 * @param indices A list of integer indices connecting vertex positions in a counterclockwise ordering to form triangles. If supplied, indices must be a multiple of 3.
+		 * @returns a reference to the mesh component
+		*/
 		static Mesh* createFromData(
 			std::string name,
 			std::vector<glm::vec4> positions, 
@@ -569,65 +601,49 @@ class Mesh : public StaticFactory
 			std::vector<glm::vec2> texcoords = std::vector<glm::vec2>(), 
 			std::vector<uint32_t> indices = std::vector<uint32_t>());
 
-        /** Gets a mesh by name 
-		 * 
-         * \returns a mesh who's primary name key matches \p name 
-         * \param name A unique name used to lookup this mesh. 
+		/**
+		 * @param name The name of the Mesh to get
+		 * @returns a Mesh who's name matches the given name 
 		 */
         static Mesh* get(std::string name);
 
-        /** Gets a mesh by id 
-		 * 
-         * \returns a mesh who's primary id key matches \p id 
-         * \param id A unique id used to lookup this mesh. 
-		 */
-        static Mesh* get(uint32_t id);
-
-        /** \returns a pointer to the table of MeshStructs required for rendering */
+        /** @returns a pointer to the table of MeshStructs required for rendering */
         static MeshStruct* getFrontStruct();
 
-        /** \returns a pointer to the table of mesh components */
+        /** @returns a pointer to the table of mesh components */
         static Mesh* getFront();
 
-        /** \returns the number of allocated meshes */
+        /** @returns the number of allocated meshes */
         static uint32_t getCount();
 		
 		/** @returns A map whose key is a mesh name and whose value is the ID for that mesh */
 		static std::map<std::string, uint32_t> getNameToIdMap();
 
-        /** Deletes the mesh who's primary name key matches \p name 
-		 * 
-         * \param name A unique name used to lookup the mesh for deletion.
-		 */
+		/** @param name The name of the Mesh to remove */
         static void remove(std::string name);
-
-        /** Deletes the mesh who's primary id key matches \p id 
-		 * 
-         * \param id A unique id used to lookup the mesh for deletion.
-		 */
-        static void remove(uint32_t id);
 
         /** Allocates the tables used to store all mesh components */
         static void initializeFactory();
 
-        /** \return True if the tables used to store all mesh components have been allocated, and False otherwise */
+        /** @returns True if the tables used to store all mesh components have been allocated, and False otherwise */
         static bool isFactoryInitialized();
 
-		/** \return True the current mesh is a valid, initialized mesh, and False if the mesh was cleared or removed. */
+		/** @returns True the current mesh is a valid, initialized mesh, and False if the mesh was cleared or removed. */
 		bool isInitialized();
 
         /** Iterates through all mesh components, computing mesh metadata for rendering purposes. */
         static void updateComponents();
 
-        /** Frees any tables used to store mesh components */
-        static void cleanUp();
+        /** Clears any existing Mesh components. */
+        static void clearAll();
 
+		/** Indicates whether or not any meshes are "out of date" and need to be updated through the "update components" function*/
 		static bool areAnyDirty();
 
-        /** \return True if the mesh has been modified since the previous frame, and False otherwise */
+        /** @returns True if the mesh has been modified since the previous frame, and False otherwise */
         bool isDirty() { return dirty; }
 
-        /** \return True if the mesh has not been modified since the previous frame, and False otherwise */
+        /** @returns True if the mesh has not been modified since the previous frame, and False otherwise */
         bool isClean() { return !dirty; }
 
         /** Tags the current component as being modified since the previous frame. */
@@ -636,58 +652,28 @@ class Mesh : public StaticFactory
         /** Tags the current component as being unmodified since the previous frame. */
         void markClean() { dirty = false; }
 		
-		// /* TODO EXPLAIN THIS*/
-		// static std::vector<vk::Buffer> GetPositionSSBOs();
-		
-		// /* TODO EXPLAIN THIS*/
-		// static std::vector<uint32_t> GetPositionSSBOSizes();
-		
-		// /* TODO EXPLAIN THIS*/
-		// static std::vector<vk::Buffer> GetNormalSSBOs();
-		
-		// /* TODO EXPLAIN THIS*/
-		// static std::vector<uint32_t> GetNormalSSBOSizes();
-		
-		// /* TODO EXPLAIN THIS*/
-		// static std::vector<vk::Buffer> GetColorSSBOs();
-		
-		// /* TODO EXPLAIN THIS*/
-		// static std::vector<uint32_t> GetColorSSBOSizes();
-		
-		// /* TODO EXPLAIN THIS*/
-		// static std::vector<vk::Buffer> GetTexCoordSSBOs();
-		
-		// /* TODO EXPLAIN THIS*/
-		// static std::vector<uint32_t> GetTexCoordSSBOSizes();
-		
-		// /* TODO EXPLAIN THIS*/
-		// static std::vector<vk::Buffer> GetIndexSSBOs();
-		
-		// /* TODO EXPLAIN THIS*/
-		// static std::vector<uint32_t> GetIndexSSBOSizes();
-
-		/** Returns a json string representation of the current component */
+		/** @returns a json string representation of the current component */
 		std::string toString();
 		
-		/* Returns a list of per vertex positions */
+		/** @returns a list of per vertex positions */
 		std::vector<glm::vec4> getVertices();
 
-		/* Returns a list of per vertex colors */
+		/** @returns a list of per vertex colors */
 		std::vector<glm::vec4> getColors();
 
-		/* Returns a list of per vertex normals */
+		/** @returns a list of per vertex normals */
 		std::vector<glm::vec4> getNormals();
 
-		/* Returns a list of per vertex texture coordinates */
+		/** @returns a list of per vertex texture coordinates */
 		std::vector<glm::vec2> getTexCoords();
 
-		/* Returns a list of edge indices */
+		// /* Returns a list of edge indices */
 		// std::vector<uint32_t> get_edge_indices();
 
-		/* Returns a list of triangle indices */
+		/** @returns a list of triangle indices */
 		std::vector<uint32_t> getTriangleIndices();
 
-		/* Returns a list of tetrahedra indices */
+		// /* Returns a list of tetrahedra indices */
 		// std::vector<uint32_t> get_tetrahedra_indices();		
 
 		// /* Returns the handle to the position buffer */
@@ -720,26 +706,28 @@ class Mesh : public StaticFactory
 		// /* Returns the total number of bytes per index */
 		// uint32_t get_index_bytes();
 
-		/* Computes the average of all vertex positions. (centroid) 
-			as well as min/max bounds and bounding sphere data. */
+		/** 
+		 * Computes the average of all vertex positions. (centroid) 
+		 * as well as min/max bounds and bounding sphere data. 
+		*/
 		void computeMetadata();
 
 		// /* TODO: Explain this */
 		// void save_tetrahedralization(float quality_bound, float maximum_volume);
 
-		/** \returns the last computed mesh centroid. */
+		/** @returns the last computed mesh centroid. */
 		glm::vec3 getCentroid();
 
-		/** \returns the minimum axis aligned bounding box position */
+		/** @returns the minimum axis aligned bounding box position */
 		glm::vec3 getMinAabbCorner();
 
-		/** \returns the maximum axis aligned bounding box position */
+		/** @returns the maximum axis aligned bounding box position */
 		glm::vec3 getMaxAabbCorner();
 
-		/** \returns the center of the aligned bounding box */
+		/** @returns the center of the aligned bounding box */
 		glm::vec3 getAabbCenter();
 
-		/* \returns the radius of a sphere centered at the centroid which completely contains the mesh */
+		/** @returns the radius of a sphere centered at the centroid which completely contains the mesh */
 		float getBoundingSphereRadius();
 
 		// /* If mesh editing is enabled, replaces the position at the given index with a new position */
@@ -754,7 +742,8 @@ class Mesh : public StaticFactory
 		// /* If mesh editing is enabled, replaces the set of normals starting at the given index with a new set of normals */
 		// void edit_normals(uint32_t index, std::vector<glm::vec4> new_normals);
 
-		/** Replaces any existing normals with per-vertex smooth normals computed by 
+		/**
+		 * Replaces any existing normals with per-vertex smooth normals computed by 
 		 * averaging neighboring geometric face normals together. 
 		 * Note that this does not take into account the surface area of each triangular face.
 		*/
@@ -788,6 +777,7 @@ class Mesh : public StaticFactory
 		// /* TODO */
 		// bool should_show_bounding_box();
 
+		/** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
 		static std::shared_ptr<std::mutex> getEditMutex();
 
 	private:
@@ -803,11 +793,11 @@ class Mesh : public StaticFactory
 		/* TODO */
 		static bool factoryInitialized;
 		
-		/* A list of the mesh components, allocated statically */
+		/** A list of the mesh components, allocated statically */
 		static Mesh meshes[MAX_MESHES];
 		static MeshStruct meshStructs[MAX_MESHES];
 
-		/* A lookup table of name to mesh id */
+		/** A lookup table of name to mesh id */
 		static std::map<std::string, uint32_t> lookupTable;
 
 		// /* Lists of per vertex data. These might not match GPU memory if editing is disabled. */

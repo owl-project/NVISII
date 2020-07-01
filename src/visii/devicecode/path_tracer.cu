@@ -483,7 +483,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.tmin = EPSILON * 100.f;
             owl::traceRay(optixLaunchParams.world, ray, payload);
 
-            if (light_pdf > EPSILON) {
+            if (light_pdf > EPSILON) 
+            {
                 // if by sampling the brdf we also hit the light source...
                 bool visible = (payload.entityID == sampledLightID);
                 if (visible) {
@@ -524,7 +525,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // clamp out any extreme fireflies
         glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
-        gillum = clamp(gillum, vec3(0.f), vec3(10.f));
+        gillum = clamp(gillum, vec3(0.f), vec3(100.f));
 
         // just in case we get inf's or nans, remove them.
         if (glm::any(glm::isnan(gillum))) gillum = vec3(0.f);

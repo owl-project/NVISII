@@ -121,7 +121,7 @@ public:
     /** @returns a string representation of the current component */
 	std::string toString();
 
-	/** Indicates whether or not any entities are "out of date" and need to be updated through the "update components" function*/
+	/** Indicates whether or not any entities are "out of date" and need to be updated through the "update components" function */
 	static bool areAnyDirty();
 
     /** @returns True if the Entity has been modified since the previous frame, and False otherwise */

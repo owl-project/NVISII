@@ -104,17 +104,15 @@ void Texture::updateComponents()
 	anyDirty = false;
 } 
 
-void Texture::cleanUp()
+void Texture::clearAll()
 {
     if (!isFactoryInitialized()) return;
 
     for (auto &light : textures) {
 		if (light.initialized) {
-			Texture::remove(light.id);
+			Texture::remove(light.name);
 		}
 	}
-
-    factoryInitialized = false;
 }	
 
 /* Static Factory Implementations */
@@ -176,17 +174,8 @@ Texture* Texture::get(std::string name) {
     return StaticFactory::get(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
 }
 
-Texture* Texture::get(uint32_t id) {
-    return StaticFactory::get(editMutex, id, "Texture", lookupTable, textures, MAX_TEXTURES);
-}
-
 void Texture::remove(std::string name) {
     StaticFactory::remove(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
-    anyDirty = true;
-}
-
-void Texture::remove(uint32_t id) {
-    StaticFactory::remove(editMutex, id, "Texture", lookupTable, textures, MAX_TEXTURES);
     anyDirty = true;
 }
 
