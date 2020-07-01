@@ -60,6 +60,8 @@ If you use this tool in your research project, please cite as follows:
 
 [Falling objects dans une salle de bain](https://imgur.com/BqSKTO7)
 
+[Random camera pose around objects](https://imgur.com/79eMgUv)
+
 <!-- ## Code Structure
 
 - submodules/ : external git submodule dependencies to build this
