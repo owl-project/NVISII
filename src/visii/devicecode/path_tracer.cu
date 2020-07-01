@@ -298,6 +298,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng);
         DisneyMaterial mat;
         int bounce = 0;
+        float3 directIllum = make_float3(0.f);
         float3 illum = make_float3(0.f);
         float3 path_throughput = make_float3(1.f);
         uint16_t ray_count = 0;
@@ -312,6 +313,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             illum = payload.normal;
             primaryNormal = make_float3(0.f, 0.f, 1.f);
             primaryAlbedo = illum;
+            directIllum = illum;
         }
 
         // If we hit something, shade each hit point on a path using NEE with MIS
@@ -357,6 +359,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     if (entityLight.color_texture_id == -1) light_emission = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
                     else light_emission = make_float3(sampleTexture(entityLight.color_texture_id, uv, make_float4(entityLight.r, entityLight.g, entityLight.b, 1.f))); // * intensity; temporarily commenting out to show texture for bright lights in LDR
                     illum = light_emission; 
+                    directIllum = illum;
                     primaryNormal = payload.normal;
                     primaryAlbedo = mat.base_color;
                 }
@@ -503,21 +506,25 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             illum = illum + path_throughput * irradiance;
             path_throughput = path_throughput * bsdf / bsdf_pdf;
 
-            if (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON) {
+            // If ray misses, interpret normal as "miss color" assigned by miss program and move on to the next sample
+            if (payload.tHit <= 0.f) {
+                illum = illum + path_throughput * payload.normal;
+            }
+            
+            if (bounce == 0) {
+                directIllum = illum;
+            }
+
+            if ((payload.tHit <= 0.0f) || (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON)) {
                 break;
             }
 
             // // Do path regularization to reduce fireflies
             // // Note, .35f was chosen emperically, but could be exposed as a parameter later on.
+            // EDIT: finding that path regularization doesn't generalize well with transmissive objects...
             // if (sampledSpecular) {
             //     roughnessMinimum = min((roughnessMinimum + .35f), 1.f);
             // }
-
-            // If ray misses, interpret normal as "miss color" assigned by miss program and move on to the next sample
-            if (payload.tHit <= 0.f) {
-                illum = illum + path_throughput * payload.normal;
-                break;
-            }
 
             // if the bounce count is less than the max bounce count, potentially add on radiance from the next hit location.
             ++bounce;            
@@ -525,7 +532,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // clamp out any extreme fireflies
         glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
-        gillum = clamp(gillum, vec3(0.f), vec3(100.f));
+        glm::vec3 dillum = vec3(directIllum.x, directIllum.y, directIllum.z);
+        glm::vec3 iillum = gillum - dillum;
+
+        if (optixLaunchParams.indirectClamp > 0.f)
+            iillum = clamp(iillum, vec3(0.f), vec3(optixLaunchParams.indirectClamp));
+        if (optixLaunchParams.directClamp > 0.f)
+            dillum = clamp(dillum, vec3(0.f), vec3(optixLaunchParams.directClamp));
+
+        gillum = dillum + iillum;
 
         // just in case we get inf's or nans, remove them.
         if (glm::any(glm::isnan(gillum))) gillum = vec3(0.f);

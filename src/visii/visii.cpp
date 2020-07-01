@@ -404,6 +404,22 @@ void setDomeLightTexture(Texture* texture)
     resetAccumulation();
 }
 
+void setIndirectLightingClamp(float clamp)
+{
+    clamp = std::max(float(clamp), float(0.f));
+    OptixData.LP.indirectClamp = clamp;
+    resetAccumulation();
+    launchParamsSetRaw(OptixData.launchParams, "indirectClamp", &OptixData.LP.indirectClamp);
+}
+
+void setDirectLightingClamp(float clamp)
+{
+    clamp = std::max(float(clamp), float(0.f));
+    OptixData.LP.directClamp = clamp;
+    resetAccumulation();
+    launchParamsSetRaw(OptixData.launchParams, "directClamp", &OptixData.LP.directClamp);
+}
+
 void initializeFrameBuffer(int fbWidth, int fbHeight) {
     synchronizeDevices();
 
@@ -509,6 +525,8 @@ void initializeOptix(bool headless)
         { "numLightEntities",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
         { "instanceToEntityMap", OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
         { "domeLightIntensity",  OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
+        { "directClamp",         OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
+        { "indirectClamp",       OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
         { "environmentMapID",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapID)},
         { "textureObjects",      OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textureObjects)},
         { "GGX_E_AVG_LOOKUP",    OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_AVG_LOOKUP)},
@@ -582,6 +600,8 @@ void initializeOptix(bool headless)
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
     launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
     launchParamsSetRaw(OD.launchParams, "domeLightIntensity", &OD.LP.domeLightIntensity);
+    launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
+    launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
 
     OWLVarDecl trianglesGeomVars[] = {
         { "index",      OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,index)},
