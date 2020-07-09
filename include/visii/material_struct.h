@@ -37,7 +37,7 @@ struct MaterialStruct {
 
     /* Addresses for texture mapped parameters */
     int32_t alpha_texture_id = -1; // 132
-    int32_t bump_texture_id = -1; // 136
+    int32_t normal_map_texture_id = -1; // 136
     int32_t subsurface_color_texture_id = -1; // 140
     int32_t subsurface_radius_texture_id = -1; // 144
     int32_t subsurface_texture_id = -1; // 148

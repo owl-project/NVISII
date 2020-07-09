@@ -16,7 +16,6 @@ struct RayPayload {
     float tHit;
     float3 normal;
     float3 gnormal;
-    // float pad;
 };
 
 inline __device__
@@ -342,7 +341,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 entityMaterial = optixLaunchParams.materials[entity.material_id];
             }
             loadMaterial(entityMaterial, payload.uv, mat, roughnessMinimum);
-
+            
+            // If the material has a normal map, load it. 
+            float3 dN = make_float3(sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float4(0.5f)));
+            dN = (Dn * make_float3(2.0f)) - make_float3(1.f);            
+            
             // If this is the first hit, keep track of primary albedo and normal for denoising.
             if (bounce == 0) {
                 primaryNormal = payload.normal;
