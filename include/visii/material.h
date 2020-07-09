@@ -594,14 +594,14 @@ class Material : public StaticFactory
     float getTransmissionRoughness();
 
     /** 
-     * A grayscale bump map texture used to displace surface normals. 
+     * A normal map texture used to displace surface normals. 
      * 
-     * @param texture A grayscale texture containing a surface displacement between 0 and 1. G, B, and A channels are ignored.
+     * @param texture A texture containing a surface normal displacement between 0 and 1. A channel is ignored.
     */
-    void setBumpTexture(Texture *texture);
+    void setNormalMapTexture(Texture *texture);
     
-    /** Disconnects the Bump texture, reverting back to any existing constant Bump */
-    void clearBumpTexture();
+    /** Disconnects the normal map texture */
+    void clearNormalMapTexture();
 
     // /* A uniform base color can be replaced with per-vertex colors as well. */
     // void use_vertex_colors(bool use);

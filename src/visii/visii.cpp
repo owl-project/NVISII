@@ -82,6 +82,7 @@ static struct OptixData {
     OWLBuffer lightEntitiesBuffer;
     OWLBuffer instanceToEntityMapBuffer;
     OWLBuffer vertexListsBuffer;
+    OWLBuffer normalListsBuffer;
     OWLBuffer texCoordListsBuffer;
     OWLBuffer indexListsBuffer;
     OWLBuffer textureObjectsBuffer;
@@ -520,6 +521,7 @@ void initializeOptix(bool headless)
         { "textures",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
         { "lightEntities",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
         { "vertexLists",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
+        { "normalLists",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, normalLists)},
         { "texCoordLists",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, texCoordLists)},
         { "indexLists",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, indexLists)},
         { "numLightEntities",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
@@ -564,6 +566,7 @@ void initializeOptix(bool headless)
     OD.lightEntitiesBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*),               MAX_MESHES,     nullptr);
+    OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*),               MAX_MESHES,     nullptr);
     OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2*),               MAX_MESHES,     nullptr);
     OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_USER_TYPE(ivec3*),              MAX_MESHES,     nullptr);
     OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_USER_TYPE(cudaTextureObject_t), MAX_TEXTURES,   nullptr);
@@ -577,6 +580,7 @@ void initializeOptix(bool headless)
     launchParamsSetBuffer(OD.launchParams, "lightEntities",       OD.lightEntitiesBuffer);
     launchParamsSetBuffer(OD.launchParams, "instanceToEntityMap", OD.instanceToEntityMapBuffer);
     launchParamsSetBuffer(OD.launchParams, "vertexLists",         OD.vertexListsBuffer);
+    launchParamsSetBuffer(OD.launchParams, "normalLists",         OD.normalListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "texCoordLists",       OD.texCoordListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "indexLists",          OD.indexListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "textureObjects",      OD.textureObjectsBuffer);
@@ -736,6 +740,7 @@ void updateComponents()
 
         std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
         std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
+        std::vector<vec4*> normalLists(Mesh::getCount(), nullptr);
         std::vector<vec2*> texCoordLists(Mesh::getCount(), nullptr);
         for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
             // If a mesh is initialized, vertex and index buffers should already be created, and so 
@@ -748,12 +753,14 @@ void updateComponents()
                 throw std::runtime_error("ERROR: vertices/indices is nullptr");
             }
             vertexLists[mid] = ((vec4*) bufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
+            normalLists[mid] = ((vec4*) bufferGetPointer(OD.meshes[mid].normals, /* device */ 0));
             texCoordLists[mid] = ((vec2*) bufferGetPointer(OD.meshes[mid].texCoords, /* device */ 0));
             indexLists[mid] = ((ivec3*) bufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
         }
         bufferUpload(OD.vertexListsBuffer, vertexLists.data());
         bufferUpload(OD.texCoordListsBuffer, texCoordLists.data());
         bufferUpload(OD.indexListsBuffer, indexLists.data());
+        bufferUpload(OD.normalListsBuffer, normalLists.data());
         Mesh::updateComponents();
         bufferUpload(OptixData.meshBuffer, Mesh::getFrontStruct());
     }
