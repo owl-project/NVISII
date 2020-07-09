@@ -607,14 +607,7 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
     launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
 
-    OWLVarDecl trianglesGeomVars[] = {
-        { "index",      OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,index)},
-        { "vertex",     OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,vertex)},
-        { "colors",     OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,colors)},
-        { "normals",    OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,normals)},
-        { "texcoords",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,texcoords)},
-        {/* sentinel to mark end of list */}
-    };
+    OWLVarDecl trianglesGeomVars[] = {{/* sentinel to mark end of list */}};
     OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
     
     /* Temporary test code */
@@ -629,11 +622,6 @@ void initializeOptix(bool headless)
     OWLGeom trianglesGeom = geomCreate(OD.context,OD.trianglesGeomType);
     trianglesSetVertices(trianglesGeom,vertexBuffer,NUM_VERTICES,sizeof(vec3),0);
     trianglesSetIndices(trianglesGeom,indexBuffer, NUM_INDICES,sizeof(ivec3),0);
-    geomSetBuffer(trianglesGeom,"vertex",nullptr);
-    geomSetBuffer(trianglesGeom,"index",nullptr);
-    geomSetBuffer(trianglesGeom,"colors",nullptr);
-    geomSetBuffer(trianglesGeom,"normals",nullptr);
-    geomSetBuffer(trianglesGeom,"texcoords",nullptr);
     OWLGroup trianglesGroup = trianglesGeomGroupCreate(OD.context,1,&trianglesGeom);
     groupBuildAccel(trianglesGroup);
     OWLGroup world = instanceGroupCreate(OD.context, 1);
@@ -729,11 +717,6 @@ void updateComponents()
             OD.meshes[mid].geom      = geomCreate(OD.context, OD.trianglesGeomType);
             trianglesSetVertices(OD.meshes[mid].geom, OD.meshes[mid].vertices, meshes[mid].getVertices().size(), sizeof(vec4), 0);
             trianglesSetIndices(OD.meshes[mid].geom, OD.meshes[mid].indices, meshes[mid].getTriangleIndices().size() / 3, sizeof(ivec3), 0);
-            geomSetBuffer(OD.meshes[mid].geom,"vertex", OD.meshes[mid].vertices);
-            geomSetBuffer(OD.meshes[mid].geom,"index", OD.meshes[mid].indices);
-            geomSetBuffer(OD.meshes[mid].geom,"colors", OD.meshes[mid].colors);
-            geomSetBuffer(OD.meshes[mid].geom,"normals", OD.meshes[mid].normals);
-            geomSetBuffer(OD.meshes[mid].geom,"texcoords", OD.meshes[mid].texCoords);
             OD.meshes[mid].blas = trianglesGeomGroupCreate(OD.context, 1, &OD.meshes[mid].geom);
             groupBuildAccel(OD.meshes[mid].blas);          
         }
