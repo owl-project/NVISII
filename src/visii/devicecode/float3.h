@@ -42,6 +42,10 @@ __device__ float2 make_float2(uint2 v) {
 	return make_float2(v.x, v.y);
 }
 
+__device__ float2 make_float2(glm::vec2 v) {
+	return make_float2(v.x, v.y);
+}
+
 __device__ glm::vec4 make_vec4(float4 v) {
 	return glm::vec4(v.x, v.y, v.z, v.w);
 }

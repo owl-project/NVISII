@@ -813,7 +813,7 @@ void updateComponents()
                 OD.textureObjects[tid] = texture2DCreate(
                     OD.context, OWL_TEXEL_FORMAT_RGBA32F,
                     textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
-                    OWL_TEXTURE_NEAREST);        
+                    OWL_TEXTURE_LINEAR);        
             }
             textureObjects[tid] = textureGetObject(OD.textureObjects[tid], 0);
         }

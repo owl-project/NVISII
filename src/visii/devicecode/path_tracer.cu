@@ -146,21 +146,25 @@ void loadMeshTriIndices(int meshID, int primitiveID, int3 &indices)
 }
 
 __device__
-void loadMeshVertexData(int meshID, int3 indices, float2 barycentrics, float3 &position, float3 &geometricNormal)
+void loadMeshVertexData(int meshID, int3 indices, float2 barycentrics, float3 &position, float3 &geometricNormal, float3 &edge1, float3 &edge2)
 {
     const float3 &A = (float3&) optixLaunchParams.vertexLists[meshID][indices.x];
     const float3 &B = (float3&) optixLaunchParams.vertexLists[meshID][indices.y];
     const float3 &C = (float3&) optixLaunchParams.vertexLists[meshID][indices.z];
+    edge1 = B - A;
+    edge2 = C - A;
     position = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
     geometricNormal = normalize(cross(B-A,C-A));
 }
 
 __device__
-void loadMeshUVData(int meshID, int3 indices, float2 barycentrics, float2 &uv)
+void loadMeshUVData(int meshID, int3 indices, float2 barycentrics, float2 &uv, float2 &edge1, float2 &edge2)
 {
     const float2 &A = (float2&) optixLaunchParams.texCoordLists[meshID][indices.x];
     const float2 &B = (float2&) optixLaunchParams.texCoordLists[meshID][indices.y];
     const float2 &C = (float2&) optixLaunchParams.texCoordLists[meshID][indices.z];
+    edge1 = B - A;
+    edge2 = C - A;
     uv = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
 }
 
@@ -171,6 +175,7 @@ void loadMeshNormalData(int meshID, int3 indices, float2 barycentrics, float2 uv
     const float3 &B = (float3&) optixLaunchParams.normalLists[meshID][indices.y];
     const float3 &C = (float3&) optixLaunchParams.normalLists[meshID][indices.z];
     normal = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
+    normal = normalize(normal);
     ortho_basis(tangent, binormal, normal);
 }
 
@@ -337,13 +342,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         uint16_t ray_count = 0;
         float roughnessMinimum = 0.f;
         RayPayload payload;
+        payload.tHit = -1.f;
         owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
                         /*the ray to trace*/ ray,
                         /*prd*/ payload);
 
         // If ray misses
         if (payload.tHit <= 0.f) {
-            illum = missColor(ray);
+            illum = missColor(ray) * optixLaunchParams.domeLightIntensity;
             primaryNormal = make_float3(0.f, 0.f, 1.f);
             primaryAlbedo = illum;
             directIllum = illum;
@@ -361,40 +367,67 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
             
             const float3 w_o = -ray.direction;
-            const float3 hit_p = ray.origin + payload.tHit * ray.direction;
-            float3 p, v_x, v_y, v_z, v_gz; float2 uv; int3 indices;
-            bool shouldNormalFaceForward = (mat.specular_transmission == 0.f);
-
+            float3 hit_p = ray.origin + payload.tHit * ray.direction;
+            float3 p, v_x, v_y, v_z, v_gz, p_e1, p_e2; float2 uv, uv_e1, uv_e2; int3 indices;
+            bool shouldNormalFaceForward = (entityMaterial.transmission == 0.f);
+            
             loadMeshTriIndices(entity.mesh_id, payload.primitiveID, indices);
-            loadMeshVertexData(entity.mesh_id, indices, payload.barycentrics, p, v_gz);
-            loadMeshUVData(entity.mesh_id, indices, payload.barycentrics, uv);
-            loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_x, v_y, v_z);
+            loadMeshVertexData(entity.mesh_id, indices, payload.barycentrics, p, v_gz, p_e1, p_e2);
+            loadMeshUVData(entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
+            loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_z, v_x, v_y);
             loadDisneyMaterial(entityMaterial, uv, mat, roughnessMinimum);
-
-            // Transform data into world space
+            
             glm::mat4 xfm;
-            xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[1],  payload.localToWorld[2],  0.0f));
-            xfm = glm::column(xfm, 1, vec4(payload.localToWorld[3], payload.localToWorld[4],  payload.localToWorld[5],  0.0f));
-            xfm = glm::column(xfm, 2, vec4(payload.localToWorld[6], payload.localToWorld[7],  payload.localToWorld[8],  0.0f));
-            xfm = glm::column(xfm, 3, vec4(payload.localToWorld[9], payload.localToWorld[10], payload.localToWorld[11], 1.0f));
+            xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
+            xfm = glm::column(xfm, 1, vec4(payload.localToWorld[1], payload.localToWorld[5],  payload.localToWorld[9], 0.0f));
+            xfm = glm::column(xfm, 2, vec4(payload.localToWorld[2], payload.localToWorld[6],  payload.localToWorld[10], 0.0f));
+            xfm = glm::column(xfm, 3, vec4(payload.localToWorld[3], payload.localToWorld[7],  payload.localToWorld[11], 1.0f));
             glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
-            p = make_float3(xfm * make_vec4(p, 1.0f));
-            v_gz = make_float3(normalize(nxfm * make_vec3(v_gz)));
-            v_x = make_float3(normalize(nxfm * make_vec3(v_x)));
-            v_y = make_float3(normalize(nxfm * make_vec3(v_y)));
-            v_z = make_float3(normalize(nxfm * make_vec3(v_z)));
 
-            // For segmentations, metadata extraction for applications like denoising or ML training
-            saveRenderData(renderData, bounce, payload.tHit, hit_p, v_z, entityID);
+            // If the material has a normal map, load it. 
+            float f = 1.0f / (uv_e1.x * uv_e2.y - uv_e2.x * uv_e1.y);
+            vec3 tangent, binormal;
+            tangent.x = f * (uv_e2.y * p_e1.x - uv_e1.y * p_e2.x);
+            tangent.y = f * (uv_e2.y * p_e1.y - uv_e1.y * p_e2.y);
+            tangent.z = f * (uv_e2.y * p_e1.z - uv_e1.y * p_e2.z);
+            tangent = normalize(tangent);
+            v_z = normalize(v_z);            
+            
+            // Transform data into world space
+            p = make_float3(xfm * make_vec4(p, 1.0f));
+            hit_p = p;
+            v_gz = make_float3(normalize(nxfm * make_vec3(v_gz)));
+            v_z = make_float3(normalize(nxfm * make_vec3(v_z)));
+            v_x = make_float3(normalize(nxfm * tangent));
+            v_y = cross(v_z, v_x);
+            v_x = cross(v_y, v_z);
+
+            if (
+                all(lessThan(abs(make_vec3(v_x)), vec3(EPSILON))) || 
+                all(lessThan(abs(make_vec3(v_y)), vec3(EPSILON))) ||
+                any(isnan(make_vec3(v_x))) || 
+                any(isnan(make_vec3(v_y)))
+            ) {
+                ortho_basis(v_x, v_y, v_z);
+            }
+
+            glm::mat3 tbn;
+            tbn = glm::column(tbn, 0, make_vec3(v_x) );
+            tbn = glm::column(tbn, 1, make_vec3(v_y) );
+            tbn = glm::column(tbn, 2, make_vec3(v_z) );
+            
+            float3 dN = make_float3(sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float4(0.5f, .5f, 1.f, 0.f)));
+            dN = (dN * make_float3(2.0f)) - make_float3(1.f);   
+
+            v_z = make_float3(normalize(tbn * normalize(make_vec3(dN))) );
 
             if (shouldNormalFaceForward) {
                 v_z = faceNormalForward(w_o, v_gz, v_z);
             }
-            
-            // If the material has a normal map, load it. 
-            // float3 dN = make_float3(sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float4(0.5f)));
-            // dN = (Dn * make_float3(2.0f)) - make_float3(1.f);            
-            
+
+            // For segmentations, metadata extraction for applications like denoising or ML training
+            saveRenderData(renderData, bounce, payload.tHit, hit_p, v_z, entityID);
+                        
             // If this is the first hit, keep track of primary albedo and normal for denoising.
             if (bounce == 0) {
                 primaryNormal = v_z;
@@ -504,6 +537,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             ray.tmax = 1e20f;
                             ray.origin = hit_p;
                             ray.direction = light_dir;
+                            payload.tHit = -1.f;
                             owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
                             if (payload.instanceID == -1) continue;
                             int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
@@ -535,6 +569,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.origin = hit_p;// + v_z * .1;
             ray.direction = w_i;
             ray.tmin = EPSILON * 100.f;
+            payload.tHit = -1.f;
             owl::traceRay(optixLaunchParams.world, ray, payload);
 
             if (light_pdf > EPSILON) 
@@ -544,31 +579,31 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
                 bool visible = (entityID == sampledLightID);
                 if (visible) {
-                    int3 indices; float3 p; float3 v_gz; float2 uv;
+                    int3 indices; float3 p, p_e1, p_e2; float3 v_gz; float2 uv, uv_e1, uv_e2;
                     loadMeshTriIndices(light_entity.mesh_id, payload.primitiveID, indices);
-                    loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, v_gz);
-                    loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv);
-                    // loadMeshNormalData(light_entity.mesh_id, indices, payload.barycentrics, uv, v_x, v_y, v_z);
-                    // loadDisneyMaterial(entityMaterial, uv, mat, roughnessMinimum);
+                    loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, v_gz, p_e1, p_e2);
+                    loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
 
                     // Transform data into world space
                     glm::mat4 xfm;
-                    xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[1],  payload.localToWorld[2],  0.0f));
-                    xfm = glm::column(xfm, 1, vec4(payload.localToWorld[3], payload.localToWorld[4],  payload.localToWorld[5],  0.0f));
-                    xfm = glm::column(xfm, 2, vec4(payload.localToWorld[6], payload.localToWorld[7],  payload.localToWorld[8],  0.0f));
-                    xfm = glm::column(xfm, 3, vec4(payload.localToWorld[9], payload.localToWorld[10], payload.localToWorld[11], 1.0f));
+                    xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
+                    xfm = glm::column(xfm, 1, vec4(payload.localToWorld[1], payload.localToWorld[5],  payload.localToWorld[9], 0.0f));
+                    xfm = glm::column(xfm, 2, vec4(payload.localToWorld[2], payload.localToWorld[6],  payload.localToWorld[10], 0.0f));
+                    xfm = glm::column(xfm, 3, vec4(payload.localToWorld[3], payload.localToWorld[7],  payload.localToWorld[11], 1.0f));
                     glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
                     p = make_float3(xfm * make_vec4(p, 1.0f));
-                    v_gz = make_float3(normalize(nxfm * make_vec3(v_gz)));
+                    v_gz = make_float3(normalize(nxfm * normalize(make_vec3(v_gz))));
 
                     float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
                     float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, uv, default_light_emission)) * light_light.intensity;
 
                     float dist = distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
                     float dotNWi = dot(v_gz, ray.direction);
-                    float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
-                    float3 Li = lightEmission * w / bsdf_pdf;
-                    irradiance = irradiance + (bsdf * Li * fabs(dotNWi)); // missing r^2 falloff?
+                    if (dotNWi > 0.f){
+                        float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
+                        float3 Li = lightEmission * w / bsdf_pdf;
+                        irradiance = irradiance + (bsdf * Li * fabs(dotNWi)); // missing r^2 falloff?
+                    }
                 }
             }
 
@@ -578,7 +613,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
             // If ray misses, interpret normal as "miss color" assigned by miss program and move on to the next sample
             if (payload.tHit <= 0.f) {
-                illum = illum + path_throughput * missColor(ray);
+                illum = illum + path_throughput * missColor(ray) * optixLaunchParams.domeLightIntensity;
             }
             
             if (bounce == 0) {

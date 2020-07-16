@@ -122,10 +122,15 @@ Texture* Texture::create(std::string name) {
     return l;
 }
 
-Texture* Texture::createFromImage(std::string name, std::string path) {
-    auto create = [path] (Texture* l) {
+Texture* Texture::createFromImage(std::string name, std::string path, bool linear) {
+    auto create = [path, linear] (Texture* l) {
         int x, y, num_channels;
         stbi_set_flip_vertically_on_load(true);
+        if (linear) {
+            stbi_ldr_to_hdr_gamma(1.0f);
+        } else {
+            stbi_ldr_to_hdr_gamma(2.2f);
+        }
         float* pixels = stbi_loadf(path.c_str(), &x, &y, &num_channels, STBI_rgb_alpha);
         if (!pixels) { 
             std::string reason (stbi_failure_reason());
