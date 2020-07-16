@@ -33,10 +33,10 @@ class Texture : public StaticFactory
 	 * Constructs a Texture with the given name from custom user data.
 	 * @param width The width of the image.
 	 * @param height The height of the image.
-	 * @param data A row major flattened vector of RGBA texels.
+	 * @param data A row major flattened vector of RGBA texels. The length of this vector should be 4 * width * height.
      * @returns a Texture allocated by the renderer. 
 	*/
-	static Texture *createFromData(std::string name, uint32_t width, uint32_t height, std::vector<glm::vec4> data);
+	static Texture *createFromData(std::string name, uint32_t width, uint32_t height, std::vector<float> data);
 
     /**
      * @param name The name of the Texture to get
