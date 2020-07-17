@@ -190,6 +190,17 @@ Mesh* Entity::getMesh()
 	return &mesh;
 }
 
+void Entity::setVisibility(bool camera)
+{
+	auto &entity = getStruct();
+	if (camera) {
+		entity.visibilityFlags |= ENTITY_VISIBILITY_CAMERA_RAYS;
+	} else {
+		entity.visibilityFlags &= (~ENTITY_VISIBILITY_CAMERA_RAYS);
+	}
+	markDirty();
+}
+
 void Entity::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
@@ -250,6 +261,7 @@ Entity* Entity::create(
 {
 	auto entity =  StaticFactory::create(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
 	try {
+		entity->setVisibility(true);
 		if (transform) entity->setTransform(transform);
 		if (material) entity->setMaterial(material);
 		if (camera) entity->setCamera(camera);

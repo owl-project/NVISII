@@ -23,7 +23,6 @@ Light::Light(std::string name, uint32_t id)
     this->lightStructs[id].g = 1.f;
     this->lightStructs[id].b = 1.f;
     this->lightStructs[id].intensity = 1.0;
-    this->lightStructs[id].flags = 0;
     this->lightStructs[id].color_texture_id = -1;
 }
 

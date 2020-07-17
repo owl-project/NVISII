@@ -336,6 +336,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng);
         DisneyMaterial mat;
         int bounce = 0;
+        int visibilitySkips = 0;
         float3 directIllum = make_float3(0.f);
         float3 illum = make_float3(0.f);
         float3 path_throughput = make_float3(1.f);
@@ -360,6 +361,25 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // Load common position, vectors, and material data used for shading...
             const int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
             EntityStruct entity = optixLaunchParams.entities[entityID];
+
+            // Skip forward if the hit object is invisible for this ray type
+            if ((bounce == 0) && ((entity.visibilityFlags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
+                ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
+                payload.tHit = -1.f;
+                owl::traceRay( optixLaunchParams.world, ray, payload);
+                visibilitySkips++;
+                if (visibilitySkips > 10) break; // avoid locking up.
+
+                // If ray misses
+                if (payload.tHit <= 0.f) {
+                    illum = missColor(ray) * optixLaunchParams.domeLightIntensity;
+                    primaryNormal = make_float3(0.f, 0.f, 1.f);
+                    primaryAlbedo = illum;
+                    directIllum = illum;
+                }
+                continue;
+            }
+
             TransformStruct entityTransform = optixLaunchParams.transforms[entity.transform_id];
             MaterialStruct entityMaterial; LightStruct entityLight;
             if (entity.material_id >= 0 && entity.material_id < MAX_MATERIALS) {
@@ -521,7 +541,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
                     sampleTriangle(pos, N, v1, v2, v3, uv1, uv2, uv3, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf, uv);
                     vec3 normal = glm::vec3(n_l.x, n_l.y, n_l.z);
-                    float dotNWi = (dot(dir, normal));     
+                    float dotNWi = fabs(dot(dir, normal)); // for now, making all lights double sided.
+                    light_pdf = abs(light_pdf);
                     
                     float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
                     float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, make_float2(uv.x, uv.y), default_light_emission)) * light_light.intensity;
@@ -598,7 +619,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, uv, default_light_emission)) * light_light.intensity;
 
                     float dist = distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
-                    float dotNWi = dot(v_gz, ray.direction);
+                    float dotNWi = fabs(dot(-v_gz, ray.direction)); // for now, making all lights double sided.
                     if (dotNWi > 0.f){
                         float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
                         float3 Li = lightEmission * w / bsdf_pdf;
