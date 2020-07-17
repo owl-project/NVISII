@@ -185,7 +185,7 @@ Mesh* Entity::getMesh()
 {
 	auto &entity = getStruct();
 	if ((entity.mesh_id < 0) || (entity.mesh_id >= MAX_MESHES))  return nullptr;
-	auto mesh = Mesh::getFront()[entity.mesh_id];
+	auto &mesh = Mesh::getFront()[entity.mesh_id];
 	if (!mesh.isInitialized()) return nullptr;
 	return &mesh;
 }
