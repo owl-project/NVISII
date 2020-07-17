@@ -357,11 +357,11 @@ void sampleTriangle(const vec3 &pos, const vec3 &n,
 {
 	vec3 p = uniformPointWithinTriangle( v1, v2, v3, rand1, rand2 );
 	uv = uniformUVWithinTriangle( uv1, uv2, uv3, rand1, rand2 );
-	float triangleArea = length(cross(v1-v2, v3-v2)) * 0.5;
+	float triangleArea = fabs(length(cross(v1-v2, v3-v2)) * 0.5);
 	float pdfA = 1.0 / triangleArea;
 	dir = p - pos;
 	float d2 = dot(dir, dir);
 	dir /= sqrt(d2);
-	float aCosThere = max(0.0, dot(-dir,n));
+	float aCosThere = max(0.0, fabs(dot(-dir,n)));
 	pdf = PdfAtoW( pdfA, d2, aCosThere );
 }

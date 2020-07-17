@@ -163,17 +163,17 @@ std::vector<Entity*> importOBJ(std::string name_prefix, std::string filepath, st
             materialComponents[i]->setBaseColorTexture(texture_map[materials[i].diffuse_texname]);
         }
         
-        if (materials[i].bump_texname.length() > 0) {
-            materialComponents[i]->setBumpTexture(texture_map[materials[i].bump_texname]);
-        }
+        // if (materials[i].bump_texname.length() > 0) {
+            // materialComponents[i]->setBumpTexture(texture_map[materials[i].bump_texname]);
+        // }
 
         if (materials[i].normal_texname.length() > 0) {
-            materialComponents[i]->setBumpTexture(texture_map[materials[i].normal_texname]);
+            materialComponents[i]->setNormalMapTexture(texture_map[materials[i].normal_texname]);
         }
 
-        if (materials[i].displacement_texname.length() > 0) {
-            materialComponents[i]->setBumpTexture(texture_map[materials[i].displacement_texname]);
-        }
+        // if (materials[i].displacement_texname.length() > 0) {
+            // materialComponents[i]->setBumpTexture(texture_map[materials[i].displacement_texname]);
+        // }
 
         if (materials[i].roughness_texname.length() > 0) {
             materialComponents[i]->setRoughnessTexture(texture_map[materials[i].roughness_texname]);

@@ -104,17 +104,15 @@ void Texture::updateComponents()
 	anyDirty = false;
 } 
 
-void Texture::cleanUp()
+void Texture::clearAll()
 {
     if (!isFactoryInitialized()) return;
 
     for (auto &light : textures) {
 		if (light.initialized) {
-			Texture::remove(light.id);
+			Texture::remove(light.name);
 		}
 	}
-
-    factoryInitialized = false;
 }	
 
 /* Static Factory Implementations */
@@ -124,10 +122,15 @@ Texture* Texture::create(std::string name) {
     return l;
 }
 
-Texture* Texture::createFromImage(std::string name, std::string path) {
-    auto create = [path] (Texture* l) {
+Texture* Texture::createFromImage(std::string name, std::string path, bool linear) {
+    auto create = [path, linear] (Texture* l) {
         int x, y, num_channels;
         stbi_set_flip_vertically_on_load(true);
+        if (linear) {
+            stbi_ldr_to_hdr_gamma(1.0f);
+        } else {
+            stbi_ldr_to_hdr_gamma(2.2f);
+        }
         float* pixels = stbi_loadf(path.c_str(), &x, &y, &num_channels, STBI_rgb_alpha);
         if (!pixels) { 
             std::string reason (stbi_failure_reason());
@@ -148,10 +151,10 @@ Texture* Texture::createFromImage(std::string name, std::string path) {
 	}
 }
 
-Texture* Texture::createFromData(std::string name, uint32_t width, uint32_t height, std::vector<glm::vec4> data)
+Texture* Texture::createFromData(std::string name, uint32_t width, uint32_t height, std::vector<float> data)
 {
     auto create = [width, height, &data] (Texture* l) {
-        if (data.size() != (width * height)) { throw std::runtime_error("Error: width * height does not equal length of data!"); }
+        if (data.size() != (width * height * 4)) { throw std::runtime_error("Error: width * height * 4 does not equal length of data!"); }
         l->texels.resize(width * height);
         memcpy(l->texels.data(), data.data(), width * height * 4 * sizeof(float));
         textureStructs[l->getId()].width = width;
@@ -176,17 +179,8 @@ Texture* Texture::get(std::string name) {
     return StaticFactory::get(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
 }
 
-Texture* Texture::get(uint32_t id) {
-    return StaticFactory::get(editMutex, id, "Texture", lookupTable, textures, MAX_TEXTURES);
-}
-
 void Texture::remove(std::string name) {
     StaticFactory::remove(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
-    anyDirty = true;
-}
-
-void Texture::remove(uint32_t id) {
-    StaticFactory::remove(editMutex, id, "Texture", lookupTable, textures, MAX_TEXTURES);
     anyDirty = true;
 }
 

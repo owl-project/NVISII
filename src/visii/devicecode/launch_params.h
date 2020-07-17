@@ -23,6 +23,8 @@ struct LaunchParams {
     glm::vec4 *accumPtr;
     OptixTraversableHandle world;
     float domeLightIntensity = 1.f;
+    float directClamp = 100.f; 
+    float indirectClamp = 100.f; 
 
     EntityStruct    cameraEntity;
     EntityStruct    *entities = nullptr;
@@ -37,6 +39,7 @@ struct LaunchParams {
     uint32_t         numLightEntities = 0;
 
     vec4 **vertexLists = nullptr;
+    vec4 **normalLists = nullptr;
     vec2 **texCoordLists = nullptr;
     ivec3 **indexLists = nullptr;
 

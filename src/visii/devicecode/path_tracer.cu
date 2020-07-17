@@ -11,12 +11,11 @@ typedef owl::common::LCG<4> Random;
 extern "C" __constant__ LaunchParams optixLaunchParams;
 
 struct RayPayload {
-    uint32_t entityID;
-    float2 uv;
-    float tHit;
-    float3 normal;
-    float3 gnormal;
-    // float pad;
+    int instanceID = -1;
+    int primitiveID = -1;
+    float2 barycentrics;
+    float tHit = -1.f;
+    float localToWorld[12];
 };
 
 inline __device__
@@ -52,23 +51,34 @@ float3 missColor(const owl::Ray &ray)
 
 OPTIX_MISS_PROGRAM(miss)()
 {
-    RayPayload &payload = get_payload<RayPayload>();
-    payload.tHit = -1.f;
-    payload.entityID = -1;
-    owl::Ray ray;
-    ray.direction = optixGetWorldRayDirection();
-    payload.normal = missColor(ray) * optixLaunchParams.domeLightIntensity;
 }
+// RayPayload &payload = get_payload<RayPayload>();
+// payload.tHit = -1.f;
+// payload.entityID = -1;
+// owl::Ray ray;
+// ray.direction = optixGetWorldRayDirection();
+// payload.normal = missColor(ray) * optixLaunchParams.domeLightIntensity;
 
 OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 {
-    const TrianglesGeomData &self = owl::getProgramData<TrianglesGeomData>();
+    RayPayload &prd = owl::getPRD<RayPayload>();
+    prd.barycentrics = optixGetTriangleBarycentrics();
+    prd.instanceID = optixGetInstanceIndex();
+    prd.primitiveID = optixGetPrimitiveIndex();
+    prd.tHit = optixGetRayTmax();
+    optixGetObjectToWorldTransformMatrix(prd.localToWorld);
+
+
+    // const TrianglesGeomData &self = owl::getProgramData<TrianglesGeomData>();
     
-    const float2 bc    = optixGetTriangleBarycentrics();
-    const int instID   = optixGetInstanceIndex();
-    const int primID   = optixGetPrimitiveIndex();
-    const int entityID = optixLaunchParams.instanceToEntityMap[instID];
-    const ivec3 index  = self.index[primID];
+    
+    // const float2 bc    = optixGetTriangleBarycentrics();
+    // const int instID   = optixGetInstanceIndex();
+    // const int primID   = optixGetPrimitiveIndex();
+    // const int entityID = optixLaunchParams.instanceToEntityMap[instID];
+    // const ivec3 index  = self.index[primID];
+    // float localToWorld[12];
+
     
     // compute position: (actually not needed. implicit via tMax )
     // vec3 V;
@@ -79,46 +89,33 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     //     V = A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y;
     // }
 
-    // compute normal:
-    float3 N, GN;
+    // // compute normal:
+    // float3 N, GN;
 
-    const float3 &A      = (float3&) self.vertex[index.x];
-    const float3 &B      = (float3&) self.vertex[index.y];
-    const float3 &C      = (float3&) self.vertex[index.z];
-    GN = normalize(cross(B-A,C-A));
+    // const float3 &A      = (float3&) self.vertex[index.x];
+    // const float3 &B      = (float3&) self.vertex[index.y];
+    // const float3 &C      = (float3&) self.vertex[index.z];
+    // GN = normalize(cross(B-A,C-A));
     
-    if (self.normals) {
-        const float3 &A = (float3&) self.normals[index.x];
-        const float3 &B = (float3&) self.normals[index.y];
-        const float3 &C = (float3&) self.normals[index.z];
-        N = normalize(A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y);
-    } else {
-        N = GN;
-    }
+    // if (self.normals) {
+    //     const float3 &A = (float3&) self.normals[index.x];
+    //     const float3 &B = (float3&) self.normals[index.y];
+    //     const float3 &C = (float3&) self.normals[index.z];
+    //     N = normalize(A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y);
+    // } else {
+    //     N = GN;
+    // }
 
-    GN = normalize(optixTransformNormalFromObjectToWorldSpace(GN));
-    N = normalize(optixTransformNormalFromObjectToWorldSpace(N));
-    // normalize(transpose(mat3(gl_WorldToObjectNV)) * payload.m_n);
-    // N  = normalize(transpose(mat3(gl_WorldToObjectNV)) * payload.m_n);
+    // GN = normalize(optixTransformNormalFromObjectToWorldSpace(GN));
+    // N = normalize(optixTransformNormalFromObjectToWorldSpace(N));
+    // // normalize(transpose(mat3(gl_WorldToObjectNV)) * payload.m_n);
+    // // N  = normalize(transpose(mat3(gl_WorldToObjectNV)) * payload.m_n);
 
-    // compute uv:
-    float2 UV;
-    if (self.texcoords) {
-        const float2 &A = (float2&) self.texcoords[index.x];
-        const float2 &B = (float2&) self.texcoords[index.y];
-        const float2 &C = (float2&) self.texcoords[index.z];
-        UV = A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y;
-    } else {
-        UV = bc;
-    }
-
-    // store data in payload
-    RayPayload &prd = owl::getPRD<RayPayload>();
-    prd.entityID = entityID;
-    prd.uv = UV;
-    prd.tHit = optixGetRayTmax();
-    prd.normal = N;
-    prd.gnormal = GN;
+    // // store data in payload
+    // prd.entityID = entityID;
+    // prd.uv = UV;
+    // prd.normal = N;
+    // prd.gnormal = GN;
 }
 
 inline __device__
@@ -141,8 +138,49 @@ float4 sampleTexture(int32_t textureId, float2 texCoord, float4 defaultValue) {
     return tex2D<float4>(tex, texCoord.x, texCoord.y);
 }
 
+__device__
+void loadMeshTriIndices(int meshID, int primitiveID, int3 &indices)
+{
+    ivec3* triIndices = optixLaunchParams.indexLists[meshID]; 
+    indices = (int3&) triIndices[primitiveID];   
+}
+
+__device__
+void loadMeshVertexData(int meshID, int3 indices, float2 barycentrics, float3 &position, float3 &geometricNormal, float3 &edge1, float3 &edge2)
+{
+    const float3 &A = (float3&) optixLaunchParams.vertexLists[meshID][indices.x];
+    const float3 &B = (float3&) optixLaunchParams.vertexLists[meshID][indices.y];
+    const float3 &C = (float3&) optixLaunchParams.vertexLists[meshID][indices.z];
+    edge1 = B - A;
+    edge2 = C - A;
+    position = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
+    geometricNormal = normalize(cross(B-A,C-A));
+}
+
+__device__
+void loadMeshUVData(int meshID, int3 indices, float2 barycentrics, float2 &uv, float2 &edge1, float2 &edge2)
+{
+    const float2 &A = (float2&) optixLaunchParams.texCoordLists[meshID][indices.x];
+    const float2 &B = (float2&) optixLaunchParams.texCoordLists[meshID][indices.y];
+    const float2 &C = (float2&) optixLaunchParams.texCoordLists[meshID][indices.z];
+    edge1 = B - A;
+    edge2 = C - A;
+    uv = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
+}
+
+__device__
+void loadMeshNormalData(int meshID, int3 indices, float2 barycentrics, float2 uv, float3 &normal, float3 &tangent, float3 &binormal)
+{
+    const float3 &A = (float3&) optixLaunchParams.normalLists[meshID][indices.x];
+    const float3 &B = (float3&) optixLaunchParams.normalLists[meshID][indices.y];
+    const float3 &C = (float3&) optixLaunchParams.normalLists[meshID][indices.z];
+    normal = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
+    normal = normalize(normal);
+    ortho_basis(tangent, binormal, normal);
+}
+
 __device__ 
-void loadMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float roughnessMinimum) {
+void loadDisneyMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float roughnessMinimum) {
 
     // uint32_t mask = __float_as_int(p.base_color.x);
     // if (IS_TEXTURED_PARAM(mask)) {
@@ -298,52 +336,121 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng);
         DisneyMaterial mat;
         int bounce = 0;
+        int visibilitySkips = 0;
+        float3 directIllum = make_float3(0.f);
         float3 illum = make_float3(0.f);
         float3 path_throughput = make_float3(1.f);
         uint16_t ray_count = 0;
         float roughnessMinimum = 0.f;
         RayPayload payload;
+        payload.tHit = -1.f;
         owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
                         /*the ray to trace*/ ray,
                         /*prd*/ payload);
 
-        // If ray misses, interpret normal as "miss color" assigned by miss program and move on to the next sample
+        // If ray misses
         if (payload.tHit <= 0.f) {
-            illum = payload.normal;
+            illum = missColor(ray) * optixLaunchParams.domeLightIntensity;
             primaryNormal = make_float3(0.f, 0.f, 1.f);
             primaryAlbedo = illum;
+            directIllum = illum;
         }
 
         // If we hit something, shade each hit point on a path using NEE with MIS
         else do {     
-            // Load common positions and vectors used for shading...
-            const float3 w_o = -ray.direction;
-            const float3 hit_p = ray.origin + payload.tHit * ray.direction;
-            float3 v_x, v_y;
-            float3 v_z = payload.normal;
-            float3 v_gz = payload.gnormal;
-            float2 uv = payload.uv;
-            if (mat.specular_transmission == 0.f) {
-                v_z = faceNormalForward(w_o, v_gz, v_z);
+            // Load common position, vectors, and material data used for shading...
+            const int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
+            EntityStruct entity = optixLaunchParams.entities[entityID];
+
+            // Skip forward if the hit object is invisible for this ray type
+            if ((bounce == 0) && ((entity.visibilityFlags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
+                ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
+                payload.tHit = -1.f;
+                owl::traceRay( optixLaunchParams.world, ray, payload);
+                visibilitySkips++;
+                if (visibilitySkips > 10) break; // avoid locking up.
+
+                // If ray misses
+                if (payload.tHit <= 0.f) {
+                    illum = missColor(ray) * optixLaunchParams.domeLightIntensity;
+                    primaryNormal = make_float3(0.f, 0.f, 1.f);
+                    primaryAlbedo = illum;
+                    directIllum = illum;
+                }
+                continue;
             }
-            ortho_basis(v_x, v_y, v_z);
 
-            // For segmentations, metadata extraction for applications like denoising or ML training
-            saveRenderData(renderData, bounce, payload.tHit, hit_p, v_z, payload.entityID);
-
-            // Load information about the hit entity
-            EntityStruct entity = optixLaunchParams.entities[payload.entityID];
             TransformStruct entityTransform = optixLaunchParams.transforms[entity.transform_id];
-            MaterialStruct entityMaterial; entityMaterial.base_color_texture_id = -1;
-            LightStruct entityLight;
+            MaterialStruct entityMaterial; LightStruct entityLight;
             if (entity.material_id >= 0 && entity.material_id < MAX_MATERIALS) {
                 entityMaterial = optixLaunchParams.materials[entity.material_id];
             }
-            loadMaterial(entityMaterial, payload.uv, mat, roughnessMinimum);
+            
+            const float3 w_o = -ray.direction;
+            float3 hit_p = ray.origin + payload.tHit * ray.direction;
+            float3 p, v_x, v_y, v_z, v_gz, p_e1, p_e2; float2 uv, uv_e1, uv_e2; int3 indices;
+            bool shouldNormalFaceForward = (entityMaterial.transmission == 0.f);
+            
+            loadMeshTriIndices(entity.mesh_id, payload.primitiveID, indices);
+            loadMeshVertexData(entity.mesh_id, indices, payload.barycentrics, p, v_gz, p_e1, p_e2);
+            loadMeshUVData(entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
+            loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_z, v_x, v_y);
+            loadDisneyMaterial(entityMaterial, uv, mat, roughnessMinimum);
+            
+            glm::mat4 xfm;
+            xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
+            xfm = glm::column(xfm, 1, vec4(payload.localToWorld[1], payload.localToWorld[5],  payload.localToWorld[9], 0.0f));
+            xfm = glm::column(xfm, 2, vec4(payload.localToWorld[2], payload.localToWorld[6],  payload.localToWorld[10], 0.0f));
+            xfm = glm::column(xfm, 3, vec4(payload.localToWorld[3], payload.localToWorld[7],  payload.localToWorld[11], 1.0f));
+            glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
 
+            // If the material has a normal map, load it. 
+            float f = 1.0f / (uv_e1.x * uv_e2.y - uv_e2.x * uv_e1.y);
+            vec3 tangent, binormal;
+            tangent.x = f * (uv_e2.y * p_e1.x - uv_e1.y * p_e2.x);
+            tangent.y = f * (uv_e2.y * p_e1.y - uv_e1.y * p_e2.y);
+            tangent.z = f * (uv_e2.y * p_e1.z - uv_e1.y * p_e2.z);
+            tangent = normalize(tangent);
+            v_z = normalize(v_z);            
+            
+            // Transform data into world space
+            p = make_float3(xfm * make_vec4(p, 1.0f));
+            hit_p = p;
+            v_gz = make_float3(normalize(nxfm * make_vec3(v_gz)));
+            v_z = make_float3(normalize(nxfm * make_vec3(v_z)));
+            v_x = make_float3(normalize(nxfm * tangent));
+            v_y = cross(v_z, v_x);
+            v_x = cross(v_y, v_z);
+
+            if (
+                all(lessThan(abs(make_vec3(v_x)), vec3(EPSILON))) || 
+                all(lessThan(abs(make_vec3(v_y)), vec3(EPSILON))) ||
+                any(isnan(make_vec3(v_x))) || 
+                any(isnan(make_vec3(v_y)))
+            ) {
+                ortho_basis(v_x, v_y, v_z);
+            }
+
+            glm::mat3 tbn;
+            tbn = glm::column(tbn, 0, make_vec3(v_x) );
+            tbn = glm::column(tbn, 1, make_vec3(v_y) );
+            tbn = glm::column(tbn, 2, make_vec3(v_z) );
+            
+            float3 dN = make_float3(sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float4(0.5f, .5f, 1.f, 0.f)));
+            dN = (dN * make_float3(2.0f)) - make_float3(1.f);   
+
+            v_z = make_float3(normalize(tbn * normalize(make_vec3(dN))) );
+
+            if (shouldNormalFaceForward) {
+                v_z = faceNormalForward(w_o, v_gz, v_z);
+            }
+
+            // For segmentations, metadata extraction for applications like denoising or ML training
+            saveRenderData(renderData, bounce, payload.tHit, hit_p, v_z, entityID);
+                        
             // If this is the first hit, keep track of primary albedo and normal for denoising.
             if (bounce == 0) {
-                primaryNormal = payload.normal;
+                primaryNormal = v_z;
                 primaryAlbedo = mat.base_color;
             }
 
@@ -357,8 +464,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     if (entityLight.color_texture_id == -1) light_emission = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
                     else light_emission = make_float3(sampleTexture(entityLight.color_texture_id, uv, make_float4(entityLight.r, entityLight.g, entityLight.b, 1.f))); // * intensity; temporarily commenting out to show texture for bright lights in LDR
                     illum = light_emission; 
-                    primaryNormal = payload.normal;
-                    primaryAlbedo = mat.base_color;
+                    directIllum = illum;
                 }
                 break;
             }
@@ -435,7 +541,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
                     sampleTriangle(pos, N, v1, v2, v3, uv1, uv2, uv3, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf, uv);
                     vec3 normal = glm::vec3(n_l.x, n_l.y, n_l.z);
-                    float dotNWi = (dot(dir, normal));     
+                    float dotNWi = fabs(dot(dir, normal)); // for now, making all lights double sided.
+                    light_pdf = abs(light_pdf);
                     
                     float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
                     float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, make_float2(uv.x, uv.y), default_light_emission)) * light_light.intensity;
@@ -446,14 +553,16 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         float bsdf_pdf = disney_pdf(mat, n_l, w_o, light_dir, v_x, v_y);
                         if (bsdf_pdf > EPSILON) {
                             RayPayload payload;
-                            payload.entityID = -1;
                             owl::Ray ray;
                             ray.tmin = EPSILON * 10.f;
                             ray.tmax = 1e20f;
                             ray.origin = hit_p;
                             ray.direction = light_dir;
+                            payload.tHit = -1.f;
                             owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
-                            bool visible = ((payload.entityID == sampledLightID) || (payload.entityID == -1));
+                            if (payload.instanceID == -1) continue;
+                            int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
+                            bool visible = ((entityID == sampledLightID) || (entityID == -1));
                             if (visible) {
                                 float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
                                 float3 bsdf = disney_brdf(mat, n_l, w_o, light_dir, v_x, v_y, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP);
@@ -481,20 +590,41 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.origin = hit_p;// + v_z * .1;
             ray.direction = w_i;
             ray.tmin = EPSILON * 100.f;
+            payload.tHit = -1.f;
             owl::traceRay(optixLaunchParams.world, ray, payload);
 
-            if (light_pdf > EPSILON) {
+            if (light_pdf > EPSILON) 
+            {
                 // if by sampling the brdf we also hit the light source...
-                bool visible = (payload.entityID == sampledLightID);
+                if (payload.instanceID == -1) continue;
+                int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
+                bool visible = (entityID == sampledLightID);
                 if (visible) {
-                    float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
-                    float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, make_float2(payload.uv.x, payload.uv.y), default_light_emission)) * light_light.intensity;
+                    int3 indices; float3 p, p_e1, p_e2; float3 v_gz; float2 uv, uv_e1, uv_e2;
+                    loadMeshTriIndices(light_entity.mesh_id, payload.primitiveID, indices);
+                    loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, v_gz, p_e1, p_e2);
+                    loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
 
-                    float dist = distance(vec3(hit_p.x, hit_p.y, hit_p.z ), vec3(ray.origin.x, ray.origin.y, ray.origin.z));
-                    float dotNWi = dot(payload.normal, ray.direction);
-                    float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
-                    float3 Li = lightEmission * w / bsdf_pdf;
-                    irradiance = irradiance + (bsdf * Li * fabs(dotNWi));
+                    // Transform data into world space
+                    glm::mat4 xfm;
+                    xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
+                    xfm = glm::column(xfm, 1, vec4(payload.localToWorld[1], payload.localToWorld[5],  payload.localToWorld[9], 0.0f));
+                    xfm = glm::column(xfm, 2, vec4(payload.localToWorld[2], payload.localToWorld[6],  payload.localToWorld[10], 0.0f));
+                    xfm = glm::column(xfm, 3, vec4(payload.localToWorld[3], payload.localToWorld[7],  payload.localToWorld[11], 1.0f));
+                    glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
+                    p = make_float3(xfm * make_vec4(p, 1.0f));
+                    v_gz = make_float3(normalize(nxfm * normalize(make_vec3(v_gz))));
+
+                    float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
+                    float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, uv, default_light_emission)) * light_light.intensity;
+
+                    float dist = distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
+                    float dotNWi = fabs(dot(-v_gz, ray.direction)); // for now, making all lights double sided.
+                    if (dotNWi > 0.f){
+                        float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
+                        float3 Li = lightEmission * w / bsdf_pdf;
+                        irradiance = irradiance + (bsdf * Li * fabs(dotNWi)); // missing r^2 falloff?
+                    }
                 }
             }
 
@@ -502,21 +632,25 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             illum = illum + path_throughput * irradiance;
             path_throughput = path_throughput * bsdf / bsdf_pdf;
 
-            if (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON) {
+            // If ray misses, interpret normal as "miss color" assigned by miss program and move on to the next sample
+            if (payload.tHit <= 0.f) {
+                illum = illum + path_throughput * missColor(ray) * optixLaunchParams.domeLightIntensity;
+            }
+            
+            if (bounce == 0) {
+                directIllum = illum;
+            }
+
+            if ((payload.tHit <= 0.0f) || (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON)) {
                 break;
             }
 
             // // Do path regularization to reduce fireflies
             // // Note, .35f was chosen emperically, but could be exposed as a parameter later on.
+            // EDIT: finding that path regularization doesn't generalize well with transmissive objects...
             // if (sampledSpecular) {
             //     roughnessMinimum = min((roughnessMinimum + .35f), 1.f);
             // }
-
-            // If ray misses, interpret normal as "miss color" assigned by miss program and move on to the next sample
-            if (payload.tHit <= 0.f) {
-                illum = illum + path_throughput * payload.normal;
-                break;
-            }
 
             // if the bounce count is less than the max bounce count, potentially add on radiance from the next hit location.
             ++bounce;            
@@ -524,7 +658,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // clamp out any extreme fireflies
         glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
-        gillum = clamp(gillum, vec3(0.f), vec3(10.f));
+        glm::vec3 dillum = vec3(directIllum.x, directIllum.y, directIllum.z);
+        glm::vec3 iillum = gillum - dillum;
+
+        if (optixLaunchParams.indirectClamp > 0.f)
+            iillum = clamp(iillum, vec3(0.f), vec3(optixLaunchParams.indirectClamp));
+        if (optixLaunchParams.directClamp > 0.f)
+            dillum = clamp(dillum, vec3(0.f), vec3(optixLaunchParams.directClamp));
+
+        gillum = dillum + iillum;
 
         // just in case we get inf's or nans, remove them.
         if (glm::any(glm::isnan(gillum))) gillum = vec3(0.f);

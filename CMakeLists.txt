@@ -132,13 +132,12 @@ include(${SWIG_USE_FILE})
 # python
 if (EXISTS ${Python_ROOT_DIR})
   set(Python_FIND_STRATEGY "LOCATION")
-  message(WARN "${Python_ROOT_DIR}") 
 endif()
 
-message(WARN "PYTHON_INCLUDE_DIR SET TO " ${PYTHON_INCLUDE_DIR})
-message(WARN "PYTHON_LIBRARY SET TO " ${PYTHON_LIBRARY})
-message(WARN "PYTHON_EXECUTABLE SET TO " ${PYTHON_EXECUTABLE})
-
+# On windows, require finding python always.
+# On unix, since we only require the include dir, it's useful to be able to specify this include
+# dir on commandline when building artifacts on the CI machines. Don't find python if a custom include
+# dir is specified.
 if(WIN32 OR NOT Python_INCLUDE_DIRS)
 set(PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
 if(PYTHON_VERSION)
@@ -147,9 +146,6 @@ else()
   find_package(Python  COMPONENTS Development)
 endif()
 endif()
-
-message(WARN "PYTHON_INCLUDE_DIRS SET TO " ${Python_INCLUDE_DIRS})
-message(WARN "PYTHON_LIBRARIES SET TO " ${Python_LIBRARIES})
 
 if (UNIX AND NOT Python_INCLUDE_DIRS)
   message(FATAL_ERROR "Python development headers missing!"

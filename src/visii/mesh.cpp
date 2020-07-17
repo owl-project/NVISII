@@ -364,18 +364,16 @@ glm::vec3 Mesh::getAabbCenter()
 // 	// device.freeMemory(texCoordBufferMemory);
 // }
 
-void Mesh::cleanUp()
+void Mesh::clearAll()
 {
 	if (!isFactoryInitialized()) return;
 
 	for (auto &mesh : meshes) {
 		if (mesh.initialized) {
 			// mesh.cleanup();
-			Mesh::remove(mesh.id);
+			Mesh::remove(mesh.name);
 		}
 	}
-
-	factoryInitialized = false;
 }
 
 void Mesh::initializeFactory() {
@@ -1512,10 +1510,6 @@ Mesh* Mesh::get(std::string name) {
 	return StaticFactory::get(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 }
 
-Mesh* Mesh::get(uint32_t id) {
-	return StaticFactory::get(editMutex, id, "Mesh", lookupTable, meshes, MAX_MESHES);
-}
-
 Mesh* Mesh::createBox(std::string name, glm::vec3 size, glm::ivec3 segments)
 {
 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
@@ -2121,11 +2115,6 @@ Mesh* Mesh::createFromData (
 
 void Mesh::remove(std::string name) {
 	StaticFactory::remove(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	anyDirty = true;
-}
-
-void Mesh::remove(uint32_t id) {
-	StaticFactory::remove(editMutex, id, "Mesh", lookupTable, meshes, MAX_MESHES);
 	anyDirty = true;
 }
 
