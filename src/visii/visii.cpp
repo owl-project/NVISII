@@ -82,6 +82,7 @@ static struct OptixData {
     OWLBuffer lightEntitiesBuffer;
     OWLBuffer instanceToEntityMapBuffer;
     OWLBuffer vertexListsBuffer;
+    OWLBuffer normalListsBuffer;
     OWLBuffer texCoordListsBuffer;
     OWLBuffer indexListsBuffer;
     OWLBuffer textureObjectsBuffer;
@@ -520,6 +521,7 @@ void initializeOptix(bool headless)
         { "textures",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
         { "lightEntities",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
         { "vertexLists",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
+        { "normalLists",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, normalLists)},
         { "texCoordLists",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, texCoordLists)},
         { "indexLists",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, indexLists)},
         { "numLightEntities",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
@@ -564,6 +566,7 @@ void initializeOptix(bool headless)
     OD.lightEntitiesBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*),               MAX_MESHES,     nullptr);
+    OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*),               MAX_MESHES,     nullptr);
     OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2*),               MAX_MESHES,     nullptr);
     OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_USER_TYPE(ivec3*),              MAX_MESHES,     nullptr);
     OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_USER_TYPE(cudaTextureObject_t), MAX_TEXTURES,   nullptr);
@@ -577,6 +580,7 @@ void initializeOptix(bool headless)
     launchParamsSetBuffer(OD.launchParams, "lightEntities",       OD.lightEntitiesBuffer);
     launchParamsSetBuffer(OD.launchParams, "instanceToEntityMap", OD.instanceToEntityMapBuffer);
     launchParamsSetBuffer(OD.launchParams, "vertexLists",         OD.vertexListsBuffer);
+    launchParamsSetBuffer(OD.launchParams, "normalLists",         OD.normalListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "texCoordLists",       OD.texCoordListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "indexLists",          OD.indexListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "textureObjects",      OD.textureObjectsBuffer);
@@ -603,14 +607,7 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
     launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
 
-    OWLVarDecl trianglesGeomVars[] = {
-        { "index",      OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,index)},
-        { "vertex",     OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,vertex)},
-        { "colors",     OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,colors)},
-        { "normals",    OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,normals)},
-        { "texcoords",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData,texcoords)},
-        {/* sentinel to mark end of list */}
-    };
+    OWLVarDecl trianglesGeomVars[] = {{/* sentinel to mark end of list */}};
     OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
     
     /* Temporary test code */
@@ -625,11 +622,6 @@ void initializeOptix(bool headless)
     OWLGeom trianglesGeom = geomCreate(OD.context,OD.trianglesGeomType);
     trianglesSetVertices(trianglesGeom,vertexBuffer,NUM_VERTICES,sizeof(vec3),0);
     trianglesSetIndices(trianglesGeom,indexBuffer, NUM_INDICES,sizeof(ivec3),0);
-    geomSetBuffer(trianglesGeom,"vertex",nullptr);
-    geomSetBuffer(trianglesGeom,"index",nullptr);
-    geomSetBuffer(trianglesGeom,"colors",nullptr);
-    geomSetBuffer(trianglesGeom,"normals",nullptr);
-    geomSetBuffer(trianglesGeom,"texcoords",nullptr);
     OWLGroup trianglesGroup = trianglesGeomGroupCreate(OD.context,1,&trianglesGeom);
     groupBuildAccel(trianglesGroup);
     OWLGroup world = instanceGroupCreate(OD.context, 1);
@@ -725,17 +717,13 @@ void updateComponents()
             OD.meshes[mid].geom      = geomCreate(OD.context, OD.trianglesGeomType);
             trianglesSetVertices(OD.meshes[mid].geom, OD.meshes[mid].vertices, meshes[mid].getVertices().size(), sizeof(vec4), 0);
             trianglesSetIndices(OD.meshes[mid].geom, OD.meshes[mid].indices, meshes[mid].getTriangleIndices().size() / 3, sizeof(ivec3), 0);
-            geomSetBuffer(OD.meshes[mid].geom,"vertex", OD.meshes[mid].vertices);
-            geomSetBuffer(OD.meshes[mid].geom,"index", OD.meshes[mid].indices);
-            geomSetBuffer(OD.meshes[mid].geom,"colors", OD.meshes[mid].colors);
-            geomSetBuffer(OD.meshes[mid].geom,"normals", OD.meshes[mid].normals);
-            geomSetBuffer(OD.meshes[mid].geom,"texcoords", OD.meshes[mid].texCoords);
             OD.meshes[mid].blas = trianglesGeomGroupCreate(OD.context, 1, &OD.meshes[mid].geom);
             groupBuildAccel(OD.meshes[mid].blas);          
         }
 
         std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
         std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
+        std::vector<vec4*> normalLists(Mesh::getCount(), nullptr);
         std::vector<vec2*> texCoordLists(Mesh::getCount(), nullptr);
         for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
             // If a mesh is initialized, vertex and index buffers should already be created, and so 
@@ -748,12 +736,14 @@ void updateComponents()
                 throw std::runtime_error("ERROR: vertices/indices is nullptr");
             }
             vertexLists[mid] = ((vec4*) bufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
+            normalLists[mid] = ((vec4*) bufferGetPointer(OD.meshes[mid].normals, /* device */ 0));
             texCoordLists[mid] = ((vec2*) bufferGetPointer(OD.meshes[mid].texCoords, /* device */ 0));
             indexLists[mid] = ((ivec3*) bufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
         }
         bufferUpload(OD.vertexListsBuffer, vertexLists.data());
         bufferUpload(OD.texCoordListsBuffer, texCoordLists.data());
         bufferUpload(OD.indexListsBuffer, indexLists.data());
+        bufferUpload(OD.normalListsBuffer, normalLists.data());
         Mesh::updateComponents();
         bufferUpload(OptixData.meshBuffer, Mesh::getFrontStruct());
     }
@@ -823,7 +813,7 @@ void updateComponents()
                 OD.textureObjects[tid] = texture2DCreate(
                     OD.context, OWL_TEXEL_FORMAT_RGBA32F,
                     textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
-                    OWL_TEXTURE_NEAREST);        
+                    OWL_TEXTURE_LINEAR);        
             }
             textureObjects[tid] = textureGetObject(OD.textureObjects[tid], 0);
         }

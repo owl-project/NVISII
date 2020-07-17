@@ -43,7 +43,7 @@ Material::Material(std::string name, uint32_t id)
 	materialStructs[id].roughness_texture_id = -1;
 	materialStructs[id].occlusion_texture_id = -1;
 	materialStructs[id].alpha_texture_id = -1;
-	materialStructs[id].bump_texture_id = -1;
+	materialStructs[id].normal_map_texture_id = -1;
 	materialStructs[id].subsurface_color_texture_id = -1;
 	materialStructs[id].subsurface_radius_texture_id = -1;
 	materialStructs[id].subsurface_texture_id = -1;
@@ -620,16 +620,16 @@ void Material::clearTransmissionRoughnessTexture() {
 // 	return ((this->material_struct.flags & (1 << MaterialFlags::MATERIAL_FLAGS_HIDDEN)) != 0);
 // }
 
-void Material::setBumpTexture(Texture *texture)
+void Material::setNormalMapTexture(Texture *texture)
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].bump_texture_id = texture->getId();
+	materialStructs[id].normal_map_texture_id = texture->getId();
 	markDirty();
 }
 
-void Material::clearBumpTexture()
+void Material::clearNormalMapTexture()
 {
-	materialStructs[id].bump_texture_id = -1;
+	materialStructs[id].normal_map_texture_id = -1;
 	markDirty();
 }
 

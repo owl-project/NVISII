@@ -2,9 +2,11 @@
 
 ![ViSII domain randomization examples](https://imgur.com/5sfS6YD.jpg)
 
-ViSII is a python based ray tracer render built on top of NVIDIA OptiX. 
+ViSII is a python-enabled ray tracing based renderer built on top of NVIDIA OptiX (C++/CUDA backend). 
 The tool allows you to define complex scenes: 3d meshes, object materials, lights, loading textures, _etc._, and render 
 them using ray tracing techniques. 
+A scene can be described in many ways, you can use our simple mesh definitions, use multiple obj files, or 
+load a complex scene defined in an obj file.
 ViSII can be used to export metadata about the scene, _e.g._, object segmentation. 
 
 

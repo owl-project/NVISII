@@ -10,11 +10,27 @@ __device__ float4 make_float4(float3 v, float c) {
 	return make_float4(v.x, v.y, v.z, c);
 }
 
+__device__ float4 make_float4(glm::vec3 v, float c) {
+	return make_float4(v.x, v.y, v.z, c);
+}
+
+__device__ float4 make_float4(glm::vec4 v) {
+	return make_float4(v.x, v.y, v.z, v.w);
+}
+
 __device__ float3 make_float3(float c) {
 	return make_float3(c, c, c);
 }
 
 __device__ float3 make_float3(float4 v) {
+	return make_float3(v.x, v.y, v.z);
+}
+
+__device__ float3 make_float3(glm::vec4 v) {
+	return make_float3(v.x, v.y, v.z);
+}
+
+__device__ float3 make_float3(glm::vec3 v) {
 	return make_float3(v.x, v.y, v.z);
 }
 
@@ -24,6 +40,26 @@ __device__ float2 make_float2(float c) {
 
 __device__ float2 make_float2(uint2 v) {
 	return make_float2(v.x, v.y);
+}
+
+__device__ float2 make_float2(glm::vec2 v) {
+	return make_float2(v.x, v.y);
+}
+
+__device__ glm::vec4 make_vec4(float4 v) {
+	return glm::vec4(v.x, v.y, v.z, v.w);
+}
+
+__device__ glm::vec4 make_vec4(float3 v, float c) {
+	return glm::vec4(v.x, v.y, v.z, c);
+}
+
+__device__ glm::vec3 make_vec3(float3 v) {
+	return glm::vec3(v.x, v.y, v.z);
+}
+
+__device__ glm::vec2 make_vec2(float2 v) {
+	return glm::vec2(v.x, v.y);
 }
 
 __device__ float length(const float3 &v) {

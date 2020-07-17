@@ -184,6 +184,12 @@ public:
 	/** @returns a reference to the connected mesh component, or None/nullptr if no component is connected. */
 	Mesh* getMesh();
 
+	/**
+	 * Objects can be set to be invisible to particular ray types:
+	 * @camera Makes the object visible to camera rays
+	*/
+	void setVisibility(bool camera = true);
+
 	/** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
 	static std::shared_ptr<std::mutex> getEditMutex();
 };

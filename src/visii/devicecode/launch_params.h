@@ -39,6 +39,7 @@ struct LaunchParams {
     uint32_t         numLightEntities = 0;
 
     vec4 **vertexLists = nullptr;
+    vec4 **normalLists = nullptr;
     vec2 **texCoordLists = nullptr;
     ivec3 **indexLists = nullptr;
 

@@ -567,9 +567,12 @@ class Mesh : public StaticFactory
 			vec2 size = vec2(1., 1.),
 			ivec2 segments = ivec2(8, 8));
 
-		/// Creates a mesh component from an OBJ file (ignoring any .mtl files) 
-		/// @param name The name (used as a primary key) for this mesh component
-		/// @param path A path to the OBJ file.
+		/** 
+		 * Creates a mesh component from an OBJ file (ignoring any .mtl files) 
+		 * 
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param path A path to the OBJ file.
+		*/
 		static Mesh* createFromObj(std::string name, std::string path);
 
 		// /* Creates a mesh component from an ASCII STL file */
@@ -583,9 +586,11 @@ class Mesh : public StaticFactory
 		
 		/**
 		 * Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates, 
-		 *	and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length
-		 *	as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other
-		 *	supplied per vertex data must be a multiple of 3 in length. 
+		 * and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length
+		 * as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other
+		 * supplied per vertex data must be a multiple of 3 in length. 
+		 * 
+		 * @param name The name (used as a primary key) for this mesh component
 		 * @param positions A list of 3D vertex positions. If indices aren't supplied, this must be a multiple of 3.
 		 * @param normals A list of 3D vertex normals. If indices aren't supplied, this must be a multiple of 3.
 		 * @param colors A list of per-vertex colors. If indices aren't supplied, this must be a multiple of 3.

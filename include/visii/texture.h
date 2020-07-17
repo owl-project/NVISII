@@ -24,18 +24,19 @@ class Texture : public StaticFactory
 	 * Constructs a Texture with the given name from a image located on the filesystem. 
 	 * Supported formats include JPEG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, and PNM
 	 * @param path The path to the image.
+	 * @param linear Indicates the image to load should not be gamma corrected.
      * @returns a Texture allocated by the renderer. 
 	*/
-	static Texture *createFromImage(std::string name, std::string path);
+	static Texture *createFromImage(std::string name, std::string path, bool linear = false);
 
 	/** 
 	 * Constructs a Texture with the given name from custom user data.
 	 * @param width The width of the image.
 	 * @param height The height of the image.
-	 * @param data A row major flattened vector of RGBA texels.
+	 * @param data A row major flattened vector of RGBA texels. The length of this vector should be 4 * width * height.
      * @returns a Texture allocated by the renderer. 
 	*/
-	static Texture *createFromData(std::string name, uint32_t width, uint32_t height, std::vector<glm::vec4> data);
+	static Texture *createFromData(std::string name, uint32_t width, uint32_t height, std::vector<float> data);
 
     /**
      * @param name The name of the Texture to get

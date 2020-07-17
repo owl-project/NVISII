@@ -48,7 +48,7 @@ void setIndirectLightingClamp(float clamp);
 void setDirectLightingClamp(float clamp);
 
 /**
-   If using interactive mode, resizes the window to the specified dimentions.
+   If using interactive mode, resizes the window to the specified dimensions.
 */
 void resizeWindow(uint32_t width, uint32_t height);
 
