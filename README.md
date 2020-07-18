@@ -1,6 +1,6 @@
 # ViSII - A VIrtual Scene Imaging Interface
 
-![ViSII domain randomization examples](https://imgur.com/5sfS6YD.jpg)
+![ViSII domain randomization examples](https://imgur.com/DomCxGy)
 
 ViSII is a python-enabled ray tracing based renderer built on top of NVIDIA OptiX (C++/CUDA backend). 
 The tool allows you to define complex scenes: 3d meshes, object materials, lights, loading textures, _etc._, and render 
@@ -109,7 +109,7 @@ todo: need (at least) the following samples
 
 - load an OBJ file, declare camera and light, render an image, save as ppm
 
-- same as before, but do simple omdification of scene (ie, rotate it)
+- same as before, but do simple modification of scene (ie, rotate it)
 
 - same as before, but two scene (probably need way of "naming" objects when loading), with one rotating around the other
 
