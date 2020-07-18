@@ -21,16 +21,14 @@ struct RayPayload {
 inline __device__
 vec2 toSpherical(vec3 dir) {
     dir = normalize(dir);
-    float u = atan(dir.z, dir.x) / (2.0 * 3.1415926535897932384626433832795) + .5;
-    float v = asin(dir.y) / 3.1415926535897932384626433832795 + .5;
-    return vec2(u, (1.0 - v));
+    float u = atan(dir.z, dir.x) / (2.0f * 3.1415926535897932384626433832795f) + .5f;
+    float v = asin(dir.y) / 3.1415926535897932384626433832795f + .5f;
+    return vec2(u, (1.0f - v));
 }
 
 inline __device__
 float3 missColor(const owl::Ray &ray)
 {
-    // return make_float3(.5f);
-
     auto pixelID = owl::getLaunchIndex();
 
     float3 rayDir = normalize(ray.direction);
@@ -52,12 +50,6 @@ float3 missColor(const owl::Ray &ray)
 OPTIX_MISS_PROGRAM(miss)()
 {
 }
-// RayPayload &payload = get_payload<RayPayload>();
-// payload.tHit = -1.f;
-// payload.entityID = -1;
-// owl::Ray ray;
-// ray.direction = optixGetWorldRayDirection();
-// payload.normal = missColor(ray) * optixLaunchParams.domeLightIntensity;
 
 OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 {
@@ -67,55 +59,6 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     prd.primitiveID = optixGetPrimitiveIndex();
     prd.tHit = optixGetRayTmax();
     optixGetObjectToWorldTransformMatrix(prd.localToWorld);
-
-
-    // const TrianglesGeomData &self = owl::getProgramData<TrianglesGeomData>();
-    
-    
-    // const float2 bc    = optixGetTriangleBarycentrics();
-    // const int instID   = optixGetInstanceIndex();
-    // const int primID   = optixGetPrimitiveIndex();
-    // const int entityID = optixLaunchParams.instanceToEntityMap[instID];
-    // const ivec3 index  = self.index[primID];
-    // float localToWorld[12];
-
-    
-    // compute position: (actually not needed. implicit via tMax )
-    // vec3 V;
-    // {
-    //     const vec3 &A      = self.vertex[index.x];
-    //     const vec3 &B      = self.vertex[index.y];
-    //     const vec3 &C      = self.vertex[index.z];
-    //     V = A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y;
-    // }
-
-    // // compute normal:
-    // float3 N, GN;
-
-    // const float3 &A      = (float3&) self.vertex[index.x];
-    // const float3 &B      = (float3&) self.vertex[index.y];
-    // const float3 &C      = (float3&) self.vertex[index.z];
-    // GN = normalize(cross(B-A,C-A));
-    
-    // if (self.normals) {
-    //     const float3 &A = (float3&) self.normals[index.x];
-    //     const float3 &B = (float3&) self.normals[index.y];
-    //     const float3 &C = (float3&) self.normals[index.z];
-    //     N = normalize(A * (1.f - (bc.x + bc.y)) + B * bc.x + C * bc.y);
-    // } else {
-    //     N = GN;
-    // }
-
-    // GN = normalize(optixTransformNormalFromObjectToWorldSpace(GN));
-    // N = normalize(optixTransformNormalFromObjectToWorldSpace(N));
-    // // normalize(transpose(mat3(gl_WorldToObjectNV)) * payload.m_n);
-    // // N  = normalize(transpose(mat3(gl_WorldToObjectNV)) * payload.m_n);
-
-    // // store data in payload
-    // prd.entityID = entityID;
-    // prd.uv = UV;
-    // prd.normal = N;
-    // prd.gnormal = GN;
 }
 
 inline __device__
