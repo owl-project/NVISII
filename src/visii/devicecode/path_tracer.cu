@@ -75,7 +75,7 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
 
 inline __device__ 
 float4 sampleTexture(int32_t textureId, float2 texCoord, float4 defaultValue) {
-    if (textureId < 0 || textureId > MAX_TEXTURES) return defaultValue;
+    if (textureId < 0 || textureId >= MAX_TEXTURES) return defaultValue;
     cudaTextureObject_t tex = optixLaunchParams.textureObjects[textureId];
     if (!tex) return defaultValue;
     return tex2D<float4>(tex, texCoord.x, texCoord.y);
@@ -124,14 +124,6 @@ void loadMeshNormalData(int meshID, int3 indices, float2 barycentrics, float2 uv
 
 __device__ 
 void loadDisneyMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float roughnessMinimum) {
-
-    // uint32_t mask = __float_as_int(p.base_color.x);
-    // if (IS_TEXTURED_PARAM(mask)) {
-    //     const uint32_t tex_id = GET_TEXTURE_ID(mask);
-    //     mat.base_color = make_float3(tex2D<float4>(launch_params.textures[tex_id], uv.x, uv.y));
-    // } else {
-        // }
-        
     mat.base_color = make_float3(sampleTexture(p.base_color_texture_id, uv, make_float4(p.base_color.x, p.base_color.y, p.base_color.z, 1.f)));
     mat.metallic = sampleTexture(p.metallic_texture_id, uv, make_float4(p.metallic)).x;
     mat.specular = sampleTexture(p.specular_texture_id, uv, make_float4(p.specular)).x;
