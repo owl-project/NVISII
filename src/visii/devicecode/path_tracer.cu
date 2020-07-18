@@ -112,14 +112,12 @@ void loadMeshUVData(int meshID, int3 indices, float2 barycentrics, float2 &uv, f
 }
 
 __device__
-void loadMeshNormalData(int meshID, int3 indices, float2 barycentrics, float2 uv, float3 &normal, float3 &tangent, float3 &binormal)
+void loadMeshNormalData(int meshID, int3 indices, float2 barycentrics, float2 uv, float3 &normal)
 {
     const float3 &A = (float3&) optixLaunchParams.normalLists[meshID][indices.x];
     const float3 &B = (float3&) optixLaunchParams.normalLists[meshID][indices.y];
     const float3 &C = (float3&) optixLaunchParams.normalLists[meshID][indices.z];
     normal = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
-    normal = normalize(normal);
-    ortho_basis(tangent, binormal, normal);
 }
 
 __device__ 
@@ -329,7 +327,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             loadMeshTriIndices(entity.mesh_id, payload.primitiveID, indices);
             loadMeshVertexData(entity.mesh_id, indices, payload.barycentrics, p, v_gz, p_e1, p_e2);
             loadMeshUVData(entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
-            loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_z, v_x, v_y);
+            loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_z);
             loadDisneyMaterial(entityMaterial, uv, mat, roughnessMinimum);
             
             glm::mat4 xfm;
