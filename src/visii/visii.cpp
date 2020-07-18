@@ -201,6 +201,7 @@ int getDeviceCount() {
 OWLContext contextCreate()
 {
     OWLContext context = owlContextCreate(/*requested Device IDs*/ nullptr, /* Num Devices */  0);
+    owlEnableMotionBlur(context);
     cudaSetDevice(0); // OWL leaves the device as num_devices - 1 after the context is created. set it back to 0.
     return context;
 }
@@ -754,7 +755,8 @@ void updateComponents()
         std::lock_guard<std::mutex> lock(*mutex.get());
 
         std::vector<OWLGroup> instances;
-        std::vector<glm::mat4> instanceTransforms;
+        std::vector<glm::mat4> t0InstanceTransforms;
+        std::vector<glm::mat4> t1InstanceTransforms;
         std::vector<uint32_t> instanceToEntityMap;
         Entity* entities = Entity::getFront();
         for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
@@ -767,17 +769,39 @@ void updateComponents()
             OWLGroup blas = OD.meshes[entities[eid].getMesh()->getId()].blas;
             if (!blas) return;
             glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix();
+            glm::mat4 nextLocalToWorld = entities[eid].getTransform()->getNextLocalToWorldMatrix();
             instances.push_back(blas);
-            instanceTransforms.push_back(localToWorld);            
+            t0InstanceTransforms.push_back(localToWorld);            
+            t1InstanceTransforms.push_back(nextLocalToWorld);            
             instanceToEntityMap.push_back(eid);
         }
 
+        std::vector<owl4x3f>     t0Transforms;
+        std::vector<owl4x3f>     t1Transforms;
         OD.tlas = instanceGroupCreate(OD.context, instances.size());
         for (uint32_t iid = 0; iid < instances.size(); ++iid) {
             instanceGroupSetChild(OD.tlas, iid, instances[iid]); 
-            glm::mat4 xfm = instanceTransforms[iid];
-            instanceGroupSetTransform(OD.tlas, iid, xfm);
+            glm::mat4 xfm0 = t0InstanceTransforms[iid];
+            glm::mat4 xfm1 = t1InstanceTransforms[iid];
+            
+            owl4x3f oxfm0 = {
+                {xfm0[0][0], xfm0[0][1], xfm0[0][2]}, 
+                {xfm0[1][0], xfm0[1][1], xfm0[1][2]}, 
+                {xfm0[2][0], xfm0[2][1], xfm0[2][2]},
+                {xfm0[3][0], xfm0[3][1], xfm0[3][2]}};
+            t0Transforms.push_back(oxfm0);
+
+            owl4x3f oxfm1 = {
+                {xfm1[0][0], xfm1[0][1], xfm1[0][2]}, 
+                {xfm1[1][0], xfm1[1][1], xfm1[1][2]}, 
+                {xfm1[2][0], xfm1[2][1], xfm1[2][2]},
+                {xfm1[3][0], xfm1[3][1], xfm1[3][2]}};
+            t1Transforms.push_back(oxfm1);
         }
+        
+        owlInstanceGroupSetTransforms(OD.tlas,0,(const float*)t0Transforms.data());
+        owlInstanceGroupSetTransforms(OD.tlas,1,(const float*)t1Transforms.data());
+
         bufferResize(OD.instanceToEntityMapBuffer, instanceToEntityMap.size());
         bufferUpload(OD.instanceToEntityMapBuffer, instanceToEntityMap.data());
         groupBuildAccel(OD.tlas);

@@ -320,6 +320,9 @@ void Transform::updateRotation()
 {
 	localToParentRotation = glm::toMat4(rotation);
 	parentToLocalRotation = glm::inverse(localToParentRotation);
+
+	nextLocalToParentRotation = glm::toMat4(angularVelocity * rotation);
+	nextParentToLocalRotation = glm::inverse(localToParentRotation);
 	updateMatrix();
 	markDirty();
 }
@@ -358,6 +361,27 @@ void Transform::addPosition(vec3 additionalPosition)
 	markDirty();
 }
 
+void Transform::setLinearVelocity(vec3 newLinearVelocity)
+{
+	linearVelocity = newLinearVelocity;
+	updatePosition();
+	markDirty();
+}
+
+void Transform::setAngularVelocity(quat newAngularVelocity)
+{
+	angularVelocity = newAngularVelocity;
+	updateRotation();
+	markDirty();
+}
+
+void Transform::setScalarVelocity(vec3 newScalarVelocity)
+{
+	scalarVelocity = newScalarVelocity;
+	updateScale();
+	markDirty();
+}
+
 // void Transform::setPosition(float x, float y, float z)
 // {
 // 	setPosition(glm::vec3(x, y, z));
@@ -374,6 +398,8 @@ void Transform::updatePosition()
 {
 	localToParentTranslation = glm::translate(glm::mat4(1.0), position);
 	parentToLocalTranslation = glm::translate(glm::mat4(1.0), -position);
+	nextLocalToParentTranslation = glm::translate(glm::mat4(1.0), position + linearVelocity);
+	nextParentToLocalTranslation = glm::translate(glm::mat4(1.0), -position + linearVelocity);
 	updateMatrix();
 	markDirty();
 }
@@ -426,6 +452,8 @@ void Transform::updateScale()
 {
 	localToParentScale = glm::scale(glm::mat4(1.0), scale);
 	parentToLocalScale = glm::scale(glm::mat4(1.0), glm::vec3(1.0 / scale.x, 1.0 / scale.y, 1.0 / scale.z));
+	nextLocalToParentScale = glm::scale(glm::mat4(1.0), scale + scalarVelocity);
+	nextParentToLocalScale = glm::scale(glm::mat4(1.0), glm::vec3(1.0 / (scale.x + scalarVelocity.x), 1.0 / (scale.y + scalarVelocity.y), 1.0 / (scale.z + scalarVelocity.z)));
 	updateMatrix();
 	markDirty();
 }
@@ -434,6 +462,9 @@ void Transform::updateMatrix()
 {
 	localToParentMatrix = (localToParentTransform * localToParentTranslation * localToParentRotation * localToParentScale);
 	parentToLocalMatrix = (parentToLocalScale * parentToLocalRotation * parentToLocalTranslation * parentToLocalTransform);
+
+	nextLocalToParentMatrix = (localToParentTransform * nextLocalToParentTranslation * nextLocalToParentRotation * nextLocalToParentScale);
+	nextParentToLocalMatrix = (nextParentToLocalScale * nextParentToLocalRotation * nextParentToLocalTranslation * parentToLocalTransform);
 
 	right = glm::vec3(localToParentMatrix[0]);
 	up = glm::vec3(localToParentMatrix[1]);
@@ -454,11 +485,23 @@ glm::mat4 Transform::computeWorldToLocalMatrix()
 	else return getParentToLocalMatrix();
 }
 
+glm::mat4 Transform::computeNextWorldToLocalMatrix()
+{
+	glm::mat4 parentMatrix = glm::mat4(1.0);
+	if (parent != -1) {
+		parentMatrix = transforms[parent].computeNextWorldToLocalMatrix();
+		return getNextParentToLocalMatrix() * parentMatrix;
+	}
+	else return getNextParentToLocalMatrix();
+}
+
 void Transform::updateWorldMatrix()
 {
 	if (parent == -1) {
 		worldToLocalMatrix = parentToLocalMatrix;
 		localToWorldMatrix = localToParentMatrix;
+		nextWorldToLocalMatrix = nextParentToLocalMatrix;
+		nextLocalToWorldMatrix = nextLocalToParentMatrix;
 
 		worldScale = scale;
 		worldTranslation = position;
@@ -467,20 +510,33 @@ void Transform::updateWorldMatrix()
 		worldPerspective = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // not sure what this should default to...
 	} else {
 		worldToLocalMatrix = computeWorldToLocalMatrix();
+		nextWorldToLocalMatrix = computeNextWorldToLocalMatrix();
 		localToWorldMatrix = glm::inverse(worldToLocalMatrix); 
+		nextLocalToWorldMatrix = glm::inverse(worldToLocalMatrix); 
 		glm::decompose(localToWorldMatrix, worldScale, worldRotation, worldTranslation, worldSkew, worldPerspective);
+		// glm::decompose(nextLocalToWorldMatrix, worldScale, worldRotation, worldTranslation, worldSkew, worldPerspective);
 	}
 	markDirty();
 }
 
 glm::mat4 Transform::getParentToLocalMatrix()
 {
-	return /*(interpolation >= 1.0 ) ?*/ parentToLocalMatrix /*: glm::interpolate(glm::mat4(1.0), parentToLocalMatrix, interpolation)*/;
+	return parentToLocalMatrix;
+}
+
+glm::mat4 Transform::getNextParentToLocalMatrix()
+{
+	return nextParentToLocalMatrix;
 }
 
 glm::mat4 Transform::getLocalToParentMatrix()
 {
-	return /*(interpolation >= 1.0 ) ?*/ localToParentMatrix /*: glm::interpolate(glm::mat4(1.0), localToParentMatrix, interpolation)*/;
+	return localToParentMatrix;
+}
+
+glm::mat4 Transform::getNextLocalToParentMatrix()
+{
+	return nextLocalToParentMatrix;
 }
 
 glm::mat4 Transform::getLocalToParentTranslationMatrix()
@@ -580,6 +636,10 @@ glm::mat4 Transform::getWorldToLocalMatrix() {
 
 glm::mat4 Transform::getLocalToWorldMatrix() {
 	return localToWorldMatrix;
+}
+
+glm::mat4 Transform::getNextLocalToWorldMatrix() {
+	return nextLocalToWorldMatrix;
 }
 
 glm::quat Transform::getWorldRotation() {

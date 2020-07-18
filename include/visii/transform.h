@@ -40,7 +40,11 @@ class Transform : public StaticFactory
     /* Local <=> Parent */
     vec3 scale = vec3(1.0);
     vec3 position = vec3(0.0);
-    quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+    quat rotation = quat(1.0f, 0.0f, 0.0f, 0.0f);
+
+    vec3 linearVelocity = vec3(0.0);
+    quat angularVelocity = quat(1.f,0.f,0.f,0.f);
+    vec3 scalarVelocity = vec3(0.0);
 
     vec3 right = vec3(1.0, 0.0, 0.0);
     vec3 up = vec3(0.0, 1.0, 0.0);
@@ -59,9 +63,22 @@ class Transform : public StaticFactory
     mat4 localToParentMatrix = mat4(1);
     mat4 parentToLocalMatrix = mat4(1);
 
+    mat4 nextLocalToParentTranslation = mat4(1);
+    mat4 nextLocalToParentRotation = mat4(1);
+    mat4 nextLocalToParentScale = mat4(1);
+
+    mat4 nextParentToLocalTranslation = mat4(1);
+    mat4 nextParentToLocalRotation = mat4(1);
+    mat4 nextParentToLocalScale = mat4(1);
+
+    mat4 nextLocalToParentMatrix = mat4(1);
+    mat4 nextParentToLocalMatrix = mat4(1);
+
     /* Local <=> World */
     mat4 localToWorldMatrix = mat4(1);
     mat4 worldToLocalMatrix = mat4(1);
+    mat4 nextLocalToWorldMatrix = mat4(1);
+    mat4 nextWorldToLocalMatrix = mat4(1);
 
     // from local to world decomposition. 
     // May only approximate the localToWorldMatrix
@@ -105,6 +122,7 @@ class Transform : public StaticFactory
     /* traverses from the current transform up through its ancestors, 
     computing a final world to local matrix */
     glm::mat4 computeWorldToLocalMatrix();
+    glm::mat4 computeNextWorldToLocalMatrix();
 
     Transform();
     Transform(std::string name, uint32_t id);
@@ -439,16 +457,52 @@ class Transform : public StaticFactory
     // void addScale(float ds);
 
     /** 
+     * Sets the linear velocity vector describing how fast this transform is translating within its 
+     * parent space. Causes motion blur.
+     * 
+     * @param newLinearVelocity The new linear velocity to set the current transform linear velocity to.
+    */
+    void setLinearVelocity(vec3 newLinearVelocity);
+
+    /** 
+     * Sets the angular velocity vector describing how fast this transform is rotating within its 
+     * parent space. Causes motion blur.
+     * 
+     * @param newAngularVelocity The new linear velocity to set the current transform angular velocity to.
+    */
+    void setAngularVelocity(quat newAngularVelocity);
+
+    /** 
+     * Sets the scalar velocity vector describing how fast this transform is scaling within its 
+     * parent space. Causes motion blur.
+     * 
+     * @param newScalarVelocity The new linear velocity to set the current transform scalar velocity to.
+    */
+    void setScalarVelocity(vec3 newScalarVelocity);
+
+    /** 
      * @returns the final matrix transforming this object from it's parent coordinate space to it's 
      * local coordinate space 
      */
     glm::mat4 getParentToLocalMatrix();
 
     /** 
+     * @returns the final matrix transforming this object from it's parent coordinate space to it's 
+     * local coordinate space, accounting for linear and angular velocities.
+     */
+    glm::mat4 getNextParentToLocalMatrix();
+
+    /** 
      * @returns the final matrix transforming this object from it's local coordinate space to it's 
      * parents coordinate space 
     */
     glm::mat4 getLocalToParentMatrix();
+
+    /** 
+     * @returns the final matrix transforming this object from it's local coordinate space to it's 
+     * parents coordinate space, accounting for linear and angular velocities.
+    */
+    glm::mat4 getNextLocalToParentMatrix();
 
     /** 
      * @returns the final matrix translating this object from it's local coordinate space to it's 
@@ -523,6 +577,12 @@ class Transform : public StaticFactory
      * parent transforms into account. 
      */
 	  glm::mat4 getLocalToWorldMatrix();
+
+    /** 
+     * @returns a matrix transforming this component from its local space to world space, taking all 
+     * parent transforms into account, in addition to any linear and angular velocities. 
+     */
+	  glm::mat4 getNextLocalToWorldMatrix();
 
     /** 
      * @returns a (possibly approximate) scale scaling the current transform from 

@@ -277,6 +277,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float roughnessMinimum = 0.f;
         RayPayload payload;
         payload.tHit = -1.f;
+        ray.time = lcg_randomf(rng);
         owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
                         /*the ray to trace*/ ray,
                         /*prd*/ payload);
@@ -299,6 +300,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if ((bounce == 0) && ((entity.visibilityFlags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
                 ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
                 payload.tHit = -1.f;
+                ray.time = lcg_randomf(rng);
                 owl::traceRay( optixLaunchParams.world, ray, payload);
                 visibilitySkips++;
                 if (visibilitySkips > 10) break; // avoid locking up.
@@ -492,6 +494,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             ray.origin = hit_p;
                             ray.direction = light_dir;
                             payload.tHit = -1.f;
+                            ray.time = lcg_randomf(rng);
                             owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
                             if (payload.instanceID == -1) continue;
                             int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
@@ -524,6 +527,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.direction = w_i;
             ray.tmin = EPSILON * 100.f;
             payload.tHit = -1.f;
+            ray.time = lcg_randomf(rng);
             owl::traceRay(optixLaunchParams.world, ray, payload);
 
             if (light_pdf > EPSILON) 
