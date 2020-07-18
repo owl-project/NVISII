@@ -262,7 +262,7 @@ set(OWL_USE_TBB OFF CACHE STRING "" FORCE)
 add_subdirectory(externals/owl)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/cmake)
 include(configure_cuda)
 
 # add libraries to a list for linking

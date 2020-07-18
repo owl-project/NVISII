@@ -186,7 +186,7 @@ public:
 
 	/**
 	 * Objects can be set to be invisible to particular ray types:
-	 * @camera Makes the object visible to camera rays
+	 * @param camera Makes the object visible to camera rays
 	*/
 	void setVisibility(bool camera = true);
 

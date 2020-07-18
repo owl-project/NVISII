@@ -7,7 +7,7 @@
 #include <ImGuizmo.h>
 #include <visii/utilities/colors.h>
 #include <owl/owl.h>
-#include <owl/ll/helper/optix.h>
+#include <owl/helper/optix.h>
 #include <cuda_gl_interop.h>
 
 #include <devicecode/launch_params.h>
