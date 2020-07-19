@@ -43,7 +43,7 @@ float3 missColor(const owl::Ray &ray)
     }
 
     float t = 0.5f*(rayDir.z + 1.0f);
-    float3 c = (1.0f - t) * make_float3(1.0f, 1.0f, 1.0f) + t * make_float3(0.5f, 0.7f, 1.0f);
+    float3 c = (1.0f - t) * make_float3(pow(vec3(1.0f), vec3(2.2f))) + t * make_float3( pow(vec3(0.5f, 0.7f, 1.0f), vec3(2.2f)) );
     return c;
 }
 
