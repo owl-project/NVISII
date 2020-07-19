@@ -406,6 +406,12 @@ void setDomeLightTexture(Texture* texture)
     resetAccumulation();
 }
 
+void setDomeLightRotation(glm::quat rotation)
+{
+    OptixData.LP.environmentMapRotation = rotation;
+    resetAccumulation();
+}
+
 void setIndirectLightingClamp(float clamp)
 {
     clamp = std::max(float(clamp), float(0.f));
@@ -505,37 +511,38 @@ void initializeOptix(bool headless)
     
     /* Setup Optix Launch Params */
     OWLVarDecl launchParamVars[] = {
-        { "frameSize",           OWL_USER_TYPE(glm::ivec2),         OWL_OFFSETOF(LaunchParams, frameSize)},
-        { "frameID",             OWL_USER_TYPE(uint64_t),           OWL_OFFSETOF(LaunchParams, frameID)},
-        { "frameBuffer",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, frameBuffer)},
-        { "normalBuffer",        OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, normalBuffer)},
-        { "albedoBuffer",        OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, albedoBuffer)},
-        { "accumPtr",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
-        { "world",               OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
-        { "cameraEntity",        OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
-        { "entities",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, entities)},
-        { "transforms",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, transforms)},
-        { "cameras",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, cameras)},
-        { "materials",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
-        { "meshes",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
-        { "lights",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lights)},
-        { "textures",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
-        { "lightEntities",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
-        { "vertexLists",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
-        { "normalLists",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, normalLists)},
-        { "texCoordLists",       OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, texCoordLists)},
-        { "indexLists",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, indexLists)},
-        { "numLightEntities",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
-        { "instanceToEntityMap", OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
-        { "domeLightIntensity",  OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
-        { "directClamp",         OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
-        { "indirectClamp",       OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
-        { "environmentMapID",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapID)},
-        { "textureObjects",      OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textureObjects)},
-        { "GGX_E_AVG_LOOKUP",    OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_AVG_LOOKUP)},
-        { "GGX_E_LOOKUP",        OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_LOOKUP)},
-        { "renderDataMode",      OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, renderDataMode)},
-        { "renderDataBounce",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, renderDataBounce)},
+        { "frameSize",               OWL_USER_TYPE(glm::ivec2),         OWL_OFFSETOF(LaunchParams, frameSize)},
+        { "frameID",                 OWL_USER_TYPE(uint64_t),           OWL_OFFSETOF(LaunchParams, frameID)},
+        { "frameBuffer",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, frameBuffer)},
+        { "normalBuffer",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, normalBuffer)},
+        { "albedoBuffer",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, albedoBuffer)},
+        { "accumPtr",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
+        { "world",                   OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
+        { "cameraEntity",            OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
+        { "entities",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, entities)},
+        { "transforms",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, transforms)},
+        { "cameras",                 OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, cameras)},
+        { "materials",               OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
+        { "meshes",                  OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
+        { "lights",                  OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lights)},
+        { "textures",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
+        { "lightEntities",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
+        { "vertexLists",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
+        { "normalLists",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, normalLists)},
+        { "texCoordLists",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, texCoordLists)},
+        { "indexLists",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, indexLists)},
+        { "numLightEntities",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
+        { "instanceToEntityMap",     OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
+        { "domeLightIntensity",      OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
+        { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
+        { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
+        { "environmentMapID",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapID)},
+        { "environmentMapRotation",  OWL_USER_TYPE(glm::quat),          OWL_OFFSETOF(LaunchParams, environmentMapRotation)},
+        { "textureObjects",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textureObjects)},
+        { "GGX_E_AVG_LOOKUP",        OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_AVG_LOOKUP)},
+        { "GGX_E_LOOKUP",            OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_LOOKUP)},
+        { "renderDataMode",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, renderDataMode)},
+        { "renderDataBounce",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, renderDataBounce)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = launchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
@@ -587,7 +594,9 @@ void initializeOptix(bool headless)
     launchParamsSetBuffer(OD.launchParams, "textureObjects",      OD.textureObjectsBuffer);
 
     OD.LP.environmentMapID = -1;
+    OD.LP.environmentMapRotation = glm::quat(1,0,0,0);
     launchParamsSetRaw(OD.launchParams, "environmentMapID", &OD.LP.environmentMapID);
+    launchParamsSetRaw(OD.launchParams, "environmentMapRotation", &OD.LP.environmentMapRotation);
                             
     OWLTexture GGX_E_AVG_LOOKUP = texture2DCreate(OD.context,
                             OWL_TEXEL_FORMAT_R32F,
@@ -891,6 +900,7 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
     launchParamsSetRaw(OptixData.launchParams, "domeLightIntensity", &OptixData.LP.domeLightIntensity);
     launchParamsSetRaw(OptixData.launchParams, "environmentMapID", &OptixData.LP.environmentMapID);
+    launchParamsSetRaw(OptixData.launchParams, "environmentMapRotation", &OptixData.LP.environmentMapRotation);
     launchParamsSetRaw(OptixData.launchParams, "renderDataMode", &OptixData.LP.renderDataMode);
     launchParamsSetRaw(OptixData.launchParams, "renderDataBounce", &OptixData.LP.renderDataBounce);
     OptixData.LP.frameID ++;

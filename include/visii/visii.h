@@ -22,24 +22,38 @@ void initializeHeadless();
 */
 void cleanup();
 
-/** Tells the renderer which camera entity to use for rendering. The transform 
+/** 
+ * Tells the renderer which camera entity to use for rendering. The transform 
  * component of this camera entity places the camera into the world, and the
  * camera component of this camera entity describes the perspective to use, the 
  * field of view, the depth of field, and other "analog" camera properties.
- * \param camera_entity The entity containing a camera and transform component, to use for rendering. */
+ * 
+ * \param camera_entity The entity containing a camera and transform component, to use for rendering. 
+ */
 void setCameraEntity(Entity* camera_entity);
 
 
-/** Sets the intensity, or brightness, that the dome light (aka environment light) will emit it's color.
+/** 
+ * Sets the intensity, or brightness, that the dome light (aka environment light) will emit it's color.
+ * 
  * \param intensity How powerful the dome light is in emitting light
  */ 
 void setDomeLightIntensity(float intensity);
 
-/** Sets the texture used to color the dome light (aka the environment). 
+/** 
+ * Sets the texture used to color the dome light (aka the environment). 
  * Textures are sampled using a 2D to 3D latitude/longitude strategy.
+ * 
  * \param texture The texture to sample for the dome light.
  */ 
 void setDomeLightTexture(Texture* texture);
+
+/** 
+ * Sets the rotation to apply to the dome light (aka the environment). 
+ * 
+ * \param rotation The rotation to apply to the dome light
+ */ 
+void setDomeLightRotation(glm::quat rotation);
 
 // todo, document
 void setIndirectLightingClamp(float clamp);

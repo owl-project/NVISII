@@ -644,10 +644,6 @@ void Mesh::loadObj(std::string objPath)
 		triangleIndices.push_back(uniqueVertexMap[vertex]);
 	}
 
-	if (!has_normals) {
-		generateSmoothNormals();
-	}
-
 	/* Map vertices to buffers */
 	for (int i = 0; i < uniqueVertices.size(); ++i)
 	{
@@ -656,6 +652,10 @@ void Mesh::loadObj(std::string objPath)
 		colors.push_back(v.color);
 		normals.push_back(v.normal);
 		texCoords.push_back(v.texcoord);
+	}
+
+	if (!has_normals) {
+		generateSmoothNormals();
 	}
 
 	computeMetadata();

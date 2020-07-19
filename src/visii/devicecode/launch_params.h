@@ -44,6 +44,7 @@ struct LaunchParams {
     ivec3 **indexLists = nullptr;
 
     int32_t environmentMapID = -1;
+    glm::quat environmentMapRotation = glm::quat(1,0,0,0);
     cudaTextureObject_t *textureObjects = nullptr;
 
     cudaTextureObject_t GGX_E_AVG_LOOKUP;
