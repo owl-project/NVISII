@@ -31,17 +31,16 @@ jobs:
       - name: Download Dependencies
         run: |
             # Add directory containing cmake
-            export PATH=$PATH:/opt/_internal/cpython-3.8.3/bin/
+            export PATH=$PATH:/opt/_internal/cpython-3.8.4/bin/
             
             # list contents of python folder
             #ls -R /opt/python/${{ matrix.python-version }}
             
             PY=${{ matrix.python-version }}
             PYVER=${PY:2:1}.${PY:3:1}
-          
-            PYTHONXDOTYM=python${PY:2:1}.${PY:8:2}
-            echo "This is python xdotym: "
-            echo $PYTHONXDOTYM
+            PYTHONXDOTYMU=python${PY:2:1}.${PY:8:3}
+            echo "This is python xdotymu: "
+            echo $PYTHONXDOTYMU
 
             PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
             $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
@@ -53,7 +52,7 @@ jobs:
             /opt/python/cp38-cp38/bin/pip install cmake
             find / -iname "cmake"
             
-            /opt/_internal/cpython-3.8.3/bin/cmake --version
+            /opt/_internal/cpython-3.8.4/bin/cmake --version
             
             # Setuptools scm
             /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm
@@ -61,12 +60,18 @@ jobs:
             # Install CUDA
             yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             yum clean all
-            yum -y install cuda-11-0
+            yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
+            yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
+            yum -y install cuda-10-2
             yum -y install xorg-x11-server-devel
             yum -y install libXinerama-devel
             yum -y install glfw-devel
             yum -y install wget
-            yum -y install pcre-devel            
+            yum -y install pcre-devel
+            yum -y install unar  
+            yum -y install zip      
+            
+            source /opt/rh/devtoolset-8/enable
     
             # Build a version of SWIG we can use
             mkdir build
@@ -82,40 +87,66 @@ jobs:
             
       - name: Configure and install cmake project
         run: |
-          export PATH=$PATH:/opt/_internal/cpython-3.8.3/bin/
+          export PATH=$PATH:/opt/_internal/cpython-3.8.4/bin/
+          source /opt/rh/devtoolset-8/enable
           
           PY=${{ matrix.python-version }}
           PYVER=${PY:2:1}.${PY:3:1}
-          PYTHONXDOTYM=python${PY:2:1}.${PY:8:2}
-          echo $PYTHONXDOTYM
+          PYTHONXDOTYMU=python${PY:2:1}.${PY:8:3}
+          echo $PYTHONXDOTYMU
           PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
-          echo $PYTHONXDOTYM
+          echo $PYTHONXDOTYMU
 
           $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
           $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
-                      
+         
           cd build
-           cmake ../ \
-          -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
-          -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
-          -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
-          -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYM/ \
-          -DPython_VERSION_MAJOR=${PY:2:1} \
-          -DPython_VERSION_MINOR=${PY:3:1} \
- 
-          cmake --build . --config Release --target install
-          cd ..
-          cd install
-          $PYEXEC -m pip install auditwheel
-          $PYEXEC setup.py bdist_wheel
-          cd dist
-          $PYEXEC -m auditwheel repair -L "" *.whl    
           
           # tmate for debugging
           #wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
           #tar xf tmate-2.4.0-static-linux-amd64.tar.xz
           #cd tmate-2.4.0-static-linux-amd64
           #./tmate -F
+          
+           cmake ../ \
+          -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
+          -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
+          -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
+          -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYMU/ \
+          -DPython_VERSION_MAJOR=${PY:2:1} \
+          -DPython_VERSION_MINOR=${PY:3:1} \
+ 
+          cmake --build . --config Release --target install
+          cd ..
+          cd install
+          
+          # need to temporarily remove libcuda.so.1 from library
+          cd visii
+          patchelf --remove-needed libcuda.so.1 libvisii_lib.so
+          patchelf --remove-needed libcuda.so.1 _visii.so
+          cd ../
+          
+          # now make the bdistwheel
+          $PYEXEC setup.py bdist_wheel
+          cd dist
+          
+          # audit the bdistwheel for use on all linux distros
+          # and use the same dir for both .py and .so files
+          auditwheel repair -L "" *.whl  
+          
+          # add back on the libcuda.so.1 to the library
+          cd wheelhouse
+          unar -d *.whl
+          cd visii*
+          cd visii
+          patchelf --add-needed libcuda.so.1 libvisii_lib.so
+          patchelf --add-needed libcuda.so.1 _visii.so
+          cd ..
+          cd ..
+          rm *.whl
+          NAME=$(ls -1 .)
+          cd ${NAME}
+          zip -r ../${NAME}.whl ./*
         
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
