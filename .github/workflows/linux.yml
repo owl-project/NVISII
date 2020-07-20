@@ -63,8 +63,11 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ../ -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="${{matrix.python-version}}"
-        cmake --build . --config Release --target install
+        cmake ../ \
+        -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
+        -DPYTHON_VERSION="${{matrix.python-version}}" \
+        -DCMAKE_BUILD_TYPE=Debug
+        cmake --build . --config Debug --target install
         cd ..
         cd install
         python setup.py bdist_wheel
@@ -73,4 +76,5 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: visii-${{ matrix.os }}-python${{ matrix.python-version }}
-        path: install/dist/*.whl
+        path: install/*
+#         path: install/dist/*.whl
