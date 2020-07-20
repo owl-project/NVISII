@@ -590,7 +590,10 @@ void initializeOptix(bool headless)
     OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*),               MAX_MESHES,     nullptr);
     OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2*),               MAX_MESHES,     nullptr);
     OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_USER_TYPE(ivec3*),              MAX_MESHES,     nullptr);
-    OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_USER_TYPE(cudaTextureObject_t), MAX_TEXTURES,   nullptr);
+    OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        MAX_TEXTURES,   nullptr);
+
+    
+
     launchParamsSetBuffer(OD.launchParams, "entities",            OD.entityBuffer);
     launchParamsSetBuffer(OD.launchParams, "transforms",          OD.transformBuffer);
     launchParamsSetBuffer(OD.launchParams, "cameras",             OD.cameraBuffer);
@@ -863,7 +866,8 @@ void updateComponents()
         std::lock_guard<std::mutex> lock(*mutex.get());
 
         Texture* textures = Texture::getFront();
-        std::vector<cudaTextureObject_t> textureObjects(Texture::getCount());
+        // std::vector<cudaTextureObject_t> textureObjects(Texture::getCount());
+        std::vector<OWLTexture> textureObjects(Texture::getCount());
         for (uint32_t tid = 0; tid < Texture::getCount(); ++tid) {
             if (!textures[tid].isInitialized()) {
                 if (OD.textureObjects[tid]) { owlTexture2DDestroy(OD.textureObjects[tid]); OD.textureObjects[tid] = nullptr; }
@@ -876,9 +880,9 @@ void updateComponents()
                     textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
                     OWL_TEXTURE_LINEAR);        
             }
-            textureObjects[tid] = textureGetObject(OD.textureObjects[tid], 0);
+            // textureObjects[tid] = OD.textureObjects[tid];
         }
-        bufferUpload(OD.textureObjectsBuffer, textureObjects.data());
+        bufferUpload(OD.textureObjectsBuffer, OD.textureObjects);
         
         Texture::updateComponents();
         bufferUpload(OptixData.textureBuffer, Texture::getFrontStruct());
