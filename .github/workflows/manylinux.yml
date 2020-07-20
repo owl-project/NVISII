@@ -31,7 +31,7 @@ jobs:
       - name: Download Dependencies
         run: |
             # Add directory containing cmake
-            export PATH=$PATH:/opt/_internal/cpython-3.8.3/bin/
+            export PATH=$PATH:/opt/_internal/cpython-3.8.4/bin/
             
             # list contents of python folder
             #ls -R /opt/python/${{ matrix.python-version }}
@@ -87,7 +87,7 @@ jobs:
             
       - name: Configure and install cmake project
         run: |
-          export PATH=$PATH:/opt/_internal/cpython-3.8.3/bin/
+          export PATH=$PATH:/opt/_internal/cpython-3.8.4/bin/
           source /opt/rh/devtoolset-8/enable
           
           PY=${{ matrix.python-version }}
