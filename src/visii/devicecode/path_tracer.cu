@@ -34,7 +34,7 @@ float3 missColor(const owl::Ray &ray)
     vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(normalize(ray.direction));
     if (optixLaunchParams.environmentMapID != -1) 
     {
-        vec2 tc = toSpherical(rayDir);
+        vec2 tc = toSpherical(vec3(rayDir.x, -rayDir.z, rayDir.y));
         cudaTextureObject_t tex = optixLaunchParams.textureObjects[optixLaunchParams.environmentMapID];
         if (!tex) return make_float3(1.f, 0.f, 1.f);
 
@@ -74,11 +74,11 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
 }
 
 inline __device__ 
-float4 sampleTexture(int32_t textureId, float2 texCoord, float4 defaultValue) {
+vec4 sampleTexture(int32_t textureId, vec2 texCoord, vec4 defaultValue) {
     if (textureId < 0 || textureId >= MAX_TEXTURES) return defaultValue;
     cudaTextureObject_t tex = optixLaunchParams.textureObjects[textureId];
     if (!tex) return defaultValue;
-    return tex2D<float4>(tex, texCoord.x, texCoord.y);
+    return make_vec4(tex2D<float4>(tex, texCoord.x, texCoord.y));
 }
 
 __device__
@@ -121,22 +121,22 @@ void loadMeshNormalData(int meshID, int3 indices, float2 barycentrics, float2 uv
 }
 
 __device__ 
-void loadDisneyMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float roughnessMinimum) {
-    mat.base_color = make_float3(sampleTexture(p.base_color_texture_id, uv, make_float4(p.base_color.x, p.base_color.y, p.base_color.z, 1.f)));
-    mat.metallic = sampleTexture(p.metallic_texture_id, uv, make_float4(p.metallic)).x;
-    mat.specular = sampleTexture(p.specular_texture_id, uv, make_float4(p.specular)).x;
-    mat.roughness = max(max(sampleTexture(p.roughness_texture_id, uv, make_float4(p.roughness)).x, MIN_ROUGHNESS), roughnessMinimum);
-    mat.specular_tint = sampleTexture(p.specular_tint_texture_id, uv, make_float4(p.specular_tint)).x;
-    mat.anisotropy = sampleTexture(p.anisotropic_texture_id, uv, make_float4(p.anisotropic)).x;
-    mat.sheen = sampleTexture(p.sheen_texture_id, uv, make_float4(p.sheen)).x;
-    mat.sheen_tint = sampleTexture(p.sheen_tint_texture_id, uv, make_float4(p.sheen_tint)).x;
-    mat.clearcoat = sampleTexture(p.clearcoat_texture_id, uv, make_float4(p.clearcoat)).x;
-    float clearcoat_roughness = max(sampleTexture(p.clearcoat_roughness_texture_id, uv, make_float4(p.clearcoat_roughness)).x, roughnessMinimum);
+void loadDisneyMaterial(const MaterialStruct &p, vec2 uv, DisneyMaterial &mat, float roughnessMinimum) {
+    mat.base_color = make_float3(sampleTexture(p.base_color_texture_id, uv, vec4(p.base_color.r, p.base_color.g, p.base_color.b, 1.f)));
+    mat.metallic = sampleTexture(p.metallic_texture_id, uv, vec4(p.metallic))[p.metallic_texture_channel];
+    mat.specular = sampleTexture(p.specular_texture_id, uv, vec4(p.specular))[p.specular_texture_channel];
+    mat.roughness = max(max(sampleTexture(p.roughness_texture_id, uv, vec4(p.roughness))[p.roughness_texture_channel], MIN_ROUGHNESS), roughnessMinimum);
+    mat.specular_tint = sampleTexture(p.specular_tint_texture_id, uv, vec4(p.specular_tint))[p.specular_tint_texture_channel];
+    mat.anisotropy = sampleTexture(p.anisotropic_texture_id, uv, vec4(p.anisotropic))[p.anisotropic_texture_channel];
+    mat.sheen = sampleTexture(p.sheen_texture_id, uv, vec4(p.sheen))[p.sheen_texture_channel];
+    mat.sheen_tint = sampleTexture(p.sheen_tint_texture_id, uv, vec4(p.sheen_tint))[p.sheen_tint_texture_channel];
+    mat.clearcoat = sampleTexture(p.clearcoat_texture_id, uv, vec4(p.clearcoat))[p.clearcoat_texture_channel];
+    float clearcoat_roughness = max(sampleTexture(p.clearcoat_roughness_texture_id, uv, vec4(p.clearcoat_roughness))[p.clearcoat_roughness_texture_channel], roughnessMinimum);
     mat.clearcoat_gloss = 1.0 - clearcoat_roughness * clearcoat_roughness;
-    mat.ior = sampleTexture(p.ior_texture_id, uv, make_float4(p.ior)).x;
-    mat.specular_transmission = sampleTexture(p.transmission_texture_id, uv, make_float4(p.transmission)).x;
-    mat.flatness = sampleTexture(p.subsurface_texture_id, uv, make_float4(p.subsurface)).x;
-    mat.transmission_roughness = max(max(sampleTexture(p.transmission_roughness_texture_id, uv, make_float4(p.transmission_roughness)).x, MIN_ROUGHNESS), roughnessMinimum);
+    mat.ior = sampleTexture(p.ior_texture_id, uv, vec4(p.ior))[p.ior_texture_channel];
+    mat.specular_transmission = sampleTexture(p.transmission_texture_id, uv, vec4(p.transmission))[p.transmission_texture_channel];
+    mat.flatness = sampleTexture(p.subsurface_texture_id, uv, vec4(p.subsurface))[p.subsurface_texture_channel];
+    mat.transmission_roughness = max(max(sampleTexture(p.transmission_roughness_texture_id, uv, vec4(p.transmission_roughness))[p.transmission_roughness_texture_channel], MIN_ROUGHNESS), roughnessMinimum);
 }
 
 inline __device__
@@ -330,7 +330,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             loadMeshVertexData(entity.mesh_id, indices, payload.barycentrics, p, v_gz, p_e1, p_e2);
             loadMeshUVData(entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
             loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_z);
-            loadDisneyMaterial(entityMaterial, uv, mat, roughnessMinimum);
+            loadDisneyMaterial(entityMaterial, make_vec2(uv), mat, roughnessMinimum);
             
             glm::mat4 xfm;
             xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
@@ -371,7 +371,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             tbn = glm::column(tbn, 1, make_vec3(v_y) );
             tbn = glm::column(tbn, 2, make_vec3(v_z) );
             
-            float3 dN = make_float3(sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float4(0.5f, .5f, 1.f, 0.f)));
+            float3 dN = make_float3(sampleTexture(entityMaterial.normal_map_texture_id, make_vec2(uv), vec4(0.5f, .5f, 1.f, 0.f)));
             dN = (dN * make_float3(2.0f)) - make_float3(1.f);   
 
             v_z = make_float3(normalize(tbn * normalize(make_vec3(dN))) );
@@ -397,7 +397,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     entityLight = optixLaunchParams.lights[entity.light_id];
                     float3 light_emission;
                     if (entityLight.color_texture_id == -1) light_emission = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
-                    else light_emission = make_float3(sampleTexture(entityLight.color_texture_id, uv, make_float4(entityLight.r, entityLight.g, entityLight.b, 1.f))); // * intensity; temporarily commenting out to show texture for bright lights in LDR
+                    else light_emission = make_float3(sampleTexture(entityLight.color_texture_id, make_vec2(uv), vec4(entityLight.r, entityLight.g, entityLight.b, 1.f))); // * intensity; temporarily commenting out to show texture for bright lights in LDR
                     illum = light_emission; 
                     directIllum = illum;
                 }
@@ -461,9 +461,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 
                 // Sample the light to compute an incident light ray to this point
                 {    
-                    glm::mat4 tfm =  transform.localToWorld;//glm::translate(glm::mat4(1.0f), transform.translation) * glm::toMat4(transform.rotation);
-                    glm::mat4 tfmInv = transform.worldToLocal;//glm::inverse(tfm);
-                    
                     vec3 dir; 
                     vec2 uv;
                     vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
@@ -480,7 +477,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     light_pdf = abs(light_pdf);
                     
                     float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
-                    float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, make_float2(uv.x, uv.y), default_light_emission)) * light_light.intensity;
+                    float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, uv, make_vec4(default_light_emission))) * light_light.intensity;
         
                     if ((light_pdf > EPSILON) && (dotNWi > EPSILON)) {
                         float3 light_dir = make_float3(dir.x, dir.y, dir.z);
@@ -553,7 +550,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     v_gz = make_float3(normalize(nxfm * normalize(make_vec3(v_gz))));
 
                     float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
-                    float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, uv, default_light_emission)) * light_light.intensity;
+                    float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, make_vec2(uv), make_vec4(default_light_emission))) * light_light.intensity;
 
                     float dist = distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
                     float dotNWi = fabs(dot(-v_gz, ray.direction)); // for now, making all lights double sided.
@@ -591,7 +588,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
             // if the bounce count is less than the max bounce count, potentially add on radiance from the next hit location.
             ++bounce;            
-        } while (bounce < MAX_PATH_DEPTH);
+        } while (bounce < optixLaunchParams.maxBounceDepth);
 
         // clamp out any extreme fireflies
         glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);

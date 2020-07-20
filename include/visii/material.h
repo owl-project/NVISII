@@ -23,10 +23,10 @@
 
 class Texture;
 
-enum MaterialFlags : uint32_t { 
-  MATERIAL_FLAGS_HIDDEN = 1, 
-  MATERIAL_FLAGS_SHOW_SKYBOX = 2
-};
+// enum MaterialFlags : uint32_t { 
+//   MATERIAL_FLAGS_HIDDEN = 1, 
+//   MATERIAL_FLAGS_SHOW_SKYBOX = 2
+// };
 
 /**
  * The "Material" component describes the surface properties of an entity.
@@ -181,9 +181,10 @@ class Material : public StaticFactory
     /** 
      * Mix between diffuse and subsurface scattering. Overrides any existing constant subsurface 
      * 
-     * @param texture A grayscale texture component containing subsurface radius multipliers. G,B, and A channels ignored.
+     * @param texture A grayscale texture component containing subsurface radius multipliers.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
      */
-    void setSubsurfaceTexture(Texture *texture);
+    void setSubsurfaceTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the subsurface texture, reverting back to any existing constant subsurface */
     void clearSubsurfaceTexture();
@@ -263,9 +264,9 @@ class Material : public StaticFactory
      * @param texture A grayscale texture, where texel values of 1 give a fully specular reflection tinted with 
      * the base color, without diffuse reflection or transmission. When texel values equal 0.0 the material 
      * consists of a diffuse or transmissive base layer, with a specular reflection layer on top. 
-     * G, B, and A channels are ignored.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
      */
-    void setMetallicTexture(Texture *texture);
+    void setMetallicTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the metallic texture, reverting back to any existing constant metallic */
     void clearMetallicTexture();
@@ -287,9 +288,10 @@ class Material : public StaticFactory
     /** 
      * The amount of dielectric specular reflection. Overrides any existing constant specular 
      * 
-     * @param texture A grayscale texture containing dielectric specular reflection values. G, B, and A channels are ignored. 
+     * @param texture A grayscale texture containing dielectric specular reflection values.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
      */
-    void setSpecularTexture(Texture *texture);
+    void setSpecularTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the specular texture, reverting back to any existing constant specular */
     void clearSpecularTexture();
@@ -313,9 +315,10 @@ class Material : public StaticFactory
     /** 
      * Tints the facing specular reflection using the base color, while glancing reflection remains white. Overrides any existing constant specular tint 
      *
-     * @param texture A grayscale texture containing specular tint values, between 0 and 1. G, B, and A channels are ignored. 
+     * @param texture A grayscale texture containing specular tint values, between 0 and 1.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
     */
-    void setSpecularTintTexture(Texture *texture);
+    void setSpecularTintTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the specular tint texture, reverting back to any existing constant specular tint */
     void clearSpecularTintTexture();
@@ -337,9 +340,10 @@ class Material : public StaticFactory
     /** 
      * Microfacet roughness of the surface for diffuse and specular reflection. Overrides any existing constant roughness 
      *
-     * @param texture A grayscale texture containing microfacet roughness values, between 0 and 1. G, B, and A channels are ignored.
+     * @param texture A grayscale texture containing microfacet roughness values, between 0 and 1.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
      */
-    void setRoughnessTexture(Texture *texture);
+    void setRoughnessTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the roughness texture, reverting back to any existing constant roughness */
     void clearRoughnessTexture();
@@ -362,9 +366,10 @@ class Material : public StaticFactory
      * The transparency of the surface, independent of transmission. Overrides any existing constant alpha 
      * 
      * @param texture A grayscale texture containing surface transparency values, with 1.0 being fully opaque and 0.0 
-     * being fully transparent. G, B, and A channels are ignored.
+     * being fully transparent.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
      */
-    void setAlphaTexture(Texture *texture);
+    void setAlphaTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the alpha texture, reverting back to any existing constant alpha */
     void clearAlphaTexture();
@@ -387,8 +392,9 @@ class Material : public StaticFactory
      * The amount of anisotropy for specular reflection. Overrides any existing constant anisotropy 
      * 
      * @param texture A grayscale texture containing amounts of anisotropy for specular reflection. G, B, and A channels are ignored.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
      */
-    void setAnisotropicTexture(Texture *texture);
+    void setAnisotropicTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the anisotropic texture, reverting back to any existing constant anisotropy */
     void clearAnisotropicTexture();
@@ -409,9 +415,10 @@ class Material : public StaticFactory
     /** 
      * The angle of anisotropy. Overrides any existing constant anisotropic rotation 
      * 
-     * @param texture A grayscale texture containing the angle of anisotropy, between 0 and 1. G, B, and A channels are ignored.
+     * @param texture A grayscale texture containing the angle of anisotropy, between 0 and 1.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
      */
-    void setAnisotropicRotationTexture(Texture *texture);
+    void setAnisotropicRotationTexture(Texture *texture, int channel = 0);
     
     /** Disconnects the anisotropic rotation texture, reverting back to any existing constant anisotropic rotation */
     void clearAnisotropicRotationTexture();
@@ -433,9 +440,10 @@ class Material : public StaticFactory
     /** 
      * Amount of soft velvet like reflection near edges, for simulating materials such as cloth. Overrides any existing constant sheen 
      * 
-     * @param texture A grayscale texture containing amounts of sheen, between 0 and 1. G, B, and A channels are ignored.
+     * @param texture A grayscale texture containing amounts of sheen, between 0 and 1.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
      */
-    void setSheenTexture(Texture *texture);
+    void setSheenTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the sheen texture, reverting back to any existing constant sheen */
     void clearSheenTexture();
@@ -458,9 +466,9 @@ class Material : public StaticFactory
      * Mix between white and using base color for sheen reflection. Overrides any existing constant sheen tint 
      * 
      * @param texture A grayscale texture containing values used to mix between white and base color for sheen reflection. 
-     * G, B, and A channels are ignored.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.     
     */
-    void setSheenTintTexture(Texture *texture);
+    void setSheenTintTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the sheen tint texture, reverting back to any existing constant sheen tint */
     void clearSheenTintTexture();
@@ -482,9 +490,10 @@ class Material : public StaticFactory
     /** 
      * Extra white specular layer on top of others. Overrides any existing constant clearcoat 
      * 
-     * @param texture A grayscale texture controlling the influence of clear coat, between 0 and 1. G, B, and A channels are ignored.
+     * @param texture A grayscale texture controlling the influence of clear coat, between 0 and 1.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
      */
-    void setClearcoatTexture(Texture *texture);
+    void setClearcoatTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the clearcoat texture, reverting back to any existing constant clearcoat */
     void clearClearcoatTexture();
@@ -506,9 +515,10 @@ class Material : public StaticFactory
     /** 
      * Microfacet surface roughness of clearcoat specular. Overrides any existing constant clearcoat roughness 
      * 
-     * @param texture
+     * @param texture the roughness of the microfacet distribution influencing the clearcoat, between 0 and 1 
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
      */
-    void setClearcoatRoughnessTexture(Texture *texture);
+    void setClearcoatRoughnessTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the clearcoat roughness texture, reverting back to any existing constant clearcoat roughness */
     void clearClearcoatRoughnessTexture();
@@ -530,9 +540,10 @@ class Material : public StaticFactory
     /** 
      * Index of refraction used for transmission events. Overrides any existing constant ior. 
      * 
-     * @param texture
+     * @param texture the index of refraction. A value of 1 results in no refraction. For reference, the IOR of water is roughly 1.33, and for glass is roughly 1.57. 
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
      */
-    void setIorTexture(Texture *texture);
+    void setIorTexture(Texture *texture, int channel = 0);
 
     /** Disconnects the ior texture, reverting back to any existing constant ior */
     void clearIorTexture();
@@ -555,9 +566,10 @@ class Material : public StaticFactory
     /** 
      * Controls how much the surface looks like glass. Note, metallic takes precedence. Overrides any existing constant transmission. 
      * 
-     * @param texture A grayscale texture containing the specular transmission of the surface. G, B, and A channels are ignored.
+     * @param texture A grayscale texture containing the specular transmission of the surface.
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
     */
-    void setTransmissionTexture(Texture *texture);
+    void setTransmissionTexture(Texture *texture, int channel = 0);
     
     /** Disconnects the transmission texture, reverting back to any existing constant transmission */
     void clearTransmissionTexture();
@@ -579,9 +591,10 @@ class Material : public StaticFactory
     /** 
      * The roughness of the interior surface used for transmitted light. Overrides any existing constant transmission roughness 
      * 
-     * @param texture A grayscale texture containing
+     * @param texture Controls the roughness value used for transmitted light. 
+     * @param channel A value between 0 and 3 indicating the channel to use for this parameter.
     */
-    void setTransmissionRoughnessTexture(Texture *texture);
+    void setTransmissionRoughnessTexture(Texture *texture, int channel = 0);
     
     /** Disconnects the TransmissionRoughness texture, reverting back to any existing constant TransmissionRoughness */
     void clearTransmissionRoughnessTexture();

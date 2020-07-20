@@ -36,12 +36,9 @@ Material::Material(std::string name, uint32_t id)
 	materialStructs[id].ior = 1.45f;
 	materialStructs[id].transmission = 0.0;
 	materialStructs[id].transmission_roughness = 0.0;
-	materialStructs[id].flags = 0;
-	materialStructs[id].volume_texture_id = -1;
 	materialStructs[id].transmission_roughness_texture_id = -1;
 	materialStructs[id].base_color_texture_id = -1;
 	materialStructs[id].roughness_texture_id = -1;
-	materialStructs[id].occlusion_texture_id = -1;
 	materialStructs[id].alpha_texture_id = -1;
 	materialStructs[id].normal_map_texture_id = -1;
 	materialStructs[id].subsurface_color_texture_id = -1;
@@ -295,10 +292,11 @@ float Material::getAlpha()
 	return materialStructs[id].base_color.a;
 }
 
-void Material::setAlphaTexture(Texture *texture) 
+void Material::setAlphaTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].alpha_texture_id = texture->getId();
+	materialStructs[id].alpha_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -316,10 +314,11 @@ float Material::getSubsurface() {
 	return materialStructs[id].subsurface;
 }
 
-void Material::setSubsurfaceTexture(Texture *texture) 
+void Material::setSubsurfaceTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].subsurface_texture_id = texture->getId();
+	materialStructs[id].subsurface_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -337,10 +336,11 @@ float Material::getMetallic() {
 	return materialStructs[id].metallic;
 }
 
-void Material::setMetallicTexture(Texture *texture) 
+void Material::setMetallicTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].metallic_texture_id = texture->getId();
+	materialStructs[id].metallic_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -358,10 +358,11 @@ float Material::getSpecular() {
 	return materialStructs[id].specular;
 }
 
-void Material::setSpecularTexture(Texture *texture) 
+void Material::setSpecularTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].specular_texture_id = texture->getId();
+	materialStructs[id].specular_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -379,10 +380,11 @@ float Material::getSpecularTint() {
 	return materialStructs[id].specular_tint;
 }
 
-void Material::setSpecularTintTexture(Texture *texture) 
+void Material::setSpecularTintTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].specular_tint_texture_id = texture->getId();
+	materialStructs[id].specular_tint_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -400,10 +402,11 @@ float Material::getRoughness() {
 	return materialStructs[id].roughness;
 }
 
-void Material::setRoughnessTexture(Texture *texture) 
+void Material::setRoughnessTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].roughness_texture_id = texture->getId();
+	materialStructs[id].roughness_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -421,10 +424,11 @@ float Material::getAnisotropic() {
 	return materialStructs[id].anisotropic;
 }
 
-void Material::setAnisotropicTexture(Texture *texture) 
+void Material::setAnisotropicTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].anisotropic_texture_id = texture->getId();
+	materialStructs[id].anisotropic_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -442,10 +446,11 @@ float Material::getAnisotropicRotation() {
 	return materialStructs[id].anisotropic_rotation;
 }
 
-void Material::setAnisotropicRotationTexture(Texture *texture) 
+void Material::setAnisotropicRotationTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].anisotropic_rotation_texture_id = texture->getId();
+	materialStructs[id].anisotropic_rotation_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -463,10 +468,11 @@ float Material::getSheen() {
 	return materialStructs[id].sheen;
 }
 
-void Material::setSheenTexture(Texture *texture) 
+void Material::setSheenTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].sheen_texture_id = texture->getId();
+	materialStructs[id].sheen_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -484,10 +490,11 @@ float Material::getSheenTint() {
 	return materialStructs[id].sheen_tint;
 }
 
-void Material::setSheenTintTexture(Texture *texture) 
+void Material::setSheenTintTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].sheen_tint_texture_id = texture->getId();
+	materialStructs[id].sheen_tint_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -505,10 +512,11 @@ float Material::getClearcoat() {
 	return materialStructs[id].clearcoat;
 }
 
-void Material::setClearcoatTexture(Texture *texture) 
+void Material::setClearcoatTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].clearcoat_texture_id = texture->getId();
+	materialStructs[id].clearcoat_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -526,10 +534,11 @@ float Material::getClearcoatRoughness() {
 	return materialStructs[id].clearcoat_roughness;
 }
 
-void Material::setClearcoatRoughnessTexture(Texture *texture) 
+void Material::setClearcoatRoughnessTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].clearcoat_roughness_texture_id = texture->getId();
+	materialStructs[id].clearcoat_roughness_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -547,10 +556,11 @@ float Material::getIor() {
 	return materialStructs[id].ior;
 }
 
-void Material::setIorTexture(Texture *texture) 
+void Material::setIorTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].ior_texture_id = texture->getId();
+	materialStructs[id].ior_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -568,10 +578,11 @@ float Material::getTransmission() {
 	return materialStructs[id].transmission;
 }
 
-void Material::setTransmissionTexture(Texture *texture) 
+void Material::setTransmissionTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].transmission_texture_id = texture->getId();
+	materialStructs[id].transmission_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -589,10 +600,11 @@ float Material::getTransmissionRoughness() {
 	return materialStructs[id].transmission_roughness;
 }
 
-void Material::setTransmissionRoughnessTexture(Texture *texture) 
+void Material::setTransmissionRoughnessTexture(Texture *texture, int channel) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
 	materialStructs[id].transmission_roughness_texture_id = texture->getId();
+	materialStructs[id].transmission_roughness_texture_channel = clamp(channel, 0, 3);
 	markDirty();
 }
 
@@ -649,7 +661,7 @@ void Material::clearNormalMapTexture()
 // 	markDirty();
 // }
 
-// void Material::setVolumeTexture(Texture *texture)
+// void Material::setVolumeTexture(Texture *textur, int channele)
 // {
 // 	if (!texture) 
 // 		throw std::runtime_error( std::string("Invalid texture handle"));
@@ -663,7 +675,7 @@ void Material::clearNormalMapTexture()
 // 	markDirty();
 // }
 
-// void Material::setTransferFunctionTexture(Texture *texture)
+// void Material::setTransferFunctionTexture(Texture *textur, int channele)
 // {
 // 	if (!texture) 
 // 		throw std::runtime_error( std::string("Invalid texture handle"));

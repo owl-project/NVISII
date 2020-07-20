@@ -44,19 +44,8 @@ void Transform::updateComponents()
 {
 	for (int i = 0; i < MAX_TRANSFORMS; ++i) {
 		if (!transforms[i].isFactoryInitialized()) continue;
-		// transformStructs[i].worldToLocalPrev = transformStructs[i].worldToLocal;
-		// transformStructs[i].localToWorldPrev = transformStructs[i].localToWorld;
-		// transformStructs[i].worldToLocalRotationPrev = transformStructs[i].worldToLocalRotation;
-		// transformStructs[i].worldToLocalTranslationPrev = transformStructs[i].worldToLocalTranslation;
-
-		transformStructs[i].scale = transforms[i].getWorldScale();
-		transformStructs[i].translation = transforms[i].getWorldTranslation();
-		transformStructs[i].rotation = transforms[i].getWorldRotation();
-
 		transformStructs[i].worldToLocal = transforms[i].getWorldToLocalMatrix();
 		transformStructs[i].localToWorld = transforms[i].getLocalToWorldMatrix();
-		// transformStructs[i].worldToLocalRotation = transforms[i].getWorldToLocalRotationMatrix();
-		// transformStructs[i].worldToLocalTranslation = transforms[i].getWorldToLocalTranslationMatrix();
 		transforms[i].markClean();
 	};
 	anyDirty = false;
@@ -361,23 +350,31 @@ void Transform::addPosition(vec3 additionalPosition)
 	markDirty();
 }
 
-void Transform::setLinearVelocity(vec3 newLinearVelocity)
+void Transform::setLinearVelocity(vec3 newLinearVelocity, float framesPerSecond, float mix)
 {
-	linearVelocity = newLinearVelocity;
+	mix = glm::clamp(mix, 0.f, 1.f);
+	newLinearVelocity /= framesPerSecond;
+	linearVelocity = glm::mix(newLinearVelocity, linearVelocity, mix);
 	updatePosition();
 	markDirty();
 }
 
-void Transform::setAngularVelocity(quat newAngularVelocity)
+void Transform::setAngularVelocity(quat newAngularVelocity, float framesPerSecond, float mix)
 {
-	angularVelocity = newAngularVelocity;
+	mix = glm::clamp(mix, 0.f, 1.f);
+	newAngularVelocity[0] = newAngularVelocity[0] / framesPerSecond;
+	newAngularVelocity[1] = newAngularVelocity[1] / framesPerSecond;
+	newAngularVelocity[2] = newAngularVelocity[2] / framesPerSecond;
+	angularVelocity = glm::lerp(newAngularVelocity, angularVelocity, mix);
 	updateRotation();
 	markDirty();
 }
 
-void Transform::setScalarVelocity(vec3 newScalarVelocity)
+void Transform::setScalarVelocity(vec3 newScalarVelocity, float framesPerSecond, float mix)
 {
-	scalarVelocity = newScalarVelocity;
+	mix = glm::clamp(mix, 0.f, 1.f);
+	newScalarVelocity /= framesPerSecond;
+	scalarVelocity = glm::mix(newScalarVelocity, scalarVelocity, mix);
 	updateScale();
 	markDirty();
 }

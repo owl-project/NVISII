@@ -460,25 +460,28 @@ class Transform : public StaticFactory
      * Sets the linear velocity vector describing how fast this transform is translating within its 
      * parent space. Causes motion blur.
      * 
-     * @param newLinearVelocity The new linear velocity to set the current transform linear velocity to.
+     * @param velocity The new linear velocity to set the current transform linear velocity to, in meters per second.
+     * @param frames_per_second Used to convert meters per second into meters per frame. Useful for animations.
     */
-    void setLinearVelocity(vec3 newLinearVelocity);
+    void setLinearVelocity(vec3 velocity, float frames_per_second = 1.0f, float mix = 0.0f);
 
     /** 
      * Sets the angular velocity vector describing how fast this transform is rotating within its 
      * parent space. Causes motion blur.
      * 
-     * @param newAngularVelocity The new linear velocity to set the current transform angular velocity to.
+     * @param velocity The new angular velocity to set the current transform angular velocity to, in radians per second.
+     * @param frames_per_second Used to convert radians per second into scale per frame. Useful for animations.
     */
-    void setAngularVelocity(quat newAngularVelocity);
+    void setAngularVelocity(quat velocity, float frames_per_second = 1.0f, float mix = 0.0f);
 
     /** 
      * Sets the scalar velocity vector describing how fast this transform is scaling within its 
      * parent space. Causes motion blur.
      * 
-     * @param newScalarVelocity The new linear velocity to set the current transform scalar velocity to.
+     * @param velocity The new scalar velocity to set the current transform scalar velocity to, in additional scale per second
+     * @param frames_per_second Used to convert additional scale per second into additional scale per frame. Useful for animations.
     */
-    void setScalarVelocity(vec3 newScalarVelocity);
+    void setScalarVelocity(vec3 velocity, float frames_per_second = 1.0f, float mix = 0.0f);
 
     /** 
      * @returns the final matrix transforming this object from it's parent coordinate space to it's 

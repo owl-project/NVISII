@@ -19,6 +19,7 @@ struct quat {
     quat(mat4 const & m);
 };
 
+quat operator-(quat const & q, quat const & p);
 quat operator+(quat const & q, quat const & p);
 quat operator*(quat const & q, quat const & p);
 vec3 operator*(quat const & q, vec3 const & v);
@@ -111,6 +112,7 @@ quat angleAxis(float const & angle, vec3 const & axis);
 
     // extend operators, otherwise some languages (lua)
     // won't be able to act on objects directly (ie. v1 + v2)
+    quat operator-(quat const & q) {return (*$self) - q;}
     quat operator+(quat const & q) {return (*$self) + q;}
     quat operator*(quat const & q) {return (*$self) * q;}
     vec3 operator*(vec3 const & v) {return (*$self) * v;}

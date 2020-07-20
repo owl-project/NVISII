@@ -428,6 +428,13 @@ void setDirectLightingClamp(float clamp)
     launchParamsSetRaw(OptixData.launchParams, "directClamp", &OptixData.LP.directClamp);
 }
 
+void setMaxBounceDepth(uint32_t depth)
+{
+    OptixData.LP.maxBounceDepth = depth;
+    resetAccumulation();
+    launchParamsSetRaw(OptixData.launchParams, "maxBounceDepth", &OptixData.LP.maxBounceDepth);
+}
+
 void initializeFrameBuffer(int fbWidth, int fbHeight) {
     synchronizeDevices();
 
@@ -536,6 +543,7 @@ void initializeOptix(bool headless)
         { "domeLightIntensity",      OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
         { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
         { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
+        { "maxBounceDepth",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxBounceDepth)},
         { "environmentMapID",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapID)},
         { "environmentMapRotation",  OWL_USER_TYPE(glm::quat),          OWL_OFFSETOF(LaunchParams, environmentMapRotation)},
         { "textureObjects",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textureObjects)},
@@ -616,6 +624,7 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "domeLightIntensity", &OD.LP.domeLightIntensity);
     launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
     launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
+    launchParamsSetRaw(OD.launchParams, "maxBounceDepth", &OD.LP.maxBounceDepth);
 
     OWLVarDecl trianglesGeomVars[] = {{/* sentinel to mark end of list */}};
     OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
@@ -996,7 +1005,9 @@ void drawFrameBufferToWindow()
     cudaMemcpyToArray(array, 0, 0, fbdevptr, OD.LP.frameSize.x *  OD.LP.frameSize.y  * sizeof(glm::vec4), cudaMemcpyDeviceToDevice);
     cudaGraphicsUnmapResources(1, &OD.cudaResourceTex);
 
+    
     // Draw pixels from optix frame buffer
+    glEnable(GL_FRAMEBUFFER_SRGB); 
     glViewport(0, 0, OD.LP.frameSize.x, OD.LP.frameSize.y);
     
     glMatrixMode(GL_MODELVIEW);

@@ -25,6 +25,7 @@ struct LaunchParams {
     float domeLightIntensity = 1.f;
     float directClamp = 100.f; 
     float indirectClamp = 100.f; 
+    uint32_t maxBounceDepth = 10;
 
     EntityStruct    cameraEntity;
     EntityStruct    *entities = nullptr;
