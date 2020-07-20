@@ -231,6 +231,11 @@ OWLBuffer deviceBufferCreate(OWLContext context, OWLDataType type, size_t count,
     return owlDeviceBufferCreate(context, type, count, init);
 }
 
+void bufferDestroy(OWLBuffer buffer)
+{
+    owlBufferDestroy(buffer);
+}
+
 void bufferResize(OWLBuffer buffer, size_t newItemCount) {
     owlBufferResize(buffer, newItemCount);
 }
@@ -726,7 +731,16 @@ void updateComponents()
         Mesh* meshes = Mesh::getFront();
         for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
             if (!meshes[mid].isDirty()) continue;
-            if (!meshes[mid].isInitialized()) continue;
+            if (!meshes[mid].isInitialized()) {
+                if (OD.meshes[mid].vertices) owlBufferRelease(OD.meshes[mid].vertices);
+                if (OD.meshes[mid].colors) owlBufferRelease(OD.meshes[mid].colors);
+                if (OD.meshes[mid].normals) owlBufferRelease(OD.meshes[mid].normals);
+                if (OD.meshes[mid].texCoords) owlBufferRelease(OD.meshes[mid].texCoords);
+                if (OD.meshes[mid].indices) owlBufferRelease(OD.meshes[mid].indices);
+                if (OD.meshes[mid].geom) owlGeomRelease(OD.meshes[mid].geom);
+                if (OD.meshes[mid].blas) owlGroupRelease(OD.meshes[mid].blas);
+                continue;
+            }
             if (meshes[mid].getTriangleIndices().size() == 0) continue;
             OD.meshes[mid].vertices  = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getVertices().size(), meshes[mid].getVertices().data());
             OD.meshes[mid].colors    = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getColors().size(), meshes[mid].getColors().data());
