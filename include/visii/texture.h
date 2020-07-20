@@ -53,6 +53,9 @@ class Texture : public StaticFactory
 	/** @returns the number of allocated textures */
 	static uint32_t getCount();
 
+	/** @returns the name of this component */
+	std::string getName();
+
 	/** @returns A map whose key is a texture name and whose value is the ID for that texture */
 	static std::map<std::string, uint32_t> getNameToIdMap();
 

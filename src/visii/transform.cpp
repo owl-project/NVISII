@@ -101,6 +101,11 @@ uint32_t Transform::getCount() {
 	return MAX_TRANSFORMS;
 }
 
+std::string Transform::getName()
+{
+    return name;
+}
+
 std::map<std::string, uint32_t> Transform::getNameToIdMap()
 {
 	return lookupTable;

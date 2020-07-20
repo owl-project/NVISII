@@ -2131,6 +2131,11 @@ uint32_t Mesh::getCount() {
 	return MAX_MESHES;
 }
 
+std::string Mesh::getName()
+{
+    return name;
+}
+
 std::map<std::string, uint32_t> Mesh::getNameToIdMap()
 {
 	return lookupTable;

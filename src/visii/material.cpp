@@ -203,6 +203,11 @@ uint32_t Material::getCount() {
 	return MAX_MATERIALS;
 }
 
+std::string Material::getName()
+{
+    return name;
+}
+
 std::map<std::string, uint32_t> Material::getNameToIdMap()
 {
 	return lookupTable;

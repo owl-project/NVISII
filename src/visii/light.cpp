@@ -204,6 +204,11 @@ uint32_t Light::getCount() {
     return MAX_LIGHTS;
 }
 
+std::string Light::getName()
+{
+    return name;
+}
+
 std::map<std::string, uint32_t> Light::getNameToIdMap()
 {
 	return lookupTable;

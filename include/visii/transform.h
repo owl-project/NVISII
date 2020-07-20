@@ -164,6 +164,9 @@ class Transform : public StaticFactory
     /** @returns the number of allocated transforms */
 	  static uint32_t getCount();
 
+    /** @returns the name of this component */
+	  std::string getName();
+
     /** @returns A map whose key is a transform name and whose value is the ID for that transform */
 	  static std::map<std::string, uint32_t> getNameToIdMap();
 

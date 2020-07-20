@@ -196,6 +196,11 @@ uint32_t Texture::getCount() {
     return MAX_TEXTURES;
 }
 
+std::string Texture::getName()
+{
+    return name;
+}
+
 std::map<std::string, uint32_t> Texture::getNameToIdMap()
 {
 	return lookupTable;
