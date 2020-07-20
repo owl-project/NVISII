@@ -732,13 +732,13 @@ void updateComponents()
         for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
             if (!meshes[mid].isDirty()) continue;
             if (!meshes[mid].isInitialized()) {
-                if (OD.meshes[mid].vertices) owlBufferRelease(OD.meshes[mid].vertices);
-                if (OD.meshes[mid].colors) owlBufferRelease(OD.meshes[mid].colors);
-                if (OD.meshes[mid].normals) owlBufferRelease(OD.meshes[mid].normals);
-                if (OD.meshes[mid].texCoords) owlBufferRelease(OD.meshes[mid].texCoords);
-                if (OD.meshes[mid].indices) owlBufferRelease(OD.meshes[mid].indices);
-                if (OD.meshes[mid].geom) owlGeomRelease(OD.meshes[mid].geom);
-                if (OD.meshes[mid].blas) owlGroupRelease(OD.meshes[mid].blas);
+                if (OD.meshes[mid].vertices) { owlBufferRelease(OD.meshes[mid].vertices); OD.meshes[mid].vertices = nullptr; }
+                if (OD.meshes[mid].colors) { owlBufferRelease(OD.meshes[mid].colors); OD.meshes[mid].colors = nullptr; }
+                if (OD.meshes[mid].normals) { owlBufferRelease(OD.meshes[mid].normals); OD.meshes[mid].normals = nullptr; }
+                if (OD.meshes[mid].texCoords) { owlBufferRelease(OD.meshes[mid].texCoords); OD.meshes[mid].texCoords = nullptr; }
+                if (OD.meshes[mid].indices) { owlBufferRelease(OD.meshes[mid].indices); OD.meshes[mid].indices = nullptr; }
+                if (OD.meshes[mid].geom) { owlGeomRelease(OD.meshes[mid].geom); OD.meshes[mid].geom = nullptr; }
+                if (OD.meshes[mid].blas) { owlGroupRelease(OD.meshes[mid].blas); OD.meshes[mid].blas = nullptr; }
                 continue;
             }
             if (meshes[mid].getTriangleIndices().size() == 0) continue;
@@ -810,6 +810,7 @@ void updateComponents()
 
         std::vector<owl4x3f>     t0Transforms;
         std::vector<owl4x3f>     t1Transforms;
+        if (OD.tlas) {owlGroupRelease(OD.tlas); OD.tlas = nullptr;}
         OD.tlas = instanceGroupCreate(OD.context, instances.size());
         for (uint32_t iid = 0; iid < instances.size(); ++iid) {
             instanceGroupSetChild(OD.tlas, iid, instances[iid]); 
@@ -864,8 +865,12 @@ void updateComponents()
         Texture* textures = Texture::getFront();
         std::vector<cudaTextureObject_t> textureObjects(Texture::getCount());
         for (uint32_t tid = 0; tid < Texture::getCount(); ++tid) {
-            if (!textures[tid].isInitialized()) continue;
+            if (!textures[tid].isInitialized()) {
+                if (OD.textureObjects[tid]) { owlTexture2DDestroy(OD.textureObjects[tid]); OD.textureObjects[tid] = nullptr; }
+                continue;
+            }
             if (textures[tid].isDirty()) {
+                if (OD.textureObjects[tid]) owlTexture2DDestroy(OD.textureObjects[tid]);
                 OD.textureObjects[tid] = texture2DCreate(
                     OD.context, OWL_TEXEL_FORMAT_RGBA32F,
                     textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
