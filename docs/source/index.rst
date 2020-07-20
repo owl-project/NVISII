@@ -5,6 +5,7 @@ Welcome to ViSII's documentation!
    :maxdepth: 3
    :caption: Contents:
 
+   visii
    entity
    transform
    material
