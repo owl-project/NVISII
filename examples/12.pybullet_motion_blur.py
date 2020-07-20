@@ -4,7 +4,6 @@ import random
 import argparse
 import colorsys
 import subprocess 
-import math
 import pybullet as p 
 
 parser = argparse.ArgumentParser()
@@ -70,7 +69,7 @@ camera = visii.entity.create(
 camera.get_transform().look_at(
     visii.vec3(0,0,0), # look at (world coordinate)
     visii.vec3(0,0,1), # up vector
-    visii.vec3(10,0,7), # camera_origin    
+    visii.vec3(10,0,5), # camera_origin    
 )
 # set the camera
 visii.set_camera_entity(camera)
@@ -84,6 +83,7 @@ frames_per_second = 30.0
 physicsClient = p.connect(p.DIRECT) # non-graphical version
 p.setGravity(0,0,-10)
 p.setTimeStep(seconds_per_step)
+
 
 # Lets set the scene
 
@@ -136,7 +136,7 @@ print(f"added collision for {floor.get_name()}, at {pos}, {rot}")
 
 # lets create a bunch of objects 
 # mesh = visii.mesh.create_torus('mesh')
-mesh = visii.mesh.create_teapotahedron('mesh')
+mesh = visii.mesh.create_teapotahedron('mesh', segments = 12)
 # mesh = visii.mesh.create_sphere('mesh')
 
 # set up for pybullet - here we will use indices for 
@@ -198,15 +198,19 @@ for i in range(opt.nb_objects):
         basePosition = pos,
         baseOrientation= rot,
         baseMass = random.uniform(0.5,2)
-    )       
+    )   
 
     # to keep track of the ids and names 
     ids_pybullet_and_visii_names.append(
         {
             "pybullet_id":obj_col_id, 
-            "visii_id":name
+            "visii_id":name,
+            "lin_vel": visii.vec3(0),
+            "ang_vel": visii.vec3(0)
         }
     )
+
+    p.resetBaseVelocity(obj_col_id, [0,0,0], [0,0,0])
 
     print(f"added collision for {name}, at {pos}, {rot}")
 
@@ -262,8 +266,11 @@ for i in range(opt.nb_objects):
     else:
         obj_mat.set_anisotropic(random.uniform(0.9,1))  # degault is 0     
 
+import math
+
 # Lets run the simulation for a few steps. 
 for i in range (int(opt.nb_frames)):
+
     steps_per_frame = math.ceil( (1.0 / seconds_per_step) / frames_per_second)
     for j in range(steps_per_frame):
         p.stepSimulation()
@@ -273,24 +280,28 @@ for i in range (int(opt.nb_frames)):
 
         # get the pose of the objects
         pos, rot = p.getBasePositionAndOrientation(ids['pybullet_id'])
+        _dpos, _drot = p.getBaseVelocity(ids['pybullet_id'])
 
-        # get the visii entity for that object
+        # get the visii entity for that object. 
         obj_entity = visii.entity.get(ids['visii_id'])
-        obj_entity.get_transform().set_position(visii.vec3(
-                                                pos[0],
-                                                pos[1],
-                                                pos[2]
-                                                )
-                                            )
+        dpos = visii.vec3(_dpos[0],_dpos[1],_dpos[2])
+        new_pos = visii.vec3(pos[0],pos[1],pos[2])
+        obj_entity.get_transform().set_position(new_pos)
+
+        # Use linear velocity to blur the object in motion.
+        # We use frames per second here to internally convert velocity in meters / second into meters / frame.
+        # The "mix" parameter smooths out the motion blur temporally, reducing flickering from linear motion blur
+        obj_entity.get_transform().set_linear_velocity(dpos, frames_per_second, mix = .8)
 
         # visii quat expects w as the first argument
-        obj_entity.get_transform().set_rotation(visii.quat(
-                                                rot[3],
-                                                rot[0],
-                                                rot[1],
-                                                rot[2]
-                                                )   
-                                            )
+        new_rot = visii.quat(rot[3], rot[0], rot[1], rot[2])
+        drot = visii.vec3(_drot[0],_drot[1],_drot[2])
+        obj_entity.get_transform().set_rotation(new_rot)
+        
+        # Use angular velocity to blur the object in motion. Same concepts as above, but for 
+        # angular velocity instead of scalar.
+        obj_entity.get_transform().set_angular_velocity(visii.quat(1.0, drot), frames_per_second, mix = .8)
+
     print(f'rendering frame {str(i).zfill(5)}/{str(opt.nb_frames).zfill(5)}')
     visii.render_to_png(
         width=int(opt.width), 
