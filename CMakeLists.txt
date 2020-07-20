@@ -257,6 +257,8 @@ include_directories(${OptiX_INCLUDE})
 
 # owl
 set(SET_UP_CONFIGURATIONS_DONE 1)
+set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
+set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
 add_subdirectory(externals/owl)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
