@@ -52,7 +52,7 @@ jobs:
             /opt/python/cp38-cp38/bin/pip install cmake
             find / -iname "cmake"
             
-            /opt/_internal/cpython-3.8.3/bin/cmake --version
+            /opt/_internal/cpython-3.8.4/bin/cmake --version
             
             # Setuptools scm
             /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm
