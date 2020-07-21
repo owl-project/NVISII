@@ -817,8 +817,10 @@ void updateComponents()
 
         std::vector<owl4x3f>     t0Transforms;
         std::vector<owl4x3f>     t1Transforms;
-        // if (OD.tlas) {owlGroupRelease(OD.tlas); OD.tlas = nullptr;} // debugging 
-        // python3d: /home/runner/work/ViSII/ViSII/externals/owl/owl/ObjectRegistry.cpp:83: owl::RegisteredObject* owl::ObjectRegistry::getPtr(int): Assertion `objects[ID]' failed.
+        // if (OD.tlas) {owlGroupRelease(OD.tlas); OD.tlas = nullptr;}
+        // not sure why, but if I release this TLAS, I get the following error
+        // python3d: /home/runner/work/ViSII/ViSII/externals/owl/owl/ObjectRegistry.cpp:83: 
+        //   owl::RegisteredObject* owl::ObjectRegistry::getPtr(int): Assertion `objects[ID]' failed.
         OD.tlas = instanceGroupCreate(OD.context, instances.size());
         for (uint32_t iid = 0; iid < instances.size(); ++iid) {
             instanceGroupSetChild(OD.tlas, iid, instances[iid]); 
