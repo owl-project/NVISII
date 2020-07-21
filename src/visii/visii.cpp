@@ -107,6 +107,8 @@ static struct OptixData {
     OWLBuffer hdrIntensityBuffer;
 
     Texture* domeLightTexture = nullptr;
+
+    OWLBuffer placeholder;
 } OptixData;
 
 static struct ViSII {
@@ -382,7 +384,7 @@ void synchronizeDevices()
         cudaError_t err = cudaPeekAtLastError();
         if (err != 0) {
             std::cout<< "ERROR: " << cudaGetErrorString(err)<<std::endl;
-            throw std::runtime_error("ERROR");
+            throw std::runtime_error(std::string("ERROR: ") + cudaGetErrorString(err));
         }
     }
     cudaSetDevice(0);
@@ -539,10 +541,10 @@ void initializeOptix(bool headless)
         { "lights",                  OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lights)},
         { "textures",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
         { "lightEntities",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
-        { "vertexLists",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
-        { "normalLists",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, normalLists)},
-        { "texCoordLists",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, texCoordLists)},
-        { "indexLists",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, indexLists)},
+        { "vertexLists",             OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
+        { "normalLists",             OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, normalLists)},
+        { "texCoordLists",           OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, texCoordLists)},
+        { "indexLists",              OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, indexLists)},
         { "numLightEntities",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
         { "instanceToEntityMap",     OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
         { "domeLightIntensity",      OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
@@ -586,11 +588,14 @@ void initializeOptix(bool headless)
     OD.textureBuffer             = deviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       MAX_TEXTURES,   nullptr);
     OD.lightEntitiesBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
-    OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*),               MAX_MESHES,     nullptr);
-    OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4*),               MAX_MESHES,     nullptr);
-    OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2*),               MAX_MESHES,     nullptr);
-    OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_USER_TYPE(ivec3*),              MAX_MESHES,     nullptr);
-    OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_USER_TYPE(cudaTextureObject_t), MAX_TEXTURES,   nullptr);
+    OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
+    OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
+    OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
+    OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
+    OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        MAX_TEXTURES,   nullptr);
+
+    
+
     launchParamsSetBuffer(OD.launchParams, "entities",            OD.entityBuffer);
     launchParamsSetBuffer(OD.launchParams, "transforms",          OD.transformBuffer);
     launchParamsSetBuffer(OD.launchParams, "cameras",             OD.cameraBuffer);
@@ -641,10 +646,10 @@ void initializeOptix(bool headless)
     ivec3 indices[NUM_INDICES] = {{ 0, 0, 0 }};
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
     
-    OWLBuffer vertexBuffer = deviceBufferCreate(OD.context,OWL_FLOAT3,NUM_VERTICES,vertices);
+    OWLBuffer vertexBuffer = deviceBufferCreate(OD.context,OWL_FLOAT4,NUM_VERTICES,vertices);
     OWLBuffer indexBuffer = deviceBufferCreate(OD.context,OWL_INT3,NUM_INDICES,indices);
     OWLGeom trianglesGeom = geomCreate(OD.context,OD.trianglesGeomType);
-    trianglesSetVertices(trianglesGeom,vertexBuffer,NUM_VERTICES,sizeof(vec3),0);
+    trianglesSetVertices(trianglesGeom,vertexBuffer,NUM_VERTICES,sizeof(vec4),0);
     trianglesSetIndices(trianglesGeom,indexBuffer, NUM_INDICES,sizeof(ivec3),0);
     OWLGroup trianglesGroup = trianglesGeomGroupCreate(OD.context,1,&trianglesGeom);
     groupBuildAccel(trianglesGroup);
@@ -695,6 +700,8 @@ void initializeOptix(bool headless)
         (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0), 
         OD.denoiserSizes.recommendedScratchSizeInBytes
     ));
+
+    OD.placeholder = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 1, nullptr);
 }
 
 void initializeImgui()
@@ -754,10 +761,10 @@ void updateComponents()
             groupBuildAccel(OD.meshes[mid].blas);          
         }
 
-        std::vector<vec4*> vertexLists(Mesh::getCount(), nullptr);
-        std::vector<ivec3*> indexLists(Mesh::getCount(), nullptr);
-        std::vector<vec4*> normalLists(Mesh::getCount(), nullptr);
-        std::vector<vec2*> texCoordLists(Mesh::getCount(), nullptr);
+        std::vector<OWLBuffer> vertexLists(Mesh::getCount(), nullptr);
+        std::vector<OWLBuffer> indexLists(Mesh::getCount(), nullptr);
+        std::vector<OWLBuffer> normalLists(Mesh::getCount(), nullptr);
+        std::vector<OWLBuffer> texCoordLists(Mesh::getCount(), nullptr);
         for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
             // If a mesh is initialized, vertex and index buffers should already be created, and so 
             if (!meshes[mid].isInitialized()) continue;
@@ -768,10 +775,10 @@ void updateComponents()
                 std::cout<<"nindices : " << meshes[mid].getTriangleIndices().size() << std::endl;
                 throw std::runtime_error("ERROR: vertices/indices is nullptr");
             }
-            vertexLists[mid] = ((vec4*) bufferGetPointer(OD.meshes[mid].vertices, /* device */ 0));
-            normalLists[mid] = ((vec4*) bufferGetPointer(OD.meshes[mid].normals, /* device */ 0));
-            texCoordLists[mid] = ((vec2*) bufferGetPointer(OD.meshes[mid].texCoords, /* device */ 0));
-            indexLists[mid] = ((ivec3*) bufferGetPointer(OD.meshes[mid].indices, /* device */ 0));
+            vertexLists[mid] = OD.meshes[mid].vertices;
+            normalLists[mid] = OD.meshes[mid].normals;
+            texCoordLists[mid] = OD.meshes[mid].texCoords;
+            indexLists[mid] = OD.meshes[mid].indices;
         }
         bufferUpload(OD.vertexListsBuffer, vertexLists.data());
         bufferUpload(OD.texCoordListsBuffer, texCoordLists.data());
@@ -810,7 +817,10 @@ void updateComponents()
 
         std::vector<owl4x3f>     t0Transforms;
         std::vector<owl4x3f>     t1Transforms;
-        if (OD.tlas) {owlGroupRelease(OD.tlas); OD.tlas = nullptr;}
+        // if (OD.tlas) {owlGroupRelease(OD.tlas); OD.tlas = nullptr;}
+        // not sure why, but if I release this TLAS, I get the following error
+        // python3d: /home/runner/work/ViSII/ViSII/externals/owl/owl/ObjectRegistry.cpp:83: 
+        //   owl::RegisteredObject* owl::ObjectRegistry::getPtr(int): Assertion `objects[ID]' failed.
         OD.tlas = instanceGroupCreate(OD.context, instances.size());
         for (uint32_t iid = 0; iid < instances.size(); ++iid) {
             instanceGroupSetChild(OD.tlas, iid, instances[iid]); 
@@ -863,7 +873,7 @@ void updateComponents()
         std::lock_guard<std::mutex> lock(*mutex.get());
 
         Texture* textures = Texture::getFront();
-        std::vector<cudaTextureObject_t> textureObjects(Texture::getCount());
+        std::vector<OWLTexture> textureObjects(Texture::getCount());
         for (uint32_t tid = 0; tid < Texture::getCount(); ++tid) {
             if (!textures[tid].isInitialized()) {
                 if (OD.textureObjects[tid]) { owlTexture2DDestroy(OD.textureObjects[tid]); OD.textureObjects[tid] = nullptr; }
@@ -876,9 +886,8 @@ void updateComponents()
                     textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
                     OWL_TEXTURE_LINEAR);        
             }
-            textureObjects[tid] = textureGetObject(OD.textureObjects[tid], 0);
         }
-        bufferUpload(OD.textureObjectsBuffer, textureObjects.data());
+        bufferUpload(OD.textureObjectsBuffer, OD.textureObjects);
         
         Texture::updateComponents();
         bufferUpload(OptixData.textureBuffer, Texture::getFrontStruct());
@@ -1216,8 +1225,17 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
 
             if (!ViSII.headlessMode) {
                 drawFrameBufferToWindow();
+                glfwSetWindowTitle(WindowData.window, 
+                    (std::to_string(i) + std::string("/") + std::to_string(samplesPerPixel)).c_str());
             }
+            std::cout<< "\r" << i << "/" << samplesPerPixel;
         }      
+        if (!ViSII.headlessMode) {
+            glfwSetWindowTitle(WindowData.window, 
+                (std::to_string(samplesPerPixel) + std::string("/") + std::to_string(samplesPerPixel) 
+                + std::string(" - done!")).c_str());
+        }
+        std::cout<<"\r "<< samplesPerPixel << "/" << samplesPerPixel <<" - done!" << std::endl;
 
         synchronizeDevices();
 

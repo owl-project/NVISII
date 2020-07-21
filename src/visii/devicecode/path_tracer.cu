@@ -82,18 +82,21 @@ vec4 sampleTexture(int32_t textureId, vec2 texCoord, vec4 defaultValue) {
 }
 
 __device__
-void loadMeshTriIndices(int meshID, int primitiveID, int3 &indices)
+void loadMeshTriIndices(int meshID, int primitiveID, int3 &triIndices)
 {
-    ivec3* triIndices = optixLaunchParams.indexLists[meshID]; 
-    indices = (int3&) triIndices[primitiveID];   
+    owl::device::Buffer *indexLists = (owl::device::Buffer *)optixLaunchParams.indexLists.data;
+    int3 *indices = (int3*) indexLists[meshID].data;
+    triIndices = indices[primitiveID];   
 }
 
 __device__
 void loadMeshVertexData(int meshID, int3 indices, float2 barycentrics, float3 &position, float3 &geometricNormal, float3 &edge1, float3 &edge2)
 {
-    const float3 &A = (float3&) optixLaunchParams.vertexLists[meshID][indices.x];
-    const float3 &B = (float3&) optixLaunchParams.vertexLists[meshID][indices.y];
-    const float3 &C = (float3&) optixLaunchParams.vertexLists[meshID][indices.z];
+    owl::device::Buffer *vertexLists = (owl::device::Buffer *)optixLaunchParams.vertexLists.data;
+    float4 *vertices = (float4*) vertexLists[meshID].data;
+    const float3 A = make_float3(vertices[indices.x]);
+    const float3 B = make_float3(vertices[indices.y]);
+    const float3 C = make_float3(vertices[indices.z]);
     edge1 = B - A;
     edge2 = C - A;
     position = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
@@ -103,9 +106,11 @@ void loadMeshVertexData(int meshID, int3 indices, float2 barycentrics, float3 &p
 __device__
 void loadMeshUVData(int meshID, int3 indices, float2 barycentrics, float2 &uv, float2 &edge1, float2 &edge2)
 {
-    const float2 &A = (float2&) optixLaunchParams.texCoordLists[meshID][indices.x];
-    const float2 &B = (float2&) optixLaunchParams.texCoordLists[meshID][indices.y];
-    const float2 &C = (float2&) optixLaunchParams.texCoordLists[meshID][indices.z];
+    owl::device::Buffer *texCoordLists = (owl::device::Buffer *)optixLaunchParams.texCoordLists.data;
+    float2 *texCoords = (float2*) texCoordLists[meshID].data;
+    const float2 &A = texCoords[indices.x];
+    const float2 &B = texCoords[indices.y];
+    const float2 &C = texCoords[indices.z];
     edge1 = B - A;
     edge2 = C - A;
     uv = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
@@ -114,9 +119,11 @@ void loadMeshUVData(int meshID, int3 indices, float2 barycentrics, float2 &uv, f
 __device__
 void loadMeshNormalData(int meshID, int3 indices, float2 barycentrics, float2 uv, float3 &normal)
 {
-    const float3 &A = (float3&) optixLaunchParams.normalLists[meshID][indices.x];
-    const float3 &B = (float3&) optixLaunchParams.normalLists[meshID][indices.y];
-    const float3 &C = (float3&) optixLaunchParams.normalLists[meshID][indices.z];
+    owl::device::Buffer *normalLists = (owl::device::Buffer *)optixLaunchParams.normalLists.data;
+    float4 *normals = (float4*) normalLists[meshID].data;
+    const float3 &A = make_float3(normals[indices.x]);
+    const float3 &B = make_float3(normals[indices.y]);
+    const float3 &C = make_float3(normals[indices.z]);
     normal = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
 }
 
@@ -456,20 +463,25 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if (!is_area_light) break;
 
                 uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
-                ivec3* triIndices = optixLaunchParams.indexLists[light_entity.mesh_id]; 
-                ivec3 triIndex = triIndices[random_tri_id];   
+                owl::device::Buffer *indexLists = (owl::device::Buffer *)optixLaunchParams.indexLists.data;
+                ivec3 *indices = (ivec3*) indexLists[light_entity.mesh_id].data;
+                ivec3 triIndex = indices[random_tri_id];   
                 
                 // Sample the light to compute an incident light ray to this point
                 {    
+                    owl::device::Buffer *vertexLists = (owl::device::Buffer *)optixLaunchParams.vertexLists.data;
+                    owl::device::Buffer *texCoordLists = (owl::device::Buffer *)optixLaunchParams.texCoordLists.data;
+                    vec4 *vertices = (vec4*) vertexLists[light_entity.mesh_id].data;
+                    vec2 *texCoords = (vec2*) texCoordLists[light_entity.mesh_id].data;
                     vec3 dir; 
                     vec2 uv;
                     vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
-                    vec3 v1 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.x];
-                    vec3 v2 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.y];
-                    vec3 v3 = transform.localToWorld * optixLaunchParams.vertexLists[light_entity.mesh_id][triIndex.z];
-                    vec2 uv1 = optixLaunchParams.texCoordLists[light_entity.mesh_id][triIndex.x];
-                    vec2 uv2 = optixLaunchParams.texCoordLists[light_entity.mesh_id][triIndex.y];
-                    vec2 uv3 = optixLaunchParams.texCoordLists[light_entity.mesh_id][triIndex.z];
+                    vec3 v1 = transform.localToWorld * vertices[triIndex.x];
+                    vec3 v2 = transform.localToWorld * vertices[triIndex.y];
+                    vec3 v3 = transform.localToWorld * vertices[triIndex.z];
+                    vec2 uv1 = texCoords[triIndex.x];
+                    vec2 uv2 = texCoords[triIndex.y];
+                    vec2 uv3 = texCoords[triIndex.z];
                     vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
                     sampleTriangle(pos, N, v1, v2, v3, uv1, uv2, uv3, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf, uv);
                     vec3 normal = glm::vec3(n_l.x, n_l.y, n_l.z);

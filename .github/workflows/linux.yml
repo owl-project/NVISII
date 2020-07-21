@@ -63,7 +63,10 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ../ -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so -DPYTHON_VERSION="${{matrix.python-version}}"
+        cmake ../ \
+        -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
+        -DPYTHON_VERSION="${{matrix.python-version}}" \
+        -DCMAKE_BUILD_TYPE=Release
         cmake --build . --config Release --target install
         cd ..
         cd install
