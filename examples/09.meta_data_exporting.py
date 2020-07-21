@@ -4,6 +4,8 @@ import noise
 import random
 import argparse
 import numpy as np 
+import PIL
+from PIL import Image 
 
 parser = argparse.ArgumentParser()
 
@@ -108,25 +110,40 @@ mesh1.get_transform().set_scale(
 # these are exported in HDR which offers very good 
 # storage for values.
 
-visii.render_data_to_hdr(
+depth_array = visii.render_data(
     width=int(opt.width), 
     height=int(opt.height), 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
-    options="depth",
-    image_path=f"{opt.outf}/depth.hdr"
+    options="depth"
+)
+depth_array = np.array(depth_array).reshape(opt.width,opt.height,4)
+depth_array[...,:-1] = depth_array[...,:-1] / np.max(depth_array[...,:-1])
+depth_array[...,:-1] = depth_array[...,:-1] - np.min(depth_array[...,:-1])
+
+# save the segmentation image
+img = Image.fromarray((depth_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save(f"{opt.outf}/depth.png")
+
+
+normals_array = visii.render_data(
+    width=int(opt.width), 
+    height=int(opt.height), 
+    start_frame=0,
+    frame_count=1,
+    bounce=int(0),
+    options="normal"
 )
 
-visii.render_data_to_hdr(
-    width=int(opt.width), 
-    height=int(opt.height), 
-    start_frame=0,
-    frame_count=1,
-    bounce=int(0),
-    options="normal",
-    image_path=f"{opt.outf}/normal.hdr"
-)
+# transform normals to be between 0 and 1
+normals_array = np.array(normals_array).reshape(opt.width,opt.height,4)
+normals_array = (normals_array * .5) + .5
+
+# save the segmentation image
+img = Image.fromarray((normals_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save(f"{opt.outf}/normals.png")
+
 
 # the entities are stored with an id, 
 # visii.entity.get_id(), this is used to 
@@ -137,25 +154,39 @@ visii.render_data_to_hdr(
 # visii.texture.get('soup').get_id()
 
 ['soup','can']
-visii.render_data_to_hdr(
+segmentation_array = visii.render_data(
     width=int(opt.width), 
     height=int(opt.height), 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
-    options="entity_id",
-    image_path=f"{opt.outf}/segmentation.hdr"
+    options="entity_id"
 )
+segmentation_array = np.array(segmentation_array).reshape(opt.width,opt.height,4)
 
-visii.render_data_to_hdr(
+# set the background as 0. Normalize to make segmentation visible
+segmentation_array[segmentation_array>3.0] = 0 
+segmentation_array /= 3.0
+
+# save the segmentation image
+img = Image.fromarray((segmentation_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save(f"{opt.outf}/segmentation.png")
+    
+position_array = visii.render_data(
     width=int(opt.width), 
     height=int(opt.height), 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
-    options="position",
-    image_path=f"{opt.outf}/position.hdr"
+    options="position"
 )
+position_array = np.array(position_array).reshape(opt.width,opt.height,4)
+position_array[...,:-1] = position_array[...,:-1] / (np.max(position_array[...,:-1]) - np.min(position_array[...,:-1]))
+position_array[...,:-1] = position_array[...,:-1] - np.min(position_array[...,:-1])
+
+# save the segmentation image
+img = Image.fromarray((position_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save(f"{opt.outf}/positions.png")
 
 visii.render_to_png(
     width=int(opt.width), 

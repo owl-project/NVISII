@@ -11,14 +11,14 @@ struct TransformStruct
     /* 64 bytes */
     mat4 worldToLocal;
     mat4 localToWorld;
+    // vec3 translation;
+    // quat rotation;
+    // vec3 scale;
     // mat4 worldToLocalRotation;
     // mat4 localToWorldRotation;
     // mat4 worldToLocalTranslation;
     // mat4 localToWorldTranslation;
 
-    vec3 translation;
-    quat rotation;
-    vec3 scale;
 
     /* 128 bytes, for temporal reprojection */
     // mat4 worldToLocalPrev;

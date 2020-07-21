@@ -306,6 +306,11 @@ uint32_t Entity::getCount() {
 	return MAX_ENTITIES;
 }
 
+std::string Entity::getName()
+{
+    return name;
+}
+
 std::map<std::string, uint32_t> Entity::getNameToIdMap()
 {
 	return lookupTable;

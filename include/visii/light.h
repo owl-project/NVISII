@@ -57,6 +57,9 @@ public:
     /** @returns the number of allocated lights */
     static uint32_t getCount();
 
+    /** @returns the name of this component */
+	std::string getName();
+
     /** @returns A map whose key is a light name and whose value is the ID for that light */
 	static std::map<std::string, uint32_t> getNameToIdMap();
 
@@ -115,6 +118,9 @@ public:
 
     /** Disconnects the color texture, reverting back to any existing constant light color*/
     void clearColorTexture();
+
+    /** @returns the constant vec3 color used by this light. If a color texture is set, this function should not be used. */
+    glm::vec3 getColor();
     
     /** 
      * Sets a realistic emission color via a temperature.
@@ -129,6 +135,9 @@ public:
      * @param intensity How powerful the light source is in emitting light 
     */
     void setIntensity(float intensity);
+
+    /** @returns the constant intensity used by this light. */
+    float getIntensity();
     
 private:
     /* Creates an uninitialized light. Useful for preallocation. */

@@ -85,9 +85,10 @@ endif()
 # └──────────────────────────────────────────────────────────────────┘
 
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-add_definitions(-DNOMINMAX)
 add_definitions(-DGENERATOR_USE_GLM)
-add_definitions(-D_WIN64)
+if(WIN32)
+  add_definitions(-DNOMINMAX)
+endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  External Dependencies                                           │
@@ -258,11 +259,10 @@ include_directories(${OptiX_INCLUDE})
 set(SET_UP_CONFIGURATIONS_DONE 1)
 set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
 set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
-set(OWL_USE_TBB OFF CACHE STRING "" FORCE)
 add_subdirectory(externals/owl)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/cmake)
 include(configure_cuda)
 
 # add libraries to a list for linking

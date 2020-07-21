@@ -5,7 +5,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--spp', 
-                    default=100,
+                    default=256,
                     type=int,
                     help = "number of sample per pixel, higher the more costly")
 parser.add_argument('--width', 

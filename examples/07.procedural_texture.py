@@ -58,7 +58,7 @@ visii.set_camera_entity(camera)
 
 shape = (1024,1024)
 img = np.zeros(shape)
-data = []
+
 for i in range(shape[0]):
     for j in range(shape[1]):
         img[i][j] = noise.pnoise2(  
@@ -71,16 +71,21 @@ for i in range(shape[0]):
             repeaty=1024, 
             base=0  
         )
-        data.append(
-            visii.vec4(
-                img[i][j],
-                img[i][j],
-                img[i][j],
-                1
-            )
-        )
 
-noise = visii.texture.create_from_data('noise',shape[0],shape[1],data)    
+data = np.concatenate([
+        img.reshape(shape[0],shape[1],1),
+        img.reshape(shape[0],shape[1],1),
+        img.reshape(shape[0],shape[1],1),
+        img.reshape(shape[0],shape[1],1),
+    ]
+)
+
+noise = visii.texture.create_from_data(
+    'noise',
+    shape[0],
+    shape[1],
+    data.reshape(shape[0]*shape[1],4).astype(np.float32).flatten().tolist()
+)    
 
 visii.set_dome_light_intensity(1)
 

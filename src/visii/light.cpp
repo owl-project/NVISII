@@ -43,6 +43,11 @@ void Light::setColor(glm::vec3 color)
     markDirty();
 }
 
+glm::vec3 Light::getColor()
+{
+    return glm::vec3(lightStructs[id].r, lightStructs[id].g, lightStructs[id].b);
+}
+
 void Light::setColorTexture(Texture *texture) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
@@ -94,6 +99,11 @@ void Light::setIntensity(float intensity)
 {
     lightStructs[id].intensity = intensity;
     markDirty();
+}
+
+float Light::getIntensity()
+{
+    return lightStructs[id].intensity;
 }
 
 /* SSBO logic */
@@ -192,6 +202,11 @@ LightStruct* Light::getFrontStruct() {
 
 uint32_t Light::getCount() {
     return MAX_LIGHTS;
+}
+
+std::string Light::getName()
+{
+    return name;
 }
 
 std::map<std::string, uint32_t> Light::getNameToIdMap()

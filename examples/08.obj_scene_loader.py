@@ -87,7 +87,7 @@ mirror.set_base_color(visii.vec3(1))
 for i_s, s in enumerate(sdb):
     if "light" in s.get_name().lower():
         s.set_light(visii.light.create('light'))
-        s.get_light().set_intensity(100)
+        s.get_light().set_intensity(80)
         s.get_light().set_temperature(5000)
         s.clear_material()
 
