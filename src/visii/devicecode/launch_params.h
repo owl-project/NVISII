@@ -1,6 +1,7 @@
 #pragma once
 
 #include <owl/owl.h>
+#include <owl/owl_device_buffer.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
@@ -39,10 +40,10 @@ struct LaunchParams {
     uint32_t        *instanceToEntityMap = nullptr;
     uint32_t         numLightEntities = 0;
 
-    vec4 **vertexLists = nullptr;
-    vec4 **normalLists = nullptr;
-    vec2 **texCoordLists = nullptr;
-    ivec3 **indexLists = nullptr;
+    owl::device::Buffer vertexLists;
+    owl::device::Buffer normalLists;
+    owl::device::Buffer texCoordLists;
+    owl::device::Buffer indexLists;
 
     int32_t environmentMapID = -1;
     glm::quat environmentMapRotation = glm::quat(1,0,0,0);
