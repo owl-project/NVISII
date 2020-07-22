@@ -738,16 +738,14 @@ void updateComponents()
         Mesh* meshes = Mesh::getFront();
         for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
             if (!meshes[mid].isDirty()) continue;
-            if (!meshes[mid].isInitialized()) {
-                if (OD.meshes[mid].vertices) { owlBufferRelease(OD.meshes[mid].vertices); OD.meshes[mid].vertices = nullptr; }
-                if (OD.meshes[mid].colors) { owlBufferRelease(OD.meshes[mid].colors); OD.meshes[mid].colors = nullptr; }
-                if (OD.meshes[mid].normals) { owlBufferRelease(OD.meshes[mid].normals); OD.meshes[mid].normals = nullptr; }
-                if (OD.meshes[mid].texCoords) { owlBufferRelease(OD.meshes[mid].texCoords); OD.meshes[mid].texCoords = nullptr; }
-                if (OD.meshes[mid].indices) { owlBufferRelease(OD.meshes[mid].indices); OD.meshes[mid].indices = nullptr; }
-                if (OD.meshes[mid].geom) { owlGeomRelease(OD.meshes[mid].geom); OD.meshes[mid].geom = nullptr; }
-                if (OD.meshes[mid].blas) { owlGroupRelease(OD.meshes[mid].blas); OD.meshes[mid].blas = nullptr; }
-                continue;
-            }
+            if (OD.meshes[mid].vertices) { owlBufferRelease(OD.meshes[mid].vertices); OD.meshes[mid].vertices = nullptr; }
+            if (OD.meshes[mid].colors) { owlBufferRelease(OD.meshes[mid].colors); OD.meshes[mid].colors = nullptr; }
+            if (OD.meshes[mid].normals) { owlBufferRelease(OD.meshes[mid].normals); OD.meshes[mid].normals = nullptr; }
+            if (OD.meshes[mid].texCoords) { owlBufferRelease(OD.meshes[mid].texCoords); OD.meshes[mid].texCoords = nullptr; }
+            if (OD.meshes[mid].indices) { owlBufferRelease(OD.meshes[mid].indices); OD.meshes[mid].indices = nullptr; }
+            if (OD.meshes[mid].geom) { owlGeomRelease(OD.meshes[mid].geom); OD.meshes[mid].geom = nullptr; }
+            if (OD.meshes[mid].blas) { owlGroupRelease(OD.meshes[mid].blas); OD.meshes[mid].blas = nullptr; }
+            if (!meshes[mid].isInitialized()) continue;
             if (meshes[mid].getTriangleIndices().size() == 0) continue;
             OD.meshes[mid].vertices  = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getVertices().size(), meshes[mid].getVertices().data());
             OD.meshes[mid].colors    = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getColors().size(), meshes[mid].getColors().data());
@@ -817,7 +815,7 @@ void updateComponents()
 
         std::vector<owl4x3f>     t0Transforms;
         std::vector<owl4x3f>     t1Transforms;
-        // if (OD.tlas) {owlGroupRelease(OD.tlas); OD.tlas = nullptr;}
+        if (OD.tlas) {owlGroupRelease(OD.tlas); OD.tlas = nullptr;}
         // not sure why, but if I release this TLAS, I get the following error
         // python3d: /home/runner/work/ViSII/ViSII/externals/owl/owl/ObjectRegistry.cpp:83: 
         //   owl::RegisteredObject* owl::ObjectRegistry::getPtr(int): Assertion `objects[ID]' failed.
@@ -875,17 +873,13 @@ void updateComponents()
         Texture* textures = Texture::getFront();
         std::vector<OWLTexture> textureObjects(Texture::getCount());
         for (uint32_t tid = 0; tid < Texture::getCount(); ++tid) {
-            if (!textures[tid].isInitialized()) {
-                if (OD.textureObjects[tid]) { owlTexture2DDestroy(OD.textureObjects[tid]); OD.textureObjects[tid] = nullptr; }
-                continue;
-            }
-            if (textures[tid].isDirty()) {
-                if (OD.textureObjects[tid]) owlTexture2DDestroy(OD.textureObjects[tid]);
-                OD.textureObjects[tid] = texture2DCreate(
-                    OD.context, OWL_TEXEL_FORMAT_RGBA32F,
-                    textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
-                    OWL_TEXTURE_LINEAR);        
-            }
+            if (!textures[tid].isDirty()) continue;
+            if (OD.textureObjects[tid]) { owlTexture2DDestroy(OD.textureObjects[tid]); OD.textureObjects[tid] = nullptr; }
+            if (!textures[tid].isInitialized()) continue;
+            OD.textureObjects[tid] = texture2DCreate(
+                OD.context, OWL_TEXEL_FORMAT_RGBA32F,
+                textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
+                OWL_TEXTURE_LINEAR);
         }
         bufferUpload(OD.textureObjectsBuffer, OD.textureObjects);
         
