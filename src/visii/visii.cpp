@@ -95,7 +95,7 @@ static struct OptixData {
     OWLMissProg missProg;
     OWLGeomType trianglesGeomType;
     MeshData meshes[MAX_MESHES];
-    OWLGroup tlas;
+    OWLGroup tlas = nullptr;
 
     std::vector<uint32_t> lightEntities;
 
@@ -815,7 +815,7 @@ void updateComponents()
 
         std::vector<owl4x3f>     t0Transforms;
         std::vector<owl4x3f>     t1Transforms;
-        if (OD.tlas) {owlGroupRelease(OD.tlas); OD.tlas = nullptr;}
+        auto oldTLAS = OD.tlas;
         // not sure why, but if I release this TLAS, I get the following error
         // python3d: /home/runner/work/ViSII/ViSII/externals/owl/owl/ObjectRegistry.cpp:83: 
         //   owl::RegisteredObject* owl::ObjectRegistry::getPtr(int): Assertion `objects[ID]' failed.
@@ -848,6 +848,8 @@ void updateComponents()
         groupBuildAccel(OD.tlas);
         launchParamsSetGroup(OD.launchParams, "world", OD.tlas);
         buildSBT(OD.context);
+
+        if (oldTLAS) {owlGroupRelease(oldTLAS);}
     
         OD.lightEntities.resize(0);
         for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {

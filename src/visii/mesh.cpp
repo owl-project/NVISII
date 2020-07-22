@@ -588,18 +588,28 @@ void Mesh::loadObj(std::string objPath)
 				}
 				if (attrib.normals.size() != 0)
 				{
-					vertex.normal = {
-						attrib.normals[3 * index.normal_index + 0],
-						attrib.normals[3 * index.normal_index + 1],
-						attrib.normals[3 * index.normal_index + 2],
-						0.0f};
-					has_normals = true;
+					if (index.normal_index == -1) {
+						vertex.normal = {0.f, 0.f, 0.f, 0.f};
+					}
+					else {
+						vertex.normal = {
+							attrib.normals[3 * index.normal_index + 0],
+							attrib.normals[3 * index.normal_index + 1],
+							attrib.normals[3 * index.normal_index + 2],
+							0.0f};
+						has_normals = true;
+					}
 				}
 				if (attrib.texcoords.size() != 0)
 				{
-					vertex.texcoord = {
-						attrib.texcoords[2 * index.texcoord_index + 0],
-						attrib.texcoords[2 * index.texcoord_index + 1]};
+					if (index.texcoord_index == -1) {
+						vertex.texcoord = {0.f, 0.f};
+					}
+					else {
+						vertex.texcoord = {
+							attrib.texcoords[2 * index.texcoord_index + 0],
+							attrib.texcoords[2 * index.texcoord_index + 1]};
+					}
 				}
 				vertices.push_back(vertex);
 			}
