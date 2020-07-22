@@ -1302,10 +1302,36 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         else if (option == std::string("denoise_albedo")) {
             OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_ALBEDO;
         }
+        else if (option == std::string("diffuse_color")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_COLOR;
+        }
+        else if (option == std::string("diffuse_direct_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_DIRECT_LIGHTING;
+        }
+        else if (option == std::string("diffuse_indirect_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_INDIRECT_LIGHTING;
+        }
+        else if (option == std::string("glossy_color")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_COLOR;
+        }
+        else if (option == std::string("glossy_direct_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_DIRECT_LIGHTING;
+        }
+        else if (option == std::string("glossy_indirect_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_INDIRECT_LIGHTING;
+        }
+        else if (option == std::string("transmission_color")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_COLOR;
+        }
+        else if (option == std::string("transmission_direct_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING;
+        }
+        else if (option == std::string("transmission_indirect_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_INDIRECT_LIGHTING;
+        }
         else {
             throw std::runtime_error(std::string("Error, unknown option : \"") + _option + std::string("\". ")
-            + std::string("Available options are \"none\", \"depth\", \"position\", ") 
-            + std::string("\"normal\", \"denoise_normal\", \"denoise_albedo\", and \"entity_id\""));
+            + std::string("See documentation for available options"));
         }
         
         resizeOptixFrameBuffer(width, height);

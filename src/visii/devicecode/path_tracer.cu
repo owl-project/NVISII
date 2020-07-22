@@ -210,7 +210,71 @@ void initializeRenderData(float3 &renderData)
 }
 
 __device__
-void saveRenderData(float3 &renderData, int bounce, float depth, float3 w_p, float3 w_n, int entity_id)
+void saveLightingColorRenderData (
+    float3 &renderData, int bounce,
+    float3 w_n, float3 w_o, float3 w_i, 
+    DisneyMaterial &mat
+)
+{
+    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
+    if (bounce != optixLaunchParams.renderDataBounce) return;
+    
+    // Note, dillum and iillum are expected to change outside this function depending on the 
+    // render data flags.
+    if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_COLOR) {
+        renderData = disney_diffuse_color(mat, w_n, w_o, w_i); 
+    }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_COLOR) {
+        renderData = disney_microfacet_reflection_color(mat, w_n, w_o, w_i);
+    }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_COLOR) {
+        renderData = disney_microfacet_transmission_color(mat, w_n, w_o, w_i);
+    }
+}
+
+__device__
+void saveLightingIrradianceRenderData(
+    float3 &renderData, int bounce,
+    float3 dillum, float3 iillum,
+    int sampledBsdf)
+{
+    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
+    if (bounce != optixLaunchParams.renderDataBounce) return;
+    
+    // Note, dillum and iillum are expected to change outside this function depending on the 
+    // render data flags.
+    if (sampledBsdf == 0) {
+        if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_DIRECT_LIGHTING) {
+            renderData = dillum;
+        }
+        else if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_INDIRECT_LIGHTING) {
+            renderData = iillum;
+        }
+    }
+    if ((sampledBsdf == 1) || (sampledBsdf == 2)) {
+        if (optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_DIRECT_LIGHTING) {
+            renderData = dillum;
+        }
+        else if (optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_INDIRECT_LIGHTING) {
+            renderData = iillum;
+        }
+    }
+    if (sampledBsdf == 3) {
+        if (optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING) {
+            renderData = dillum;
+        }
+        else if (optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_INDIRECT_LIGHTING) {
+            renderData = iillum;
+        }
+    }
+}
+
+__device__
+void saveGeometricRenderData(
+    float3 &renderData, 
+    int bounce, float depth, 
+    float3 w_p, float3 w_n, float3 w_o,
+    int entity_id, DisneyMaterial &mat)
 {
     if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
     if (bounce != optixLaunchParams.renderDataBounce) return;
@@ -277,8 +341,24 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         DisneyMaterial mat;
         int bounce = 0;
         int visibilitySkips = 0;
+
+        // direct here is used for final image clamping
         float3 directIllum = make_float3(0.f);
         float3 illum = make_float3(0.f);
+
+        // used for render metadata stuff. 
+        float3 rdIllum = make_float3(0.f);
+        float3 rdDirectIllum = make_float3(0.f);
+        float3 rdIndirectIllum = make_float3(0.f);
+        int32_t rdSampledBsdf = -1;
+        int32_t rdForcedBsdf = -1;
+        if ((optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_DIRECT_LIGHTING) ||
+            (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_DIRECT_LIGHTING)) rdForcedBsdf = 0;
+        if ((optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_DIRECT_LIGHTING) ||
+            (optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_DIRECT_LIGHTING)) rdForcedBsdf = 1;
+        if ((optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING) ||
+            (optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING)) rdForcedBsdf = 3;
+        
         float3 path_throughput = make_float3(1.f);
         uint16_t ray_count = 0;
         float roughnessMinimum = 0.f;
@@ -387,8 +467,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 v_z = faceNormalForward(w_o, v_gz, v_z);
             }
 
-            // For segmentations, metadata extraction for applications like denoising or ML training
-            saveRenderData(renderData, bounce, payload.tHit, hit_p, v_z, entityID);
+            // For segmentations, geometric metadata extraction dependent on the hit object
+            saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, entityID, mat);
                         
             // If this is the first hit, keep track of primary albedo and normal for denoising.
             if (bounce == 0) {
@@ -427,6 +507,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // if (dot(w_o, n_l) < 0.f) {
                 // n_l = -n_l;
             // }
+
+            // note, rdForcedBsdf is -1 by default
+            int forcedBsdf = (bounce == optixLaunchParams.renderDataBounce) ? rdForcedBsdf : -1; 
 
             // first, sample the light source by importance sampling the light
             do {
@@ -494,7 +577,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     if ((light_pdf > EPSILON) && (dotNWi > EPSILON)) {
                         float3 light_dir = make_float3(dir.x, dir.y, dir.z);
                         light_dir = normalize(light_dir);
-                        float bsdf_pdf = disney_pdf(mat, n_l, w_o, light_dir, v_x, v_y);
+                        float bsdf_pdf = disney_pdf(mat, n_l, w_o, light_dir, v_x, v_y, forcedBsdf);
                         if (bsdf_pdf > EPSILON) {
                             RayPayload payload;
                             owl::Ray ray;
@@ -510,7 +593,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             bool visible = ((entityID == sampledLightID) || (entityID == -1));
                             if (visible) {
                                 float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
-                                float3 bsdf = disney_brdf(mat, n_l, w_o, light_dir, v_x, v_y, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP);
+                                float3 bsdf = disney_brdf(mat, n_l, w_o, light_dir, v_x, v_y, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP, forcedBsdf);
                                 float3 Li = lightEmission * w / light_pdf;
                                 irradiance = (bsdf * Li * fabs(dotNWi));
                             }
@@ -522,17 +605,17 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // next, sample a light source by importance sampling the BDRF
             float3 w_i;
             float bsdf_pdf;
-            bool sampledSpecular;
-            float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdf_pdf, sampledSpecular, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP);
+            int sampledBsdf = -1;
+            float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdf_pdf, 
+                sampledBsdf, forcedBsdf, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP);
+
+            // terminate if the bsdf probability is impossible, or if the bsdf filters out all light
             if (bsdf_pdf < EPSILON || all_zero(bsdf)) {
                 break;
             }
 
             // trace the next ray along that sampled BRDF direction
-            if (dot(w_o, v_z) < 0.f) {
-                v_z = -v_z;
-            }
-            ray.origin = hit_p;// + v_z * .1;
+            ray.origin = hit_p;
             ray.direction = w_i;
             ray.tmin = EPSILON * 100.f;
             payload.tHit = -1.f;
@@ -575,16 +658,33 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
 
             // accumulate any radiance (ie path_throughput * irradiance), and update the path throughput using the sampled BRDF
-            illum = illum + path_throughput * irradiance;
+            float3 contribution = path_throughput * irradiance;
+            illum = illum + contribution;
+            // if (bounce >= optixLaunchParams.renderDataBounce) 
+            rdIllum = rdIllum + contribution;
             path_throughput = path_throughput * bsdf / bsdf_pdf;
 
             // If ray misses, interpret normal as "miss color" assigned by miss program and move on to the next sample
             if (payload.tHit <= 0.f) {
+                irradiance = irradiance + missColor(ray) * optixLaunchParams.domeLightIntensity;
                 illum = illum + path_throughput * missColor(ray) * optixLaunchParams.domeLightIntensity;
+                // if (bounce >= optixLaunchParams.renderDataBounce) 
+                {
+                    rdIllum = rdIllum + path_throughput * missColor(ray) * optixLaunchParams.domeLightIntensity;
+                }
             }
-            
+
+            // For segmentations, lighting metadata extraction dependent on sampling the BSDF
+            saveLightingColorRenderData(renderData, bounce, v_z, w_o, w_i, mat);
+
             if (bounce == 0) {
                 directIllum = illum;
+                rdDirectIllum = illum;
+                rdSampledBsdf = sampledBsdf;
+            }
+
+            if (bounce == /*optixLaunchParams.renderDataBounce*/ 0) {
+                // rdIllum = rdDirectIllum;
             }
 
             if ((payload.tHit <= 0.0f) || (path_throughput.x < EPSILON && path_throughput.y < EPSILON && path_throughput.z < EPSILON)) {
@@ -606,6 +706,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
         glm::vec3 dillum = vec3(directIllum.x, directIllum.y, directIllum.z);
         glm::vec3 iillum = gillum - dillum;
+
+        // For segmentations, indirect/direct lighting metadata extraction
+        float3 rdgillum = rdIllum;
+        rdIndirectIllum = rdgillum;// - rdDirectIllum;
+        saveLightingIrradianceRenderData(renderData, bounce, rdDirectIllum, rdIndirectIllum, rdSampledBsdf);
 
         if (optixLaunchParams.indirectClamp > 0.f)
             iillum = clamp(iillum, vec3(0.f), vec3(optixLaunchParams.indirectClamp));
@@ -646,12 +751,24 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     // color.y = linear_to_srgb(color.y);
     // color.z = linear_to_srgb(color.z);
 
-    optixLaunchParams.frameBuffer[fbOfs] = vec4(
-        color.x,
-        color.y,
-        color.z,
-        1.0f
-    );
+    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) 
+    {
+        optixLaunchParams.frameBuffer[fbOfs] = vec4(
+            color.x,
+            color.y,
+            color.z,
+            1.0f
+        );
+    }
+    // Override framebuffer output if user requested to render metadata
+    else
+    {
+        vec3 oldRenderData = vec3(optixLaunchParams.frameBuffer[fbOfs]);
+        vec3 newRenderData = make_vec3(renderData);
+        vec3 accumData = (newRenderData + float(optixLaunchParams.frameID) * oldRenderData) / float(optixLaunchParams.frameID + 1);
+        optixLaunchParams.frameBuffer[fbOfs] = vec4( accumData.x, accumData.y, accumData.z, 1.0f);
+    }
+
     vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
     vec4 oldNormal = optixLaunchParams.normalBuffer[fbOfs];
     if (any(isnan(oldAlbedo))) oldAlbedo = vec4(1.f);
@@ -664,13 +781,5 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     optixLaunchParams.albedoBuffer[fbOfs] = accumAlbedo;
     optixLaunchParams.normalBuffer[fbOfs] = accumNormal;
 
-    // Override framebuffer output if user requested to render metadata
-    if (optixLaunchParams.renderDataMode != RenderDataFlags::NONE) {
-        accumNormal = abs(accumNormal + vec4(1.f));
-        if (optixLaunchParams.renderDataMode == RenderDataFlags::DENOISE_NORMAL) 
-            renderData = make_float3(accumNormal.x, accumNormal.y, accumNormal.z);
-        if (optixLaunchParams.renderDataMode == RenderDataFlags::DENOISE_ALBEDO) 
-            renderData = make_float3(accumAlbedo.x, accumAlbedo.y, accumAlbedo.z);
-        optixLaunchParams.frameBuffer[fbOfs] = vec4( renderData.x, renderData.y, renderData.z, 1.0f);
-    }
+    
 }
