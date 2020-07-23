@@ -153,7 +153,11 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     mat4 camWorldToLocal = transform.localToWorld;
     mat4 projinv = camera.projinv;//glm::inverse(glm::perspective(.785398, 1.0, .1, 1000));//camera.projinv;
     mat4 viewinv = /*camera.viewinv * */camWorldToLocal;
-    vec2 aa = vec2(lcg_randomf(rng),lcg_randomf(rng)) - vec2(.5f,.5f);
+    vec2 aa = vec2(0.f);
+    if (optixLaunchParams.samplePixelArea) {
+        aa = vec2(lcg_randomf(rng),lcg_randomf(rng)) - vec2(.5f,.5f);
+    }
+    
     vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(optixLaunchParams.frameSize);
     vec3 right = normalize(glm::column(viewinv, 0));
     vec3 up = normalize(glm::column(viewinv, 1));

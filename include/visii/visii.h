@@ -90,6 +90,18 @@ void setDirectLightingClamp(float clamp);
  */ 
 void setMaxBounceDepth(uint32_t depth);
 
+/** 
+ * Enables or disables sampling pixel area. If disabled, rays will always sample from the center
+ * of a pixel. If enabled, rays with sample the entire pixel area. Enabling this allows for 
+ * antialiasing, but results in noise in intermediate data buffers. When disabled, intermediate
+ * data buffers will appear noise-less on first hit, however aliasing artifacts may appear 
+ * for final path traced images. Note that camera defocus blur will implicitly force sampling 
+ * pixel area.
+ * 
+ * @param sample If true, samples the entire pixel area
+ */ 
+void samplePixelArea(bool sample);
+
 /**
   * If using interactive mode, resizes the window to the specified dimensions.
   * 

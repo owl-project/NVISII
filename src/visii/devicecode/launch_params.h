@@ -27,6 +27,7 @@ struct LaunchParams {
     float directClamp = 100.f; 
     float indirectClamp = 100.f; 
     uint32_t maxBounceDepth = 10;
+    bool samplePixelArea = true;
 
     EntityStruct    cameraEntity;
     EntityStruct    *entities = nullptr;
