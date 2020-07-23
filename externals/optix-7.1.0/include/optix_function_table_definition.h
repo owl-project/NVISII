@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2020 NVIDIA Corporation.  All rights reserved.
  *
  * NVIDIA Corporation and its licensors retain all intellectual property and proprietary
  * rights in and to this software, related documentation and any modifications thereto.
@@ -19,20 +18,32 @@
  * SUCH DAMAGES
  */
 
-/**
- * @file   optix_host.h
- * @author NVIDIA Corporation
- * @brief  OptiX public API
- *
- * OptiX public API Reference - Host side
- */
+/// @file
+/// @author NVIDIA Corporation
+/// @brief  OptiX public API header
 
-#if !defined(__OPTIX_INCLUDE_INTERNAL_HEADERS__)
-#  define __OPTIX_INCLUDE_INTERNAL_HEADERS__
-#  define __UNDEF_OPTIX_INCLUDE_INTERNAL_HEADERS_OPTIX_HOST_H__
+#ifndef __optix_optix_function_table_definition_h__
+#define __optix_optix_function_table_definition_h__
+
+#include "optix_function_table.h"
+
+#ifdef __cplusplus
+extern "C" {
 #endif
-#include "optix_7_host.h"
-#if defined( __UNDEF_OPTIX_INCLUDE_INTERNAL_HEADERS_OPTIX_HOST_H__ )
-#  undef __OPTIX_INCLUDE_INTERNAL_HEADERS__
-#  undef __UNDEF_OPTIX_INCLUDE_INTERNAL_HEADERS_OPTIX_HOST_H__
+
+/** \addtogroup optix_function_table
+@{
+*/
+
+/// If the stubs in optix_stubs.h are used, then the function table needs to be defined in exactly
+/// one translation unit. This can be achieved by including this header file in that translation
+/// unit.
+OptixFunctionTable g_optixFunctionTable;
+
+/*@}*/  // end group optix_function_table
+
+#ifdef __cplusplus
+}
 #endif
+
+#endif  // __optix_optix_function_table_definition_h__

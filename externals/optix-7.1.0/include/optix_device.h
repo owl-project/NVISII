@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2020 NVIDIA Corporation.  All rights reserved.
  *
  * NVIDIA Corporation and its licensors retain all intellectual property and proprietary
  * rights in and to this software, related documentation and any modifications thereto.
@@ -19,29 +19,29 @@
  * SUCH DAMAGES
  */
 
-/// @file
-/// @author NVIDIA Corporation
-/// @brief  OptiX public API header
-///
-/// Includes the host api if compiling host code, includes the cuda api if compiling device code.
-/// For the math library routines include optix_math.h
+ /**
+ * @file   optix_device.h
+ * @author NVIDIA Corporation
+ * @brief  OptiX public API
+ *
+ * OptiX public API Reference - Host/Device side
+ */
 
-#ifndef __optix_optix_h__
-#define __optix_optix_h__
-
-/// The OptiX version.
-///
-/// - major =  OPTIX_VERSION/10000
-/// - minor = (OPTIX_VERSION%10000)/100
-/// - micro =  OPTIX_VERSION%100
-#define OPTIX_VERSION 70000
-
-
-#ifdef __CUDACC__
-#include "optix_device.h"
-#else
-#include "optix_host.h"
+/******************************************************************************\
+ * optix_cuda.h
+ *
+ * This file provides the nvcc interface for generating PTX that the OptiX is
+ * capable of parsing and weaving into the final kernel.  This is included by
+ * optix.h automatically if compiling device code.  It can be included explicitly
+ * in host code if desired.
+ *
+\******************************************************************************/
+#if !defined(__OPTIX_INCLUDE_INTERNAL_HEADERS__)
+#  define __OPTIX_INCLUDE_INTERNAL_HEADERS__
+#  define __UNDEF_OPTIX_INCLUDE_INTERNAL_HEADERS_OPTIX_DEVICE_H__
 #endif
-
-
-#endif  // __optix_optix_h__
+#include "optix_7_device.h"
+#if defined( __UNDEF_OPTIX_INCLUDE_INTERNAL_HEADERS_OPTIX_DEVICE_H__ )
+#  undef __OPTIX_INCLUDE_INTERNAL_HEADERS__
+#  undef __UNDEF_OPTIX_INCLUDE_INTERNAL_HEADERS_OPTIX_DEVICE_H__
+#endif
