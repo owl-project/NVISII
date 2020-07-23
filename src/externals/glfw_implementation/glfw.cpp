@@ -11,10 +11,13 @@ void resize_window_callback(GLFWwindow * window, int width, int height) {
 
 void close_window_callback(GLFWwindow *window)
 {
-    auto window_key = Libraries::GLFW::Get()->get_key_from_ptr(window);
-    if (window_key.size() > 0) {
-        Libraries::GLFW::Get()->destroy_window(window_key);
-    }
+    // disable closing the window for now
+    glfwSetWindowShouldClose(window, GLFW_FALSE);
+
+    // auto window_key = Libraries::GLFW::Get()->get_key_from_ptr(window);
+    // if (window_key.size() > 0) {
+    //     Libraries::GLFW::Get()->destroy_window(window_key);
+    // }
 }
 
 void cursor_position_callback(GLFWwindow * window, double xpos, double ypos) {
@@ -99,6 +102,7 @@ namespace Libraries {
         glfwWindowHint(GLFW_DECORATED, (decorated) ? GLFW_TRUE : GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, (resizable) ? GLFW_TRUE : GLFW_FALSE);
         glfwWindowHint(GLFW_FLOATING, (floating) ? GLFW_TRUE : GLFW_FALSE);
+
         Window window = {};
         auto ptr = glfwCreateWindow(width, height, key.c_str(), NULL, NULL);
         if (!ptr)
@@ -110,7 +114,7 @@ namespace Libraries {
         glfwSetMouseButtonCallback(ptr, &mouse_button_callback);
         glfwSetWindowCloseCallback(ptr, &close_window_callback);
         glfwSetKeyCallback(ptr, &key_callback);
-
+        glfwSetWindowSizeLimits(ptr, 1, 1, GLFW_DONT_CARE, GLFW_DONT_CARE);
         window.ptr = ptr;
         // window.swapchain_out_of_date = true;
         Windows()[key] = window;

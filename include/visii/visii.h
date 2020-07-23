@@ -22,9 +22,14 @@ void initializeInteractive(bool window_on_top = false);
 void initializeHeadless();
 
 /**
-  * Cleans up any allocated resources, closes windows and shuts down any running backend systems.
+  * Cleans up any allocated resources
 */
-void cleanup();
+void clearAll();
+
+/**
+  * closes windows and shuts down any running backend systems.
+*/
+void deinitialize();
 
 /** 
  * Tells the renderer which camera entity to use for rendering. The transform 

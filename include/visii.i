@@ -174,6 +174,6 @@ namespace std {
 //     atexit(cleanup);
 // %}
 
-%init %{
-  atexit(cleanup);
-%}
+// %init %{
+//   atexit(deinitialize);
+// %}

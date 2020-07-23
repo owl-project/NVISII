@@ -392,10 +392,15 @@ void synchronizeDevices()
 
 void setCameraEntity(Entity* camera_entity)
 {
-    if (!camera_entity) throw std::runtime_error("Error: camera entity was nullptr/None");
-    if (!camera_entity->isInitialized()) throw std::runtime_error("Error: camera entity is uninitialized");
-
-    OptixData.LP.cameraEntity = camera_entity->getStruct();
+    if (!camera_entity) {
+        OptixData.LP.cameraEntity = EntityStruct();
+        OptixData.LP.cameraEntity.initialized = false;        
+        resetAccumulation();
+    }
+    else {
+        if (!camera_entity->isInitialized()) throw std::runtime_error("Error: camera entity is uninitialized");
+        OptixData.LP.cameraEntity = camera_entity->getStruct();
+    }
     resetAccumulation();
 }
 
@@ -443,6 +448,8 @@ void setMaxBounceDepth(uint32_t depth)
 }
 
 void initializeFrameBuffer(int fbWidth, int fbHeight) {
+    fbWidth = glm::max(fbWidth, 1);
+    fbHeight = glm::max(fbHeight, 1);
     synchronizeDevices();
 
     auto &OD = OptixData;
@@ -506,6 +513,9 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
 void updateFrameBuffer()
 {
     glfwGetFramebufferSize(WindowData.window, &WindowData.currentSize.x, &WindowData.currentSize.y);
+
+    // window is minimized
+    if ((WindowData.currentSize.x == 0) || (WindowData.currentSize.y == 0)) return;
 
     if ((WindowData.currentSize.x != WindowData.lastSize.x) || (WindowData.currentSize.y != WindowData.lastSize.y))  {
         WindowData.lastSize.x = WindowData.currentSize.x; WindowData.lastSize.y = WindowData.currentSize.y;
@@ -1126,6 +1136,8 @@ void processCommandQueue()
 
 void resizeWindow(uint32_t width, uint32_t height)
 {
+    width = (width <= 0) ? 1 : width;
+    height = (height <= 0) ? 1 : height;
     if (ViSII.headlessMode) return;
 
     auto resizeWindow = [width, height] () {
@@ -1188,6 +1200,7 @@ std::vector<float> readFrameBuffer() {
 }
 
 std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPixel) {
+    if ((width < 1) || (height < 1)) throw std::runtime_error("Error, invalid width/height");
     std::vector<float> frameBuffer(width * height * 4);
 
     auto readFrameBuffer = [&frameBuffer, width, height, samplesPerPixel] () {
@@ -1449,7 +1462,9 @@ void initializeComponentFactories()
 void initializeInteractive(bool windowOnTop)
 {
     // don't initialize more than once
-    if (initialized == true) return;
+    if (initialized == true) {
+        throw std::runtime_error("Error: already initialized!");
+    }
 
     initialized = true;
     close = false;
@@ -1512,7 +1527,9 @@ void initializeInteractive(bool windowOnTop)
 void initializeHeadless()
 {
     // don't initialize more than once
-    if (initialized == true) return;
+    if (initialized == true) {
+        throw std::runtime_error("Error: already initialized!");
+    }
 
     initialized = true;
     close = false;
@@ -1545,8 +1562,22 @@ void initializeHeadless()
     future.wait();
 }
 
-void cleanup()
+void clearAll()
 {
+    setCameraEntity(nullptr);
+    Entity::clearAll();
+    Transform::clearAll();
+    Material::clearAll();
+    Texture::clearAll();
+    Mesh::clearAll();
+    Camera::clearAll();
+    Light::clearAll();
+}
+
+
+void deinitialize()
+{
+    clearAll();
     if (initialized == true) {
         /* cleanup window if open */
         if (close == false) {
@@ -1555,6 +1586,9 @@ void cleanup()
         }
         if (OptixData.denoiser)
             OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
+    }
+    else {
+        throw std::runtime_error("Error: already deinitialized!");
     }
     initialized = false;
 }
