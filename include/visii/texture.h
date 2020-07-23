@@ -111,6 +111,8 @@ class Texture : public StaticFactory
   	/** Creates an uninitialized texture. Useful for preallocation. */
 	Texture();
 
+	~Texture();
+
 	/** Creates a texture with the given name and id. */
 	Texture(std::string name, uint32_t id);
 

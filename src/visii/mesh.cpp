@@ -1908,6 +1908,8 @@ Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> posi
 	try {		
 		ParametricPath parametricPath {
 			[positions](double t) {
+				t = t * .999f;
+				
 				// t is 1.0 / positions.size() - 1 and goes from 0 to 1.0
 				float t_scaled = ((float)t * (((float)positions.size()) - 1.0f));
 				uint32_t p1_idx = (uint32_t) floor(t_scaled);
@@ -1915,17 +1917,8 @@ Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> posi
 
 				float t_segment = t_scaled - floor(t_scaled);
 
-				glm::vec3 p1;
-				glm::vec3 p2;
-				if (t == 1.0f) {
-					glm::vec3 d = normalize(positions[positions.size() - 1] - positions[positions.size() - 2]);
-					p1 = positions[positions.size() - 1] - d * .1f;
-					p2 = positions[positions.size() - 1];
-				}
-				else {
-					p1 = positions[p1_idx];
-					p2 = positions[p2_idx];
-				}				
+				glm::vec3 p1 = positions[p1_idx];
+				glm::vec3 p2 = positions[p2_idx];
 
 				PathVertex vertex;
 				
@@ -1968,6 +1961,7 @@ Mesh* Mesh::createRoundedRectangleTubeFromPolyline(std::string name, std::vector
 		
 		ParametricPath parametricPath {
 			[positions](double t) {
+				t = t * .999f;
 				// t is 1.0 / positions.size() - 1 and goes from 0 to 1.0
 				float t_scaled = (float)t * ((float)(positions.size()) - 1.0f);
 				uint32_t p1_idx = (uint32_t) floor(t_scaled);
@@ -1975,17 +1969,8 @@ Mesh* Mesh::createRoundedRectangleTubeFromPolyline(std::string name, std::vector
 
 				float t_segment = t_scaled - floor(t_scaled);
 
-				glm::vec3 p1;
-				glm::vec3 p2;
-				if (t == 1.0f) {
-					glm::vec3 d = normalize(positions[positions.size() - 1] - positions[positions.size() - 2]);
-					p1 = positions[positions.size() - 1] - d * .1f;
-					p2 = positions[positions.size() - 1];
-				}
-				else {
-					p1 = positions[p1_idx];
-					p2 = positions[p2_idx];
-				}
+				glm::vec3 p1 = positions[p1_idx];
+				glm::vec3 p2 = positions[p2_idx];
 
 				PathVertex vertex;
 				
@@ -2027,6 +2012,7 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 	try {
 		ParametricPath parametricPath {
 			[positions](double t) {
+				t = t * .999f;
 				// t is 1.0 / positions.size() - 1 and goes from 0 to 1.0
 				float t_scaled = (float)t * ((float)(positions.size()) - 1.0f);
 				uint32_t p1_idx = (uint32_t) floor(t_scaled);
@@ -2034,17 +2020,8 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 
 				float t_segment = t_scaled - floor(t_scaled);
 
-				glm::vec3 p1;
-				glm::vec3 p2;
-				if (t == 1.0f) {
-					glm::vec3 d = normalize(positions[positions.size() - 1] - positions[positions.size() - 2]);
-					p1 = positions[positions.size() - 1] - d * .1f;
-					p2 = positions[positions.size() - 1];
-				}
-				else {
-					p1 = positions[p1_idx];
-					p2 = positions[p2_idx];
-				}
+				glm::vec3 p1 = positions[p1_idx];
+				glm::vec3 p2 = positions[p2_idx];
 
 				PathVertex vertex;
 				
