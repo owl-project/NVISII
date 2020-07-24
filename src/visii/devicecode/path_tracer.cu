@@ -59,6 +59,175 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     prd.primitiveID = optixGetPrimitiveIndex();
     prd.tHit = optixGetRayTmax();
     optixGetObjectToWorldTransformMatrix(prd.localToWorld);
+    
+    OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
+    // WARNING, hard-coding 32 here! Adjust this number if needed
+    // OptixTraversableHandle transformList[32];
+    
+    // fill transform list
+    // int transforms = 0;
+    // OptixTransformType type = optixGetTransformTypeFromHandle( handle );
+    // while( type != OPTIX_TRANSFORM_TYPE_NONE ) {
+    //     transformList[transforms++] = handle;
+    //     switch( type )
+    //     {
+    //     case OPTIX_TRANSFORM_TYPE_STATIC_TRANSFORM:
+    //     {
+    //         const OptixStaticTransform* t = optixGetStaticTransformFromHandle( handle );
+    //         handle = t->child;
+    //         break;
+    //     }
+    //     case OPTIX_TRANSFORM_TYPE_MATRIX_MOTION_TRANSFORM:
+    //     {
+    //         const OptixMatrixMotionTransform* t = optixGetMatrixMotionTransformFromHandle( handle );
+    //         handle = t->child;
+    //         break;
+    //     }
+    //     case OPTIX_TRANSFORM_TYPE_SRT_MOTION_TRANSFORM:
+    //     {
+    //         const OptixSRTMotionTransform* t = optixGetSRTMotionTransformFromHandle( handle );
+    //         handle = t->child;
+    //         break;
+    //     }
+    //     default:
+    //         handle = 0;
+    //         break;
+    //     }
+    //     type = optixGetTransformTypeFromHandle( handle );
+    // }
+
+    // OptixTraversableHandle handle = transformList[0];
+
+    float4 trf00, trf01, trf02;
+    float4 trf10, trf11, trf12;
+    optix_impl::optixGetInterpolatedTransformationFromHandle( trf00, trf01, trf02, handle, /* time */ 0.f, true );
+    optix_impl::optixGetInterpolatedTransformationFromHandle( trf10, trf11, trf12, handle, /* time */ 1.f, true );
+
+    
+    // for( int i = transforms - 1; i >= 0; --i )
+    // {
+    //     OptixTraversableHandle handle = transformList[i];
+    //     float4 trf0, trf1, trf2;
+    //     optixGetInterpolatedTransformationFromHandle( trf0, trf1, trf2, handle, time, true );
+    //     if( i == transforms - 1 )
+    //     {
+    //         m0 = trf0;
+    //         m1 = trf1;
+    //         m2 = trf2;
+    //     }
+    //     else
+    //     {
+    //         // m := trf * m
+    //         float4 tmp0 = m0, tmp1 = m1, tmp2 = m2;
+    //         m0 = optixMultiplyRowMatrix( trf0, tmp0, tmp1, tmp2 );
+    //         m1 = optixMultiplyRowMatrix( trf1, tmp0, tmp1, tmp2 );
+    //         m2 = optixMultiplyRowMatrix( trf2, tmp0, tmp1, tmp2 );
+    //     }
+    // }
+
+    // if( transforms == 0 )
+    // {
+    //     m0 = ((float4*)instance->transform)[0];
+    //     m1 = ((float4*)instance->transform)[1];
+    //     m2 = ((float4*)instance->transform)[2];
+    // }
+    // else
+    // {
+    //     // m := trf * m
+    //     float4 tmp0 = m0, tmp1 = m1, tmp2 = m2;
+    //     m0 = optixMultiplyRowMatrix( *(float4*)&instance->transform[0], tmp0, tmp1, tmp2 );
+    //     m1 = optixMultiplyRowMatrix( *(float4*)&instance->transform[4], tmp0, tmp1, tmp2 );
+    //     m2 = optixMultiplyRowMatrix( *(float4*)&instance->transform[8], tmp0, tmp1, tmp2 );
+    // }
+    // p = optixTransformPoint( m0, m1, m2, p );
+    // float m[16] = { m0.x, m0.y, m0.z, m0.w,
+    //                 m1.x, m1.y, m1.z, m1.w,
+    //                 m2.x, m2.y, m2.z, m2.w,
+    //                 0.0f, 0.0f, 0.0f, 1.0f };
+    // Matrix4x4 mi = Matrix4x4( m ).inverse();
+    // n = optixTransformNormal( mi.getRow(0), mi.getRow(1), mi.getRow(2), n );
+
+    // bool instance = true;
+    // if( instance )
+//         {
+//             // WARNING, hard-coding 32 here! Adjust this number if needed
+//             OptixTraversableHandle transformList[32];
+//             // fill transform list
+//             OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);//instance->traversableHandle;
+//             int transforms = 0;
+//             OptixTransformType type = optixGetTransformTypeFromHandle( handle );
+//             while( type != OPTIX_TRANSFORM_TYPE_NONE ) {
+//                 transformList[transforms++] = handle;
+//                 switch( type )
+//                 {
+//                 case OPTIX_TRANSFORM_TYPE_STATIC_TRANSFORM:
+//                 {
+//                     const OptixStaticTransform* t = optixGetStaticTransformFromHandle( handle );
+//                     handle = t->child;
+//                     break;
+//                 }
+//                 case OPTIX_TRANSFORM_TYPE_MATRIX_MOTION_TRANSFORM:
+//                 {
+//                     const OptixMatrixMotionTransform* t = optixGetMatrixMotionTransformFromHandle( handle );
+//                     handle = t->child;
+//                     break;
+//                 }
+//                 case OPTIX_TRANSFORM_TYPE_SRT_MOTION_TRANSFORM:
+//                 {
+//                     const OptixSRTMotionTransform* t = optixGetSRTMotionTransformFromHandle( handle );
+//                     handle = t->child;
+//                     break;
+//                 }
+//                 default:
+//                     handle = 0;
+//                     break;
+//                 }
+//                 type = optixGetTransformTypeFromHandle( handle );
+//             }
+//             float4 m0, m1, m2;
+// #pragma unroll 1
+//             for( int i = transforms - 1; i >= 0; --i )
+//             {
+//                 OptixTraversableHandle handle = transformList[i];
+//                 float4 trf0, trf1, trf2;
+//                 optixGetInterpolatedTransformationFromHandle( trf0, trf1, trf2, handle, time, true );
+//                 if( i == transforms - 1 )
+//                 {
+//                     m0 = trf0;
+//                     m1 = trf1;
+//                     m2 = trf2;
+//                 }
+//                 else
+//                 {
+//                     // m := trf * m
+//                     float4 tmp0 = m0, tmp1 = m1, tmp2 = m2;
+//                     m0 = optixMultiplyRowMatrix( trf0, tmp0, tmp1, tmp2 );
+//                     m1 = optixMultiplyRowMatrix( trf1, tmp0, tmp1, tmp2 );
+//                     m2 = optixMultiplyRowMatrix( trf2, tmp0, tmp1, tmp2 );
+//                 }
+//             }
+//             if( transforms == 0 )
+//             {
+//                 m0 = ((float4*)instance->transform)[0];
+//                 m1 = ((float4*)instance->transform)[1];
+//                 m2 = ((float4*)instance->transform)[2];
+//             }
+//             else
+//             {
+//                 // m := trf * m
+//                 float4 tmp0 = m0, tmp1 = m1, tmp2 = m2;
+//                 m0 = optixMultiplyRowMatrix( *(float4*)&instance->transform[0], tmp0, tmp1, tmp2 );
+//                 m1 = optixMultiplyRowMatrix( *(float4*)&instance->transform[4], tmp0, tmp1, tmp2 );
+//                 m2 = optixMultiplyRowMatrix( *(float4*)&instance->transform[8], tmp0, tmp1, tmp2 );
+//             }
+//             p = optixTransformPoint( m0, m1, m2, p );
+//             float m[16] = { m0.x, m0.y, m0.z, m0.w,
+//                             m1.x, m1.y, m1.z, m1.w,
+//                             m2.x, m2.y, m2.z, m2.w,
+//                             0.0f, 0.0f, 0.0f, 1.0f };
+//             Matrix4x4 mi = Matrix4x4( m ).inverse();
+//             n = optixTransformNormal( mi.getRow(0), mi.getRow(1), mi.getRow(2), n );
+//         }
 }
 
 inline __device__
@@ -157,7 +326,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     if (optixLaunchParams.samplePixelArea) {
         aa = vec2(lcg_randomf(rng),lcg_randomf(rng)) - vec2(.5f,.5f);
     }
-    
+
     vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(optixLaunchParams.frameSize);
     vec3 right = normalize(glm::column(viewinv, 0));
     vec3 up = normalize(glm::column(viewinv, 1));

@@ -300,6 +300,6 @@ for i in range (int(opt.nb_frames)):
     )
 
 p.disconnect()
-visii.cleanup()
+visii.deinitialize()
 
 subprocess.call(['ffmpeg', '-y', '-framerate', '30', '-i', r"%05d.png",  '-vcodec', 'libx264', '-pix_fmt', 'yuv420p', '../output.mp4'], cwd=os.path.realpath(opt.outf))

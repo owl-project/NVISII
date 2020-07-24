@@ -499,7 +499,7 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
     
     // Reconfigure denoiser
     optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes);
-    bufferResize(OD.denoiserScratchBuffer, OD.denoiserSizes.recommendedScratchSizeInBytes);
+    bufferResize(OD.denoiserScratchBuffer, OD.denoiserSizes.withOverlapScratchSizeInBytes);
     bufferResize(OD.denoiserStateBuffer, OD.denoiserSizes.stateSizeInBytes);
     
     auto cudaStream = getStream(OD.context, 0);
@@ -511,7 +511,7 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
         (CUdeviceptr) bufferGetPointer(OD.denoiserStateBuffer, 0), 
         OD.denoiserSizes.stateSizeInBytes,
         (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0), 
-        OD.denoiserSizes.recommendedScratchSizeInBytes
+        OD.denoiserSizes.withOverlapScratchSizeInBytes
     );
 
     resetAccumulation();
@@ -692,8 +692,8 @@ void initializeOptix(bool headless)
 
     // Setup denoiser
     OptixDenoiserOptions options;
-    options.inputKind = OPTIX_DENOISER_INPUT_RGB;//_ALBEDO;//_NORMAL;
-    options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
+    options.inputKind = OPTIX_DENOISER_INPUT_RGB_ALBEDO;//_NORMAL;
+    // options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
     auto optixContext = getOptixContext(OD.context, 0);
     auto cudaStream = getStream(OD.context, 0);
     OPTIX_CHECK(optixDenoiserCreate(optixContext, &options, &OD.denoiser));
@@ -703,7 +703,7 @@ void initializeOptix(bool headless)
 
     OPTIX_CHECK(optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes));
     OD.denoiserScratchBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
-        OD.denoiserSizes.recommendedScratchSizeInBytes, nullptr);
+        OD.denoiserSizes.withOverlapScratchSizeInBytes, nullptr);
     OD.denoiserStateBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
         OD.denoiserSizes.stateSizeInBytes, nullptr);
     OD.hdrIntensityBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(float),
@@ -717,7 +717,7 @@ void initializeOptix(bool headless)
         (CUdeviceptr) bufferGetPointer(OD.denoiserStateBuffer, 0), 
         OD.denoiserSizes.stateSizeInBytes,
         (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0), 
-        OD.denoiserSizes.recommendedScratchSizeInBytes
+        OD.denoiserSizes.withOverlapScratchSizeInBytes
     ));
 
     OD.placeholder = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 1, nullptr);
@@ -991,7 +991,7 @@ void denoiseImage() {
     albedoLayer.pixelStrideInBytes = 4 * sizeof(float);
     albedoLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
     albedoLayer.data   = (CUdeviceptr) bufferGetPointer(OD.albedoBuffer, 0);
-    // inputLayers.push_back(albedoLayer);
+    inputLayers.push_back(albedoLayer);
 
     OptixImage2D normalLayer;
     normalLayer.width = OD.LP.frameSize.x;
@@ -1011,7 +1011,7 @@ void denoiseImage() {
         &inputLayers[0], 
         (CUdeviceptr) bufferGetPointer(OD.hdrIntensityBuffer, 0),
         (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0),
-        OD.denoiserSizes.recommendedScratchSizeInBytes));
+        OD.denoiserSizes.withOverlapScratchSizeInBytes));
 
     OptixDenoiserParams params;
     params.denoiseAlpha = 0;    // Don't touch alpha.
@@ -1030,7 +1030,7 @@ void denoiseImage() {
         /* inputOffsetY */ 0,
         &outputLayer,
         (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0),
-        OD.denoiserSizes.recommendedScratchSizeInBytes
+        OD.denoiserSizes.withOverlapScratchSizeInBytes
     ));
 
     synchronizeDevices();
@@ -1600,4 +1600,8 @@ void deinitialize()
         throw std::runtime_error("Error: already deinitialized!");
     }
     initialized = false;
+}
+
+void __test__(std::vector<std::string> args) {
+
 }

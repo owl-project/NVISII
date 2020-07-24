@@ -182,3 +182,6 @@ std::vector<Entity*> importOBJ(std::string name_prefix, std::string file_path, s
         glm::vec3 position = glm::vec3(0.0f), 
         glm::vec3 scale = glm::vec3(1.0f),
         glm::quat rotation = glm::angleAxis(0.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
+
+// This is for internal testing purposes. Don't call this unless you know what you're doing.
+void __test__(std::vector<std::string> args);
