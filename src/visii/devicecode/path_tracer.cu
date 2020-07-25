@@ -272,7 +272,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
     auto fbOfs = pixelID.x+optixLaunchParams.frameSize.x* ((optixLaunchParams.frameSize.y - 1) -  pixelID.y);
-    LCGRand rng = get_rng(optixLaunchParams.frameID);
+    LCGRand rng = get_rng(optixLaunchParams.frameID + optixLaunchParams.seed * 10007);
 
     // If no camera is in use, just display some random noise...
     EntityStruct    camera_entity;

@@ -131,8 +131,9 @@ void disableDenoiser();
  * @param width The width of the image to render
  * @param height The height of the image to render
  * @param samples_per_pixel The number of rays to trace and accumulate per pixel.
+ * @param seed A seed used to initialize the random number generator.
 */
-std::vector<float> render(uint32_t width, uint32_t height, uint32_t samples_per_pixel);
+std::vector<float> render(uint32_t width, uint32_t height, uint32_t samples_per_pixel, uint32_t seed = 0);
 
 /** 
  * Renders the current scene, saving the resulting framebuffer to an HDR image on disk.
@@ -141,8 +142,9 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samples_per_
  * @param height The height of the image to render
  * @param samples_per_pixel The number of rays to trace and accumulate per pixel.
  * @param image_path The path to use to save the HDR file, including the extension.
+ * @param seed A seed used to initialize the random number generator.
 */
-void renderToHDR(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);
+void renderToHDR(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path, uint32_t seed = 0);
 
 /** 
  * Renders the current scene, saving the resulting framebuffer to a PNG image on disk.
@@ -151,8 +153,9 @@ void renderToHDR(uint32_t width, uint32_t height, uint32_t samples_per_pixel, st
  * @param height The height of the image to render
  * @param samples_per_pixel The number of rays to trace and accumulate per pixel.
  * @param image_path The path to use to save the PNG file, including the extension.
+ * @param seed A seed used to initialize the random number generator.
 */
-void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path);
+void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path, uint32_t seed = 0);
 
 /** 
  * Renders out metadata used to render the current scene, returning the resulting framebuffer back to the user directly.
@@ -168,8 +171,10 @@ void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, st
  * "position" for rendering out the world space position of the path vertex, "normal" for rendering out the world space normal of the 
  * path vertex, "entity_id" for rendering out the entity ID whose surface the path vertex hit, "denoise_normal" for rendering out
  * the normal buffer supplied to the Optix denoiser, and "denoise_albedo" for rendering out the albedo supplied to the Optix denoiser.   
+ * @param seed A seed used to initialize the random number generator.
 */
-std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options);
+std::vector<float> renderData(
+  uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options, uint32_t seed = 0);
 
 /**
  * Imports an OBJ containing scene data. 
