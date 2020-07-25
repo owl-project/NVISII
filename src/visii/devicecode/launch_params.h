@@ -27,7 +27,9 @@ struct LaunchParams {
     float directClamp = 100.f; 
     float indirectClamp = 100.f; 
     uint32_t maxBounceDepth = 10;
-    bool samplePixelArea = true;
+    vec2 xPixelSamplingInterval = vec2(0.f,1.f);
+    vec2 yPixelSamplingInterval = vec2(0.f,1.f);
+    vec2 timeSamplingInterval = vec2(0.f,1.f);
 
     EntityStruct    cameraEntity;
     EntityStruct    *entities = nullptr;

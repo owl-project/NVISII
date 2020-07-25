@@ -447,11 +447,20 @@ void setMaxBounceDepth(uint32_t depth)
     launchParamsSetRaw(OptixData.launchParams, "maxBounceDepth", &OptixData.LP.maxBounceDepth);
 }
 
-void samplePixelArea(bool sample)
+void samplePixelArea(vec2 xSampleInterval, vec2 ySampleInterval)
 {
-    OptixData.LP.samplePixelArea = sample;
+    OptixData.LP.xPixelSamplingInterval = xSampleInterval;
+    OptixData.LP.yPixelSamplingInterval = ySampleInterval;
     resetAccumulation();
-    launchParamsSetRaw(OptixData.launchParams, "samplePixelArea", &OptixData.LP.samplePixelArea);
+    launchParamsSetRaw(OptixData.launchParams, "xPixelSamplingInterval", &OptixData.LP.xPixelSamplingInterval);
+    launchParamsSetRaw(OptixData.launchParams, "yPixelSamplingInterval", &OptixData.LP.yPixelSamplingInterval);
+}
+
+void sampleTimeInterval(vec2 sampleTimeInterval)
+{
+    OptixData.LP.timeSamplingInterval = sampleTimeInterval;
+    resetAccumulation();
+    launchParamsSetRaw(OptixData.launchParams, "timeSamplingInterval", &OptixData.LP.timeSamplingInterval);
 }
 
 void initializeFrameBuffer(int fbWidth, int fbHeight) {
@@ -568,7 +577,9 @@ void initializeOptix(bool headless)
         { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
         { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
         { "maxBounceDepth",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxBounceDepth)},
-        { "samplePixelArea",         OWL_USER_TYPE(bool),               OWL_OFFSETOF(LaunchParams, samplePixelArea)},
+        { "xPixelSamplingInterval",  OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, xPixelSamplingInterval)},
+        { "yPixelSamplingInterval",  OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, yPixelSamplingInterval)},
+        { "timeSamplingInterval",    OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, timeSamplingInterval)},
         { "environmentMapID",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapID)},
         { "environmentMapRotation",  OWL_USER_TYPE(glm::quat),          OWL_OFFSETOF(LaunchParams, environmentMapRotation)},
         { "textureObjects",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textureObjects)},
@@ -653,7 +664,9 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
     launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
     launchParamsSetRaw(OD.launchParams, "maxBounceDepth", &OD.LP.maxBounceDepth);
-    launchParamsSetRaw(OD.launchParams, "samplePixelArea", &OD.LP.samplePixelArea);
+    launchParamsSetRaw(OD.launchParams, "xPixelSamplingInterval", &OD.LP.xPixelSamplingInterval);
+    launchParamsSetRaw(OD.launchParams, "yPixelSamplingInterval", &OD.LP.yPixelSamplingInterval);
+    launchParamsSetRaw(OD.launchParams, "timeSamplingInterval", &OD.LP.timeSamplingInterval);
 
     OWLVarDecl trianglesGeomVars[] = {{/* sentinel to mark end of list */}};
     OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);

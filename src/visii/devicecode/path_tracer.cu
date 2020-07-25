@@ -16,6 +16,8 @@ struct RayPayload {
     float2 barycentrics;
     float tHit = -1.f;
     float localToWorld[12];
+    float localToWorldT0[12];
+    float localToWorldT1[12];
 };
 
 inline __device__
@@ -61,173 +63,16 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     optixGetObjectToWorldTransformMatrix(prd.localToWorld);
     
     OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
-    // WARNING, hard-coding 32 here! Adjust this number if needed
-    // OptixTraversableHandle transformList[32];
-    
-    // fill transform list
-    // int transforms = 0;
-    // OptixTransformType type = optixGetTransformTypeFromHandle( handle );
-    // while( type != OPTIX_TRANSFORM_TYPE_NONE ) {
-    //     transformList[transforms++] = handle;
-    //     switch( type )
-    //     {
-    //     case OPTIX_TRANSFORM_TYPE_STATIC_TRANSFORM:
-    //     {
-    //         const OptixStaticTransform* t = optixGetStaticTransformFromHandle( handle );
-    //         handle = t->child;
-    //         break;
-    //     }
-    //     case OPTIX_TRANSFORM_TYPE_MATRIX_MOTION_TRANSFORM:
-    //     {
-    //         const OptixMatrixMotionTransform* t = optixGetMatrixMotionTransformFromHandle( handle );
-    //         handle = t->child;
-    //         break;
-    //     }
-    //     case OPTIX_TRANSFORM_TYPE_SRT_MOTION_TRANSFORM:
-    //     {
-    //         const OptixSRTMotionTransform* t = optixGetSRTMotionTransformFromHandle( handle );
-    //         handle = t->child;
-    //         break;
-    //     }
-    //     default:
-    //         handle = 0;
-    //         break;
-    //     }
-    //     type = optixGetTransformTypeFromHandle( handle );
-    // }
-
-    // OptixTraversableHandle handle = transformList[0];
-
     float4 trf00, trf01, trf02;
     float4 trf10, trf11, trf12;
     optix_impl::optixGetInterpolatedTransformationFromHandle( trf00, trf01, trf02, handle, /* time */ 0.f, true );
     optix_impl::optixGetInterpolatedTransformationFromHandle( trf10, trf11, trf12, handle, /* time */ 1.f, true );
-
-    
-    // for( int i = transforms - 1; i >= 0; --i )
-    // {
-    //     OptixTraversableHandle handle = transformList[i];
-    //     float4 trf0, trf1, trf2;
-    //     optixGetInterpolatedTransformationFromHandle( trf0, trf1, trf2, handle, time, true );
-    //     if( i == transforms - 1 )
-    //     {
-    //         m0 = trf0;
-    //         m1 = trf1;
-    //         m2 = trf2;
-    //     }
-    //     else
-    //     {
-    //         // m := trf * m
-    //         float4 tmp0 = m0, tmp1 = m1, tmp2 = m2;
-    //         m0 = optixMultiplyRowMatrix( trf0, tmp0, tmp1, tmp2 );
-    //         m1 = optixMultiplyRowMatrix( trf1, tmp0, tmp1, tmp2 );
-    //         m2 = optixMultiplyRowMatrix( trf2, tmp0, tmp1, tmp2 );
-    //     }
-    // }
-
-    // if( transforms == 0 )
-    // {
-    //     m0 = ((float4*)instance->transform)[0];
-    //     m1 = ((float4*)instance->transform)[1];
-    //     m2 = ((float4*)instance->transform)[2];
-    // }
-    // else
-    // {
-    //     // m := trf * m
-    //     float4 tmp0 = m0, tmp1 = m1, tmp2 = m2;
-    //     m0 = optixMultiplyRowMatrix( *(float4*)&instance->transform[0], tmp0, tmp1, tmp2 );
-    //     m1 = optixMultiplyRowMatrix( *(float4*)&instance->transform[4], tmp0, tmp1, tmp2 );
-    //     m2 = optixMultiplyRowMatrix( *(float4*)&instance->transform[8], tmp0, tmp1, tmp2 );
-    // }
-    // p = optixTransformPoint( m0, m1, m2, p );
-    // float m[16] = { m0.x, m0.y, m0.z, m0.w,
-    //                 m1.x, m1.y, m1.z, m1.w,
-    //                 m2.x, m2.y, m2.z, m2.w,
-    //                 0.0f, 0.0f, 0.0f, 1.0f };
-    // Matrix4x4 mi = Matrix4x4( m ).inverse();
-    // n = optixTransformNormal( mi.getRow(0), mi.getRow(1), mi.getRow(2), n );
-
-    // bool instance = true;
-    // if( instance )
-//         {
-//             // WARNING, hard-coding 32 here! Adjust this number if needed
-//             OptixTraversableHandle transformList[32];
-//             // fill transform list
-//             OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);//instance->traversableHandle;
-//             int transforms = 0;
-//             OptixTransformType type = optixGetTransformTypeFromHandle( handle );
-//             while( type != OPTIX_TRANSFORM_TYPE_NONE ) {
-//                 transformList[transforms++] = handle;
-//                 switch( type )
-//                 {
-//                 case OPTIX_TRANSFORM_TYPE_STATIC_TRANSFORM:
-//                 {
-//                     const OptixStaticTransform* t = optixGetStaticTransformFromHandle( handle );
-//                     handle = t->child;
-//                     break;
-//                 }
-//                 case OPTIX_TRANSFORM_TYPE_MATRIX_MOTION_TRANSFORM:
-//                 {
-//                     const OptixMatrixMotionTransform* t = optixGetMatrixMotionTransformFromHandle( handle );
-//                     handle = t->child;
-//                     break;
-//                 }
-//                 case OPTIX_TRANSFORM_TYPE_SRT_MOTION_TRANSFORM:
-//                 {
-//                     const OptixSRTMotionTransform* t = optixGetSRTMotionTransformFromHandle( handle );
-//                     handle = t->child;
-//                     break;
-//                 }
-//                 default:
-//                     handle = 0;
-//                     break;
-//                 }
-//                 type = optixGetTransformTypeFromHandle( handle );
-//             }
-//             float4 m0, m1, m2;
-// #pragma unroll 1
-//             for( int i = transforms - 1; i >= 0; --i )
-//             {
-//                 OptixTraversableHandle handle = transformList[i];
-//                 float4 trf0, trf1, trf2;
-//                 optixGetInterpolatedTransformationFromHandle( trf0, trf1, trf2, handle, time, true );
-//                 if( i == transforms - 1 )
-//                 {
-//                     m0 = trf0;
-//                     m1 = trf1;
-//                     m2 = trf2;
-//                 }
-//                 else
-//                 {
-//                     // m := trf * m
-//                     float4 tmp0 = m0, tmp1 = m1, tmp2 = m2;
-//                     m0 = optixMultiplyRowMatrix( trf0, tmp0, tmp1, tmp2 );
-//                     m1 = optixMultiplyRowMatrix( trf1, tmp0, tmp1, tmp2 );
-//                     m2 = optixMultiplyRowMatrix( trf2, tmp0, tmp1, tmp2 );
-//                 }
-//             }
-//             if( transforms == 0 )
-//             {
-//                 m0 = ((float4*)instance->transform)[0];
-//                 m1 = ((float4*)instance->transform)[1];
-//                 m2 = ((float4*)instance->transform)[2];
-//             }
-//             else
-//             {
-//                 // m := trf * m
-//                 float4 tmp0 = m0, tmp1 = m1, tmp2 = m2;
-//                 m0 = optixMultiplyRowMatrix( *(float4*)&instance->transform[0], tmp0, tmp1, tmp2 );
-//                 m1 = optixMultiplyRowMatrix( *(float4*)&instance->transform[4], tmp0, tmp1, tmp2 );
-//                 m2 = optixMultiplyRowMatrix( *(float4*)&instance->transform[8], tmp0, tmp1, tmp2 );
-//             }
-//             p = optixTransformPoint( m0, m1, m2, p );
-//             float m[16] = { m0.x, m0.y, m0.z, m0.w,
-//                             m1.x, m1.y, m1.z, m1.w,
-//                             m2.x, m2.y, m2.z, m2.w,
-//                             0.0f, 0.0f, 0.0f, 1.0f };
-//             Matrix4x4 mi = Matrix4x4( m ).inverse();
-//             n = optixTransformNormal( mi.getRow(0), mi.getRow(1), mi.getRow(2), n );
-//         }
+    memcpy(&prd.localToWorldT0[0], &trf00, sizeof(trf00));
+    memcpy(&prd.localToWorldT0[4], &trf01, sizeof(trf01));
+    memcpy(&prd.localToWorldT0[8], &trf02, sizeof(trf02));
+    memcpy(&prd.localToWorldT1[0], &trf10, sizeof(trf10));
+    memcpy(&prd.localToWorldT1[4], &trf11, sizeof(trf11));
+    memcpy(&prd.localToWorldT1[8], &trf12, sizeof(trf12));
 }
 
 inline __device__
@@ -322,10 +167,10 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     mat4 camWorldToLocal = transform.localToWorld;
     mat4 projinv = camera.projinv;//glm::inverse(glm::perspective(.785398, 1.0, .1, 1000));//camera.projinv;
     mat4 viewinv = /*camera.viewinv * */camWorldToLocal;
-    vec2 aa = vec2(0.f);
-    if (optixLaunchParams.samplePixelArea) {
-        aa = vec2(lcg_randomf(rng),lcg_randomf(rng)) - vec2(.5f,.5f);
-    }
+    vec2 aa =  vec2(optixLaunchParams.xPixelSamplingInterval[0], optixLaunchParams.yPixelSamplingInterval[0])
+            + (vec2(optixLaunchParams.xPixelSamplingInterval[1], optixLaunchParams.yPixelSamplingInterval[1]) 
+            -  vec2(optixLaunchParams.xPixelSamplingInterval[0], optixLaunchParams.yPixelSamplingInterval[0])
+            ) * vec2(lcg_randomf(rng),lcg_randomf(rng));
 
     vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(optixLaunchParams.frameSize);
     vec3 right = normalize(glm::column(viewinv, 0));
@@ -416,6 +261,13 @@ float3 faceNormalForward(const float3 &w_o, const float3 &gn, const float3 &n)
     return new_n;
 }
 
+__device__
+float sampleTime(float xi) {
+    return  optixLaunchParams.timeSamplingInterval[0] + 
+           (optixLaunchParams.timeSamplingInterval[1] - 
+            optixLaunchParams.timeSamplingInterval[0]) * xi;
+}
+
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
@@ -430,6 +282,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         optixLaunchParams.frameBuffer[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
         return;
     }
+
+    mat4 VP = camera.proj * camera_transform.worldToLocal;
 
     float3 accum_illum = make_float3(0.f);
     float3 primaryAlbedo = make_float3(0.f);
@@ -447,6 +301,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Trace an initial ray through the scene
         owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng);
+
         DisneyMaterial mat;
         int bounce = 0;
         int visibilitySkips = 0;
@@ -457,7 +312,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float roughnessMinimum = 0.f;
         RayPayload payload;
         payload.tHit = -1.f;
-        ray.time = lcg_randomf(rng);
+        ray.time = sampleTime(lcg_randomf(rng));
         owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
                         /*the ray to trace*/ ray,
                         /*prd*/ payload);
@@ -480,7 +335,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if ((bounce == 0) && ((entity.visibilityFlags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
                 ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
                 payload.tHit = -1.f;
-                ray.time = lcg_randomf(rng);
+                ray.time = sampleTime(lcg_randomf(rng));
                 owl::traceRay( optixLaunchParams.world, ray, payload);
                 visibilitySkips++;
                 if (visibilitySkips > 10) break; // avoid locking up.
@@ -503,11 +358,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             
             const float3 w_o = -ray.direction;
             float3 hit_p = ray.origin + payload.tHit * ray.direction;
-            float3 p, v_x, v_y, v_z, v_gz, p_e1, p_e2; float2 uv, uv_e1, uv_e2; int3 indices;
+            float3 mp, p, pt0, pt1, v_x, v_y, v_z, v_gz, p_e1, p_e2; float2 uv, uv_e1, uv_e2; int3 indices;
             bool shouldNormalFaceForward = (entityMaterial.transmission == 0.f);
             
             loadMeshTriIndices(entity.mesh_id, payload.primitiveID, indices);
-            loadMeshVertexData(entity.mesh_id, indices, payload.barycentrics, p, v_gz, p_e1, p_e2);
+            loadMeshVertexData(entity.mesh_id, indices, payload.barycentrics, mp, v_gz, p_e1, p_e2);
             loadMeshUVData(entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
             loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_z);
             loadDisneyMaterial(entityMaterial, make_vec2(uv), mat, roughnessMinimum);
@@ -517,6 +372,16 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             xfm = glm::column(xfm, 1, vec4(payload.localToWorld[1], payload.localToWorld[5],  payload.localToWorld[9], 0.0f));
             xfm = glm::column(xfm, 2, vec4(payload.localToWorld[2], payload.localToWorld[6],  payload.localToWorld[10], 0.0f));
             xfm = glm::column(xfm, 3, vec4(payload.localToWorld[3], payload.localToWorld[7],  payload.localToWorld[11], 1.0f));
+            glm::mat4 xfmt0;
+            xfmt0 = glm::column(xfmt0, 0, vec4(payload.localToWorldT0[0], payload.localToWorldT0[4],  payload.localToWorldT0[8], 0.0f));
+            xfmt0 = glm::column(xfmt0, 1, vec4(payload.localToWorldT0[1], payload.localToWorldT0[5],  payload.localToWorldT0[9], 0.0f));
+            xfmt0 = glm::column(xfmt0, 2, vec4(payload.localToWorldT0[2], payload.localToWorldT0[6],  payload.localToWorldT0[10], 0.0f));
+            xfmt0 = glm::column(xfmt0, 3, vec4(payload.localToWorldT0[3], payload.localToWorldT0[7],  payload.localToWorldT0[11], 1.0f));
+            glm::mat4 xfmt1;
+            xfmt1 = glm::column(xfmt1, 0, vec4(payload.localToWorldT1[0], payload.localToWorldT1[4],  payload.localToWorldT1[8], 0.0f));
+            xfmt1 = glm::column(xfmt1, 1, vec4(payload.localToWorldT1[1], payload.localToWorldT1[5],  payload.localToWorldT1[9], 0.0f));
+            xfmt1 = glm::column(xfmt1, 2, vec4(payload.localToWorldT1[2], payload.localToWorldT1[6],  payload.localToWorldT1[10], 0.0f));
+            xfmt1 = glm::column(xfmt1, 3, vec4(payload.localToWorldT1[3], payload.localToWorldT1[7],  payload.localToWorldT1[11], 1.0f));
             glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
 
             // If the material has a normal map, load it. 
@@ -529,7 +394,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_z = normalize(v_z);            
             
             // Transform data into world space
-            p = make_float3(xfm * make_vec4(p, 1.0f));
+            p = make_float3(xfm * make_vec4(mp, 1.0f));
+            pt0 = make_float3(VP * xfmt0 * make_vec4(mp, 1.0f));
+            pt1 = make_float3(VP * xfmt1 * make_vec4(mp, 1.0f));
+            // float3 test = make_float3(abs(make_vec3(pt1 - pt0)));
+            // test.z = 0.f;
+            // illum = test;
+            // break;
+
             hit_p = p;
             v_gz = make_float3(normalize(nxfm * make_vec3(v_gz)));
             v_z = make_float3(normalize(nxfm * make_vec3(v_z)));
@@ -676,7 +548,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             ray.origin = hit_p;
                             ray.direction = light_dir;
                             payload.tHit = -1.f;
-                            ray.time = lcg_randomf(rng);
+                            ray.time = sampleTime(lcg_randomf(rng));
                             owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
                             if (payload.instanceID == -1) continue;
                             int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
@@ -709,7 +581,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.direction = w_i;
             ray.tmin = EPSILON * 100.f;
             payload.tHit = -1.f;
-            ray.time = lcg_randomf(rng);
+            ray.time = sampleTime(lcg_randomf(rng));
             owl::traceRay(optixLaunchParams.world, ray, payload);
 
             if (light_pdf > EPSILON) 
@@ -830,7 +702,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     if (any(isnan(oldAlbedo))) oldAlbedo = vec4(1.f);
     if (any(isnan(oldNormal))) oldNormal = vec4(1.f);
     vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
-    vec4 newNormal = normalize(camera.proj * camera_transform.worldToLocal * vec4(primaryNormal.x, primaryNormal.y, primaryNormal.z, 0.f));
+    vec4 newNormal = normalize(VP * vec4(primaryNormal.x, primaryNormal.y, primaryNormal.z, 0.f));
     newNormal.a = 1.f;
     vec4 accumAlbedo = (newAlbedo + float(optixLaunchParams.frameID) * oldAlbedo) / float(optixLaunchParams.frameID + 1);
     vec4 accumNormal = (newNormal + float(optixLaunchParams.frameID) * oldNormal) / float(optixLaunchParams.frameID + 1);

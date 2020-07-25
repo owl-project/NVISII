@@ -91,16 +91,25 @@ void setDirectLightingClamp(float clamp);
 void setMaxBounceDepth(uint32_t depth);
 
 /** 
- * Enables or disables sampling pixel area. If disabled, rays will always sample from the center
- * of a pixel. If enabled, rays with sample the entire pixel area. Enabling this allows for 
- * antialiasing, but results in noise in intermediate data buffers. When disabled, intermediate
- * data buffers will appear noise-less on first hit, however aliasing artifacts may appear 
- * for final path traced images. Note that camera defocus blur will implicitly force sampling 
- * pixel area.
+ * Sets the region of the pixel where rays should sample. By default, rays sample the entire
+ * pixel area between [0,1]. Rays can instead sample a specific location of the pixel, like the pixel center,
+ * by specifying a specific location within the pixel area, eg [.5, .5]. 
+ * This allows for enabling or disabling antialiasing, possibly at the cost of noise in intermediate data buffers. 
  * 
- * @param sample If true, samples the entire pixel area
+ * @param x_sample_interval The interval to sample rays within along the x axis. A value of [0,1] will sample the entire pixel x axis.
+ * @param y_sample_interval The interval to sample rays within along the y axis. A value of [0,1] will sample the entire pixel y axis.
  */ 
-void samplePixelArea(bool sample);
+void samplePixelArea(vec2 x_sample_interval = vec2(0.f, 1.f), vec2 y_sample_interval = vec2(0.f, 1.f));
+
+/** 
+ * Sets the interval of time that rays should sample. By default, rays sample the entire
+ * time interval befween the current frame and the next, [0,1]. Rays can instead sample a specific point in time,
+ * like the end-of-frame time, by specifying a specific location within the time interval, eg [1.0, 1.0] or [0.0, 0.0]. 
+ * This allows for enabling or disabling motion blur, while still preserving motion vectors. 
+ * 
+ * @param time_sample_interval The interval to sample rays within along in time. A value of [0,1] will result in motion blur across the entire frame.
+ */ 
+void sampleTimeInterval(vec2 time_sample_interval = vec2(0.f, 1.f));
 
 /**
   * If using interactive mode, resizes the window to the specified dimensions.
