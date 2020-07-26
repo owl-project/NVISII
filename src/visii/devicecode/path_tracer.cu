@@ -242,13 +242,16 @@ void initializeRenderData(float3 &renderData)
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::ENTITY_ID) {
         renderData = make_float3(FLT_MAX);
     }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::BASE_COLOR) {
+        renderData = make_float3(0.0, 0.0, 0.0);
+    }
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
         renderData = make_float3(0.0, 0.0, -1.0);
     }
 }
 
 __device__
-void saveRenderData(float3 &renderData, int bounce, float depth, float3 w_p, float3 w_n, int entity_id, float3 diffuse_mvec)
+void saveRenderData(float3 &renderData, int bounce, float depth, float3 w_p, float3 w_n, int entity_id, float3 diffuse_mvec, float3 base_color)
 {
     if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
     if (bounce != optixLaunchParams.renderDataBounce) return;
@@ -267,6 +270,9 @@ void saveRenderData(float3 &renderData, int bounce, float depth, float3 w_p, flo
     }
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
         renderData = diffuse_mvec;
+    }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::BASE_COLOR) {
+        renderData = base_color;
     }
 }
 
@@ -457,7 +463,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
 
             // For segmentations, metadata extraction for applications like denoising or ML training
-            saveRenderData(renderData, bounce, payload.tHit, hit_p, v_z, entityID, diffuseMotion);
+            saveRenderData(renderData, bounce, payload.tHit, hit_p, v_z, entityID, diffuseMotion, mat.base_color);
                         
             // If this is the first hit, keep track of primary albedo and normal for denoising.
             if (bounce == 0) {

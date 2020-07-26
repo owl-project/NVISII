@@ -75,6 +75,7 @@ enum RenderDataFlags : uint32_t {
   DENOISE_NORMAL = 5,
   DENOISE_ALBEDO = 6,
   DIFFUSE_MOTION_VECTORS = 7,
+  BASE_COLOR = 8,
 };
 
 // #define REPROJECT true
