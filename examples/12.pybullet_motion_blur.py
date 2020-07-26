@@ -291,7 +291,7 @@ for i in range (int(opt.nb_frames)):
         # Use linear velocity to blur the object in motion.
         # We use frames per second here to internally convert velocity in meters / second into meters / frame.
         # The "mix" parameter smooths out the motion blur temporally, reducing flickering from linear motion blur
-        obj_entity.get_transform().set_linear_velocity(dpos, frames_per_second, mix = .8)
+        obj_entity.get_transform().set_linear_velocity(dpos, frames_per_second, mix = .7)
 
         # visii quat expects w as the first argument
         new_rot = visii.quat(rot[3], rot[0], rot[1], rot[2])
@@ -300,7 +300,7 @@ for i in range (int(opt.nb_frames)):
         
         # Use angular velocity to blur the object in motion. Same concepts as above, but for 
         # angular velocity instead of scalar.
-        obj_entity.get_transform().set_angular_velocity(visii.quat(1.0, drot), frames_per_second, mix = .8)
+        obj_entity.get_transform().set_angular_velocity(visii.quat(1.0, drot), frames_per_second, mix = .7)
 
     print(f'rendering frame {str(i).zfill(5)}/{str(opt.nb_frames).zfill(5)}')
     visii.render_to_png(

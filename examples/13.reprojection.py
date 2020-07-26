@@ -39,7 +39,7 @@ else:
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.initialize_interactive()
+visii.initialize_headless()
 
 camera = visii.entity.create(
     name = "camera",

@@ -2,3 +2,4 @@ pybullet
 noise
 numpy
 PIL
+scipy
