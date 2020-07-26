@@ -82,7 +82,7 @@ areaLight1 = visii.entity.create(
     mesh = visii.mesh.create_teapotahedron("areaLight1"),
 )
 areaLight1.get_light().set_intensity(10000.)
-areaLight1.get_light().set_temperature(4000)
+areaLight1.get_light().set_temperature(8000)
 areaLight1.get_transform().set_position(
     visii.vec3(0, 0, 5))
 
@@ -93,22 +93,27 @@ mesh1 = visii.entity.create(
     material = visii.material.create("mesh1")
 )
 
-mesh1.get_material().set_metallic(0)  # should 0 or 1      
-mesh1.get_material().set_transmission(0.8)  # should 0 or 1      
-mesh1.get_material().set_roughness(0.2) # default is 1  
+mesh1.get_material().set_roughness(0.1)
 mesh1.get_material().set_base_color(
-    visii.vec3(0.9, 0.2, 0.7))
+    visii.vec3(1.0, 0.0, 0.0))
 
 mesh1.get_transform().set_position(
     visii.vec3(0.0, 0.0, 0))
 mesh1.get_transform().set_scale(
     visii.vec3(0.1))
 
+visii.set_dome_light_intensity(0)
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # visii offers different ways to export meta data
-# these are exported in HDR which offers very good 
-# storage for values.
+# these are exported as raw arrays of numbers
+
+# for many segmentations, it might be beneficial to only 
+# sample pixel centers instead of the whole pixel area.
+# to do so, call this function
+visii.sample_pixel_area(
+    x_sample_interval = visii.vec2(.5,.5), 
+    y_sample_interval = visii.vec2(.5, .5))
 
 depth_array = visii.render_data(
     width=int(opt.width), 
@@ -188,12 +193,39 @@ position_array[...,:-1] = position_array[...,:-1] - np.min(position_array[...,:-
 img = Image.fromarray((position_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
 img.save(f"{opt.outf}/positions.png")
 
+# motion vectors can be useful for reprojection
+
+# induce motion, sample only at T=0
+mesh1.get_transform().set_angular_velocity(visii.angleAxis(1.5, visii.vec3(0,0,1)))
+visii.sample_time_interval(visii.vec2(0,0))
+motion_vectors_array = visii.render_data(
+    width=int(opt.width), 
+    height=int(opt.height), 
+    start_frame=0,
+    frame_count=1,
+    bounce=int(0),
+    options="diffuse_motion_vectors"
+)
+
+# transform vectors to be between 0 and 1
+motion_vectors_array = np.array(motion_vectors_array).reshape(opt.width,opt.height,4)
+motion_vectors_array = (motion_vectors_array * .5) + .5
+
+# save the segmentation image
+img = Image.fromarray((motion_vectors_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save(f"{opt.outf}/diffuse_motion_vectors.png")
+
+# for the final image, sample the entire pixel area to anti-alias the result
+visii.sample_pixel_area(
+    x_sample_interval = visii.vec2(0.0, 1.0), 
+    y_sample_interval = visii.vec2(0.0, 1.0))
+visii.set_direct_lighting_clamp(10.0)
+visii.set_indirect_lighting_clamp(10.0)
 visii.render_to_png(
     width=int(opt.width), 
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
     image_path=f"{opt.outf}/img.png"
-
 )
 
 visii.render_to_hdr(
