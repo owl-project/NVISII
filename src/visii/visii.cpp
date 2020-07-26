@@ -8,6 +8,7 @@
 #include <visii/utilities/colors.h>
 #include <owl/owl.h>
 #include <owl/helper/optix.h>
+#include <cuda.h>
 #include <cuda_gl_interop.h>
 
 #include <devicecode/launch_params.h>
@@ -70,6 +71,8 @@ static struct OptixData {
     OWLBuffer frameBuffer;
     OWLBuffer normalBuffer;
     OWLBuffer albedoBuffer;
+    OWLBuffer scratchBuffer;
+    OWLBuffer mvecBuffer;
     OWLBuffer accumBuffer;
 
     OWLBuffer entityBuffer;
@@ -504,6 +507,8 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
     bufferResize(OD.frameBuffer, width * height);
     bufferResize(OD.normalBuffer, width * height);
     bufferResize(OD.albedoBuffer, width * height);
+    bufferResize(OD.scratchBuffer, width * height);
+    bufferResize(OD.mvecBuffer, width * height);    
     bufferResize(OD.accumBuffer, width * height);
     
     // Reconfigure denoiser
@@ -556,6 +561,8 @@ void initializeOptix(bool headless)
         { "frameBuffer",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, frameBuffer)},
         { "normalBuffer",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, normalBuffer)},
         { "albedoBuffer",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, albedoBuffer)},
+        { "scratchBuffer",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, scratchBuffer)},
+        { "mvecBuffer",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, mvecBuffer)},
         { "accumPtr",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
         { "world",                   OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
         { "cameraEntity",            OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
@@ -581,6 +588,9 @@ void initializeOptix(bool headless)
         { "xPixelSamplingInterval",  OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, xPixelSamplingInterval)},
         { "yPixelSamplingInterval",  OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, yPixelSamplingInterval)},
         { "timeSamplingInterval",    OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, timeSamplingInterval)},
+        { "proj",                    OWL_USER_TYPE(glm::mat4),          OWL_OFFSETOF(LaunchParams, proj)},
+        { "viewT0",                  OWL_USER_TYPE(glm::mat4),          OWL_OFFSETOF(LaunchParams, viewT0)},
+        { "viewT1",                  OWL_USER_TYPE(glm::mat4),          OWL_OFFSETOF(LaunchParams, viewT1)},
         { "environmentMapID",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapID)},
         { "environmentMapRotation",  OWL_USER_TYPE(glm::quat),          OWL_OFFSETOF(LaunchParams, environmentMapRotation)},
         { "textureObjects",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textureObjects)},
@@ -601,10 +611,14 @@ void initializeOptix(bool headless)
     OD.accumBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.normalBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.albedoBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.scratchBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.mvecBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.LP.frameSize = glm::ivec2(512, 512);
     launchParamsSetBuffer(OD.launchParams, "frameBuffer", OD.frameBuffer);
     launchParamsSetBuffer(OD.launchParams, "normalBuffer", OD.normalBuffer);
     launchParamsSetBuffer(OD.launchParams, "albedoBuffer", OD.albedoBuffer);
+    launchParamsSetBuffer(OD.launchParams, "scratchBuffer", OD.scratchBuffer);
+    launchParamsSetBuffer(OD.launchParams, "mvecBuffer", OD.mvecBuffer);
     launchParamsSetBuffer(OD.launchParams, "accumPtr", OD.accumBuffer);
     launchParamsSetRaw(OD.launchParams, "frameSize", &OD.LP.frameSize);
 
@@ -818,7 +832,7 @@ void updateComponents()
         bufferUpload(OD.normalListsBuffer, normalLists.data());
         Mesh::updateComponents();
         bufferUpload(OptixData.meshBuffer, Mesh::getFrontStruct());
-    }
+    }    
 
     // Manage Entities: Build / Rebuild TLAS
     if (Entity::areAnyDirty()) {
@@ -841,9 +855,9 @@ void updateComponents()
             if (!blas) return;
             glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix();
             glm::mat4 nextLocalToWorld = entities[eid].getTransform()->getNextLocalToWorldMatrix();
-            instances.push_back(blas);
             t0InstanceTransforms.push_back(localToWorld);            
             t1InstanceTransforms.push_back(nextLocalToWorld);            
+            instances.push_back(blas);
             instanceToEntityMap.push_back(eid);
         }
 
@@ -958,6 +972,14 @@ void updateComponents()
         Light::updateComponents();
         bufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());
     }
+
+    if (OptixData.LP.cameraEntity.initialized) {
+        auto transform = Transform::getFront()[OptixData.LP.cameraEntity.transform_id];
+        auto camera = Camera::getFront()[OptixData.LP.cameraEntity.camera_id];
+        OptixData.LP.proj = camera.getProjection();
+        OptixData.LP.viewT0 = transform.getWorldToLocalMatrix();
+        OptixData.LP.viewT1 = transform.getNextWorldToLocalMatrix();
+    }
 }
 
 void updateLaunchParams()
@@ -971,6 +993,9 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "renderDataMode", &OptixData.LP.renderDataMode);
     launchParamsSetRaw(OptixData.launchParams, "renderDataBounce", &OptixData.LP.renderDataBounce);
     launchParamsSetRaw(OptixData.launchParams, "seed", &OptixData.LP.seed);
+    launchParamsSetRaw(OptixData.launchParams, "proj", &OptixData.LP.proj);
+    launchParamsSetRaw(OptixData.launchParams, "viewT0", &OptixData.LP.viewT0);
+    launchParamsSetRaw(OptixData.launchParams, "viewT1", &OptixData.LP.viewT1);
     OptixData.LP.frameID ++;
 }
 
@@ -1338,6 +1363,9 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         else if (option == std::string("denoise_albedo")) {
             OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_ALBEDO;
         }
+        else if (option == std::string("diffuse_motion_vectors")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_MOTION_VECTORS;
+        }
         else {
             throw std::runtime_error(std::string("Error, unknown option : \"") + _option + std::string("\". ")
             + std::string("Available options are \"none\", \"depth\", \"position\", ") 
@@ -1487,6 +1515,8 @@ void initializeComponentFactories()
     Light::initializeFactory();
 }
 
+void reproject(glm::vec4 *samplesBuffer, glm::vec4 *t0AlbedoBuffer, glm::vec4 *t1AlbedoBuffer, glm::vec4 *mvecBuffer, glm::vec4 *scratchBuffer, glm::vec4 *imageBuffer, int width, int height);
+
 void initializeInteractive(bool windowOnTop)
 {
     // don't initialize more than once
@@ -1527,11 +1557,25 @@ void initializeInteractive(bool windowOnTop)
             static double start=0;
             static double stop=0;
             start = glfwGetTime();
-            traceRays();
+            traceRays();   
+
             if (OptixData.enableDenoiser)
             {
                 denoiseImage();
-            }
+            }        
+
+            // glm::vec4* samplePtr = (glm::vec4*) bufferGetPointer(OptixData.accumBuffer,0);
+            // glm::vec4* mvecPtr = (glm::vec4*) bufferGetPointer(OptixData.mvecBuffer,0);
+            // glm::vec4* t0AlbPtr = (glm::vec4*) bufferGetPointer(OptixData.scratchBuffer,0);
+            // glm::vec4* t1AlbPtr = (glm::vec4*) bufferGetPointer(OptixData.albedoBuffer,0);
+            // glm::vec4* fbPtr = (glm::vec4*) bufferGetPointer(OptixData.frameBuffer,0);
+            // glm::vec4* sPtr = (glm::vec4*) bufferGetPointer(OptixData.normalBuffer,0);
+            // int width = OptixData.LP.frameSize.x;
+            // int height = OptixData.LP.frameSize.y;
+            // reproject(samplePtr, t0AlbPtr, t1AlbPtr, mvecPtr, sPtr, fbPtr, width, height);
+
+            
+
             drawFrameBufferToWindow();
             stop = glfwGetTime();
             glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());

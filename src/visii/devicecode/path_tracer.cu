@@ -160,13 +160,30 @@ void loadDisneyMaterial(const MaterialStruct &p, vec2 uv, DisneyMaterial &mat, f
     mat.transmission_roughness = max(max(sampleTexture(p.transmission_roughness_texture_id, uv, vec4(p.transmission_roughness))[p.transmission_roughness_texture_channel], MIN_ROUGHNESS), roughnessMinimum);
 }
 
+__device__
+float sampleTime(float xi) {
+    return  optixLaunchParams.timeSamplingInterval[0] + 
+           (optixLaunchParams.timeSamplingInterval[1] - 
+            optixLaunchParams.timeSamplingInterval[0]) * xi;
+}
+
 inline __device__
 owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transform, ivec2 pixelID, ivec2 frameSize, LCGRand &rng)
 {
     /* Generate camera rays */    
-    mat4 camWorldToLocal = transform.localToWorld;
-    mat4 projinv = camera.projinv;//glm::inverse(glm::perspective(.785398, 1.0, .1, 1000));//camera.projinv;
-    mat4 viewinv = /*camera.viewinv * */camWorldToLocal;
+    glm::quat r0 = glm::quat_cast(optixLaunchParams.viewT0);
+    glm::quat r1 = glm::quat_cast(optixLaunchParams.viewT1);
+    glm::vec4 p0 = glm::column(optixLaunchParams.viewT0, 3);
+    glm::vec4 p1 = glm::column(optixLaunchParams.viewT1, 3);
+    float time = sampleTime(lcg_randomf(rng));
+
+    glm::vec4 pos = glm::mix(p0, p1, time);
+    glm::quat rot = glm::slerp(r0, r1, time);
+    glm::mat4 camLocalToWorld = glm::mat4_cast(rot);
+    camLocalToWorld = glm::column(camLocalToWorld, 3, pos);
+
+    mat4 projinv = glm::inverse(optixLaunchParams.proj);
+    mat4 viewinv = glm::inverse(camLocalToWorld);
     vec2 aa =  vec2(optixLaunchParams.xPixelSamplingInterval[0], optixLaunchParams.yPixelSamplingInterval[0])
             + (vec2(optixLaunchParams.xPixelSamplingInterval[1], optixLaunchParams.yPixelSamplingInterval[1]) 
             -  vec2(optixLaunchParams.xPixelSamplingInterval[0], optixLaunchParams.yPixelSamplingInterval[0])
@@ -225,10 +242,13 @@ void initializeRenderData(float3 &renderData)
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::ENTITY_ID) {
         renderData = make_float3(FLT_MAX);
     }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
+        renderData = make_float3(0.0, 0.0, -1.0);
+    }
 }
 
 __device__
-void saveRenderData(float3 &renderData, int bounce, float depth, float3 w_p, float3 w_n, int entity_id)
+void saveRenderData(float3 &renderData, int bounce, float depth, float3 w_p, float3 w_n, int entity_id, float3 diffuse_mvec)
 {
     if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
     if (bounce != optixLaunchParams.renderDataBounce) return;
@@ -245,6 +265,9 @@ void saveRenderData(float3 &renderData, int bounce, float depth, float3 w_p, flo
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::ENTITY_ID) {
         renderData = make_float3(float(entity_id));
     }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
+        renderData = diffuse_mvec;
+    }
 }
 
 __device__
@@ -259,13 +282,6 @@ float3 faceNormalForward(const float3 &w_o, const float3 &gn, const float3 &n)
         new_n = -new_n;
     }
     return new_n;
-}
-
-__device__
-float sampleTime(float xi) {
-    return  optixLaunchParams.timeSamplingInterval[0] + 
-           (optixLaunchParams.timeSamplingInterval[1] - 
-            optixLaunchParams.timeSamplingInterval[0]) * xi;
 }
 
 OPTIX_RAYGEN_PROGRAM(rayGen)()
@@ -288,6 +304,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     float3 accum_illum = make_float3(0.f);
     float3 primaryAlbedo = make_float3(0.f);
     float3 primaryNormal = make_float3(0.f);
+    float3 primaryDiffuseMotion = make_float3(0.f);
     
     float3 renderData = make_float3(0.f);
     initializeRenderData(renderData);
@@ -395,9 +412,16 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             
             // Transform data into world space
             p = make_float3(xfm * make_vec4(mp, 1.0f));
-            pt0 = make_float3(VP * xfmt0 * make_vec4(mp, 1.0f));
-            pt1 = make_float3(VP * xfmt1 * make_vec4(mp, 1.0f));
-            // float3 test = make_float3(abs(make_vec3(pt1 - pt0)));
+            vec4 tmp1 = optixLaunchParams.proj * optixLaunchParams.viewT0 * xfmt0 * make_vec4(mp, 1.0f);
+            pt0 = make_float3(tmp1 / tmp1.w) * .5f;
+
+            vec4 tmp2 = optixLaunchParams.proj * optixLaunchParams.viewT1 * xfmt1 * make_vec4(mp, 1.0f);
+            pt1 = make_float3(tmp2 / tmp2.w) * .5f;
+            
+            float3 diffuseMotion = pt1 - pt0;
+            // diffuseMotion = make_float3(diffuseMotion.x, diffuseMotion.z, diffuseMotion.y);
+            if (bounce == 0) primaryDiffuseMotion = diffuseMotion;
+            // float3 test = make_float3(abs(make_vec3(diffuseMotion)));
             // test.z = 0.f;
             // illum = test;
             // break;
@@ -433,7 +457,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
 
             // For segmentations, metadata extraction for applications like denoising or ML training
-            saveRenderData(renderData, bounce, payload.tHit, hit_p, v_z, entityID);
+            saveRenderData(renderData, bounce, payload.tHit, hit_p, v_z, entityID, diffuseMotion);
                         
             // If this is the first hit, keep track of primary albedo and normal for denoising.
             if (bounce == 0) {
@@ -680,23 +704,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         accum_color.w
     );
 
-    float exposure = 10.f; // todo: make variable
-
     float3 color = make_float3(accum_color);
-    
-    // color = uncharted_2_tonemap(color * exposure);
-    // color = color * (1.0f / uncharted_2_tonemap(make_float3(11.2f)));
-
-    // color.x = linear_to_srgb(color.x);
-    // color.y = linear_to_srgb(color.y);
-    // color.z = linear_to_srgb(color.z);
-
     optixLaunchParams.frameBuffer[fbOfs] = vec4(
         color.x,
         color.y,
         color.z,
         1.0f
     );
+    
     vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
     vec4 oldNormal = optixLaunchParams.normalBuffer[fbOfs];
     if (any(isnan(oldAlbedo))) oldAlbedo = vec4(1.f);
@@ -711,11 +726,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     // Override framebuffer output if user requested to render metadata
     if (optixLaunchParams.renderDataMode != RenderDataFlags::NONE) {
-        accumNormal = abs(accumNormal + vec4(1.f));
-        if (optixLaunchParams.renderDataMode == RenderDataFlags::DENOISE_NORMAL) 
-            renderData = make_float3(accumNormal.x, accumNormal.y, accumNormal.z);
-        if (optixLaunchParams.renderDataMode == RenderDataFlags::DENOISE_ALBEDO) 
-            renderData = make_float3(accumAlbedo.x, accumAlbedo.y, accumAlbedo.z);
         optixLaunchParams.frameBuffer[fbOfs] = vec4( renderData.x, renderData.y, renderData.z, 1.0f);
     }
 }

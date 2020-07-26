@@ -21,6 +21,8 @@ struct LaunchParams {
     glm::vec4 *frameBuffer;
     glm::vec4 *albedoBuffer;
     glm::vec4 *normalBuffer;
+    glm::vec4 *scratchBuffer;
+    glm::vec4 *mvecBuffer;
     glm::vec4 *accumPtr;
     OptixTraversableHandle world;
     float domeLightIntensity = 1.f;
@@ -31,6 +33,9 @@ struct LaunchParams {
     vec2 xPixelSamplingInterval = vec2(0.f,1.f);
     vec2 yPixelSamplingInterval = vec2(0.f,1.f);
     vec2 timeSamplingInterval = vec2(0.f,1.f);
+    mat4 proj;
+    mat4 viewT0;
+    mat4 viewT1;
 
     EntityStruct    cameraEntity;
     EntityStruct    *entities = nullptr;
@@ -69,4 +74,7 @@ enum RenderDataFlags : uint32_t {
   ENTITY_ID = 4,
   DENOISE_NORMAL = 5,
   DENOISE_ALBEDO = 6,
+  DIFFUSE_MOTION_VECTORS = 7,
 };
+
+// #define REPROJECT true

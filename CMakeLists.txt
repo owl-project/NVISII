@@ -370,7 +370,7 @@ cuda_compile_and_embed(ptxCode ${SRC_CU})
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  ViSII Library                                                   │
 # └──────────────────────────────────────────────────────────────────┘
-cuda_add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
+cuda_add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode} OPTIONS --expt-relaxed-constexpr -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
 target_link_libraries(visii_lib ${LIBRARIES})
 set_target_properties(visii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 install(TARGETS visii_lib 
