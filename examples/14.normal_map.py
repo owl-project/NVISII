@@ -47,13 +47,39 @@ camera = visii.entity.create(
 camera.get_transform().look_at(
     visii.vec3(0,0,0), # look at (world coordinate)
     visii.vec3(0,0,1), # up vector
-    visii.vec3(-2,0,2), # camera_origin    
+    visii.vec3(0,0,3), # camera_origin    
 )
 visii.set_camera_entity(camera)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.set_dome_light_intensity(1)
+visii.set_dome_light_intensity(0)
+
+# third light 
+obj_entity = visii.entity.create(
+    name="light",
+    mesh = visii.mesh.create_plane('light'),
+    transform = visii.transform.create("light"),
+)
+obj_entity.set_light(
+    visii.light.create('light')
+)
+obj_entity.get_light().set_intensity(10000)
+
+obj_entity.get_light().set_temperature(5000)
+
+obj_entity.get_transform().set_scale(
+    visii.vec3(0.2)
+)
+obj_entity.get_transform().set_position(
+    visii.vec3(1,0,2)
+)
+obj_entity.get_transform().look_at(
+    at =  visii.vec3(0,0,0), # look at (world coordinate)
+    up = visii.vec3(0,0,1), # up vector
+)
+obj_entity.get_transform().add_rotation(visii.quat(0,0,1,0))
+
 
 # Lets set some objects in the scene
 entity = visii.entity.create(
@@ -67,16 +93,19 @@ entity = visii.entity.create(
 entity.get_transform().set_scale(visii.vec3(2))
 
 mat = visii.material.get("material_floor")
-mat.set_metallic(1)
-mat.set_roughness(0)
-
-mat.set_roughness_texture(noise)
+mat.set_metallic(0)
+mat.set_roughness(1)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # load the texture 
-normal_tex = visii.texture.create_from_image("normal",'content/normal_map.png')
+color_tex = visii.texture.create_from_image("color",'content/Bricks051_2K_Color.jpg')
+normal_tex = visii.texture.create_from_image("normal",'content/Bricks051_2K_Normal.jpg')
+rough_tex = visii.texture.create_from_image("rough",'content/Bricks051_2K_Roughness.jpg')
+
+mat.set_base_color_texture(color_tex)
 mat.set_normal_map_texture(normal_tex)
+mat.set_roughness_texture(rough_tex)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -96,4 +125,4 @@ visii.render_to_hdr(
 )
 
 # let's clean up the GPU
-visii.cleanup()
+visii.deinitialize()
