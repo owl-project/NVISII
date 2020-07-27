@@ -656,7 +656,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     if ((light_pdf > EPSILON) && (dotNWi > EPSILON)) {
                         float3 light_dir = make_float3(dir.x, dir.y, dir.z);
                         light_dir = normalize(light_dir);
-                        float bsdf_pdf = disney_pdf(mat, n_l, w_o, light_dir, v_x, v_y, forcedBsdf);
+                        float bsdf_pdf;
+                        disney_pdf(mat, n_l, w_o, light_dir, v_x, v_y, bsdf_pdf, forcedBsdf);
                         if (bsdf_pdf > EPSILON) {
                             RayPayload payload;
                             owl::Ray ray;
@@ -672,9 +673,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             bool visible = ((entityID == sampledLightID) || (entityID == -1));
                             if (visible) {
                                 float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
-                                float3 bsdf = disney_brdf(mat, n_l, w_o, light_dir, v_x, v_y, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP, forcedBsdf);
+                                float3 bsdf, bsdf_color;
+                                disney_brdf(mat, n_l, w_o, light_dir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
                                 float3 Li = lightEmission * w / light_pdf;
-                                irradiance = (bsdf * Li * fabs(dotNWi));
+                                irradiance = (bsdf * bsdf_color * Li * fabs(dotNWi));
                             }
                         }
                     }
@@ -685,14 +687,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 w_i;
             float bsdf_pdf;
             int sampledBsdf = -1;
-            float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdf_pdf, 
-                sampledBsdf, forcedBsdf, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP);
+            float3 bsdf, bsdf_color;
+            sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdf_pdf, sampledBsdf, bsdf, bsdf_color, forcedBsdf);
 
             // For segmentations, lighting metadata extraction dependent on sampling the BSDF
             saveLightingColorRenderData(renderData, bounce, v_z, w_o, w_i, mat);
 
             // terminate if the bsdf probability is impossible, or if the bsdf filters out all light
-            if (bsdf_pdf < EPSILON || all_zero(bsdf)) {
+            if (bsdf_pdf < EPSILON || all_zero(bsdf) || all_zero(bsdf_color)) {
                 break;
             }
 
@@ -734,7 +736,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     if (dotNWi > 0.f){
                         float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
                         float3 Li = lightEmission * w / bsdf_pdf;
-                        irradiance = irradiance + (bsdf * Li * fabs(dotNWi)); // missing r^2 falloff?
+                        irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi)); // missing r^2 falloff?
                     }
                 }
             }
@@ -743,25 +745,28 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 contribution = path_throughput * irradiance;
             illum = illum + contribution;
             // if (bounce >= optixLaunchParams.renderDataBounce) 
-            rdIllum = rdIllum + contribution;
-            path_throughput = path_throughput * bsdf / bsdf_pdf;
+            if (bounce == 0) {
+                rdIllum = rdIllum + irradiance;
+            } else {
+                rdIllum = rdIllum + contribution;
+            }
+            path_throughput = (path_throughput * bsdf * bsdf_color) / bsdf_pdf;
 
             // If ray misses, interpret normal as "miss color" assigned by miss program and move on to the next sample
             if (payload.tHit <= 0.f) {
                 irradiance = irradiance + missColor(ray) * optixLaunchParams.domeLightIntensity;
                 illum = illum + path_throughput * missColor(ray) * optixLaunchParams.domeLightIntensity;
-                // if (bounce >= optixLaunchParams.renderDataBounce) 
-                {
+                if (bounce == 0) {
+                    rdIllum = rdIllum + missColor(ray) * optixLaunchParams.domeLightIntensity;
+                }
+                else {
                     rdIllum = rdIllum + path_throughput * missColor(ray) * optixLaunchParams.domeLightIntensity;
                 }
             }
 
-            // For segmentations, lighting metadata extraction dependent on sampling the BSDF
-            // saveLightingColorRenderData(renderData, bounce, v_z, w_o, w_i, mat);
-
             if (bounce == 0) {
                 directIllum = illum;
-                rdDirectIllum = illum;
+                rdDirectIllum = rdIllum;
                 rdSampledBsdf = sampledBsdf;
             }
 
