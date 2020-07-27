@@ -92,6 +92,7 @@ else:
 namespace std {
   %template(FloatVector) vector<float>;
   %template(UINT32Vector) vector<uint32_t>;
+  %template(StringVector) vector<string>;
   %template(EntityVector) vector<Entity*>;
   %template(TransformVector) vector<Transform*>;
   %template(MeshVector) vector<Mesh*>;
@@ -174,6 +175,6 @@ namespace std {
 //     atexit(cleanup);
 // %}
 
-%init %{
-  atexit(cleanup);
-%}
+// %init %{
+//   atexit(deinitialize);
+// %}

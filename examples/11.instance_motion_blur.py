@@ -145,4 +145,4 @@ visii.render_to_png(
 )
 
 # let's clean up the GPU
-visii.cleanup()
+visii.deinitialize()

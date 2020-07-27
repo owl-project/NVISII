@@ -74,6 +74,19 @@ This is a very simple scene showing different export that visii does naturally, 
 This is the same scene to `5.lights.py` but we added textures to the lights. Check out 
 how the color light bounces on the objects and the floor. 
 
+## 11.instance_motion_blur.py
+In this example, we demonstrate how to use motion blur for linear, angular, and scalar motion.
+The end results are four dragons with different types of motion blur.
+
+## 12.pybullet_motion_blur.py
+Many physics frameworks expose linear and angular velocity. In this example, we 
+demonstrate how to account for these linear and angular velocities through motion blur 
+when generating an animation.
+
+## 13.reprojection.py
+A common technique for denoising ray traced images is to use "temporal reprojection". 
+Here, we use diffuse motion vectors to reproject an image from frame to frame, accounting
+for disocclusions.
 
 ## Notes
 All these examples were developed and tested on Ubuntu 18.04 with cuda 10.2, NVIDIA drivers

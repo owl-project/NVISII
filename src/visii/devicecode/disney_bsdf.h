@@ -355,43 +355,43 @@ __device__ float3 disney_multiscatter(const DisneyMaterial &mat, const float3 &n
     return brdf * energyScale;
 }
 
-__device__ float G(float3 i, float3 o, float3 h, float alpha)
-{
-	alpha = 1.f - alpha;
-	// Roughly follows Eq 23 from Microfacet Models for Refraction.
-	// G is approximately the seperable product of two monodirectional shadowing terms G1 (aka smith shadowing function)
-	return smith_shadowing_ggx(fabs(dot(i, h)), alpha) * smith_shadowing_ggx(fabs(dot(o, h)), alpha);
-}
+// __device__ float G(float3 i, float3 o, float3 h, float alpha)
+// {
+// 	alpha = 1.f - alpha;
+// 	// Roughly follows Eq 23 from Microfacet Models for Refraction.
+// 	// G is approximately the seperable product of two monodirectional shadowing terms G1 (aka smith shadowing function)
+// 	return smith_shadowing_ggx(fabs(dot(i, h)), alpha) * smith_shadowing_ggx(fabs(dot(o, h)), alpha);
+// }
 
-__device__ float D(float3 m, float3 n, float alpha)
-{
-	// alpha = 1.f - alpha;
-	// float alpha_sqr = alpha * alpha;
+// __device__ float D(float3 m, float3 n, float alpha)
+// {
+// 	// alpha = 1.f - alpha;
+// 	// float alpha_sqr = alpha * alpha;
 
-	// From Eq 33 of Microfacet Models for Refraction
-	// help from http://filmicworlds.com/blog/optimizing-ggx-shaders-with-dotlh/
-	float m_dot_n = dot(m, n);
-	float posCharFunc = (m_dot_n > 0) ? 1.f : 0.f;
-	float alpha_sqr = pow2(alpha);
-	float denom = m_dot_n * m_dot_n * (alpha_sqr - 1.f) + 1.f;
-	float D = alpha_sqr / (M_PI * denom * denom);
-	return D;
-	// M_1_PI * alpha_sqr / max(pow2(1.f + (alpha_sqr - 1.f) * cos_theta_h * cos_theta_h), SMALL_EPSILON);
-	// return gtr_2(fabs(dot(n, w_ht)), alpha);
-}
+// 	// From Eq 33 of Microfacet Models for Refraction
+// 	// help from http://filmicworlds.com/blog/optimizing-ggx-shaders-with-dotlh/
+// 	float m_dot_n = dot(m, n);
+// 	float posCharFunc = (m_dot_n > 0) ? 1.f : 0.f;
+// 	float alpha_sqr = pow2(alpha);
+// 	float denom = m_dot_n * m_dot_n * (alpha_sqr - 1.f) + 1.f;
+// 	float D = alpha_sqr / (M_PI * denom * denom);
+// 	return D;
+// 	// M_1_PI * alpha_sqr / max(pow2(1.f + (alpha_sqr - 1.f) * cos_theta_h * cos_theta_h), SMALL_EPSILON);
+// 	// return gtr_2(fabs(dot(n, w_ht)), alpha);
+// }
 
-__device__ float F(float3 i, float3 m, float eta_t, float eta_i)
-{
-	// From Eq 22 of Microfacet Models for Refraction
-	float c = fabs(dot(i, m));
-	float g = pow2(eta_t) / pow2(eta_i) - 1 + pow2(c);
-	if (g < 0) return 1; // if g is imaginary after sqrt, this indicates a total internal reflection
-	g = sqrtf(g);
-	float f = .5f;
-	f *= pow2(g - c) / pow2(g + c);
-	f *= (1.f + (pow2(c * (g + c) - 1) / pow2(c * (g - c) + 1)));
-	return f;
-}
+// __device__ float F(float3 i, float3 m, float eta_t, float eta_i)
+// {
+// 	// From Eq 22 of Microfacet Models for Refraction
+// 	float c = fabs(dot(i, m));
+// 	float g = pow2(eta_t) / pow2(eta_i) - 1 + pow2(c);
+// 	if (g < 0) return 1; // if g is imaginary after sqrt, this indicates a total internal reflection
+// 	g = sqrtf(g);
+// 	float f = .5f;
+// 	f *= pow2(g - c) / pow2(g + c);
+// 	f *= (1.f + (pow2(c * (g + c) - 1) / pow2(c * (g - c) + 1)));
+// 	return f;
+// }
 
 __device__ float3 disney_microfacet_isotropic(const DisneyMaterial &mat, const float3 &n,
 	const float3 &w_o, const float3 &w_i)

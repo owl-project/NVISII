@@ -280,6 +280,17 @@ class Transform : public StaticFactory
     void lookAt(vec3 at, vec3 up, vec3 eye = vec3(NAN));
 
     // /**
+    //  *  For motion blur. Rotates the next transform so the forward vector points at the target's current position.
+    //  *  Then it rotates the transform to point its up direction vector in the direction hinted at 
+    //  *  by the parentUp vector.
+    //  * 
+    //  * @param at The position to point the transform towards
+    //  * @param up The unit direction pointing upwards
+    //  * @param eye (optional) The position to place the object
+    // */
+    // void nextLookAt(vec3 at, vec3 up, vec3 eye = vec3(NAN));
+
+    // /**
     // Applies a rotation of eulerAngles.z degrees around the z axis, eulerAngles.x degrees around 
     // the x axis, and eulerAngles.y degrees around the y axis (in that order).
     // If relativeTo is not specified, rotation is relative to local space.
@@ -583,6 +594,12 @@ class Transform : public StaticFactory
      * parent transforms into account. 
      */
 	  glm::mat4 getLocalToWorldMatrix();
+
+    /** 
+     * @returns a matrix transforming this component from world space to its local space, taking all 
+     * parent transforms into account, in addition to any linear and angular velocities. 
+     */
+	  glm::mat4 getNextWorldToLocalMatrix();
 
     /** 
      * @returns a matrix transforming this component from its local space to world space, taking all 

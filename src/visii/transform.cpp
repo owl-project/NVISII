@@ -207,6 +207,29 @@ void Transform::lookAt(vec3 at, vec3 up, vec3 eye)
 	setRotation(rotation);
 }
 
+// void Transform::nextLookAt(vec3 at, vec3 up, vec3 eye)
+// {
+// 	if (glm::any(glm::isnan(eye))) {
+// 		eye = position;
+// 	}
+// 	up = normalize(up);
+// 	// glm::vec3 forward = glm::normalize(at - eye);
+// 	// glm::quat rotation = safeQuatLookAt(eye, at, up, up);
+	
+
+// 	nextWorldToLocalMatrix = glm::lookAt(eye, at, up);
+// 	glm::mat4 dNext = nextWorldToLocalMatrix * localToWorldMatrix;
+// 	glm::quat rot = glm::quat_cast(dNext);
+// 	glm::vec4 vel = glm::column(dNext, 3);
+
+// 	setLinearVelocity(vec3(vel));
+// 	setAngularVelocity(rot);
+// 	// nextLocalToWorldMatrix = inverse(nextWorldToLocalMatrix);
+// 	// setAngularVelocity(rot * glm::inverse(rotation));
+// 	// markDirty();
+
+// }
+
 // void Transform::rotateAround(vec3 point, float angle, vec3 axis)
 // {
 // 	glm::vec3 direction = point - getPosition();
@@ -316,7 +339,7 @@ void Transform::updateRotation()
 	parentToLocalRotation = glm::inverse(localToParentRotation);
 
 	nextLocalToParentRotation = glm::toMat4(angularVelocity * rotation);
-	nextParentToLocalRotation = glm::inverse(localToParentRotation);
+	nextParentToLocalRotation = glm::inverse(nextLocalToParentRotation);
 	updateMatrix();
 	markDirty();
 }
@@ -638,6 +661,10 @@ glm::mat4 Transform::getWorldToLocalMatrix() {
 
 glm::mat4 Transform::getLocalToWorldMatrix() {
 	return localToWorldMatrix;
+}
+
+glm::mat4 Transform::getNextWorldToLocalMatrix() {
+	return nextWorldToLocalMatrix;
 }
 
 glm::mat4 Transform::getNextLocalToWorldMatrix() {

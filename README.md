@@ -9,6 +9,7 @@ A scene can be described in many ways, you can use our simple mesh definitions, 
 load a complex scene defined in an obj file.
 ViSII can be used to export metadata about the scene, _e.g._, object segmentation. 
 
+[Documentation](https://owl-project.github.io/ViSII/).
 
 <!--
 This library provides a simple, primarily python-user targeted, interface to rendering images of a virtual scene. Its key cornerstones are:

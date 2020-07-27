@@ -140,4 +140,4 @@ visii.render_to_hdr(
 )
 
 # let's clean up the GPU
-visii.cleanup()
+visii.deinitialize()

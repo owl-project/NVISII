@@ -17,6 +17,11 @@ Texture::Texture()
     markDirty();
 }
 
+Texture::~Texture()
+{
+    this->texels.clear();
+}
+
 Texture::Texture(std::string name, uint32_t id)
 {
     this->initialized = true;
@@ -108,9 +113,9 @@ void Texture::clearAll()
 {
     if (!isFactoryInitialized()) return;
 
-    for (auto &light : textures) {
-		if (light.initialized) {
-			Texture::remove(light.name);
+    for (auto &texture : textures) {
+		if (texture.initialized) {
+			Texture::remove(texture.name);
 		}
 	}
 }	
@@ -141,6 +146,7 @@ Texture* Texture::createFromImage(std::string name, std::string path, bool linea
         textureStructs[l->getId()].width = x;
         textureStructs[l->getId()].height = y;
         l->markDirty();
+        stbi_image_free(pixels);
     };
 
     try {

@@ -1908,10 +1908,12 @@ Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> posi
 	try {		
 		ParametricPath parametricPath {
 			[positions](double t) {
+				t = t * .999f;
+				
 				// t is 1.0 / positions.size() - 1 and goes from 0 to 1.0
-				float t_scaled = (float)t * (((float)positions.size()) - 1.0f);
+				float t_scaled = ((float)t * (((float)positions.size()) - 1.0f));
 				uint32_t p1_idx = (uint32_t) floor(t_scaled);
-				uint32_t p2_idx = p1_idx + 1;
+				uint32_t p2_idx = min(p1_idx + 1, uint32_t(positions.size() - 1));
 
 				float t_segment = t_scaled - floor(t_scaled);
 
@@ -1922,8 +1924,8 @@ Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> posi
 				
 				vertex.position = (p2 * t_segment) + (p1 * (1.0f - t_segment));
 
-				glm::vec3 next = (p2 * (t_segment + .01f)) + (p1 * (1.0f - (t_segment + .01f)));
-				glm::vec3 prev = (p2 * (t_segment - .01f)) + (p1 * (1.0f - (t_segment - .01f)));
+				glm::vec3 next = (p2 * glm::clamp((t_segment + .01f), 0.f, 1.0f)) + (p1 * glm::clamp((1.0f - (t_segment + .01f)), 0.f, 1.f));
+				glm::vec3 prev = (p2 * glm::clamp((t_segment - .01f), 0.f, 1.0f)) + (p1 * glm::clamp((1.0f - (t_segment - .01f)), 0.f, 1.f));
 
 				glm::vec3 tangent = glm::normalize(next - prev);
 				glm::vec3 B1;
@@ -1959,10 +1961,11 @@ Mesh* Mesh::createRoundedRectangleTubeFromPolyline(std::string name, std::vector
 		
 		ParametricPath parametricPath {
 			[positions](double t) {
+				t = t * .999f;
 				// t is 1.0 / positions.size() - 1 and goes from 0 to 1.0
 				float t_scaled = (float)t * ((float)(positions.size()) - 1.0f);
 				uint32_t p1_idx = (uint32_t) floor(t_scaled);
-				uint32_t p2_idx = p1_idx + 1;
+				uint32_t p2_idx = min(p1_idx + 1, uint32_t(positions.size() - 1));
 
 				float t_segment = t_scaled - floor(t_scaled);
 
@@ -2009,10 +2012,11 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 	try {
 		ParametricPath parametricPath {
 			[positions](double t) {
+				t = t * .999f;
 				// t is 1.0 / positions.size() - 1 and goes from 0 to 1.0
 				float t_scaled = (float)t * ((float)(positions.size()) - 1.0f);
 				uint32_t p1_idx = (uint32_t) floor(t_scaled);
-				uint32_t p2_idx = p1_idx + 1;
+				uint32_t p2_idx = min(p1_idx + 1, uint32_t(positions.size() - 1));
 
 				float t_segment = t_scaled - floor(t_scaled);
 

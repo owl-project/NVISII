@@ -6,4 +6,4 @@ visii.initialize_interactive()
 
 input("Press Enter to continue...")
 
-visii.cleanup()
+visii.deinitialize()

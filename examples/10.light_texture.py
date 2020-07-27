@@ -5,7 +5,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--spp', 
-                    default=256,
+                    default=400,
                     type=int,
                     help = "number of sample per pixel, higher the more costly")
 parser.add_argument('--width', 
@@ -160,7 +160,7 @@ sphere3 = visii.entity.create(
     material = visii.material.create("sphere3")
 )
 sphere3.get_transform().set_position(
-    visii.vec3(0.6,-0.5,0.1))
+    visii.vec3(0.6,-0.5,0.16))
 sphere3.get_transform().set_scale(
     visii.vec3(0.16))
 sphere3.get_material().set_base_color(
@@ -196,4 +196,4 @@ visii.render_to_png(
 )
 
 # let's clean up the GPU
-visii.cleanup()
+visii.deinitialize()
