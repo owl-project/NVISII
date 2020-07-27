@@ -338,6 +338,9 @@ void saveGeometricRenderData(
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::BASE_COLOR) {
         renderData = mat.base_color;
     }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::RAY_DIRECTION) {
+        renderData = -w_o;
+    }
 }
 
 __device__
