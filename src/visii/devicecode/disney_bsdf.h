@@ -408,9 +408,9 @@ __device__ float3 disney_microfacet_reflection_color(const DisneyMaterial &mat, 
 	float3 spec = lerp(mat.specular * 0.08f * lerp(make_float3(1.f), tint, mat.specular_tint), mat.base_color, mat.metallic);
 
 	float alpha = max(MIN_ALPHA, mat.roughness * mat.roughness);
-	float3 f = lerp(spec, make_float3(1.f), schlick_weight(dot(w_i, w_h)));
-	float g = smith_shadowing_ggx(dot(n, w_i), alpha) * smith_shadowing_ggx(dot(n, w_o), alpha);
-	return f * g;
+	float3 f = lerp(spec, make_float3(1.f), schlick_weight(dot(w_o, n)));
+	// float3 f = lerp(spec, make_float3(1.f), schlick_weight(dot(w_i, w_h)));
+	return f;
 }
 
 __device__ float3 disney_microfacet_isotropic(const DisneyMaterial &mat, const float3 &n,
@@ -423,7 +423,8 @@ __device__ float3 disney_microfacet_isotropic(const DisneyMaterial &mat, const f
 
 	float alpha = max(MIN_ALPHA, mat.roughness * mat.roughness);
 	float d = gtr_2(dot(n, w_h), alpha);
-	float3 f = lerp(spec, make_float3(1.f), schlick_weight(dot(w_i, w_h)));
+	// float3 f = lerp(spec, make_float3(1.f), schlick_weight(dot(w_i, w_h))); // seems to be noisy
+	float3 f = lerp(spec, make_float3(1.f), schlick_weight(dot(w_o, n)));
 	float g = smith_shadowing_ggx(dot(n, w_i), alpha) * smith_shadowing_ggx(dot(n, w_o), alpha);
 	return d * f * g;
 }

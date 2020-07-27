@@ -168,14 +168,13 @@ float sampleTime(float xi) {
 }
 
 inline __device__
-owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transform, ivec2 pixelID, ivec2 frameSize, LCGRand &rng)
+owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transform, ivec2 pixelID, ivec2 frameSize, LCGRand &rng, float time)
 {
     /* Generate camera rays */    
     glm::quat r0 = glm::quat_cast(optixLaunchParams.viewT0);
     glm::quat r1 = glm::quat_cast(optixLaunchParams.viewT1);
     glm::vec4 p0 = glm::column(optixLaunchParams.viewT0, 3);
     glm::vec4 p1 = glm::column(optixLaunchParams.viewT1, 3);
-    float time = sampleTime(lcg_randomf(rng));
 
     glm::vec4 pos = glm::mix(p0, p1, time);
     glm::quat rot = glm::slerp(r0, r1, time);
@@ -315,7 +314,8 @@ void saveGeometricRenderData(
     float3 &renderData, 
     int bounce, float depth, 
     float3 w_p, float3 w_n, float3 w_o,
-    int entity_id, DisneyMaterial &mat)
+    int entity_id, float3 diffuse_mvec,
+    DisneyMaterial &mat)
 {
     if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
     if (bounce != optixLaunchParams.renderDataBounce) return;
@@ -359,6 +359,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
     auto fbOfs = pixelID.x+optixLaunchParams.frameSize.x* ((optixLaunchParams.frameSize.y - 1) -  pixelID.y);
     LCGRand rng = get_rng(optixLaunchParams.frameID + optixLaunchParams.seed * 10007);
+    float time = sampleTime(lcg_randomf(rng));
 
     // If no camera is in use, just display some random noise...
     EntityStruct    camera_entity;
@@ -387,7 +388,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     {
 
         // Trace an initial ray through the scene
-        owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng);
+        owl::Ray ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng, time);
 
         DisneyMaterial mat;
         int bounce = 0;
@@ -415,7 +416,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float roughnessMinimum = 0.f;
         RayPayload payload;
         payload.tHit = -1.f;
-        ray.time = sampleTime(lcg_randomf(rng));
+        ray.time = time;
         owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
                         /*the ray to trace*/ ray,
                         /*prd*/ payload);
@@ -438,7 +439,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if ((bounce == 0) && ((entity.visibilityFlags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
                 ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
                 payload.tHit = -1.f;
-                ray.time = sampleTime(lcg_randomf(rng));
+                ray.time = time;
                 owl::traceRay( optixLaunchParams.world, ray, payload);
                 visibilitySkips++;
                 if (visibilitySkips > 10) break; // avoid locking up.
@@ -542,13 +543,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 v_z = faceNormalForward(w_o, v_gz, v_z);
             }
 
-<<<<<<< HEAD
             // For segmentations, geometric metadata extraction dependent on the hit object
-            saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, entityID, mat);
-=======
-            // For segmentations, metadata extraction for applications like denoising or ML training
-            saveRenderData(renderData, bounce, payload.tHit, hit_p, v_z, entityID, diffuseMotion, mat.base_color);
->>>>>>> development
+            saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, entityID, diffuseMotion, mat);
                         
             // If this is the first hit, keep track of primary albedo and normal for denoising.
             if (bounce == 0) {
@@ -666,7 +662,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             ray.origin = hit_p;
                             ray.direction = light_dir;
                             payload.tHit = -1.f;
-                            ray.time = sampleTime(lcg_randomf(rng));
+                            ray.time = time;
                             owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
                             if (payload.instanceID == -1) continue;
                             int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
@@ -688,6 +684,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             int sampledBsdf = -1;
             float3 bsdf = sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdf_pdf, 
                 sampledBsdf, forcedBsdf, optixLaunchParams.GGX_E_LOOKUP, optixLaunchParams.GGX_E_AVG_LOOKUP);
+
+            // For segmentations, lighting metadata extraction dependent on sampling the BSDF
+            saveLightingColorRenderData(renderData, bounce, v_z, w_o, w_i, mat);
 
             // terminate if the bsdf probability is impossible, or if the bsdf filters out all light
             if (bsdf_pdf < EPSILON || all_zero(bsdf)) {
@@ -755,7 +754,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
 
             // For segmentations, lighting metadata extraction dependent on sampling the BSDF
-            saveLightingColorRenderData(renderData, bounce, v_z, w_o, w_i, mat);
+            // saveLightingColorRenderData(renderData, bounce, v_z, w_o, w_i, mat);
 
             if (bounce == 0) {
                 directIllum = illum;
@@ -821,34 +820,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     );
 
     float3 color = make_float3(accum_color);
-<<<<<<< HEAD
-    
-    // color = uncharted_2_tonemap(color * exposure);
-    // color = color * (1.0f / uncharted_2_tonemap(make_float3(11.2f)));
-
-    // color.x = linear_to_srgb(color.x);
-    // color.y = linear_to_srgb(color.y);
-    // color.z = linear_to_srgb(color.z);
-
-    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) 
-    {
-        optixLaunchParams.frameBuffer[fbOfs] = vec4(
-            color.x,
-            color.y,
-            color.z,
-            1.0f
-        );
-    }
-    // Override framebuffer output if user requested to render metadata
-    else
-    {
-        vec3 oldRenderData = vec3(optixLaunchParams.frameBuffer[fbOfs]);
-        vec3 newRenderData = make_vec3(renderData);
-        vec3 accumData = (newRenderData + float(optixLaunchParams.frameID) * oldRenderData) / float(optixLaunchParams.frameID + 1);
-        optixLaunchParams.frameBuffer[fbOfs] = vec4( accumData.x, accumData.y, accumData.z, 1.0f);
-    }
-
-=======
     optixLaunchParams.frameBuffer[fbOfs] = vec4(
         color.x,
         color.y,
@@ -856,7 +827,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         1.0f
     );
     
->>>>>>> development
     vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
     vec4 oldNormal = optixLaunchParams.normalBuffer[fbOfs];
     if (any(isnan(oldAlbedo))) oldAlbedo = vec4(1.f);
@@ -869,12 +839,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     optixLaunchParams.albedoBuffer[fbOfs] = accumAlbedo;
     optixLaunchParams.normalBuffer[fbOfs] = accumNormal;
 
-<<<<<<< HEAD
-    
-=======
     // Override framebuffer output if user requested to render metadata
     if (optixLaunchParams.renderDataMode != RenderDataFlags::NONE) {
         optixLaunchParams.frameBuffer[fbOfs] = vec4( renderData.x, renderData.y, renderData.z, 1.0f);
     }
->>>>>>> development
 }
