@@ -474,21 +474,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_z);
             loadDisneyMaterial(entityMaterial, make_vec2(uv), mat, roughnessMinimum);
             
-            glm::mat4 xfm;
-            xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
-            xfm = glm::column(xfm, 1, vec4(payload.localToWorld[1], payload.localToWorld[5],  payload.localToWorld[9], 0.0f));
-            xfm = glm::column(xfm, 2, vec4(payload.localToWorld[2], payload.localToWorld[6],  payload.localToWorld[10], 0.0f));
-            xfm = glm::column(xfm, 3, vec4(payload.localToWorld[3], payload.localToWorld[7],  payload.localToWorld[11], 1.0f));
-            glm::mat4 xfmt0;
-            xfmt0 = glm::column(xfmt0, 0, vec4(payload.localToWorldT0[0], payload.localToWorldT0[4],  payload.localToWorldT0[8], 0.0f));
-            xfmt0 = glm::column(xfmt0, 1, vec4(payload.localToWorldT0[1], payload.localToWorldT0[5],  payload.localToWorldT0[9], 0.0f));
-            xfmt0 = glm::column(xfmt0, 2, vec4(payload.localToWorldT0[2], payload.localToWorldT0[6],  payload.localToWorldT0[10], 0.0f));
-            xfmt0 = glm::column(xfmt0, 3, vec4(payload.localToWorldT0[3], payload.localToWorldT0[7],  payload.localToWorldT0[11], 1.0f));
-            glm::mat4 xfmt1;
-            xfmt1 = glm::column(xfmt1, 0, vec4(payload.localToWorldT1[0], payload.localToWorldT1[4],  payload.localToWorldT1[8], 0.0f));
-            xfmt1 = glm::column(xfmt1, 1, vec4(payload.localToWorldT1[1], payload.localToWorldT1[5],  payload.localToWorldT1[9], 0.0f));
-            xfmt1 = glm::column(xfmt1, 2, vec4(payload.localToWorldT1[2], payload.localToWorldT1[6],  payload.localToWorldT1[10], 0.0f));
-            xfmt1 = glm::column(xfmt1, 3, vec4(payload.localToWorldT1[3], payload.localToWorldT1[7],  payload.localToWorldT1[11], 1.0f));
+            glm::mat4 xfm = to_mat4(payload.localToWorld);
+            glm::mat4 xfmt0 = to_mat4(payload.localToWorldT0);
+            glm::mat4 xfmt1 = to_mat4(payload.localToWorldT1);
             glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
 
             // If the material has a normal map, load it. 
@@ -796,7 +784,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // For segmentations, indirect/direct lighting metadata extraction
         float3 rdgillum = rdIllum;
-        rdIndirectIllum = rdgillum;// - rdDirectIllum;
+        rdIndirectIllum = rdgillum - rdDirectIllum;
         saveLightingIrradianceRenderData(renderData, bounce, rdDirectIllum, rdIndirectIllum, rdSampledBsdf);
 
         if (optixLaunchParams.indirectClamp > 0.f)

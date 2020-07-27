@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_access.hpp>
 #include "types.h"
 
 __device__ float4 make_float4(float c) {
@@ -64,6 +65,16 @@ __device__ glm::vec3 make_vec3(float3 v) {
 
 __device__ glm::vec2 make_vec2(float2 v) {
 	return glm::vec2(v.x, v.y);
+}
+
+__device__ glm::mat4 to_mat4(float xfm_[12])
+{
+    glm::mat4 xfm;
+    xfm = glm::column(xfm, 0, vec4(xfm_[0], xfm_[4],  xfm_[8], 0.0f));
+    xfm = glm::column(xfm, 1, vec4(xfm_[1], xfm_[5],  xfm_[9], 0.0f));
+    xfm = glm::column(xfm, 2, vec4(xfm_[2], xfm_[6],  xfm_[10], 0.0f));
+    xfm = glm::column(xfm, 3, vec4(xfm_[3], xfm_[7],  xfm_[11], 1.0f));
+	return xfm;
 }
 
 __device__ float length(const float3 &v) {
