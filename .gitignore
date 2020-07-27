@@ -9,3 +9,8 @@ include\visii\utilities\version.h
 include/visii/utilities/version.h
 *.png
 data
+*.obj
+*.mp4
+*.hdr
+*.jpg
+*.mtl

@@ -251,8 +251,8 @@ find_program(BIN2C bin2c
   /usr/local/cuda/bin)
 
 # optix 7
-set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
-find_package(OptiX REQUIRED VERSION 7)
+set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.1.0/)
+find_package(OptiX REQUIRED VERSION 7.1)
 include_directories(${OptiX_INCLUDE})
 
 # owl
@@ -370,7 +370,7 @@ cuda_compile_and_embed(ptxCode ${SRC_CU})
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  ViSII Library                                                   │
 # └──────────────────────────────────────────────────────────────────┘
-cuda_add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
+cuda_add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode} OPTIONS --expt-relaxed-constexpr -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
 target_link_libraries(visii_lib ${LIBRARIES})
 set_target_properties(visii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 install(TARGETS visii_lib 

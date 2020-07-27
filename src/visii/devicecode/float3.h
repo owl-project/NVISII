@@ -54,6 +54,10 @@ __device__ glm::vec4 make_vec4(float3 v, float c) {
 	return glm::vec4(v.x, v.y, v.z, c);
 }
 
+__device__ glm::vec3 make_vec3(float4 v) {
+	return glm::vec3(v.x, v.y, v.z);
+}
+
 __device__ glm::vec3 make_vec3(float3 v) {
 	return glm::vec3(v.x, v.y, v.z);
 }

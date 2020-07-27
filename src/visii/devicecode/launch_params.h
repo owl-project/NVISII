@@ -21,12 +21,21 @@ struct LaunchParams {
     glm::vec4 *frameBuffer;
     glm::vec4 *albedoBuffer;
     glm::vec4 *normalBuffer;
+    glm::vec4 *scratchBuffer;
+    glm::vec4 *mvecBuffer;
     glm::vec4 *accumPtr;
     OptixTraversableHandle world;
     float domeLightIntensity = 1.f;
     float directClamp = 100.f; 
     float indirectClamp = 100.f; 
     uint32_t maxBounceDepth = 10;
+    uint32_t seed = 0;
+    vec2 xPixelSamplingInterval = vec2(0.f,1.f);
+    vec2 yPixelSamplingInterval = vec2(0.f,1.f);
+    vec2 timeSamplingInterval = vec2(0.f,1.f);
+    mat4 proj;
+    mat4 viewT0;
+    mat4 viewT1;
 
     EntityStruct    cameraEntity;
     EntityStruct    *entities = nullptr;
@@ -65,13 +74,17 @@ enum RenderDataFlags : uint32_t {
   ENTITY_ID = 4,
   DENOISE_NORMAL = 5,
   DENOISE_ALBEDO = 6,
-  DIFFUSE_COLOR = 7,
-  DIFFUSE_DIRECT_LIGHTING = 8,
-  DIFFUSE_INDIRECT_LIGHTING = 9,
-  GLOSSY_COLOR = 10,
-  GLOSSY_DIRECT_LIGHTING = 11,
-  GLOSSY_INDIRECT_LIGHTING = 12,
-  TRANSMISSION_COLOR = 13,
-  TRANSMISSION_DIRECT_LIGHTING = 14,
-  TRANSMISSION_INDIRECT_LIGHTING = 15
+  DIFFUSE_MOTION_VECTORS = 7,
+  BASE_COLOR = 8,
+  DIFFUSE_COLOR = 9,
+  DIFFUSE_DIRECT_LIGHTING = 10,
+  DIFFUSE_INDIRECT_LIGHTING = 11,
+  GLOSSY_COLOR = 12,
+  GLOSSY_DIRECT_LIGHTING = 13,
+  GLOSSY_INDIRECT_LIGHTING = 14,
+  TRANSMISSION_COLOR = 15,
+  TRANSMISSION_DIRECT_LIGHTING = 16,
+  TRANSMISSION_INDIRECT_LIGHTING = 17
 };
+
+// #define REPROJECT true
