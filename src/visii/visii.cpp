@@ -1348,6 +1348,9 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         else if (option == std::string("depth")) {
             OptixData.LP.renderDataMode = RenderDataFlags::DEPTH;
         }
+        else if (option == std::string("ray_direction")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::RAY_DIRECTION;
+        }
         else if (option == std::string("position")) {
             OptixData.LP.renderDataMode = RenderDataFlags::POSITION;
         }
@@ -1366,13 +1369,39 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         else if (option == std::string("denoise_albedo")) {
             OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_ALBEDO;
         }
+        else if (option == std::string("diffuse_color")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_COLOR;
+        }
+        else if (option == std::string("diffuse_direct_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_DIRECT_LIGHTING;
+        }
+        else if (option == std::string("diffuse_indirect_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_INDIRECT_LIGHTING;
+        }
+        else if (option == std::string("glossy_color")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_COLOR;
+        }
+        else if (option == std::string("glossy_direct_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_DIRECT_LIGHTING;
+        }
+        else if (option == std::string("glossy_indirect_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_INDIRECT_LIGHTING;
+        }
+        else if (option == std::string("transmission_color")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_COLOR;
+        }
+        else if (option == std::string("transmission_direct_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING;
+        }
+        else if (option == std::string("transmission_indirect_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_INDIRECT_LIGHTING;
+        }
         else if (option == std::string("diffuse_motion_vectors")) {
             OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_MOTION_VECTORS;
         }
         else {
             throw std::runtime_error(std::string("Error, unknown option : \"") + _option + std::string("\". ")
-            + std::string("Available options are \"none\", \"depth\", \"position\", ") 
-            + std::string("\"normal\", \"denoise_normal\", \"denoise_albedo\", and \"entity_id\""));
+            + std::string("See documentation for available options"));
         }
         
         resizeOptixFrameBuffer(width, height);
@@ -1669,5 +1698,71 @@ void deinitialize()
 }
 
 void __test__(std::vector<std::string> args) {
+    if (args.size() != 1) return;
 
+    std::string option = args[0];
+
+    if (option == std::string("none")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::NONE;
+    }
+    else if (option == std::string("depth")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DEPTH;
+    }
+    else if (option == std::string("ray_direction")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::RAY_DIRECTION;
+    }
+    else if (option == std::string("position")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::POSITION;
+    }
+    else if (option == std::string("normal")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::NORMAL;
+    }
+    else if (option == std::string("entity_id")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::ENTITY_ID;
+    }
+    else if (option == std::string("base_color")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::BASE_COLOR;
+    }
+    else if (option == std::string("denoise_normal")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_NORMAL;
+    }
+    else if (option == std::string("denoise_albedo")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_ALBEDO;
+    }
+    else if (option == std::string("diffuse_color")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_COLOR;
+    }
+    else if (option == std::string("diffuse_direct_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_DIRECT_LIGHTING;
+    }
+    else if (option == std::string("diffuse_indirect_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_INDIRECT_LIGHTING;
+    }
+    else if (option == std::string("glossy_color")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_COLOR;
+    }
+    else if (option == std::string("glossy_direct_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_DIRECT_LIGHTING;
+    }
+    else if (option == std::string("glossy_indirect_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_INDIRECT_LIGHTING;
+    }
+    else if (option == std::string("transmission_color")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_COLOR;
+    }
+    else if (option == std::string("transmission_direct_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING;
+    }
+    else if (option == std::string("transmission_indirect_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_INDIRECT_LIGHTING;
+    }
+    else if (option == std::string("diffuse_motion_vectors")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_MOTION_VECTORS;
+    }
+    else {
+        throw std::runtime_error(std::string("Error, unknown option : \"") + option + std::string("\". ")
+        + std::string("See documentation for available options"));
+    }
+
+    resetAccumulation();
 }
