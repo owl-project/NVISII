@@ -13,3 +13,4 @@ unzip salle_de_bain_separated.zip
 rm salle_de_bain_separated.zip
 
 wget https://www.dropbox.com/s/p2xius4kd4olqg3/gradient.png
+wget https://www.dropbox.com/s/ktjyndsai8qxb4q/normal_map.png
