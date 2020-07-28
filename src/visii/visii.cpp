@@ -408,6 +408,61 @@ void setDomeLightTexture(Texture* texture)
 {
     // OptixData.domeLightTexture = texture;
     OptixData.LP.environmentMapID = texture->getId();
+    std::vector<glm::vec4> texels = texture->getTexels();
+    int width = texture->getWidth();
+    int height = texture->getHeight();
+
+    // why do i need to do this?
+    // if (width < 32) width = 32;
+    // if (height < 32) height = 32;
+
+    float invWidth = 1.f / float(width);
+    float invHeight = 1.f / float(height);
+    float invjacobian = width * height / float(4 * M_PI);
+
+    auto rows = std::vector<float>(height);
+    auto cols = std::vector<float>(width * height);
+    for (int y = 0, i = 0; y < height; y++) {
+        for (int x = 0; x < width; x++, i++) {
+            cols[i] = std::max(texels[i].r, std::max(texels[i].g, texels[i].b)) + ((x > 0) ? cols[i - 1] : 0.f);
+        }
+        rows[y] = cols[i - 1] + ((y > 0) ? rows[y - 1] : 0.0f);
+        // normalize the pdf for this scanline (if it was non-zero)
+        if (cols[i - 1] > 0) {
+            for (int x = 0; x < width; x++) {
+                cols[i - width + x] /= cols[i - 1];
+            }
+        }
+    }
+
+    // normalize the pdf across all scanlines
+    for (int y = 0; y < height; y++)
+        rows[y] /= rows[height - 1];
+    
+    // both eval and sample below return a "weight" that is
+    // value[i] / row*col_pdf, so might as well bake it into the table
+    for (int y = 0, i = 0; y < height; y++) {
+        float row_pdf = rows[y] - (y > 0 ? rows[y - 1] : 0.0f);
+        for (int x = 0; x < width; x++, i++) {
+            float col_pdf = cols[i] - (x > 0 ? cols[i - 1] : 0.0f);
+            texels[i].r /= row_pdf * col_pdf * invjacobian;
+            texels[i].g /= row_pdf * col_pdf * invjacobian;
+            texels[i].b /= row_pdf * col_pdf * invjacobian;
+        }
+    }
+
+    #if 1  // DEBUG: visualize importance table
+    // using namespace OIIO;
+    // ImageOutput* out = ImageOutput::create("bg.exr");
+    // ImageSpec spec(res, res, 3, TypeDesc::TypeFloat);
+    // if (out && out->open("bg.exr", spec))
+    //     out->write_image(TypeDesc::TypeFloat, &values[0]);
+    // delete out;
+
+    stbi_flip_vertically_on_write(true);
+    stbi_write_hdr("test.hdr", width, height, /* num channels*/ 4, (float*)texels.data());
+    #endif
+    
     resetAccumulation();
 }
 
