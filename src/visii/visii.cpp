@@ -216,16 +216,6 @@ OWLModule moduleCreate(OWLContext context, const char* ptxCode)
     return owlModuleCreate(context, ptxCode);
 }
 
-OWLTexture texture2DCreate(OWLContext context, OWLTexelFormat format, size_t sizeX, size_t sizeY, const void* texels, OWLTextureFilterMode mode)
-{
-    return owlTexture2DCreate(context, format, sizeX, sizeY, texels, mode, 0);
-}
-
-CUtexObject textureGetObject(OWLTexture texture, int deviceID)
-{
-    return owlTextureGetObject(texture, deviceID);
-}
-
 OWLBuffer managedMemoryBufferCreate(OWLContext context, OWLDataType type, size_t count, void* init)
 {
     return owlManagedMemoryBufferCreate(context, type, count, init);
@@ -660,16 +650,18 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "environmentMapID", &OD.LP.environmentMapID);
     launchParamsSetRaw(OD.launchParams, "environmentMapRotation", &OD.LP.environmentMapRotation);
                             
-    OWLTexture GGX_E_AVG_LOOKUP = texture2DCreate(OD.context,
+    OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
                             OWL_TEXEL_FORMAT_R32F,
                             GGX_E_avg_size,1,
                             GGX_E_avg,
-                            OWL_TEXTURE_LINEAR);
-    OWLTexture GGX_E_LOOKUP = texture2DCreate(OD.context,
+                            OWL_TEXTURE_LINEAR,
+                            OWL_TEXTURE_CLAMP);
+    OWLTexture GGX_E_LOOKUP = owlTexture2DCreate(OD.context,
                             OWL_TEXEL_FORMAT_R32F,
                             GGX_E_size[0],GGX_E_size[1],
                             GGX_E,
-                            OWL_TEXTURE_LINEAR);
+                            OWL_TEXTURE_LINEAR,
+                            OWL_TEXTURE_CLAMP);
     launchParamsSetTexture(OD.launchParams, "GGX_E_AVG_LOOKUP", GGX_E_AVG_LOOKUP);
     launchParamsSetTexture(OD.launchParams, "GGX_E_LOOKUP",     GGX_E_LOOKUP);
     
@@ -926,10 +918,10 @@ void updateComponents()
             if (!textures[tid].isDirty()) continue;
             if (OD.textureObjects[tid]) { owlTexture2DDestroy(OD.textureObjects[tid]); OD.textureObjects[tid] = nullptr; }
             if (!textures[tid].isInitialized()) continue;
-            OD.textureObjects[tid] = texture2DCreate(
+            OD.textureObjects[tid] = owlTexture2DCreate(
                 OD.context, OWL_TEXEL_FORMAT_RGBA32F,
                 textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
-                OWL_TEXTURE_LINEAR);
+                OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
         }
         bufferUpload(OD.textureObjectsBuffer, OD.textureObjects);
         
