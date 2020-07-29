@@ -20,23 +20,95 @@ struct RayPayload {
     float localToWorldT1[12];
 };
 
-inline __device__
-vec2 toSpherical(vec3 dir) {
-    dir = normalize(dir);
-    float u = atan(dir.z, dir.x) / (2.0f * 3.1415926535897932384626433832795f) + .5f;
-    float v = asin(dir.y) / 3.1415926535897932384626433832795f + .5f;
-    return vec2(u, (1.0f - v));
+__device__
+vec2 toUV(vec3 n)
+{
+    n.z = -n.z;
+    n.x = -n.x;
+    vec2 uv;
+
+    uv.x = atan(-n.x, n.y);
+    uv.x = (uv.x + M_PI / 2.0) / (M_PI * 2.0) + M_PI * (28.670 / 360.0);
+
+    uv.y = acos(n.z) / M_PI;
+
+    return uv;
 }
+
+// Uv range: [0, 1]
+__device__
+vec3 toPolar(vec2 uv)
+{
+    float theta = 2.0 * M_PI * uv.x + - M_PI / 2.0;
+    float phi = M_PI * uv.y;
+
+    vec3 n;
+    n.x = cos(theta) * sin(phi);
+    n.y = sin(theta) * sin(phi);
+    n.z = cos(phi);
+
+    //n = normalize(n);
+    n.z = -n.z;
+    n.x = -n.x;
+    return n;
+}
+
+// inline __device__
+// vec2 toSpherical(vec3 dir) {
+//     dir = normalize(dir);
+//     float u = atan(dir.z, dir.x) / (2.0f * 3.1415926535897932384626433832795f) + .5f;
+//     float v = asin(dir.y) / 3.1415926535897932384626433832795f + .5f;
+//     return vec2(u, (1.0f - v));
+// }
+
+// inline __device__
+// vec3 toDirectional(vec2 coords) {
+//     dir = normalize(dir);
+//     float u = atan(dir.z, dir.x) / (2.0f * 3.1415926535897932384626433832795f) + .5f;
+//     float v = asin(dir.y) / 3.1415926535897932384626433832795f + .5f;
+//     return vec2(u, (1.0f - v));
+// }
+
+// Dual2<Vec3> map(float x, float y) const {
+//     // pixel coordinates of entry (x,y)
+//     Dual2<float> u = Dual2<float>(x, 1, 0) * invres;
+//     Dual2<float> v = Dual2<float>(y, 0, 1) * invres;
+//     Dual2<float> theta   = u * float(2 * M_PI);
+//     Dual2<float> st, ct;
+//     fast_sincos(theta, &st, &ct);
+//     Dual2<float> cos_phi = 1.0f - 2.0f * v;
+//     Dual2<float> sin_phi = sqrt(1.0f - cos_phi * cos_phi);
+//     return make_Vec3(sin_phi * ct,
+//                      sin_phi * st,
+//                      cos_phi);
+// }
 
 inline __device__
 float3 missColor(const owl::Ray &ray)
 {
-    auto pixelID = owl::getLaunchIndex();
-
     vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(normalize(ray.direction));
     if (optixLaunchParams.environmentMapID != -1) 
     {
-        vec2 tc = toSpherical(vec3(rayDir.x, -rayDir.z, rayDir.y));
+        vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
+        cudaTextureObject_t tex = optixLaunchParams.textureObjects[optixLaunchParams.environmentMapID];
+        if (!tex) return make_float3(1.f, 0.f, 1.f);
+
+        float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
+        return make_float3(texColor);
+    }
+
+    float t = 0.5f*(rayDir.z + 1.0f);
+    float3 c = (1.0f - t) * make_float3(pow(vec3(1.0f), vec3(2.2f))) + t * make_float3( pow(vec3(0.5f, 0.7f, 1.0f), vec3(2.2f)) );
+    return c;
+}
+
+inline __device__
+float3 missColor(const float3 dir)
+{
+    vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(normalize(dir));
+    if (optixLaunchParams.environmentMapID != -1) 
+    {
+        vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
         cudaTextureObject_t tex = optixLaunchParams.textureObjects[optixLaunchParams.environmentMapID];
         if (!tex) return make_float3(1.f, 0.f, 1.f);
 
@@ -351,6 +423,50 @@ float3 faceNormalForward(const float3 &w_o, const float3 &gn, const float3 &n)
     return new_n;
 }
 
+__device__
+const float* upper_bound (const float* first, const float* last, const float& val)
+{
+  const float* it;
+//   iterator_traits<const float*>::difference_type count, step;
+  int count, step;
+//   count = std::distance(first,last);
+  count = (last-first);
+  while (count > 0)
+  {
+    it = first; 
+    step=count/2; 
+    // std::advance (it,step);
+    it = it + step;
+    if ( ! (val < *it))                 // or: if (!comp(val,*it)), for version (2)
+    { 
+        first=++it; 
+        count-=step+1;  
+    }
+    else count=step;
+  }
+  return first;
+}
+
+__device__ float sample_cdf(const float* data, unsigned int n, float x, unsigned int *idx, float* pdf) 
+{
+    // OSL_DASSERT(x >= 0);
+    // OSL_DASSERT(x < 1);
+    *idx = upper_bound(data, data + n, x) - data;
+    // OSL_DASSERT(*idx < n);
+    // OSL_DASSERT(x < data[*idx]);
+    float scaled_sample;
+    if (*idx == 0) {
+        *pdf = data[0];
+        scaled_sample = x / data[0];
+    } else {
+        // OSL_DASSERT(x >= data[*idx - 1]);
+        *pdf = data[*idx] - data[*idx - 1];
+        scaled_sample = (x - data[*idx - 1]) / (data[*idx] - data[*idx - 1]);
+    }
+    // keep result in [0,1)
+    return min(scaled_sample, 0.99999994f);
+}
+
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
@@ -588,9 +704,32 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if (random_id == numLights) {
                     sampledLightID = -1;
                     const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
-                    const float3 hemi_dir = normalize(cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
-                    float3 light_dir = make_float3(normalize(tbn * normalize(make_vec3(hemi_dir))) );
-                    light_pdf = 1.f;
+                    float3 light_dir;
+
+                    if ((optixLaunchParams.environmentMapWidth != 0) && (optixLaunchParams.environmentMapHeight != 0)) {
+                        // Vec3fa color = m_background->sample(dg, wi, tMax, RandomSampler_get2D(sampler));
+                        float rx = lcg_randomf(rng);
+                        float ry = lcg_randomf(rng);
+                        float* rows = optixLaunchParams.environmentMapRows;
+                        float* cols = optixLaunchParams.environmentMapCols;
+                        int width = optixLaunchParams.environmentMapWidth;
+                        int height = optixLaunchParams.environmentMapHeight;
+                        float invjacobian = width * height / float(4 * M_PI);
+                        float row_pdf, col_pdf;
+                        unsigned x, y;
+                        ry = sample_cdf(rows, height, ry, &y, &row_pdf);
+                        rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
+                        // y = height - y;
+                        light_dir = make_float3(toPolar(vec2((x/* + rx*/) / float(width), (y/* + ry*/)/float(height))));
+                        light_pdf = row_pdf * col_pdf * invjacobian;
+                    } 
+                    else 
+                    {                        
+                        const float3 hemi_dir = normalize(cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
+                        light_dir = make_float3(normalize(tbn * normalize(make_vec3(hemi_dir))) );
+                        light_pdf = 1.f;
+                    }
+
                     float dotNWi = fabs(dot(light_dir, v_z)); // for now, making all lights double sided.
                     
                     float bsdf_pdf;
@@ -607,6 +746,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
                         int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
                         bool visible = (payload.instanceID == -1);
+
                         if (visible) {
                             float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
                             float3 bsdf, bsdf_color;
@@ -840,7 +980,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         //     printf("aov gillum: %f %f %f\n", aovGIllum.x, aovGIllum.y, aovGIllum.z);
         //     printf("aov dillum: %f %f %f\n", aovDirectIllum.x, aovDirectIllum.y, aovDirectIllum.z);
         //     printf("aov iillum: %f %f %f\n", aovIndirectIllum.x, aovIndirectIllum.y, aovIndirectIllum.z);
-
         //     printf("gillum: %f %f %f\n", gillum.x, gillum.y, gillum.z);
         //     printf("dillum: %f %f %f\n", dillum.x, dillum.y, dillum.z);
         //     printf("iillum: %f %f %f\n", iillum.x, iillum.y, iillum.z);

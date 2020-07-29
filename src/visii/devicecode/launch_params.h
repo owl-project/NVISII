@@ -56,6 +56,10 @@ struct LaunchParams {
 
     int32_t environmentMapID = -1;
     glm::quat environmentMapRotation = glm::quat(1,0,0,0);
+    float* environmentMapRows = nullptr;
+    float* environmentMapCols = nullptr;
+    int environmentMapWidth = 0;
+    int environmentMapHeight = 0;
     cudaTextureObject_t *textureObjects = nullptr;
 
     cudaTextureObject_t GGX_E_AVG_LOOKUP;
