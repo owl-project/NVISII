@@ -29,6 +29,7 @@ struct LaunchParams {
     float directClamp = 100.f; 
     float indirectClamp = 100.f; 
     uint32_t maxBounceDepth = 10;
+    uint32_t numLightSamples = 2;
     uint32_t seed = 0;
     vec2 xPixelSamplingInterval = vec2(0.f,1.f);
     vec2 yPixelSamplingInterval = vec2(0.f,1.f);
@@ -91,5 +92,7 @@ enum RenderDataFlags : uint32_t {
   TRANSMISSION_INDIRECT_LIGHTING = 17,
   RAY_DIRECTION = 18,
 };
+
+#define MAX_LIGHT_SAMPLES 10
 
 // #define REPROJECT true

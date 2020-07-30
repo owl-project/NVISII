@@ -507,6 +507,7 @@ void initializeOptix(bool headless)
         { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
         { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
         { "maxBounceDepth",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxBounceDepth)},
+        { "numLightSamples",         OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightSamples)},
         { "seed",                    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, seed)},
         { "xPixelSamplingInterval",  OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, xPixelSamplingInterval)},
         { "yPixelSamplingInterval",  OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, yPixelSamplingInterval)},
@@ -614,6 +615,7 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
     launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
     launchParamsSetRaw(OD.launchParams, "maxBounceDepth", &OD.LP.maxBounceDepth);
+    launchParamsSetRaw(OD.launchParams, "numLightSamples", &OD.LP.numLightSamples);
     launchParamsSetRaw(OD.launchParams, "seed", &OD.LP.seed);
     launchParamsSetRaw(OD.launchParams, "xPixelSamplingInterval", &OD.LP.xPixelSamplingInterval);
     launchParamsSetRaw(OD.launchParams, "yPixelSamplingInterval", &OD.LP.yPixelSamplingInterval);
@@ -821,39 +823,54 @@ void setIndirectLightingClamp(float clamp)
 {
     clamp = std::max(float(clamp), float(0.f));
     OptixData.LP.indirectClamp = clamp;
-    resetAccumulation();
     launchParamsSetRaw(OptixData.launchParams, "indirectClamp", &OptixData.LP.indirectClamp);
+    resetAccumulation();
 }
 
 void setDirectLightingClamp(float clamp)
 {
     clamp = std::max(float(clamp), float(0.f));
     OptixData.LP.directClamp = clamp;
-    resetAccumulation();
     launchParamsSetRaw(OptixData.launchParams, "directClamp", &OptixData.LP.directClamp);
+    resetAccumulation();
 }
 
 void setMaxBounceDepth(uint32_t depth)
 {
     OptixData.LP.maxBounceDepth = depth;
-    resetAccumulation();
     launchParamsSetRaw(OptixData.launchParams, "maxBounceDepth", &OptixData.LP.maxBounceDepth);
+    resetAccumulation();
+}
+
+void setLightSampleCount(uint32_t count)
+{
+    if (count > MAX_LIGHT_SAMPLES) 
+        throw std::runtime_error(
+            std::string("Error: max number of light samples is ") 
+            + std::to_string(MAX_LIGHT_SAMPLES));
+    if (count == 0) 
+        throw std::runtime_error(
+            std::string("Error: number of light samples must be between 1 and ") 
+            + std::to_string(MAX_LIGHT_SAMPLES));
+    OptixData.LP.numLightSamples = count;
+    launchParamsSetRaw(OptixData.launchParams, "numLightSamples", &OptixData.LP.numLightSamples);
+    resetAccumulation();
 }
 
 void samplePixelArea(vec2 xSampleInterval, vec2 ySampleInterval)
 {
     OptixData.LP.xPixelSamplingInterval = xSampleInterval;
     OptixData.LP.yPixelSamplingInterval = ySampleInterval;
-    resetAccumulation();
     launchParamsSetRaw(OptixData.launchParams, "xPixelSamplingInterval", &OptixData.LP.xPixelSamplingInterval);
     launchParamsSetRaw(OptixData.launchParams, "yPixelSamplingInterval", &OptixData.LP.yPixelSamplingInterval);
+    resetAccumulation();
 }
 
 void sampleTimeInterval(vec2 sampleTimeInterval)
 {
     OptixData.LP.timeSamplingInterval = sampleTimeInterval;
-    resetAccumulation();
     launchParamsSetRaw(OptixData.launchParams, "timeSamplingInterval", &OptixData.LP.timeSamplingInterval);
+    resetAccumulation();
 }
 
 void updateComponents()

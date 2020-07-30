@@ -677,11 +677,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
                         
             // Sample a light source
-            int32_t sampledLightID = -1;
+            int32_t sampledLightIDs[MAX_LIGHT_SAMPLES] = {-2};
+            float lightPDFs[MAX_LIGHT_SAMPLES] = {0.f};
+            
             int numLights = optixLaunchParams.numLightEntities;
-            // float3 lightEmission = make_float3(0.f);
             float3 irradiance = make_float3(0.f);
-            float light_pdf = 0.f;
+            // float3 lightEmission = make_float3(0.f);
 
             EntityStruct light_entity;
             MaterialStruct light_material;
@@ -697,14 +698,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             int forcedBsdf = rdForcedBsdf;//(bounce == optixLaunchParams.renderDataBounce) ? rdForcedBsdf : -1; 
 
             // first, sample the light source by importance sampling the light
-            do {
-                uint32_t random_id = uint32_t(min(lcg_randomf(rng) * (numLights+1), float(numLights)));
+            for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid) 
+            {
+                uint32_t randomID = uint32_t(min(lcg_randomf(rng) * (numLights+1), float(numLights)));
 
                 // sample background
-                if (random_id == numLights) {
-                    sampledLightID = -1;
-                    const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
-                    float3 light_dir;
+                if (randomID == numLights) {
+                    sampledLightIDs[lid] = -1;
+                    const uint32_t occlusionFlags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
+                    float3 lightDir;
 
                     if ((optixLaunchParams.environmentMapWidth != 0) && (optixLaunchParams.environmentMapHeight != 0)) {
                         // Vec3fa color = m_background->sample(dg, wi, tMax, RandomSampler_get2D(sampler));
@@ -720,53 +722,53 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         ry = sample_cdf(rows, height, ry, &y, &row_pdf);
                         rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
                         // y = height - y;
-                        light_dir = make_float3(toPolar(vec2((x/* + rx*/) / float(width), (y/* + ry*/)/float(height))));
-                        light_pdf = row_pdf * col_pdf * invjacobian;
+                        lightDir = make_float3(toPolar(vec2((x/* + rx*/) / float(width), (y/* + ry*/)/float(height))));
+                        lightPDFs[lid] = row_pdf * col_pdf * invjacobian;
                     } 
                     else 
                     {                        
                         const float3 hemi_dir = normalize(cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
-                        light_dir = make_float3(normalize(tbn * normalize(make_vec3(hemi_dir))) );
-                        light_pdf = 1.f;
+                        lightDir = make_float3(normalize(tbn * normalize(make_vec3(hemi_dir))) );
+                        lightPDFs[lid] = 1.f;
                     }
 
-                    float dotNWi = fabs(dot(light_dir, v_z)); // for now, making all lights double sided.
+                    float dotNWi = fabs(dot(lightDir, v_z)); // for now, making all lights double sided.
                     
-                    float bsdf_pdf;
-                    disney_pdf(mat, n_l, w_o, light_dir, v_x, v_y, bsdf_pdf, forcedBsdf);
-                    if (bsdf_pdf > EPSILON) {
+                    float bsdfPDF;
+                    disney_pdf(mat, n_l, w_o, lightDir, v_x, v_y, bsdfPDF, forcedBsdf);
+                    if (bsdfPDF > EPSILON) {
                         RayPayload payload;
                         owl::Ray ray;
                         ray.tmin = EPSILON * 10.f;
                         ray.tmax = 1e20f;
                         ray.origin = hit_p;
-                        ray.direction = light_dir;
+                        ray.direction = lightDir;
                         payload.tHit = -1.f;
                         ray.time = time;
-                        owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
+                        owl::traceRay( optixLaunchParams.world, ray, payload, occlusionFlags);
                         int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
                         bool visible = (payload.instanceID == -1);
 
                         if (visible) {
-                            float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
+                            float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
                             float3 bsdf, bsdf_color;
-                            disney_brdf(mat, n_l, w_o, light_dir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
-                            float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / light_pdf;
-                            irradiance = (bsdf * bsdf_color * Li * fabs(dotNWi));
+                            disney_brdf(mat, n_l, w_o, lightDir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
+                            float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / lightPDFs[lid];
+                            irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
                         }
                     }
                 }
                 // sample light sources
                 else 
                 {
-                    if (numLights == 0) break;
-                    random_id = min(random_id, numLights - 1);
-                    sampledLightID = optixLaunchParams.lightEntities[random_id];
-                    light_entity = optixLaunchParams.entities[sampledLightID];
+                    if (numLights == 0) continue;
+                    randomID = min(randomID, numLights - 1);
+                    sampledLightIDs[lid] = optixLaunchParams.lightEntities[randomID];
+                    light_entity = optixLaunchParams.entities[sampledLightIDs[lid]];
                     
                     // shouldn't happen, but just in case...
-                    if ((light_entity.light_id < 0) || (light_entity.light_id > MAX_LIGHTS)) break;
-                    if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_TRANSFORMS)) break;
+                    if ((light_entity.light_id < 0) || (light_entity.light_id > MAX_LIGHTS)) continue;
+                    if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_TRANSFORMS)) continue;
                 
                     light_light = optixLaunchParams.lights[light_entity.light_id];
                     TransformStruct transform = optixLaunchParams.transforms[light_entity.transform_id];
@@ -782,7 +784,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         // | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
                         // | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT;
                 
-                    if (!is_area_light) break;
+                    if (!is_area_light) continue;
 
                     uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
                     owl::device::Buffer *indexLists = (owl::device::Buffer *)optixLaunchParams.indexLists.data;
@@ -805,15 +807,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         vec2 uv2 = texCoords[triIndex.y];
                         vec2 uv3 = texCoords[triIndex.z];
                         vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
-                        sampleTriangle(pos, N, v1, v2, v3, uv1, uv2, uv3, lcg_randomf(rng), lcg_randomf(rng), dir, light_pdf, uv);
+                        sampleTriangle(pos, N, v1, v2, v3, uv1, uv2, uv3, lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv);
                         vec3 normal = glm::vec3(n_l.x, n_l.y, n_l.z);
                         float dotNWi = fabs(dot(dir, normal)); // for now, making all lights double sided.
-                        light_pdf = abs(light_pdf);
+                        lightPDFs[lid] = abs(lightPDFs[lid]);
                         
                         float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
                         float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, uv, make_vec4(default_light_emission))) * light_light.intensity;
 
-                        if ((light_pdf > EPSILON) && (dotNWi > EPSILON)) {
+                        if ((lightPDFs[lid] > EPSILON) && (dotNWi > EPSILON)) {
                             float3 light_dir = make_float3(dir.x, dir.y, dir.z);
                             light_dir = normalize(light_dir);
                             float bsdf_pdf;
@@ -830,19 +832,19 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                                 owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
                                 if (payload.instanceID == -1) continue;
                                 int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
-                                bool visible = ((entityID == sampledLightID) || (entityID == -1));
+                                bool visible = ((entityID == sampledLightIDs[lid]) || (entityID == -1));
                                 if (visible) {
-                                    float w = power_heuristic(1.f, light_pdf, 1.f, bsdf_pdf);
+                                    float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdf_pdf);
                                     float3 bsdf, bsdf_color;
                                     disney_brdf(mat, n_l, w_o, light_dir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
-                                    float3 Li = lightEmission * w / light_pdf;
-                                    irradiance = (bsdf * bsdf_color * Li * fabs(dotNWi));
+                                    float3 Li = lightEmission * w / lightPDFs[lid];
+                                    irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
                                 }
                             }
                         }
                     }
                 }
-            } while (false);
+            }
 
             // next, sample a light source by importance sampling the BDRF
             float3 w_i;
@@ -868,52 +870,57 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.time = sampleTime(lcg_randomf(rng));
             owl::traceRay(optixLaunchParams.world, ray, payload);
 
-            if (light_pdf > EPSILON) 
+            for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid)
             {
-                // if by sampling the brdf we also hit the light source...
-                if ((payload.instanceID == -1) && (sampledLightID == -1)) {
-                    // Case where we hit the background, and also previously sampled the background   
-                    float dotNWi = fabs(dot(-v_gz, ray.direction)); // for now, making all lights double sided.
-                    if (dotNWi > 0.f) {
-                        float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
-                        float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / bsdf_pdf;
-                        irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
-                    }
-                }
-                else if (payload.instanceID != -1) {
-                    // Case where we hit the light, and also previously sampled the same light
-                    int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
-                    bool visible = (entityID == sampledLightID);
-                    // We hit the light we sampled previously
-                    if (visible) {
-                        int3 indices; float3 p, p_e1, p_e2; float3 v_gz; float2 uv, uv_e1, uv_e2;
-                        loadMeshTriIndices(light_entity.mesh_id, payload.primitiveID, indices);
-                        loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, v_gz, p_e1, p_e2);
-                        loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
-    
-                        // Transform data into world space
-                        glm::mat4 xfm;
-                        xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
-                        xfm = glm::column(xfm, 1, vec4(payload.localToWorld[1], payload.localToWorld[5],  payload.localToWorld[9], 0.0f));
-                        xfm = glm::column(xfm, 2, vec4(payload.localToWorld[2], payload.localToWorld[6],  payload.localToWorld[10], 0.0f));
-                        xfm = glm::column(xfm, 3, vec4(payload.localToWorld[3], payload.localToWorld[7],  payload.localToWorld[11], 1.0f));
-                        glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
-                        p = make_float3(xfm * make_vec4(p, 1.0f));
-                        v_gz = make_float3(normalize(nxfm * normalize(make_vec3(v_gz))));
-    
-                        float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
-                        float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, make_vec2(uv), make_vec4(default_light_emission))) * light_light.intensity;
-    
-                        float dist = distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
+                if (lightPDFs[lid] > EPSILON) 
+                {
+                    // if by sampling the brdf we also hit the light source...
+                    if ((payload.instanceID == -1) && (sampledLightIDs[lid] == -1)) {
+                        // Case where we hit the background, and also previously sampled the background   
                         float dotNWi = fabs(dot(-v_gz, ray.direction)); // for now, making all lights double sided.
-                        if (dotNWi > 0.f){
-                            float w = power_heuristic(1.f, bsdf_pdf, 1.f, light_pdf);
-                            float3 Li = lightEmission * w / bsdf_pdf;
-                            irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi)); // missing r^2 falloff?
+                        if (dotNWi > 0.f) {
+                            float w = power_heuristic(1.f, bsdf_pdf, 1.f, lightPDFs[lid]);
+                            float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / bsdf_pdf;
+                            irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
+                        }
+                    }
+                    else if (payload.instanceID != -1) {
+                        // Case where we hit the light, and also previously sampled the same light
+                        int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
+                        bool visible = (entityID == sampledLightIDs[lid]);
+                        // We hit the light we sampled previously
+                        if (visible) {
+                            int3 indices; float3 p, p_e1, p_e2; float3 v_gz; float2 uv, uv_e1, uv_e2;
+                            loadMeshTriIndices(light_entity.mesh_id, payload.primitiveID, indices);
+                            loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, v_gz, p_e1, p_e2);
+                            loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
+        
+                            // Transform data into world space
+                            glm::mat4 xfm;
+                            xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
+                            xfm = glm::column(xfm, 1, vec4(payload.localToWorld[1], payload.localToWorld[5],  payload.localToWorld[9], 0.0f));
+                            xfm = glm::column(xfm, 2, vec4(payload.localToWorld[2], payload.localToWorld[6],  payload.localToWorld[10], 0.0f));
+                            xfm = glm::column(xfm, 3, vec4(payload.localToWorld[3], payload.localToWorld[7],  payload.localToWorld[11], 1.0f));
+                            glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
+                            p = make_float3(xfm * make_vec4(p, 1.0f));
+                            v_gz = make_float3(normalize(nxfm * normalize(make_vec3(v_gz))));
+        
+                            float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
+                            float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, make_vec2(uv), make_vec4(default_light_emission))) * light_light.intensity;
+        
+                            float dist = distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
+                            float dotNWi = fabs(dot(-v_gz, ray.direction)); // for now, making all lights double sided.
+                            if (dotNWi > 0.f){
+                                float w = power_heuristic(1.f, bsdf_pdf, 1.f, lightPDFs[lid]);
+                                float3 Li = lightEmission * w / bsdf_pdf;
+                                irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi)); // missing r^2 falloff?
+                            }
                         }
                     }
                 }
             }
+
+            irradiance = irradiance / float(optixLaunchParams.numLightSamples);
 
             // accumulate any radiance (ie pathThroughput * irradiance), and update the path throughput using the sampled BRDF
             float3 contribution = pathThroughput * irradiance;
