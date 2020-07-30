@@ -677,7 +677,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
                         
             // Sample a light source
-            uint32_t sampledLightID;
+            int32_t sampledLightID = -1;
             int numLights = optixLaunchParams.numLightEntities;
             // float3 lightEmission = make_float3(0.f);
             float3 irradiance = make_float3(0.f);
@@ -698,8 +698,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
             // first, sample the light source by importance sampling the light
             do {
-                uint32_t random_id = uint32_t(min(lcg_randomf(rng) * numLights+1, float(numLights)));
-                
+                uint32_t random_id = uint32_t(min(lcg_randomf(rng) * (numLights+1), float(numLights)));
+
                 // sample background
                 if (random_id == numLights) {
                     sampledLightID = -1;
@@ -757,7 +757,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     }
                 }
                 // sample light sources
-                else {
+                else 
+                {
+                    if (numLights == 0) break;
                     random_id = min(random_id, numLights - 1);
                     sampledLightID = optixLaunchParams.lightEntities[random_id];
                     light_entity = optixLaunchParams.entities[sampledLightID];
@@ -810,7 +812,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         
                         float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
                         float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, uv, make_vec4(default_light_emission))) * light_light.intensity;
-            
+
                         if ((light_pdf > EPSILON) && (dotNWi > EPSILON)) {
                             float3 light_dir = make_float3(dir.x, dir.y, dir.z);
                             light_dir = normalize(light_dir);
@@ -878,7 +880,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
                     }
                 }
-                else {
+                else if (payload.instanceID != -1) {
+                    // Case where we hit the light, and also previously sampled the same light
                     int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
                     bool visible = (entityID == sampledLightID);
                     // We hit the light we sampled previously
@@ -924,18 +927,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // } else {
             //     aovPathThroughput = (aovPathThroughput * bsdf * bsdf_color) / bsdf_pdf;
             //     // aovPathThroughput = (aovPathThroughput * bsdf * bsdf_color) / bsdf_pdf;
-            // }
-
-            // If ray misses, and we didn't previously explicitly sample the backgroound light, 
-            // interpret normal as "miss color" assigned by miss program and move on to the next sample
-            // if ((payload.tHit <= 0.f)) && (sampledLightID != -1)) {
-            //     irradiance = irradiance + missColor(ray) * optixLaunchParams.domeLightIntensity;
-            //     illum = illum + pathThroughput * missColor(ray) * optixLaunchParams.domeLightIntensity;
-            //     if (bounce == 0) {
-            //         aovIllum = aovIllum + aovPathThroughput * missColor(ray) * optixLaunchParams.domeLightIntensity;
-            //     } else {
-            //         aovIllum = aovIllum + aovPathThroughput * missColor(ray) * optixLaunchParams.domeLightIntensity;
-            //     }
             // }
 
             if (bounce == 0) {

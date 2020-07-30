@@ -803,7 +803,7 @@ void setDomeLightTexture(Texture* texture)
         OptixData.environmentMapRowsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), height, rows.data());
         OptixData.environmentMapColsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), width * height, cols.data());
         OptixData.LP.environmentMapWidth = width;
-        OptixData.LP.environmentMapHeight = height;        
+        OptixData.LP.environmentMapHeight = height;  
         resetAccumulation();        
     };
 
