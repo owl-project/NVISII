@@ -91,6 +91,9 @@ for disocclusions.
 ## 14.normal_map.py
 A simple script that loads a texture, normal and roughness map and apply them to a flat surface. 
 
+## 15.camera_control.py
+An interactive demo for controlling the camera similar to to a first person shooter control using `w,a,s,d` and `q` and `e` for up and down. Using the left click on the mouse you can rotate the camera.  
+
 ## Notes
 All these examples were developed and tested on Ubuntu 18.04 with cuda 11.0, NVIDIA drivers
 450.36.06 and using a NVIDIA TITAN RTX . 
