@@ -960,10 +960,10 @@ void updateComponents()
 
             OWLGroup blas = OD.meshes[entities[eid].getMesh()->getId()].blas;
             if (!blas) return;
-            glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix();
-            glm::mat4 nextLocalToWorld = entities[eid].getTransform()->getNextLocalToWorldMatrix();
-            t0InstanceTransforms.push_back(localToWorld);            
-            t1InstanceTransforms.push_back(nextLocalToWorld);            
+            glm::mat4 prevLocalToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */true);
+            glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */false);
+            t0InstanceTransforms.push_back(prevLocalToWorld);            
+            t1InstanceTransforms.push_back(localToWorld);            
             instances.push_back(blas);
             instanceToEntityMap.push_back(eid);
         }
@@ -1084,8 +1084,8 @@ void updateComponents()
         auto transform = Transform::getFront()[OptixData.LP.cameraEntity.transform_id];
         auto camera = Camera::getFront()[OptixData.LP.cameraEntity.camera_id];
         OptixData.LP.proj = camera.getProjection();
-        OptixData.LP.viewT0 = transform.getWorldToLocalMatrix();
-        OptixData.LP.viewT1 = transform.getNextWorldToLocalMatrix();
+        OptixData.LP.viewT0 = transform.getWorldToLocalMatrix(/*previous = */ true);
+        OptixData.LP.viewT1 = transform.getWorldToLocalMatrix(/*previous = */ false);
     }
 }
 

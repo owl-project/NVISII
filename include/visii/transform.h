@@ -27,12 +27,17 @@ using namespace std;
 /**
  * The "Transform" component places an entity into the scene.
  * These transform components represent a scale, a rotation, and a translation, in that order.
+ * These transform components also keep track of the previous frame scale, rotation, and translation, which 
+ * can optionally be used for creating motion blur and for temporal effects like reprojection.
 */
 class Transform : public StaticFactory
 {
     friend class StaticFactory;
     friend class Entity;
+
   private:
+    bool useRelativeMotionBlur = true;
+
     /* Scene graph information */
     int32_t parent = -1;
 	  std::set<int32_t> children;
@@ -42,51 +47,68 @@ class Transform : public StaticFactory
     vec3 position = vec3(0.0);
     quat rotation = quat(1.0f, 0.0f, 0.0f, 0.0f);
 
-    vec3 linearVelocity = vec3(0.0);
-    quat angularVelocity = quat(1.f,0.f,0.f,0.f);
-    vec3 scalarVelocity = vec3(0.0);
+    vec3 prevScale = vec3(1.0);
+    vec3 prevPosition = vec3(0.0);
+    quat prevRotation = quat(1.0f, 0.0f, 0.0f, 0.0f);
 
-    vec3 right = vec3(1.0, 0.0, 0.0);
-    vec3 up = vec3(0.0, 1.0, 0.0);
-    vec3 forward = vec3(0.0, 0.0, 1.0);
+    vec3 linearMotion = vec3(0.0);
+    quat angularMotion = quat(1.f,0.f,0.f,0.f);
+    vec3 scalarMotion = vec3(0.0);
+
+    // vec3 right = vec3(1.0, 0.0, 0.0);
+    // vec3 up = vec3(0.0, 1.0, 0.0);
+    // vec3 forward = vec3(0.0, 0.0, 1.0);
+
+    // vec3 prevRight = vec3(1.0, 0.0, 0.0);
+    // vec3 prevUp = vec3(0.0, 1.0, 0.0);
+    // vec3 prevForward = vec3(0.0, 0.0, 1.0);
 
     mat4 localToParentTransform = mat4(1);
-    mat4 localToParentRotation = mat4(1);
-    mat4 localToParentTranslation = mat4(1);
-    mat4 localToParentScale = mat4(1);
+    // mat4 localToParentRotation = mat4(1);
+    // mat4 localToParentTranslation = mat4(1);
+    // mat4 localToParentScale = mat4(1);
 
-    mat4 parentToLocalTransform = mat4(1);
-    mat4 parentToLocalRotation = mat4(1);
-    mat4 parentToLocalTranslation = mat4(1);
-    mat4 parentToLocalScale = mat4(1);
+    // mat4 parentToLocalTransform = mat4(1);
+    // mat4 parentToLocalRotation = mat4(1);
+    // mat4 parentToLocalTranslation = mat4(1);
+    // mat4 parentToLocalScale = mat4(1);
 
     mat4 localToParentMatrix = mat4(1);
     mat4 parentToLocalMatrix = mat4(1);
 
-    mat4 nextLocalToParentTranslation = mat4(1);
-    mat4 nextLocalToParentRotation = mat4(1);
-    mat4 nextLocalToParentScale = mat4(1);
+    mat4 prevLocalToParentTransform = mat4(1);
+    // mat4 prevLocalToParentTranslation = mat4(1);
+    // mat4 prevLocalToParentRotation = mat4(1);
+    // mat4 prevLocalToParentScale = mat4(1);
 
-    mat4 nextParentToLocalTranslation = mat4(1);
-    mat4 nextParentToLocalRotation = mat4(1);
-    mat4 nextParentToLocalScale = mat4(1);
+    // mat4 prevParentToLocalTransform = mat4(1);
+    // mat4 prevParentToLocalTranslation = mat4(1);
+    // mat4 prevParentToLocalRotation = mat4(1);
+    // mat4 prevParentToLocalScale = mat4(1);
 
-    mat4 nextLocalToParentMatrix = mat4(1);
-    mat4 nextParentToLocalMatrix = mat4(1);
+    mat4 prevLocalToParentMatrix = mat4(1);
+    mat4 prevParentToLocalMatrix = mat4(1);
 
     /* Local <=> World */
     mat4 localToWorldMatrix = mat4(1);
     mat4 worldToLocalMatrix = mat4(1);
-    mat4 nextLocalToWorldMatrix = mat4(1);
-    mat4 nextWorldToLocalMatrix = mat4(1);
+
+    mat4 prevLocalToWorldMatrix = mat4(1);
+    mat4 prevWorldToLocalMatrix = mat4(1);
 
     // from local to world decomposition. 
     // May only approximate the localToWorldMatrix
-    glm::vec3 worldScale;
-    glm::quat worldRotation;
-    glm::vec3 worldTranslation;
-    glm::vec3 worldSkew;
-    glm::vec4 worldPerspective;
+    // glm::vec3 worldScale;
+    // glm::quat worldRotation;
+    // glm::vec3 worldTranslation;
+    // glm::vec3 worldSkew;
+    // glm::vec4 worldPerspective;
+
+    // glm::vec3 prevWorldScale;
+    // glm::quat prevWorldRotation;
+    // glm::vec3 prevWorldTranslation;
+    // glm::vec3 prevWorldSkew;
+    // glm::vec4 prevWorldPerspective;
     
     // float interpolation = 1.0;
 
@@ -121,8 +143,8 @@ class Transform : public StaticFactory
     
     /* traverses from the current transform up through its ancestors, 
     computing a final world to local matrix */
-    glm::mat4 computeWorldToLocalMatrix();
-    glm::mat4 computeNextWorldToLocalMatrix();
+    glm::mat4 computeWorldToLocalMatrix(bool previous);
+    // glm::mat4 computePrevWorldToLocalMatrix(bool previous);
 
     Transform();
     Transform(std::string name, uint32_t id);
@@ -215,18 +237,20 @@ class Transform : public StaticFactory
      *  The returned vector has the same length as the input direction.
      *  
      *  @param direction The direction to apply the transform to.
+     *  @param previous If true, uses the previous transform as the transform to apply.
      *  @return The transformed direction.
     */
-    vec3 transformDirection(vec3 direction);
+    vec3 transformDirection(vec3 direction, bool previous = false);
 
     /** 
      * Transforms position from local to parent. Note, affected by scale.
      * The opposite conversion, from parent to local, can be done with Transform.inverse_transform_point
      * 
      * @param point The point to apply the transform to.
+     * @param previous If true, uses the previous transform as the transform to apply.
      * @return The transformed point. 
     */
-    vec3 transformPoint(vec3 point);
+    vec3 transformPoint(vec3 point, bool previous = false);
 
     /** 
      * Transforms vector from local to parent.
@@ -234,9 +258,10 @@ class Transform : public StaticFactory
      * The returned vector may have a different length that the input vector.
      * 
      * @param vector The vector to apply the transform to.
+     * @param previous If true, uses the previous transform as the transform to apply.
      * @return The transformed vector.
     */
-    vec3 transformVector(vec3 vector);
+    vec3 transformVector(vec3 vector, bool previous = false);
 
     /** 
      * Transforms a direction from parent space to local space.
@@ -244,9 +269,10 @@ class Transform : public StaticFactory
      * This operation is unaffected by scale.
      * 
      * @param point The direction to apply the inverse transform to.
+     * @param previous If true, uses the previous transform as the transform to apply.
      * @return The transformed direction.
     */
-    vec3 inverseTransformDirection(vec3 direction);
+    vec3 inverseTransformDirection(vec3 direction, bool previous = false);
 
     /** 
      * Transforms position from parent space to local space.
@@ -254,9 +280,10 @@ class Transform : public StaticFactory
      * Note, affected by scale.
      * 
      * @param point The point to apply the inverse transform to.
+     * @param previous If true, uses the previous transform as the transform to apply.
      * @return The transformed point.
     */
-    vec3 inverseTransformPoint(vec3 point);
+    vec3 inverseTransformPoint(vec3 point, bool previous = false);
 
     /** 
      * Transforms a vector from parent space to local space.
@@ -264,9 +291,10 @@ class Transform : public StaticFactory
      * This operation is affected by scale.
      * 
      * @param point The vector to apply the inverse transform to.
+     * @param previous If true, uses the previous transform as the transform to apply.
      * @return The transformed vector.
     */
-    vec3 inverseTransformVector(vec3 vector);
+    vec3 inverseTransformVector(vec3 vector, bool previous = false);
 
     /**
      *  Rotates the transform so the forward vector points at the target's current position.
@@ -276,11 +304,12 @@ class Transform : public StaticFactory
      * @param at The position to point the transform towards
      * @param up The unit direction pointing upwards
      * @param eye (optional) The position to place the object
+     * @param previous If true, edits the previous translation and/or rotation.
     */
-    void lookAt(vec3 at, vec3 up, vec3 eye = vec3(NAN));
+    void lookAt(vec3 at, vec3 up, vec3 eye = vec3(NAN), bool previous = false);
 
     // /**
-    //  *  For motion blur. Rotates the next transform so the forward vector points at the target's current position.
+    //  *  For motion blur. Rotates the prev transform so the forward vector points at the target's current position.
     //  *  Then it rotates the transform to point its up direction vector in the direction hinted at 
     //  *  by the parentUp vector.
     //  * 
@@ -288,7 +317,7 @@ class Transform : public StaticFactory
     //  * @param up The unit direction pointing upwards
     //  * @param eye (optional) The position to place the object
     // */
-    // void nextLookAt(vec3 at, vec3 up, vec3 eye = vec3(NAN));
+    // void prevLookAt(vec3 at, vec3 up, vec3 eye = vec3(NAN));
 
     // /**
     // Applies a rotation of eulerAngles.z degrees around the z axis, eulerAngles.x degrees around 
@@ -314,9 +343,10 @@ class Transform : public StaticFactory
      * This modifies both the position and rotation of the transform.
      * 
      * @param point The pivot point in space to rotate around.
-     * @param quaternion   The quaternion to use for rotation.
+     * @param quaternion The quaternion to use for rotation.
+     * @param previous If true, edits the previous translation and rotation.
     */
-    void rotateAround(vec3 point, glm::quat quaternion);
+    void rotateAround(vec3 point, glm::quat quaternion, bool previous = false);
 
     /** 
      * Sets an optional additional transform, useful for representing normally unsupported transformations
@@ -324,18 +354,23 @@ class Transform : public StaticFactory
      * 
      * @param transformation  a 4 by 4 column major transformation matrix
      * @param decompose       attempts to use singular value decomposition to decompose the provided transform into a translation, rotation, and scale 
+     * @param previous If true, edits the previous translation, rotation, and scale.
     */
-    void setTransform(glm::mat4 transformation, bool decompose = true);
+    void setTransform(glm::mat4 transformation, bool decompose = true, bool previous = false);
 
-    /** @return A quaternion rotating the transform from local to parent */
-    quat getRotation();
+    /** 
+     * @param previous If true, returns the previous rotation.
+     * @return A quaternion rotating the transform from local to parent 
+     */
+    quat getRotation(bool previous = false);
 
     /** 
      * Sets the rotation of the transform from local to parent via a quaternion 
      * 
      * @param newRotation The new rotation quaternion to set the current transform quaternion to.
+     * @param previous If true, edits the previous rotation.
     */
-    void setRotation(quat newRotation);
+    void setRotation(quat newRotation, bool previous = false);
 
     // /** 
     //  * Sets the rotation of the transform from local to parent using an axis 
@@ -351,8 +386,9 @@ class Transform : public StaticFactory
      * via a quaternion. 
      * 
      * @param additionalRotation The rotation quaternion apply to the existing transform quaternion.
+     * @param previous If true, edits the previous rotation.
     */
-    void addRotation(quat additionalRotation);
+    void addRotation(quat additionalRotation, bool previous = false);
 
     // /** 
     //  * Adds a rotation to the existing transform rotation from local to parent 
@@ -364,33 +400,47 @@ class Transform : public StaticFactory
     // */
     // void addRotation(float angle, vec3 axis);
 
-    /** @returns a position vector describing where this transform will be translated to in its parent space. */
-    vec3 getPosition();
+    /** 
+     * @param previous If true, returns the previous position.
+     * @returns a position vector describing where this transform will be translated to in its parent space. 
+     */
+    vec3 getPosition(bool previous = false);
 
-    /** @returns a vector pointing right relative to the current transform placed in its parent's space. */
-    vec3 getRight();
+    /** 
+     * @param previous If true, returns the previous right vector.
+     * @returns a vector pointing right relative to the current transform placed in its parent's space. 
+     */
+    vec3 getRight(bool previous = false);
 
-    /** @returns a vector pointing up relative to the current transform placed in its parent's space. */
-    vec3 getUp();
+    /** 
+     * @param previous If true, returns the previous up vector.
+     * @returns a vector pointing up relative to the current transform placed in its parent's space. 
+     */
+    vec3 getUp(bool previous = false);
 
-    /** @returns a vector pointing forward relative to the current transform placed in its parent's space. */
-    vec3 getForward();
+    /** 
+     * @param previous If true, returns the previous forward vector.
+     * @returns a vector pointing forward relative to the current transform placed in its parent's space. 
+     */
+    vec3 getForward(bool previous = false);
 
     /** 
      * Sets the position vector describing where this transform should be translated to when placed in its 
      * parent space. 
      * 
      * @param newPosition The new position to set the current transform position to.
+     * @param previous If true, edits the previous position.
     */
-    void setPosition(vec3 newPosition);
+    void setPosition(vec3 newPosition, bool previous = false);
 
     /** 
      * Adds to the current the position vector describing where this transform should be translated to 
      * when placed in its parent space. 
      * 
      * @param additionalPosition The position (interpreted as a vector) to add onto the current transform position.
+     * @param previous If true, edits the previous position.
     */
-    void addPosition(vec3 additionalPosition);
+    void addPosition(vec3 additionalPosition, bool previous = false);
 
     // /**
     //  * Sets the position vector describing where this transform should be translated to when placed in its 
@@ -413,18 +463,20 @@ class Transform : public StaticFactory
     // void addPosition(float dx, float dy, float dz);
 
     /** 
+     * @param previous If true, returns the previous scale.
      * @returns the scale of this transform from local to parent space along its right, up, and forward 
      * directions respectively 
      */
-    vec3 getScale();
+    vec3 getScale(bool previous = false);
 
     /** 
      * Sets the scale of this transform from local to parent space along its right, up, and forward 
      * directions respectively. 
      * 
      * @param newScale The new scale to set the current transform scale to.
+     * @param previous If true, edits the previous scale.
     */
-    void setScale(vec3 newScale);
+    void setScale(vec3 newScale, bool previous = false);
 
     // /** 
     //  * Sets the scale of this transform from local to parent space along its right, up, and forward 
@@ -439,8 +491,9 @@ class Transform : public StaticFactory
      * and forward directions respectively 
      * 
      * @param additionalScale The scale to add onto the current transform scale.
+     * @param previous If true, edits the previous scale.
     */
-    void addScale(vec3 additionalScale);
+    void addScale(vec3 additionalScale, bool previous = false);
 
     // /** 
     //  * Sets the scale of this transform from local to parent space along its right, up, and forward 
@@ -498,64 +551,66 @@ class Transform : public StaticFactory
     void setScalarVelocity(vec3 velocity, float frames_per_second = 1.0f, float mix = 0.0f);
 
     /** 
+     * @param previous If true, returns the previous parent-to-local matrix.
      * @returns the final matrix transforming this object from it's parent coordinate space to it's 
      * local coordinate space 
      */
-    glm::mat4 getParentToLocalMatrix();
+    glm::mat4 getParentToLocalMatrix(bool previous = false);
+
+    // /** 
+    //  * @returns the final matrix transforming this object from it's parent coordinate space to it's 
+    //  * local coordinate space, accounting for linear and angular velocities.
+    //  */
+    // glm::mat4 getPrevParentToLocalMatrix(bool previous = false);
 
     /** 
-     * @returns the final matrix transforming this object from it's parent coordinate space to it's 
-     * local coordinate space, accounting for linear and angular velocities.
-     */
-    glm::mat4 getNextParentToLocalMatrix();
-
-    /** 
+     * @param previous If true, returns the previous local-to-parent matrix.
      * @returns the final matrix transforming this object from it's local coordinate space to it's 
      * parents coordinate space 
     */
-    glm::mat4 getLocalToParentMatrix();
+    glm::mat4 getLocalToParentMatrix(bool previous = false);
 
     /** 
-     * @returns the final matrix transforming this object from it's local coordinate space to it's 
-     * parents coordinate space, accounting for linear and angular velocities.
-    */
-    glm::mat4 getNextLocalToParentMatrix();
-
-    /** 
+     * @param previous If true, returns the previous local-to-parent translation matrix.
      * @returns the final matrix translating this object from it's local coordinate space to it's 
      * parent coordinate space 
      */
-    glm::mat4 getLocalToParentTranslationMatrix();
+    glm::mat4 getLocalToParentTranslationMatrix(bool previous = false);
 
     /** 
+     * @param previous If true, returns the previous local-to-parent scale matrix.
      * @returns the final matrix translating this object from it's local coordinate space to it's 
      * parent coordinate space 
      */
-    glm::mat4 getLocalToParentScaleMatrix();
+    glm::mat4 getLocalToParentScaleMatrix(bool previous = false);
 
     /** 
+     * @param previous If true, returns the previous local-to-parent rotation matrix.
      * @returns the final matrix rotating this object in it's local coordinate space to it's 
      * parent coordinate space 
      */
-    glm::mat4 getLocalToParentRotationMatrix();
+    glm::mat4 getLocalToParentRotationMatrix(bool previous = false);
 
     /** 
+     * @param previous If true, returns the previous parent-to-local translation matrix.
      * @returns the final matrix translating this object from it's parent coordinate space to it's 
      * local coordinate space 
      */
-    glm::mat4 getParentToLocalTranslationMatrix();
+    glm::mat4 getParentToLocalTranslationMatrix(bool previous = false);
 
     /** 
+     * @param previous If true, returns the previous parent-to-local scale matrix.
      * @returns the final matrix scaling this object from it's parent coordinate space to it's 
      * local coordinate space 
      */
-    glm::mat4 getParentToLocalScaleMatrix();
+    glm::mat4 getParentToLocalScaleMatrix(bool previous = false);
 
     /** 
+     * @param previous If true, returns the previous parent-to-local rotation matrix.
      * @returns the final matrix rotating this object from it's parent coordinate space to it's 
      * local coordinate space 
     * */
-    glm::mat4 getParentToLocalRotationMatrix();
+    glm::mat4 getParentToLocalRotationMatrix(bool previous = false);
 
     /** 
      * Set the parent of this transform, whose transformation will be applied after the current
@@ -584,82 +639,81 @@ class Transform : public StaticFactory
 	  void removeChild(Transform* child);
 
     /** 
+     * @param previous If true, returns the previous world-to-local matrix.
      * @returns a matrix transforming this component from world space to its local space, taking all 
      * parent transforms into account. 
      */
-    glm::mat4 getWorldToLocalMatrix();
+    glm::mat4 getWorldToLocalMatrix(bool previous = false);
 
     /** 
+     * @param previous If true, returns the previous local-to-world matrix.
      * @returns a matrix transforming this component from its local space to world space, taking all 
      * parent transforms into account. 
      */
-	  glm::mat4 getLocalToWorldMatrix();
+	  glm::mat4 getLocalToWorldMatrix(bool previous = false);
 
-    /** 
-     * @returns a matrix transforming this component from world space to its local space, taking all 
-     * parent transforms into account, in addition to any linear and angular velocities. 
-     */
-	  glm::mat4 getNextWorldToLocalMatrix();
+    // /** 
+    //  * @param previous If true, returns the previous world space scale.
+    //  * @returns a (possibly approximate) scale scaling the current transform from 
+    //    * local space to world space, taking all parent transforms into account 
+    //    */
+    // glm::vec3 getWorldScale(bool previous = false);
 
-    /** 
-     * @returns a matrix transforming this component from its local space to world space, taking all 
-     * parent transforms into account, in addition to any linear and angular velocities. 
-     */
-	  glm::mat4 getNextLocalToWorldMatrix();
+    // /** 
+    //  * @param previous If true, returns the previous world space rotation.
+    //  * @returns a (possibly approximate) rotation rotating the current transform from 
+    //  * local space to world space, taking all parent transforms into account 
+    //  */
+	  // glm::quat getWorldRotation(bool previous = false);
 
-    /** 
-     * @returns a (possibly approximate) scale scaling the current transform from 
-       * local space to world space, taking all parent transforms into account 
-       */
-    glm::vec3 getWorldScale();
+    // /** 
+    //  * @param previous If true, returns the previous world space translation.
+    //  * @returns a (possibly approximate) translation moving the current transform from 
+    //  * local space to world space, taking all parent transforms into account 
+    //  */
+    // glm::vec3 getWorldTranslation(bool previous = false);
 
-    /** 
-     * @returns a (possibly approximate) rotation rotating the current transform from 
-     * local space to world space, taking all parent transforms into account 
-     */
-	  glm::quat getWorldRotation();
+    // /** 
+    //  * @param previous If true, returns the previous world-to-local rotation matrix.
+    //  * @returns a (possibly approximate) rotation matrix rotating the current transform from 
+    //  * local space to world space, taking all parent transforms into account 
+    //  */
+    // glm::mat4 getWorldToLocalRotationMatrix(bool previous = false);
 
-    /** 
-     * @returns a (possibly approximate) translation moving the current transform from 
-     * local space to world space, taking all parent transforms into account 
-     */
-    glm::vec3 getWorldTranslation();
+    // /** 
+    //  * @param previous If true, returns the previous local-to-world rotation matrix.
+    //  * @returns a (possibly approximate) rotation matrix rotating the current transform from 
+    //  * world space to local space, taking all parent transforms into account 
+    //  */
+    // glm::mat4 getLocalToWorldRotationMatrix(bool previous = false);
 
-    /** 
-     * @returns a (possibly approximate) rotation matrix rotating the current transform from 
-     * local space to world space, taking all parent transforms into account 
-     */
-    glm::mat4 getWorldToLocalRotationMatrix();
+    // /** 
+    //  * @param previous If true, returns the previous world-to-local translation matrix.
+    //  * @returns a (possibly approximate) translation matrix translating the current transform from 
+    //  * local space to world space, taking all parent transforms into account 
+    //  */
+    // glm::mat4 getWorldToLocalTranslationMatrix(bool previous = false);
 
-    /** 
-     * @returns a (possibly approximate) rotation matrix rotating the current transform from 
-     * world space to local space, taking all parent transforms into account 
-     */
-    glm::mat4 getLocalToWorldRotationMatrix();
+    // /** 
+    //  * @param previous If true, returns the previous local-to-world translation matrix.
+    //  * @returns a (possibly approximate) translation matrix rotating the current transform from 
+    //  * world space to local space 
+    //  */
+    // glm::mat4 getLocalToWorldTranslationMatrix(bool previous = false);
 
-    /** 
-     * @returns a (possibly approximate) translation matrix translating the current transform from 
-     * local space to world space, taking all parent transforms into account 
-     */
-    glm::mat4 getWorldToLocalTranslationMatrix();
+    // /** 
+    //  * @param previous If true, returns the previous world-to-local scale matrix.
+    //  * @returns a (possibly approximate) scale matrix scaling the current transform from 
+    //  * local space to world space, taking all parent transforms into account 
+    //  */
+    // glm::mat4 getWorldToLocalScaleMatrix(bool previous = false);
 
-    /** 
-     * @returns a (possibly approximate) translation matrix rotating the current transform from 
-     * world space to local space 
-     */
-    glm::mat4 getLocalToWorldTranslationMatrix();
-
-    /** 
-     * @returns a (possibly approximate) scale matrix scaling the current transform from 
-     * local space to world space, taking all parent transforms into account 
-     */
-    glm::mat4 getWorldToLocalScaleMatrix();
-
-    /** 
-     * @returns a (possibly approximate) scale matrix scaling the current transform from 
-     * world space to local space, taking all parent transforms into account 
-     */
-    glm::mat4 getLocalToWorldScaleMatrix();
+    // /** 
+    //  * @param previous If true, returns the previous local-to-world scale matrix.
+    //  * @returns a (possibly approximate) scale matrix scaling the current transform from 
+    //  * world space to local space, taking all parent transforms into account 
+    //  */
+    // glm::mat4 getLocalToWorldScaleMatrix(bool previous = false);
 
     /** @returns a struct with only essential data */
     TransformStruct &getStruct();
