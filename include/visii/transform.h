@@ -550,6 +550,11 @@ class Transform : public StaticFactory
     */
     void setScalarVelocity(vec3 velocity, float frames_per_second = 1.0f, float mix = 0.0f);
 
+    /**
+     * Resets any "previous" transform data, effectively clearing any current motion blur.
+     */
+    void clearMotion();
+
     /** 
      * @param previous If true, returns the previous parent-to-local matrix.
      * @returns the final matrix transforming this object from it's parent coordinate space to it's 

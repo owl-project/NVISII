@@ -441,6 +441,16 @@ void Transform::setScalarVelocity(vec3 newScalarVelocity, float framesPerSecond,
 	markDirty();
 }
 
+void Transform::clearMotion()
+{
+	useRelativeMotionBlur = true;
+	scalarMotion = glm::vec3(0.f);
+	angularMotion = glm::quat(1.f, 0.f, 0.f, 0.f);
+	linearMotion = glm::vec3(0.f);
+	updateMatrix();
+	markDirty();
+}
+
 // void Transform::setPosition(float x, float y, float z)
 // {
 // 	setPosition(glm::vec3(x, y, z));
