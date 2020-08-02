@@ -149,11 +149,7 @@ class Transform : public StaticFactory
     Transform();
     Transform(std::string name, uint32_t id);
 
-    /* Indicates that one of the components has been edited */
-    static bool anyDirty;
-
-    /* Indicates this component has been edited */
-    bool dirty = true;
+    static std::set<Transform*> dirtyTransforms;
 
   public:
     /**
@@ -189,6 +185,9 @@ class Transform : public StaticFactory
     /** @returns the name of this component */
 	  std::string getName();
 
+    /** @returns the unique integer ID for this component */
+	  int32_t getId();
+
     /** @returns A map whose key is a transform name and whose value is the ID for that transform */
 	  static std::map<std::string, uint32_t> getNameToIdMap();
 
@@ -207,23 +206,20 @@ class Transform : public StaticFactory
     /** Iterates through all transform components, computing transform metadata for rendering purposes. */
     static void updateComponents();
 
+    /** Iterates through all transform components, marking them as clean. */
+    static void cleanComponents();
+
     /** Clears any existing transform components. */
     static void clearAll();
-
-    /** @return True if this transform has been modified since the previous frame, and False otherwise */
-	  bool isDirty() { return dirty; }
 
     /** @return True if any the transform has been modified since the previous frame, and False otherwise */
 	  static bool areAnyDirty();
 
-    /** @return True if the Transform has not been modified since the previous frame, and False otherwise */
-	  bool isClean() { return !dirty; }
+    /** @returns a list of transforms that have been modified since the previous frame */
+    static std::set<Transform*> getDirtyTransforms();
 
     /** Tags the current component as being modified since the previous frame. */
 	  void markDirty();
-
-    /** Tags the current component as being unmodified since the previous frame. */
-	  void markClean() { dirty = false; }
 
     /** For internal use. Returns the mutex used to lock transforms for processing by the renderer. */
     static std::shared_ptr<std::mutex> getEditMutex();

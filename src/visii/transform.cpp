@@ -7,7 +7,7 @@ std::map<std::string, uint32_t> Transform::lookupTable;
 
 std::shared_ptr<std::mutex> Transform::editMutex;
 bool Transform::factoryInitialized = false;
-bool Transform::anyDirty = true;
+std::set<Transform*> Transform::dirtyTransforms;
 
 void Transform::initializeFactory()
 {
@@ -26,29 +26,29 @@ bool Transform::isInitialized()
 	return initialized;
 }
 
-bool Transform::areAnyDirty()
-{
-	return anyDirty;
-}
-
-void Transform::markDirty() {
-	dirty = true;
-	anyDirty = true;
-	auto entityPointers = Entity::getFront();
-	for (auto &eid : entities) {
-		entityPointers[eid].markDirty();
-	}
+bool Transform::areAnyDirty() {
+	return dirtyTransforms.size();
 };
+
+std::set<Transform*> Transform::getDirtyTransforms()
+{
+	return dirtyTransforms;
+}
 
 void Transform::updateComponents() 
 {
-	for (int i = 0; i < MAX_TRANSFORMS; ++i) {
-		if (!transforms[i].isFactoryInitialized()) continue;
-		transformStructs[i].worldToLocal = transforms[i].getWorldToLocalMatrix();
-		transformStructs[i].localToWorld = transforms[i].getLocalToWorldMatrix();
-		transforms[i].markClean();
-	};
-	anyDirty = false;
+	if (dirtyTransforms.size() == 0) return;
+	for (auto &t : dirtyTransforms) {
+		if (!t->isInitialized()) continue;
+		transformStructs[t->id].worldToLocal = t->getWorldToLocalMatrix();
+		transformStructs[t->id].localToWorld = t->getLocalToWorldMatrix();
+	}
+}
+
+void Transform::cleanComponents()
+{
+	if (dirtyTransforms.size() == 0) return;
+	dirtyTransforms.clear();
 }
 
 void Transform::clearAll() 
@@ -68,10 +68,10 @@ Transform* Transform::create(std::string name,
 	vec3 scale, quat rotation, vec3 position) 
 {
 	auto t = StaticFactory::create(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+	dirtyTransforms.insert(t);
 	t->setPosition(position);
 	t->setRotation(rotation);
 	t->setScale(scale);
-	anyDirty = true;
 	return t;
 }
 
@@ -85,7 +85,9 @@ Transform* Transform::get(std::string name) {
 }
 
 void Transform::remove(std::string name) {
+	int32_t oldID = transforms->getId();
 	StaticFactory::remove(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+	dirtyTransforms.insert(&transforms[oldID]);
 }
 
 TransformStruct* Transform::getFrontStruct()
@@ -106,10 +108,23 @@ std::string Transform::getName()
     return name;
 }
 
+int32_t Transform::getId()
+{
+    return id;
+}
+
 std::map<std::string, uint32_t> Transform::getNameToIdMap()
 {
 	return lookupTable;
 }
+
+void Transform::markDirty() {
+	dirtyTransforms.insert(this);
+	auto entityPointers = Entity::getFront();
+	for (auto &eid : entities) {
+		entityPointers[eid].markDirty();
+	}
+};
 
 Transform::Transform() { 
 	initialized = false;

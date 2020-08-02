@@ -1045,12 +1045,30 @@ void updateComponents()
     }
     
     // Manage transforms
-    if (Transform::areAnyDirty()) {
+    auto dirtyTransforms = Transform::getDirtyTransforms();
+    if (dirtyTransforms.size() > 0) {
         auto mutex = Transform::getEditMutex();
         std::lock_guard<std::mutex> lock(*mutex.get());
 
         Transform::updateComponents();
-        bufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
+        
+        // for each device
+        for (uint32_t id = 0; id < owlGetDeviceCount(OptixData.context); ++id)
+        {
+            cudaSetDevice(id);
+
+            TransformStruct* devTransforms = (TransformStruct*)owlBufferGetPointer(OptixData.transformBuffer, id);
+            TransformStruct* transformStructs = Transform::getFrontStruct();
+            for (auto &t : dirtyTransforms) {
+                if (!t->isInitialized()) continue;
+                CUDA_CHECK(cudaMemcpy(&devTransforms[t->getId()], &transformStructs[t->getId()], sizeof(TransformStruct), cudaMemcpyHostToDevice));
+            }
+        }
+
+        cudaSetDevice(0);
+
+        Transform::cleanComponents();
+        // bufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
     }   
 
     // Manage Cameras
