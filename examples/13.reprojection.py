@@ -1,4 +1,5 @@
 import os
+import math
 import visii
 import noise
 import random
@@ -38,7 +39,6 @@ else:
     print(f'created folder {opt.outf}/')
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-
 visii.initialize_headless()
 
 camera = visii.entity.create(
@@ -51,11 +51,22 @@ camera = visii.entity.create(
     )
 )
 
+angle = 0
 camera.get_transform().look_at(
-    visii.vec3(0,0,0), # look at (world coordinate)
+    visii.vec3(0,0,.1), # look at (world coordinate)
     visii.vec3(0,0,1), # up vector
-    visii.vec3(0,1,1)
+    visii.vec3(math.sin(angle), math.cos(angle),.2),
+    previous = True
 )
+
+angle = -visii.pi() * .05
+camera.get_transform().look_at(
+    visii.vec3(0,0,.1), # look at (world coordinate)
+    visii.vec3(0,0,1), # up vector
+    visii.vec3(math.sin(angle), math.cos(angle),.2),
+    previous = False
+)
+
 visii.set_camera_entity(camera)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -67,19 +78,7 @@ floor = visii.entity.create(
     material = visii.material.create("floor")
 )
 
-floor.get_transform().set_scale(visii.vec3(100))
 floor.get_material().set_roughness(1.0)
-
-areaLight1 = visii.entity.create(
-    name="areaLight1",
-    light = visii.light.create("areaLight1"),
-    transform = visii.transform.create("areaLight1"),
-    mesh = visii.mesh.create_teapotahedron("areaLight1"),
-)
-areaLight1.get_light().set_intensity(10000.)
-areaLight1.get_light().set_temperature(8000)
-areaLight1.get_transform().set_position(
-    visii.vec3(0, 0, 5))
 
 mesh1 = visii.entity.create(
     name="mesh1",
@@ -92,17 +91,21 @@ mesh1.get_material().set_roughness(1.0)
 mesh1.get_material().set_base_color(
     visii.vec3(1.0, 0.0, 0.0))
 
-mesh1.get_transform().set_position(visii.vec3(-0.05, 0.0, 0))
-mesh1.get_transform().set_scale(visii.vec3(0.1))
-mesh1.get_transform().set_linear_velocity(visii.vec3(0.1, 0.0, 0.0))
+mesh1.get_transform().set_position(visii.vec3(-0.05, 0.0, 0), previous=True)
+mesh1.get_transform().set_scale(visii.vec3(0.1), previous = False)
+mesh1.get_transform().set_scale(visii.vec3(0.1), previous = True)
+mesh1.get_transform().set_position(visii.vec3(0.05, 0.0, 0), previous=False)
 
-visii.set_dome_light_intensity(1)
+tex = visii.texture.create_from_image("dome", "../data/dome.hdr")
+visii.set_dome_light_texture(tex)
+visii.set_dome_light_intensity(2)
+
 visii.set_direct_lighting_clamp(10.0)
 visii.set_indirect_lighting_clamp(10.0)
 visii.set_max_bounce_depth(0)
 visii.sample_pixel_area(visii.vec2(.5), visii.vec2(.5))
-# # # # # # # # # # # # # # # # # # # # # # # # #
 
+# # # # # # # # # # # # # # # # # # # # # # # # #
 # First, let's render out the scene with motion blur to understand
 # how the object is moving
 visii.sample_time_interval(visii.vec2(0.0, 1.0))
@@ -129,7 +132,7 @@ visii.sample_time_interval(visii.vec2(1.0, 1.0)) # only sample at t = 1
 t1_array = visii.render(
     width=opt.width, 
     height=opt.height, 
-    samples_per_pixel=1, 
+    samples_per_pixel=8, 
     seed = 1
 )
 t1_array = np.array(t1_array).reshape(opt.height,opt.width,4)
