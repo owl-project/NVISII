@@ -206,9 +206,6 @@ class Transform : public StaticFactory
     /** Iterates through all transform components, computing transform metadata for rendering purposes. */
     static void updateComponents();
 
-    /** Iterates through all transform components, marking them as clean. */
-    static void cleanComponents();
-
     /** Clears any existing transform components. */
     static void clearAll();
 

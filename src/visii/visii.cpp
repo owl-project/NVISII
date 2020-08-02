@@ -1066,8 +1066,6 @@ void updateComponents()
         }
 
         cudaSetDevice(0);
-
-        Transform::cleanComponents();
         // bufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
     }   
 

@@ -376,6 +376,21 @@ void saveLightingIrradianceRenderData(
 }
 
 __device__
+void saveMissRenderData(
+    float3 &renderData, 
+    int bounce,
+    float3 mvec)
+{
+    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
+    if (bounce != optixLaunchParams.renderDataBounce) return;
+
+    if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
+        renderData = mvec;
+    }
+}
+
+
+__device__
 void saveGeometricRenderData(
     float3 &renderData, 
     int bounce, float depth, 
@@ -492,6 +507,19 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 // primaryAlbedo = illum;
                 directIllum = illum;
             }
+            
+            const float envDist = 10000.0f; // large value
+            /* Compute miss motion vector */
+            float3 mvec;
+            // Point far away
+            float3 pFar = ray.origin + ray.direction * envDist;
+            // TODO: account for motion from rotating dome light
+            vec4 tmp1 = optixLaunchParams.proj * optixLaunchParams.viewT0 * /*xfmt0 **/ make_vec4(pFar, 1.0f);
+            float3 pt0 = make_float3(tmp1 / tmp1.w) * .5f;
+            vec4 tmp2 = optixLaunchParams.proj * optixLaunchParams.viewT1 * /*xfmt1 **/ make_vec4(pFar, 1.0f);
+            float3 pt1 = make_float3(tmp2 / tmp2.w) * .5f;
+            mvec = pt1 - pt0;
+            saveMissRenderData(renderData, bounce, mvec);
             break;
         }
 

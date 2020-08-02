@@ -8,6 +8,7 @@ std::map<std::string, uint32_t> Transform::lookupTable;
 std::shared_ptr<std::mutex> Transform::editMutex;
 bool Transform::factoryInitialized = false;
 std::set<Transform*> Transform::dirtyTransforms;
+static bool mutexAcquired = false;
 
 void Transform::initializeFactory()
 {
@@ -43,11 +44,6 @@ void Transform::updateComponents()
 		transformStructs[t->id].worldToLocal = t->getWorldToLocalMatrix();
 		transformStructs[t->id].localToWorld = t->getLocalToWorldMatrix();
 	}
-}
-
-void Transform::cleanComponents()
-{
-	if (dirtyTransforms.size() == 0) return;
 	dirtyTransforms.clear();
 }
 
@@ -62,17 +58,24 @@ void Transform::clearAll()
 	}
 }
 
-
 /* Static Factory Implementations */
 Transform* Transform::create(std::string name, 
 	vec3 scale, quat rotation, vec3 position) 
 {
-	auto t = StaticFactory::create(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
-	dirtyTransforms.insert(t);
-	t->setPosition(position);
-	t->setRotation(rotation);
-	t->setScale(scale);
-	return t;
+	auto createTransform = [scale, rotation, position] (Transform* transform) {
+		dirtyTransforms.insert(transform);
+		transform->setPosition(position);
+		transform->setRotation(rotation);
+		transform->setScale(scale);
+	};
+
+	try {
+		return StaticFactory::create<Transform>(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS, createTransform);
+	}
+	catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+		throw;
+	}
 }
 
 std::shared_ptr<std::mutex> Transform::getEditMutex()
@@ -211,6 +214,9 @@ glm::quat safeQuatLookAt(
 
 void Transform::lookAt(vec3 at, vec3 up, vec3 eye, bool previous)
 {
+	// if (!mutexAcquired) {
+	// 	std::lock_guard<std::mutex>lock(*editMutex.get());
+	// }
 	if (previous) useRelativeMotionBlur = false;
 	if (glm::any(glm::isnan(eye))) {
 		eye = (previous) ? this->prevPosition : this->position;
