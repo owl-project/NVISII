@@ -645,7 +645,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 const uint32_t occlusionFlags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
                 float3 lightDir;
 
-                if ((optixLaunchParams.environmentMapWidth != 0) && (optixLaunchParams.environmentMapHeight != 0)) {
+                if (
+                    (optixLaunchParams.environmentMapWidth != 0) && (optixLaunchParams.environmentMapHeight != 0) &&
+                    (optixLaunchParams.environmentMapRows != nullptr) && (optixLaunchParams.environmentMapCols != nullptr)
+                ) 
+                {
                     // Vec3fa color = m_background->sample(dg, wi, tMax, RandomSampler_get2D(sampler));
                     float rx = lcg_randomf(rng);
                     float ry = lcg_randomf(rng);
@@ -657,8 +661,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     float row_pdf, col_pdf;
                     unsigned x, y;
                     ry = sample_cdf(rows, height, ry, &y, &row_pdf);
+                    y = max(min(y, height - 1), 0);
                     rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
-                    // y = height - y;
                     lightDir = make_float3(toPolar(vec2((x + rx) / float(width), (y + ry)/float(height))));
                     lightPDFs[lid] = row_pdf * col_pdf * invjacobian;
                 } 
