@@ -36,7 +36,9 @@ class Transform : public StaticFactory
     friend class Entity;
 
   private:
-    bool useRelativeMotionBlur = true;
+    bool useRelativeLinearMotionBlur = true;
+    bool useRelativeAngularMotionBlur = true;
+    bool useRelativeScalarMotionBlur = true;
 
     /* Scene graph information */
     int32_t parent = -1;

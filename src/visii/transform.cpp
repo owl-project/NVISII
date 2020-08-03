@@ -217,10 +217,15 @@ void Transform::lookAt(vec3 at, vec3 up, vec3 eye, bool previous)
 	// if (!mutexAcquired) {
 	// 	std::lock_guard<std::mutex>lock(*editMutex.get());
 	// }
-	if (previous) useRelativeMotionBlur = false;
+	if (previous) {
+		useRelativeAngularMotionBlur = false;
+	}
 	if (glm::any(glm::isnan(eye))) {
 		eye = (previous) ? this->prevPosition : this->position;
 	} else {
+		if (previous) {
+			useRelativeLinearMotionBlur = false;
+		}
 		setPosition(eye, previous);
 	}
 	up = normalize(up);
@@ -273,7 +278,7 @@ void Transform::lookAt(vec3 at, vec3 up, vec3 eye, bool previous)
 
 void Transform::rotateAround(vec3 point, glm::quat rot, bool previous)
 {
-	if (previous) useRelativeMotionBlur = false;
+	if (previous) useRelativeAngularMotionBlur = false;
 	glm::vec3 direction = point - getPosition(previous);
 	glm::vec3 newPosition = getPosition(previous) + direction;
 	glm::quat newRotation = rot * getRotation(previous);
@@ -300,7 +305,11 @@ void Transform::rotateAround(vec3 point, glm::quat rot, bool previous)
 
 void Transform::setTransform(glm::mat4 transformation, bool decompose, bool previous)
 {
-	if (previous) useRelativeMotionBlur = false;
+	if (previous) {
+		useRelativeLinearMotionBlur = false;
+		useRelativeAngularMotionBlur = false;
+		useRelativeScalarMotionBlur = false;
+	}
 	if (decompose)
 	{
 		glm::vec3 scale;
@@ -347,7 +356,7 @@ quat Transform::getRotation(bool previous)
 
 void Transform::setRotation(quat newRotation, bool previous)
 {
-	if (previous) useRelativeMotionBlur = false;
+	if (previous) useRelativeAngularMotionBlur = false;
 	auto &r = (previous) ? prevRotation : rotation;
 	r = glm::normalize(newRotation);
 	updateRotation();
@@ -362,7 +371,7 @@ void Transform::setRotation(quat newRotation, bool previous)
 
 void Transform::addRotation(quat additionalRotation, bool previous)
 {
-	if (previous) useRelativeMotionBlur = false;
+	if (previous) useRelativeAngularMotionBlur = false;
 	setRotation(getRotation(previous) * additionalRotation, previous);
 	updateRotation();
 	markDirty();
@@ -415,7 +424,7 @@ vec3 Transform::getForward(bool previous)
 
 void Transform::setPosition(vec3 newPosition, bool previous)
 {
-	if (previous) useRelativeMotionBlur = false;
+	if (previous) useRelativeLinearMotionBlur = false;
 	auto &p = (previous) ? prevPosition : position;
 	p = newPosition;
 	updatePosition();
@@ -424,7 +433,7 @@ void Transform::setPosition(vec3 newPosition, bool previous)
 
 void Transform::addPosition(vec3 additionalPosition, bool previous)
 {
-	if (previous) useRelativeMotionBlur = false;
+	if (previous) useRelativeLinearMotionBlur = false;
 	setPosition(getPosition(previous) + additionalPosition, previous);
 	updatePosition();
 	markDirty();
@@ -432,7 +441,7 @@ void Transform::addPosition(vec3 additionalPosition, bool previous)
 
 void Transform::setLinearVelocity(vec3 newLinearVelocity, float framesPerSecond, float mix)
 {
-	useRelativeMotionBlur = true;
+	useRelativeLinearMotionBlur = true;
 	mix = glm::clamp(mix, 0.f, 1.f);
 	newLinearVelocity /= framesPerSecond;
 	linearMotion = glm::mix(newLinearVelocity, linearMotion, mix);
@@ -442,7 +451,7 @@ void Transform::setLinearVelocity(vec3 newLinearVelocity, float framesPerSecond,
 
 void Transform::setAngularVelocity(quat newAngularVelocity, float framesPerSecond, float mix)
 {
-	useRelativeMotionBlur = true;
+	useRelativeAngularMotionBlur = true;
 	mix = glm::clamp(mix, 0.f, 1.f);
 	newAngularVelocity[0] = newAngularVelocity[0] / framesPerSecond;
 	newAngularVelocity[1] = newAngularVelocity[1] / framesPerSecond;
@@ -454,7 +463,7 @@ void Transform::setAngularVelocity(quat newAngularVelocity, float framesPerSecon
 
 void Transform::setScalarVelocity(vec3 newScalarVelocity, float framesPerSecond, float mix)
 {
-	useRelativeMotionBlur = true;
+	useRelativeScalarMotionBlur = true;
 	mix = glm::clamp(mix, 0.f, 1.f);
 	newScalarVelocity /= framesPerSecond;
 	scalarMotion = glm::mix(newScalarVelocity, scalarMotion, mix);
@@ -464,7 +473,9 @@ void Transform::setScalarVelocity(vec3 newScalarVelocity, float framesPerSecond,
 
 void Transform::clearMotion()
 {
-	useRelativeMotionBlur = true;
+	useRelativeLinearMotionBlur = true;
+	useRelativeAngularMotionBlur = true;
+	useRelativeScalarMotionBlur = true;
 	scalarMotion = glm::vec3(0.f);
 	angularMotion = glm::quat(1.f, 0.f, 0.f, 0.f);
 	linearMotion = glm::vec3(0.f);
@@ -507,7 +518,7 @@ vec3 Transform::getScale(bool previous)
 
 void Transform::setScale(vec3 newScale, bool previous)
 {
-	if (previous) useRelativeMotionBlur = false;
+	if (previous) useRelativeScalarMotionBlur = false;
 	auto &s = (previous) ? prevScale : scale;
 	s = newScale;
 	updateScale();
@@ -523,7 +534,7 @@ void Transform::setScale(vec3 newScale, bool previous)
 
 void Transform::addScale(vec3 additionalScale, bool previous)
 {
-	if (previous) useRelativeMotionBlur = false;
+	if (previous) useRelativeScalarMotionBlur = false;
 	setScale(getScale(previous) + additionalScale, previous);
 	updateScale();
 	markDirty();
@@ -659,42 +670,42 @@ glm::mat4 Transform::getLocalToParentMatrix(bool previous)
 
 glm::mat4 Transform::getLocalToParentTranslationMatrix(bool previous)
 {
-	if ((previous) && (useRelativeMotionBlur)) return glm::translate(glm::mat4(1.0), position - linearMotion);
+	if ((previous) && (useRelativeLinearMotionBlur)) return glm::translate(glm::mat4(1.0), position - linearMotion);
 	else if (previous) return glm::translate(glm::mat4(1.0), prevPosition);
 	else return glm::translate(glm::mat4(1.0), position);
 }
 
 glm::mat4 Transform::getLocalToParentScaleMatrix(bool previous)
 {
-	if ((previous) && (useRelativeMotionBlur)) return glm::scale(glm::mat4(1.0), scale - scalarMotion);
+	if ((previous) && (useRelativeScalarMotionBlur)) return glm::scale(glm::mat4(1.0), scale - scalarMotion);
 	else if (previous) return glm::scale(glm::mat4(1.0), prevScale);
 	else return glm::scale(glm::mat4(1.0), scale);
 }
 
 glm::mat4 Transform::getLocalToParentRotationMatrix(bool previous)
 {
-	if ((previous) && (useRelativeMotionBlur)) return glm::toMat4(angularMotion * rotation);
+	if ((previous) && (useRelativeAngularMotionBlur)) return glm::toMat4(angularMotion * rotation);
 	else if (previous) return glm::toMat4(prevRotation);
 	else return glm::toMat4(rotation);
 }
 
 glm::mat4 Transform::getParentToLocalTranslationMatrix(bool previous)
 {
-	if ((previous) && (useRelativeMotionBlur)) return glm::translate(glm::mat4(1.0), -(position - linearMotion));
+	if ((previous) && (useRelativeLinearMotionBlur)) return glm::translate(glm::mat4(1.0), -(position - linearMotion));
 	else if (previous) return glm::translate(glm::mat4(1.0), -prevPosition);
 	else return glm::translate(glm::mat4(1.0), -position);
 }
 
 glm::mat4 Transform::getParentToLocalScaleMatrix(bool previous)
 {
-	if ((previous) && (useRelativeMotionBlur)) return glm::scale(glm::mat4(1.0), glm::vec3(1.0 / (scale - scalarMotion).x, 1.0 / (scale - scalarMotion).y, 1.0 / (scale - scalarMotion).z));
+	if ((previous) && (useRelativeScalarMotionBlur)) return glm::scale(glm::mat4(1.0), glm::vec3(1.0 / (scale - scalarMotion).x, 1.0 / (scale - scalarMotion).y, 1.0 / (scale - scalarMotion).z));
 	else if (previous) return glm::scale(glm::mat4(1.0), glm::vec3(1.0 / prevScale.x, 1.0 / prevScale.y, 1.0 / prevScale.z));
 	else return glm::scale(glm::mat4(1.0), glm::vec3(1.0 / scale.x, 1.0 / scale.y, 1.0 / scale.z));
 }
 
 glm::mat4 Transform::getParentToLocalRotationMatrix(bool previous)
 {
-	if ((previous) && (useRelativeMotionBlur)) return glm::toMat4(glm::inverse(angularMotion * rotation));
+	if ((previous) && (useRelativeAngularMotionBlur)) return glm::toMat4(glm::inverse(angularMotion * rotation));
 	else if (previous) return glm::toMat4(glm::inverse(prevRotation));
 	else return glm::toMat4(glm::inverse(rotation));
 }
