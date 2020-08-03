@@ -165,27 +165,6 @@ void sampleDirectLight( vec3 pos,
                        	vec3 &dir,
                        	float &pdf ) 
 {	
-	// pick one of the three AABB orientations to sample from.
-	// glm::mat4 rotation, rotationInv;
-	// ivec4 q[2];
-	
-	// vec3 p[8] = {
-	// 	vec3(bbmin.x, bbmin.y, bbmin.z),
-	// 	vec3(bbmax.x, bbmin.y, bbmin.z),
-	// 	vec3(bbmin.x, bbmax.y, bbmin.z),
-	// 	vec3(bbmax.x, bbmax.y, bbmin.z),
-	// 	vec3(bbmin.x, bbmin.y, bbmax.z),
-	// 	vec3(bbmax.x, bbmin.y, bbmax.z),
-	// 	vec3(bbmin.x, bbmax.y, bbmax.z),
-	// 	vec3(bbmax.x, bbmax.y, bbmax.z)
-	// };
-	// {
-	// 	vec3 n = cross(normalize(e1), normalize(e2));
-	// 	if (abs(dot(n, pos - s)) < EPSILON) {
-	// 		return;
-	// 	}
-	// }
-
 	pos = vec3( lightTransformInv * vec4(pos, 1.0) );
 	normal = vec3( lightTransformInv * vec4(normal, 0.0) );
 	bool minCloser = (distance(bbmin , pos) < distance(bbmax , pos));
@@ -247,8 +226,6 @@ void sampleDirectLightPDF( vec3 pos,
 	// pdf is 1 over solid angle of spherical quad
 	pdf = 1.0f / squad.S;
 }
-
-
 
 //Gram-Schmidt method
 __device__
@@ -364,4 +341,43 @@ void sampleTriangle(const vec3 &pos, const vec3 &n,
 	dir /= sqrt(d2);
 	float aCosThere = max(0.0, fabs(dot(-dir,n)));
 	pdf = PdfAtoW( pdfA, d2, aCosThere );
+}
+
+__device__
+const float* upper_bound (const float* first, const float* last, const float& val)
+{
+  const float* it;
+//   iterator_traits<const float*>::difference_type count, step;
+  int count, step;
+//   count = std::distance(first,last);
+  count = (last-first);
+  while (count > 0)
+  {
+    it = first; 
+    step=count/2; 
+    // std::advance (it,step);
+    it = it + step;
+    if ( ! (val < *it))                 // or: if (!comp(val,*it)), for version (2)
+    { 
+        first=++it; 
+        count-=step+1;  
+    }
+    else count=step;
+  }
+  return first;
+}
+
+__device__ float sample_cdf(const float* data, unsigned int n, float x, unsigned int *idx, float* pdf) 
+{
+    *idx = upper_bound(data, data + n, x) - data;
+    float scaled_sample;
+    if (*idx == 0) {
+        *pdf = data[0];
+        scaled_sample = x / data[0];
+    } else {
+        *pdf = data[*idx] - data[*idx - 1];
+        scaled_sample = (x - data[*idx - 1]) / (data[*idx] - data[*idx - 1]);
+    }
+    // keep result in [0,1)
+    return min(scaled_sample, 0.99999994f);
 }

@@ -507,6 +507,7 @@ void initializeOptix(bool headless)
         { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
         { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
         { "maxBounceDepth",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxBounceDepth)},
+        { "numLightSamples",         OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightSamples)},
         { "seed",                    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, seed)},
         { "xPixelSamplingInterval",  OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, xPixelSamplingInterval)},
         { "yPixelSamplingInterval",  OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, yPixelSamplingInterval)},
@@ -614,6 +615,7 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
     launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
     launchParamsSetRaw(OD.launchParams, "maxBounceDepth", &OD.LP.maxBounceDepth);
+    launchParamsSetRaw(OD.launchParams, "numLightSamples", &OD.LP.numLightSamples);
     launchParamsSetRaw(OD.launchParams, "seed", &OD.LP.seed);
     launchParamsSetRaw(OD.launchParams, "xPixelSamplingInterval", &OD.LP.xPixelSamplingInterval);
     launchParamsSetRaw(OD.launchParams, "yPixelSamplingInterval", &OD.LP.yPixelSamplingInterval);
@@ -821,39 +823,54 @@ void setIndirectLightingClamp(float clamp)
 {
     clamp = std::max(float(clamp), float(0.f));
     OptixData.LP.indirectClamp = clamp;
-    resetAccumulation();
     launchParamsSetRaw(OptixData.launchParams, "indirectClamp", &OptixData.LP.indirectClamp);
+    resetAccumulation();
 }
 
 void setDirectLightingClamp(float clamp)
 {
     clamp = std::max(float(clamp), float(0.f));
     OptixData.LP.directClamp = clamp;
-    resetAccumulation();
     launchParamsSetRaw(OptixData.launchParams, "directClamp", &OptixData.LP.directClamp);
+    resetAccumulation();
 }
 
 void setMaxBounceDepth(uint32_t depth)
 {
     OptixData.LP.maxBounceDepth = depth;
-    resetAccumulation();
     launchParamsSetRaw(OptixData.launchParams, "maxBounceDepth", &OptixData.LP.maxBounceDepth);
+    resetAccumulation();
+}
+
+void setLightSampleCount(uint32_t count)
+{
+    if (count > MAX_LIGHT_SAMPLES) 
+        throw std::runtime_error(
+            std::string("Error: max number of light samples is ") 
+            + std::to_string(MAX_LIGHT_SAMPLES));
+    if (count == 0) 
+        throw std::runtime_error(
+            std::string("Error: number of light samples must be between 1 and ") 
+            + std::to_string(MAX_LIGHT_SAMPLES));
+    OptixData.LP.numLightSamples = count;
+    launchParamsSetRaw(OptixData.launchParams, "numLightSamples", &OptixData.LP.numLightSamples);
+    resetAccumulation();
 }
 
 void samplePixelArea(vec2 xSampleInterval, vec2 ySampleInterval)
 {
     OptixData.LP.xPixelSamplingInterval = xSampleInterval;
     OptixData.LP.yPixelSamplingInterval = ySampleInterval;
-    resetAccumulation();
     launchParamsSetRaw(OptixData.launchParams, "xPixelSamplingInterval", &OptixData.LP.xPixelSamplingInterval);
     launchParamsSetRaw(OptixData.launchParams, "yPixelSamplingInterval", &OptixData.LP.yPixelSamplingInterval);
+    resetAccumulation();
 }
 
 void sampleTimeInterval(vec2 sampleTimeInterval)
 {
     OptixData.LP.timeSamplingInterval = sampleTimeInterval;
-    resetAccumulation();
     launchParamsSetRaw(OptixData.launchParams, "timeSamplingInterval", &OptixData.LP.timeSamplingInterval);
+    resetAccumulation();
 }
 
 void updateComponents()
@@ -943,10 +960,10 @@ void updateComponents()
 
             OWLGroup blas = OD.meshes[entities[eid].getMesh()->getId()].blas;
             if (!blas) return;
-            glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix();
-            glm::mat4 nextLocalToWorld = entities[eid].getTransform()->getNextLocalToWorldMatrix();
-            t0InstanceTransforms.push_back(localToWorld);            
-            t1InstanceTransforms.push_back(nextLocalToWorld);            
+            glm::mat4 prevLocalToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */true);
+            glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */false);
+            t0InstanceTransforms.push_back(prevLocalToWorld);            
+            t1InstanceTransforms.push_back(localToWorld);            
             instances.push_back(blas);
             instanceToEntityMap.push_back(eid);
         }
@@ -1028,12 +1045,28 @@ void updateComponents()
     }
     
     // Manage transforms
-    if (Transform::areAnyDirty()) {
+    auto dirtyTransforms = Transform::getDirtyTransforms();
+    if (dirtyTransforms.size() > 0) {
         auto mutex = Transform::getEditMutex();
         std::lock_guard<std::mutex> lock(*mutex.get());
 
         Transform::updateComponents();
-        bufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
+        
+        // for each device
+        for (uint32_t id = 0; id < owlGetDeviceCount(OptixData.context); ++id)
+        {
+            cudaSetDevice(id);
+
+            TransformStruct* devTransforms = (TransformStruct*)owlBufferGetPointer(OptixData.transformBuffer, id);
+            TransformStruct* transformStructs = Transform::getFrontStruct();
+            for (auto &t : dirtyTransforms) {
+                if (!t->isInitialized()) continue;
+                CUDA_CHECK(cudaMemcpy(&devTransforms[t->getId()], &transformStructs[t->getId()], sizeof(TransformStruct), cudaMemcpyHostToDevice));
+            }
+        }
+
+        cudaSetDevice(0);
+        // bufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
     }   
 
     // Manage Cameras
@@ -1067,8 +1100,8 @@ void updateComponents()
         auto transform = Transform::getFront()[OptixData.LP.cameraEntity.transform_id];
         auto camera = Camera::getFront()[OptixData.LP.cameraEntity.camera_id];
         OptixData.LP.proj = camera.getProjection();
-        OptixData.LP.viewT0 = transform.getWorldToLocalMatrix();
-        OptixData.LP.viewT1 = transform.getNextWorldToLocalMatrix();
+        OptixData.LP.viewT0 = transform.getWorldToLocalMatrix(/*previous = */ true);
+        OptixData.LP.viewT1 = transform.getWorldToLocalMatrix(/*previous = */ false);
     }
 }
 
