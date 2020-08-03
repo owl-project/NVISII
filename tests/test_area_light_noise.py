@@ -1,5 +1,7 @@
 #%%
 import sys, os, math, colorsys
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+import sys, os, math, colorsys
 os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
 sys.path.append(os.path.join(os.getcwd(), "..", "install"))
 
@@ -35,6 +37,11 @@ v.set_dome_light_texture(tex)
 
 
 #%%
+# tex = v.texture.create_from_image("texture", "../data/dome.hdr")
+# v.set_dome_light_texture(tex)
+
+
+#%%
 entities_obj = v.import_obj(
     "knob", # prefix name
     'C:/Users/natevm/3D Objects/mori_knob/mori_knob_subdiv.obj', #obj path
@@ -61,103 +68,6 @@ outer = entities_obj[3]
 #%% inner
 inner = entities_obj[4]
 
-#%%
-# floor = v.entity.create(
-#     name="floor",
-#     mesh = v.mesh.create_plane("floor"),
-#     transform = v.transform.create("floor"),
-#     material = v.material.create("floor")
-# )
-# #%%
-# mesh1 = v.entity.create(
-#     name="mesh1",
-#     mesh = v.mesh.create_from_obj("mesh2", "C:/Users/natevm/3D Objects/mori_knob/mori_knob_subdiv.obj"),
-#     transform = v.transform.create("mesh1"),
-#     material = v.material.create("mesh1")
-# )
-
-# #%%
-# mesh2 = v.entity.create(
-#     name="mesh2",
-#     mesh = v.mesh.create_sphere("sphere2"),
-#     transform = v.transform.create("mesh2"),
-#     material = v.material.create("mesh2")
-# )
-
-# # %%
-# mesh1.get_transform().set_scale(v.vec3(4))
-# mesh1.get_transform().set_rotation(v.angleAxis(1.57, v.vec3(1,0,0)))
-# mesh1.get_transform().set_position(v.vec3(0,0,1.5))
-
-# # %%
-# normtex = v.texture.create_from_image("grid", "../data/normal.png", linear=True)
-# #%%
-# floor.get_material().set_normal_map_texture(normtex)
-# floor.get_material().set_roughness(0)
-# floor.get_material().set_metallic(0)
-# #%%
-# mesh2.get_material().clear_normal_map_texture()
-# #%%
-# areaLight1 = v.entity.create(
-#     name="areaLight1",
-#     light = v.light.create("areaLight1"),
-#     transform = v.transform.create("areaLight1"),
-#     mesh = v.mesh.create_sphere("areaLight1"),
-# )
-# %%
-# areaLight1.get_transform().set_scale(v.vec3(.25))
-#%%
-# areaLight1.get_transform().set_position(v.vec3(0, 0, 4))
-# areaLight1.get_transform().set_scale(v.vec3(.5))
-
-#%%
-# floor.get_transform().set_scale(v.vec3(5))
-# mesh1.get_transform().set_scale(v.vec3(.5))
-# floor.get_material().set_roughness(1.0)
-# mesh1.get_material().set_base_color(v.vec3(1.0, 1.0, 1.0))
-# mesh2.get_material().set_base_color(v.vec3(1.0, 1.0, 1.0))
-# mesh1.get_transform().set_position(v.vec3(-1.0, 1.0, 0.0))
-# mesh2.get_transform().set_position(v.vec3(-1.0, 3.0, 1.0))
-
-# mesh1.get_transform().set_scale(v.vec3(4))
-# mesh1.get_transform().set_rotation(v.angleAxis(1.57, v.vec3(1,0,0)))
-# mesh1.get_transform().set_position(v.vec3(0,0,1.0))
-
-# #%%
-# def rotfloor(rot=0): 
-#     floor.get_transform().set_rotation(v.angleAxis(rot, v.vec3(0, 0, 1)))
-# interact(rotfloor, rot=(0.0, 3.14 * 2, .001))
-
-
-#%%
-def changeColor(hue=0, sat=0, val=1): 
-    rgb = colorsys.hsv_to_rgb(hue, sat, val)
-    outer.get_material().set_base_color(v.vec3(rgb[0], rgb[1], rgb[2]))
-def changeRoughness(roughness=0): outer.get_material().set_roughness(roughness)
-def changeTransmission(transmission=0): outer.get_material().set_transmission(transmission)    
-def changeIor(ior=1.57): outer.get_material().set_ior(ior)
-def changeSheen(sheen=0): outer.get_material().set_sheen(sheen)
-def changeClearCoat(clearcoat=0): outer.get_material().set_clearcoat(clearcoat)
-def changeClearCoatRoughness(clearcoat_roughness=0): outer.get_material().set_clearcoat_roughness(clearcoat_roughness)
-def changeMetallic(metallic=1): outer.get_material().set_metallic(metallic)
-def changeSpecularTint(specular_tint=0): outer.get_material().set_specular_tint(specular_tint)
-def changeSpecular(specular=1): outer.get_material().set_specular(specular)
-def changeSubsurface(subsurface=0): outer.get_material().set_subsurface(subsurface)
-def changeTransmissionRoughess(transmission_roughness=0): outer.get_material().set_transmission_roughness(transmission_roughness)
-def changeAnisotropy(anisotropy=0): outer.get_material().set_anisotropic(anisotropy)
-interact(changeColor, hue=(0.0, 1.0, .001), sat=(0.0, 1.0, .001), val=(0.0, 1.0, .001))
-interact(changeRoughness, roughness=(0.0, 1.0, .001))
-interact(changeTransmission, transmission=(0.0, 1.0, .001))
-interact(changeIor, ior=(0.0, 2.0, .001))
-interact(changeSheen, sheen=(0.0, 1.0, .001))
-interact(changeClearCoat, clearcoat=(0.0, 1.0, .001))
-interact(changeClearCoatRoughness, clearcoat_roughness=(0.0, 1.0, .001))
-interact(changeMetallic, metallic=(0.0, 1.0, .001))
-interact(changeSpecularTint, specular_tint=(0.0, 1.0, .001))
-interact(changeSpecular, specular=(0.0, 2.0, .001))
-interact(changeSubsurface, subsurface=(0.0, 1.0, .001))
-interact(changeTransmissionRoughess, transmission_roughness=(0.0, 1.0, .001))
-interact(changeAnisotropy, anisotropy=(0.0, 1.0, .001))
 #%%
 def changeColor(hue=0, sat=0, val=1): 
     rgb = colorsys.hsv_to_rgb(hue, sat, val)
@@ -187,9 +97,35 @@ interact(changeSpecular, specular=(0.0, 2.0, .001))
 interact(changeSubsurface, subsurface=(0.0, 1.0, .001))
 interact(changeTransmissionRoughess, transmission_roughness=(0.0, 1.0, .001))
 interact(changeAnisotropy, anisotropy=(0.0, 1.0, .001))
+#%%
+def changeColor(hue=0, sat=0, val=1): 
+    rgb = colorsys.hsv_to_rgb(hue, sat, val)
+    outer.get_material().set_base_color(v.vec3(rgb[0], rgb[1], rgb[2]))
+def changeRoughness(roughness=1): outer.get_material().set_roughness(roughness)
+def changeTransmission(transmission=0): outer.get_material().set_transmission(transmission)    
+def changeIor(ior=1.57): outer.get_material().set_ior(ior)
+def changeSheen(sheen=0): outer.get_material().set_sheen(sheen)
+def changeClearCoat(clearcoat=0): outer.get_material().set_clearcoat(clearcoat)
+def changeClearCoatRoughness(clearcoat_roughness=0): outer.get_material().set_clearcoat_roughness(clearcoat_roughness)
+def changeMetallic(metallic=0): outer.get_material().set_metallic(metallic)
+def changeSpecularTint(specular_tint=0): outer.get_material().set_specular_tint(specular_tint)
+def changeSpecular(specular=1): outer.get_material().set_specular(specular)
+def changeSubsurface(subsurface=0): outer.get_material().set_subsurface(subsurface)
+def changeTransmissionRoughess(transmission_roughness=0): outer.get_material().set_transmission_roughness(transmission_roughness)
+def changeAnisotropy(anisotropy=0): outer.get_material().set_anisotropic(anisotropy)
 interact(changeColor, hue=(0.0, 1.0, .001), sat=(0.0, 1.0, .001), val=(0.0, 1.0, .001))
-
-
+interact(changeRoughness, roughness=(0.0, 1.0, .001))
+interact(changeTransmission, transmission=(0.0, 1.0, .001))
+interact(changeIor, ior=(0.0, 2.0, .001))
+interact(changeSheen, sheen=(0.0, 1.0, .001))
+interact(changeClearCoat, clearcoat=(0.0, 1.0, .001))
+interact(changeClearCoatRoughness, clearcoat_roughness=(0.0, 1.0, .001))
+interact(changeMetallic, metallic=(0.0, 1.0, .001))
+interact(changeSpecularTint, specular_tint=(0.0, 1.0, .001))
+interact(changeSpecular, specular=(0.0, 2.0, .001))
+interact(changeSubsurface, subsurface=(0.0, 1.0, .001))
+interact(changeTransmissionRoughess, transmission_roughness=(0.0, 1.0, .001))
+interact(changeAnisotropy, anisotropy=(0.0, 1.0, .001))
 #%%
 def changeLinearVelocity(lx=0, ly=0, lz=0): 
     inner.get_transform().set_linear_velocity(v.vec3(lx,ly,lz))
@@ -211,10 +147,10 @@ def changeAngularVelocity(ax=0, ay=0, az=0):
 interact(changeAngularVelocity, ax=(-1.0, 1.0, .001), ay=(-1.0, 1.0, .001), az=(-1.0, 1.0, .001))
 
 #%%
-def changeDomeLightIntensity(dome_intensity=0): v.set_dome_light_intensity(dome_intensity)
+def changeDomeLightIntensity(dome_intensity=1): v.set_dome_light_intensity(dome_intensity)
 interact(changeDomeLightIntensity, dome_intensity=(0.0, 4.0, .001))
 #%%
-def changeLightIntensity(intensity=0): light.get_light().set_intensity(intensity)
+def changeLightIntensity(intensity=100): light.get_light().set_intensity(intensity)
 interact(changeLightIntensity, intensity=(0.0, 1000.0, .001))
 
 #%%
@@ -426,9 +362,12 @@ outer.get_material().set_metallic_texture(orm, channel=2)
 outer.get_material().clear_normal_map_texture()
 
 # %%
-norm2 = v.texture.create_from_image("N2", "../data/normal_flat.png", linear=True)
+norm2 = v.texture.create_from_image("N2", "../data/normal.png", linear=True)
 
 # %%
 norm2 = v.texture.create_from_image("N4", "../data/RustedMetal_N.png", linear=True)
+
+# %%
+outer.get_material().set_normal_map_texture(norm2)
 
 # %%

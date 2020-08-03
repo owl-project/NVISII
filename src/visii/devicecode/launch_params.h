@@ -29,6 +29,7 @@ struct LaunchParams {
     float directClamp = 100.f; 
     float indirectClamp = 100.f; 
     uint32_t maxBounceDepth = 10;
+    uint32_t numLightSamples = 1;
     uint32_t seed = 0;
     vec2 xPixelSamplingInterval = vec2(0.f,1.f);
     vec2 yPixelSamplingInterval = vec2(0.f,1.f);
@@ -56,6 +57,10 @@ struct LaunchParams {
 
     int32_t environmentMapID = -1;
     glm::quat environmentMapRotation = glm::quat(1,0,0,0);
+    float* environmentMapRows = nullptr;
+    float* environmentMapCols = nullptr;
+    int environmentMapWidth = 0;
+    int environmentMapHeight = 0;
     cudaTextureObject_t *textureObjects = nullptr;
 
     cudaTextureObject_t GGX_E_AVG_LOOKUP;
@@ -76,6 +81,18 @@ enum RenderDataFlags : uint32_t {
   DENOISE_ALBEDO = 6,
   DIFFUSE_MOTION_VECTORS = 7,
   BASE_COLOR = 8,
+  DIFFUSE_COLOR = 9,
+  DIFFUSE_DIRECT_LIGHTING = 10,
+  DIFFUSE_INDIRECT_LIGHTING = 11,
+  GLOSSY_COLOR = 12,
+  GLOSSY_DIRECT_LIGHTING = 13,
+  GLOSSY_INDIRECT_LIGHTING = 14,
+  TRANSMISSION_COLOR = 15,
+  TRANSMISSION_DIRECT_LIGHTING = 16,
+  TRANSMISSION_INDIRECT_LIGHTING = 17,
+  RAY_DIRECTION = 18,
 };
+
+#define MAX_LIGHT_SAMPLES 10
 
 // #define REPROJECT true

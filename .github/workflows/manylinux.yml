@@ -31,7 +31,7 @@ jobs:
       - name: Download Dependencies
         run: |
             # Add directory containing cmake
-            export PATH=$PATH:/opt/_internal/cpython-3.8.4/bin/
+            export PATH=$PATH:/opt/_internal/cpython-3.8.5/bin/
             
             # list contents of python folder
             #ls -R /opt/python/${{ matrix.python-version }}
@@ -52,7 +52,7 @@ jobs:
             /opt/python/cp38-cp38/bin/pip install cmake
             find / -iname "cmake"
             
-            /opt/_internal/cpython-3.8.4/bin/cmake --version
+            /opt/_internal/cpython-3.8.5/bin/cmake --version
             
             # Setuptools scm
             /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm
@@ -87,7 +87,7 @@ jobs:
             
       - name: Configure and install cmake project
         run: |
-          export PATH=$PATH:/opt/_internal/cpython-3.8.4/bin/
+          export PATH=$PATH:/opt/_internal/cpython-3.8.5/bin/
           source /opt/rh/devtoolset-8/enable
           
           PY=${{ matrix.python-version }}

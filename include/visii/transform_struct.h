@@ -1,7 +1,7 @@
 /* File shared by both host and device */
 #pragma once
 
-#define MAX_TRANSFORMS 100000
+#define MAX_TRANSFORMS 1000000
 #include <glm/glm.hpp>
 using namespace glm;
 
@@ -18,8 +18,7 @@ struct TransformStruct
     // mat4 localToWorldRotation;
     // mat4 worldToLocalTranslation;
     // mat4 localToWorldTranslation;
-
-
+    
     /* 128 bytes, for temporal reprojection */
     // mat4 worldToLocalPrev;
     // mat4 localToWorldPrev;

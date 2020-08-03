@@ -1,5 +1,7 @@
 #include <visii/visii.h>
 
+#include <algorithm>
+
 #include <glfw_implementation/glfw.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -111,7 +113,11 @@ static struct OptixData {
 
     Texture* domeLightTexture = nullptr;
 
+    OWLBuffer environmentMapRowsBuffer;
+    OWLBuffer environmentMapColsBuffer;
+
     OWLBuffer placeholder;
+
 } OptixData;
 
 static struct ViSII {
@@ -214,16 +220,6 @@ OWLContext contextCreate()
 OWLModule moduleCreate(OWLContext context, const char* ptxCode)
 {
     return owlModuleCreate(context, ptxCode);
-}
-
-OWLTexture texture2DCreate(OWLContext context, OWLTexelFormat format, size_t sizeX, size_t sizeY, const void* texels, OWLTextureFilterMode mode)
-{
-    return owlTexture2DCreate(context, format, sizeX, sizeY, texels, mode, 0);
-}
-
-CUtexObject textureGetObject(OWLTexture texture, int deviceID)
-{
-    return owlTextureGetObject(texture, deviceID);
 }
 
 OWLBuffer managedMemoryBufferCreate(OWLContext context, OWLDataType type, size_t count, void* init)
@@ -393,79 +389,6 @@ void synchronizeDevices()
     cudaSetDevice(0);
 }
 
-void setCameraEntity(Entity* camera_entity)
-{
-    if (!camera_entity) {
-        OptixData.LP.cameraEntity = EntityStruct();
-        OptixData.LP.cameraEntity.initialized = false;        
-        resetAccumulation();
-    }
-    else {
-        if (!camera_entity->isInitialized()) throw std::runtime_error("Error: camera entity is uninitialized");
-        OptixData.LP.cameraEntity = camera_entity->getStruct();
-    }
-    resetAccumulation();
-}
-
-void setDomeLightIntensity(float intensity)
-{
-    intensity = std::max(float(intensity), float(0.f));
-    OptixData.LP.domeLightIntensity = intensity;
-    resetAccumulation();
-}
-
-void setDomeLightTexture(Texture* texture)
-{
-    // OptixData.domeLightTexture = texture;
-    OptixData.LP.environmentMapID = texture->getId();
-    resetAccumulation();
-}
-
-void setDomeLightRotation(glm::quat rotation)
-{
-    OptixData.LP.environmentMapRotation = rotation;
-    resetAccumulation();
-}
-
-void setIndirectLightingClamp(float clamp)
-{
-    clamp = std::max(float(clamp), float(0.f));
-    OptixData.LP.indirectClamp = clamp;
-    resetAccumulation();
-    launchParamsSetRaw(OptixData.launchParams, "indirectClamp", &OptixData.LP.indirectClamp);
-}
-
-void setDirectLightingClamp(float clamp)
-{
-    clamp = std::max(float(clamp), float(0.f));
-    OptixData.LP.directClamp = clamp;
-    resetAccumulation();
-    launchParamsSetRaw(OptixData.launchParams, "directClamp", &OptixData.LP.directClamp);
-}
-
-void setMaxBounceDepth(uint32_t depth)
-{
-    OptixData.LP.maxBounceDepth = depth;
-    resetAccumulation();
-    launchParamsSetRaw(OptixData.launchParams, "maxBounceDepth", &OptixData.LP.maxBounceDepth);
-}
-
-void samplePixelArea(vec2 xSampleInterval, vec2 ySampleInterval)
-{
-    OptixData.LP.xPixelSamplingInterval = xSampleInterval;
-    OptixData.LP.yPixelSamplingInterval = ySampleInterval;
-    resetAccumulation();
-    launchParamsSetRaw(OptixData.launchParams, "xPixelSamplingInterval", &OptixData.LP.xPixelSamplingInterval);
-    launchParamsSetRaw(OptixData.launchParams, "yPixelSamplingInterval", &OptixData.LP.yPixelSamplingInterval);
-}
-
-void sampleTimeInterval(vec2 sampleTimeInterval)
-{
-    OptixData.LP.timeSamplingInterval = sampleTimeInterval;
-    resetAccumulation();
-    launchParamsSetRaw(OptixData.launchParams, "timeSamplingInterval", &OptixData.LP.timeSamplingInterval);
-}
-
 void initializeFrameBuffer(int fbWidth, int fbHeight) {
     fbWidth = glm::max(fbWidth, 1);
     fbHeight = glm::max(fbHeight, 1);
@@ -584,6 +507,7 @@ void initializeOptix(bool headless)
         { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
         { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
         { "maxBounceDepth",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxBounceDepth)},
+        { "numLightSamples",         OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightSamples)},
         { "seed",                    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, seed)},
         { "xPixelSamplingInterval",  OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, xPixelSamplingInterval)},
         { "yPixelSamplingInterval",  OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, yPixelSamplingInterval)},
@@ -593,6 +517,10 @@ void initializeOptix(bool headless)
         { "viewT1",                  OWL_USER_TYPE(glm::mat4),          OWL_OFFSETOF(LaunchParams, viewT1)},
         { "environmentMapID",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapID)},
         { "environmentMapRotation",  OWL_USER_TYPE(glm::quat),          OWL_OFFSETOF(LaunchParams, environmentMapRotation)},
+        { "environmentMapRows",      OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, environmentMapRows)},
+        { "environmentMapCols",      OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, environmentMapCols)},
+        { "environmentMapWidth",     OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapWidth)},
+        { "environmentMapHeight",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapHeight)},
         { "textureObjects",          OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textureObjects)},
         { "GGX_E_AVG_LOOKUP",        OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_AVG_LOOKUP)},
         { "GGX_E_LOOKUP",            OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_LOOKUP)},
@@ -659,17 +587,25 @@ void initializeOptix(bool headless)
     OD.LP.environmentMapRotation = glm::quat(1,0,0,0);
     launchParamsSetRaw(OD.launchParams, "environmentMapID", &OD.LP.environmentMapID);
     launchParamsSetRaw(OD.launchParams, "environmentMapRotation", &OD.LP.environmentMapRotation);
+
+    launchParamsSetBuffer(OD.launchParams, "environmentMapRows", OD.environmentMapRowsBuffer);
+    launchParamsSetBuffer(OD.launchParams, "environmentMapCols", OD.environmentMapColsBuffer);
+    launchParamsSetRaw(OD.launchParams, "environmentMapWidth", &OD.LP.environmentMapWidth);
+    launchParamsSetRaw(OD.launchParams, "environmentMapHeight", &OD.LP.environmentMapHeight);
+
                             
-    OWLTexture GGX_E_AVG_LOOKUP = texture2DCreate(OD.context,
+    OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
                             OWL_TEXEL_FORMAT_R32F,
                             GGX_E_avg_size,1,
                             GGX_E_avg,
-                            OWL_TEXTURE_LINEAR);
-    OWLTexture GGX_E_LOOKUP = texture2DCreate(OD.context,
+                            OWL_TEXTURE_LINEAR,
+                            OWL_TEXTURE_CLAMP);
+    OWLTexture GGX_E_LOOKUP = owlTexture2DCreate(OD.context,
                             OWL_TEXEL_FORMAT_R32F,
                             GGX_E_size[0],GGX_E_size[1],
                             GGX_E,
-                            OWL_TEXTURE_LINEAR);
+                            OWL_TEXTURE_LINEAR,
+                            OWL_TEXTURE_CLAMP);
     launchParamsSetTexture(OD.launchParams, "GGX_E_AVG_LOOKUP", GGX_E_AVG_LOOKUP);
     launchParamsSetTexture(OD.launchParams, "GGX_E_LOOKUP",     GGX_E_LOOKUP);
     
@@ -679,6 +615,7 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
     launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
     launchParamsSetRaw(OD.launchParams, "maxBounceDepth", &OD.LP.maxBounceDepth);
+    launchParamsSetRaw(OD.launchParams, "numLightSamples", &OD.LP.numLightSamples);
     launchParamsSetRaw(OD.launchParams, "seed", &OD.LP.seed);
     launchParamsSetRaw(OD.launchParams, "xPixelSamplingInterval", &OD.LP.xPixelSamplingInterval);
     launchParamsSetRaw(OD.launchParams, "yPixelSamplingInterval", &OD.LP.yPixelSamplingInterval);
@@ -764,6 +701,176 @@ void initializeImgui()
     ImGui_ImplGlfw_InitForOpenGL(WindowData.window, true);
     const char* glsl_version = "#version 130";
     ImGui_ImplOpenGL3_Init(glsl_version);
+}
+
+std::future<void> enqueueCommand(std::function<void()> function)
+{
+    if (ViSII.render_thread_id != std::this_thread::get_id()) 
+        std::lock_guard<std::mutex> lock(ViSII.qMutex);
+
+    ViSII::Command c;
+    c.function = function;
+    c.promise = std::make_shared<std::promise<void>>();
+    auto new_future = c.promise->get_future();
+    ViSII.commandQueue.push(c);
+    // cv.notify_one();
+    return new_future;
+}
+
+void processCommandQueue()
+{
+    std::lock_guard<std::mutex> lock(ViSII.qMutex);
+    while (!ViSII.commandQueue.empty()) {
+        auto item = ViSII.commandQueue.front();
+        item.function();
+        try {
+            item.promise->set_value();
+        }
+        catch (std::future_error& e) {
+            if (e.code() == std::make_error_condition(std::future_errc::promise_already_satisfied))
+                std::cout << "ViSII: [promise already satisfied]\n";
+            else
+                std::cout << "ViSII: [unknown exception]\n";
+        }
+        ViSII.commandQueue.pop();
+    }
+}
+
+void setCameraEntity(Entity* camera_entity)
+{
+    if (!camera_entity) {
+        OptixData.LP.cameraEntity = EntityStruct();
+        OptixData.LP.cameraEntity.initialized = false;        
+        resetAccumulation();
+    }
+    else {
+        if (!camera_entity->isInitialized()) throw std::runtime_error("Error: camera entity is uninitialized");
+        OptixData.LP.cameraEntity = camera_entity->getStruct();
+    }
+    resetAccumulation();
+}
+
+void setDomeLightIntensity(float intensity)
+{
+    intensity = std::max(float(intensity), float(0.f));
+    OptixData.LP.domeLightIntensity = intensity;
+    resetAccumulation();
+}
+
+void setDomeLightTexture(Texture* texture)
+{
+    auto func = [texture] () {
+        OptixData.LP.environmentMapID = texture->getId();
+        std::vector<glm::vec4> texels = texture->getTexels();
+        int width = texture->getWidth();
+        int height = texture->getHeight();
+
+        float invWidth = 1.f / float(width);
+        float invHeight = 1.f / float(height);
+        float invjacobian = width * height / float(4 * M_PI);
+
+        auto rows = std::vector<float>(height);
+        auto cols = std::vector<float>(width * height);
+        for (int y = 0, i = 0; y < height; y++) {
+            for (int x = 0; x < width; x++, i++) {
+                cols[i] = std::max(texels[i].r, std::max(texels[i].g, texels[i].b)) + ((x > 0) ? cols[i - 1] : 0.f);
+            }
+            rows[y] = cols[i - 1] + ((y > 0) ? rows[y - 1] : 0.0f);
+            // normalize the pdf for this scanline (if it was non-zero)
+            if (cols[i - 1] > 0) {
+                for (int x = 0; x < width; x++) {
+                    cols[i - width + x] /= cols[i - 1];
+                }
+            }
+        }
+
+        // normalize the pdf across all scanlines
+        for (int y = 0; y < height; y++)
+            rows[y] /= rows[height - 1];
+        
+        // both eval and sample below return a "weight" that is
+        // value[i] / row*col_pdf, so might as well bake it into the table
+        for (int y = 0, i = 0; y < height; y++) {
+            float row_pdf = rows[y] - (y > 0 ? rows[y - 1] : 0.0f);
+            for (int x = 0; x < width; x++, i++) {
+                float col_pdf = cols[i] - (x > 0 ? cols[i - 1] : 0.0f);
+                texels[i].r /= row_pdf * col_pdf * invjacobian;
+                texels[i].g /= row_pdf * col_pdf * invjacobian;
+                texels[i].b /= row_pdf * col_pdf * invjacobian;
+            }
+        }
+
+        if (OptixData.environmentMapRowsBuffer) owlBufferRelease(OptixData.environmentMapRowsBuffer);
+        if (OptixData.environmentMapColsBuffer) owlBufferRelease(OptixData.environmentMapColsBuffer);
+        OptixData.environmentMapRowsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), height, rows.data());
+        OptixData.environmentMapColsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), width * height, cols.data());
+        OptixData.LP.environmentMapWidth = width;
+        OptixData.LP.environmentMapHeight = height;  
+        resetAccumulation();        
+    };
+
+    auto future = enqueueCommand(func);
+    future.wait();
+}
+
+void setDomeLightRotation(glm::quat rotation)
+{
+    OptixData.LP.environmentMapRotation = rotation;
+    resetAccumulation();
+}
+
+void setIndirectLightingClamp(float clamp)
+{
+    clamp = std::max(float(clamp), float(0.f));
+    OptixData.LP.indirectClamp = clamp;
+    launchParamsSetRaw(OptixData.launchParams, "indirectClamp", &OptixData.LP.indirectClamp);
+    resetAccumulation();
+}
+
+void setDirectLightingClamp(float clamp)
+{
+    clamp = std::max(float(clamp), float(0.f));
+    OptixData.LP.directClamp = clamp;
+    launchParamsSetRaw(OptixData.launchParams, "directClamp", &OptixData.LP.directClamp);
+    resetAccumulation();
+}
+
+void setMaxBounceDepth(uint32_t depth)
+{
+    OptixData.LP.maxBounceDepth = depth;
+    launchParamsSetRaw(OptixData.launchParams, "maxBounceDepth", &OptixData.LP.maxBounceDepth);
+    resetAccumulation();
+}
+
+void setLightSampleCount(uint32_t count)
+{
+    if (count > MAX_LIGHT_SAMPLES) 
+        throw std::runtime_error(
+            std::string("Error: max number of light samples is ") 
+            + std::to_string(MAX_LIGHT_SAMPLES));
+    if (count == 0) 
+        throw std::runtime_error(
+            std::string("Error: number of light samples must be between 1 and ") 
+            + std::to_string(MAX_LIGHT_SAMPLES));
+    OptixData.LP.numLightSamples = count;
+    launchParamsSetRaw(OptixData.launchParams, "numLightSamples", &OptixData.LP.numLightSamples);
+    resetAccumulation();
+}
+
+void samplePixelArea(vec2 xSampleInterval, vec2 ySampleInterval)
+{
+    OptixData.LP.xPixelSamplingInterval = xSampleInterval;
+    OptixData.LP.yPixelSamplingInterval = ySampleInterval;
+    launchParamsSetRaw(OptixData.launchParams, "xPixelSamplingInterval", &OptixData.LP.xPixelSamplingInterval);
+    launchParamsSetRaw(OptixData.launchParams, "yPixelSamplingInterval", &OptixData.LP.yPixelSamplingInterval);
+    resetAccumulation();
+}
+
+void sampleTimeInterval(vec2 sampleTimeInterval)
+{
+    OptixData.LP.timeSamplingInterval = sampleTimeInterval;
+    launchParamsSetRaw(OptixData.launchParams, "timeSamplingInterval", &OptixData.LP.timeSamplingInterval);
+    resetAccumulation();
 }
 
 void updateComponents()
@@ -853,10 +960,10 @@ void updateComponents()
 
             OWLGroup blas = OD.meshes[entities[eid].getMesh()->getId()].blas;
             if (!blas) return;
-            glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix();
-            glm::mat4 nextLocalToWorld = entities[eid].getTransform()->getNextLocalToWorldMatrix();
-            t0InstanceTransforms.push_back(localToWorld);            
-            t1InstanceTransforms.push_back(nextLocalToWorld);            
+            glm::mat4 prevLocalToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */true);
+            glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */false);
+            t0InstanceTransforms.push_back(prevLocalToWorld);            
+            t1InstanceTransforms.push_back(localToWorld);            
             instances.push_back(blas);
             instanceToEntityMap.push_back(eid);
         }
@@ -926,10 +1033,10 @@ void updateComponents()
             if (!textures[tid].isDirty()) continue;
             if (OD.textureObjects[tid]) { owlTexture2DDestroy(OD.textureObjects[tid]); OD.textureObjects[tid] = nullptr; }
             if (!textures[tid].isInitialized()) continue;
-            OD.textureObjects[tid] = texture2DCreate(
+            OD.textureObjects[tid] = owlTexture2DCreate(
                 OD.context, OWL_TEXEL_FORMAT_RGBA32F,
                 textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
-                OWL_TEXTURE_LINEAR);
+                OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
         }
         bufferUpload(OD.textureObjectsBuffer, OD.textureObjects);
         
@@ -938,12 +1045,28 @@ void updateComponents()
     }
     
     // Manage transforms
-    if (Transform::areAnyDirty()) {
+    auto dirtyTransforms = Transform::getDirtyTransforms();
+    if (dirtyTransforms.size() > 0) {
         auto mutex = Transform::getEditMutex();
         std::lock_guard<std::mutex> lock(*mutex.get());
 
         Transform::updateComponents();
-        bufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
+        
+        // for each device
+        for (uint32_t id = 0; id < owlGetDeviceCount(OptixData.context); ++id)
+        {
+            cudaSetDevice(id);
+
+            TransformStruct* devTransforms = (TransformStruct*)owlBufferGetPointer(OptixData.transformBuffer, id);
+            TransformStruct* transformStructs = Transform::getFrontStruct();
+            for (auto &t : dirtyTransforms) {
+                if (!t->isInitialized()) continue;
+                CUDA_CHECK(cudaMemcpy(&devTransforms[t->getId()], &transformStructs[t->getId()], sizeof(TransformStruct), cudaMemcpyHostToDevice));
+            }
+        }
+
+        cudaSetDevice(0);
+        // bufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
     }   
 
     // Manage Cameras
@@ -977,8 +1100,8 @@ void updateComponents()
         auto transform = Transform::getFront()[OptixData.LP.cameraEntity.transform_id];
         auto camera = Camera::getFront()[OptixData.LP.cameraEntity.camera_id];
         OptixData.LP.proj = camera.getProjection();
-        OptixData.LP.viewT0 = transform.getWorldToLocalMatrix();
-        OptixData.LP.viewT1 = transform.getNextWorldToLocalMatrix();
+        OptixData.LP.viewT0 = transform.getWorldToLocalMatrix(/*previous = */ true);
+        OptixData.LP.viewT1 = transform.getWorldToLocalMatrix(/*previous = */ false);
     }
 }
 
@@ -988,14 +1111,20 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
     launchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
     launchParamsSetRaw(OptixData.launchParams, "domeLightIntensity", &OptixData.LP.domeLightIntensity);
-    launchParamsSetRaw(OptixData.launchParams, "environmentMapID", &OptixData.LP.environmentMapID);
-    launchParamsSetRaw(OptixData.launchParams, "environmentMapRotation", &OptixData.LP.environmentMapRotation);
     launchParamsSetRaw(OptixData.launchParams, "renderDataMode", &OptixData.LP.renderDataMode);
     launchParamsSetRaw(OptixData.launchParams, "renderDataBounce", &OptixData.LP.renderDataBounce);
     launchParamsSetRaw(OptixData.launchParams, "seed", &OptixData.LP.seed);
     launchParamsSetRaw(OptixData.launchParams, "proj", &OptixData.LP.proj);
     launchParamsSetRaw(OptixData.launchParams, "viewT0", &OptixData.LP.viewT0);
     launchParamsSetRaw(OptixData.launchParams, "viewT1", &OptixData.LP.viewT1);
+
+    launchParamsSetRaw(OptixData.launchParams, "environmentMapID", &OptixData.LP.environmentMapID);
+    launchParamsSetRaw(OptixData.launchParams, "environmentMapRotation", &OptixData.LP.environmentMapRotation);
+    launchParamsSetBuffer(OptixData.launchParams, "environmentMapRows", OptixData.environmentMapRowsBuffer);
+    launchParamsSetBuffer(OptixData.launchParams, "environmentMapCols", OptixData.environmentMapColsBuffer);
+    launchParamsSetRaw(OptixData.launchParams, "environmentMapWidth", &OptixData.LP.environmentMapWidth);
+    launchParamsSetRaw(OptixData.launchParams, "environmentMapHeight", &OptixData.LP.environmentMapHeight);
+
     OptixData.LP.frameID ++;
 }
 
@@ -1149,39 +1278,6 @@ void drawGUI()
     //     ImGui::RenderPlatformWindowsDefault();
     //     glfwMakeContextCurrent(backup_current_context);
     // }
-}
-
-std::future<void> enqueueCommand(std::function<void()> function)
-{
-    if (ViSII.render_thread_id != std::this_thread::get_id()) 
-        std::lock_guard<std::mutex> lock(ViSII.qMutex);
-
-    ViSII::Command c;
-    c.function = function;
-    c.promise = std::make_shared<std::promise<void>>();
-    auto new_future = c.promise->get_future();
-    ViSII.commandQueue.push(c);
-    // cv.notify_one();
-    return new_future;
-}
-
-void processCommandQueue()
-{
-    std::lock_guard<std::mutex> lock(ViSII.qMutex);
-    while (!ViSII.commandQueue.empty()) {
-        auto item = ViSII.commandQueue.front();
-        item.function();
-        try {
-            item.promise->set_value();
-        }
-        catch (std::future_error& e) {
-            if (e.code() == std::make_error_condition(std::future_errc::promise_already_satisfied))
-                std::cout << "ViSII: [promise already satisfied]\n";
-            else
-                std::cout << "ViSII: [unknown exception]\n";
-        }
-        ViSII.commandQueue.pop();
-    }
 }
 
 void resizeWindow(uint32_t width, uint32_t height)
@@ -1348,6 +1444,9 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         else if (option == std::string("depth")) {
             OptixData.LP.renderDataMode = RenderDataFlags::DEPTH;
         }
+        else if (option == std::string("ray_direction")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::RAY_DIRECTION;
+        }
         else if (option == std::string("position")) {
             OptixData.LP.renderDataMode = RenderDataFlags::POSITION;
         }
@@ -1366,13 +1465,39 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         else if (option == std::string("denoise_albedo")) {
             OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_ALBEDO;
         }
+        else if (option == std::string("diffuse_color")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_COLOR;
+        }
+        else if (option == std::string("diffuse_direct_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_DIRECT_LIGHTING;
+        }
+        else if (option == std::string("diffuse_indirect_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_INDIRECT_LIGHTING;
+        }
+        else if (option == std::string("glossy_color")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_COLOR;
+        }
+        else if (option == std::string("glossy_direct_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_DIRECT_LIGHTING;
+        }
+        else if (option == std::string("glossy_indirect_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_INDIRECT_LIGHTING;
+        }
+        else if (option == std::string("transmission_color")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_COLOR;
+        }
+        else if (option == std::string("transmission_direct_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING;
+        }
+        else if (option == std::string("transmission_indirect_lighting")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_INDIRECT_LIGHTING;
+        }
         else if (option == std::string("diffuse_motion_vectors")) {
             OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_MOTION_VECTORS;
         }
         else {
             throw std::runtime_error(std::string("Error, unknown option : \"") + _option + std::string("\". ")
-            + std::string("Available options are \"none\", \"depth\", \"position\", ") 
-            + std::string("\"normal\", \"denoise_normal\", \"denoise_albedo\", and \"entity_id\""));
+            + std::string("See documentation for available options"));
         }
         
         resizeOptixFrameBuffer(width, height);
@@ -1669,5 +1794,71 @@ void deinitialize()
 }
 
 void __test__(std::vector<std::string> args) {
+    if (args.size() != 1) return;
 
+    std::string option = args[0];
+
+    if (option == std::string("none")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::NONE;
+    }
+    else if (option == std::string("depth")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DEPTH;
+    }
+    else if (option == std::string("ray_direction")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::RAY_DIRECTION;
+    }
+    else if (option == std::string("position")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::POSITION;
+    }
+    else if (option == std::string("normal")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::NORMAL;
+    }
+    else if (option == std::string("entity_id")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::ENTITY_ID;
+    }
+    else if (option == std::string("base_color")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::BASE_COLOR;
+    }
+    else if (option == std::string("denoise_normal")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_NORMAL;
+    }
+    else if (option == std::string("denoise_albedo")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_ALBEDO;
+    }
+    else if (option == std::string("diffuse_color")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_COLOR;
+    }
+    else if (option == std::string("diffuse_direct_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_DIRECT_LIGHTING;
+    }
+    else if (option == std::string("diffuse_indirect_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_INDIRECT_LIGHTING;
+    }
+    else if (option == std::string("glossy_color")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_COLOR;
+    }
+    else if (option == std::string("glossy_direct_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_DIRECT_LIGHTING;
+    }
+    else if (option == std::string("glossy_indirect_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::GLOSSY_INDIRECT_LIGHTING;
+    }
+    else if (option == std::string("transmission_color")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_COLOR;
+    }
+    else if (option == std::string("transmission_direct_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING;
+    }
+    else if (option == std::string("transmission_indirect_lighting")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::TRANSMISSION_INDIRECT_LIGHTING;
+    }
+    else if (option == std::string("diffuse_motion_vectors")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_MOTION_VECTORS;
+    }
+    else {
+        throw std::runtime_error(std::string("Error, unknown option : \"") + option + std::string("\". ")
+        + std::string("See documentation for available options"));
+    }
+
+    resetAccumulation();
 }

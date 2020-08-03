@@ -90,6 +90,14 @@ void setDirectLightingClamp(float clamp);
  */ 
 void setMaxBounceDepth(uint32_t depth);
 
+/**
+ * Sets the number of light samples to take per path vertex. A higher number of samples will reduce noise per frame, but
+ * also reduces frames per second.
+ * 
+ * @param count The number of light samples to take per path vertex. Currently constrained to a maximum of 10 samples per vertex.
+ */
+void setLightSampleCount(uint32_t count);
+
 /** 
  * Sets the region of the pixel where rays should sample. By default, rays sample the entire
  * pixel area between [0,1]. Rays can instead sample a specific location of the pixel, like the pixel center,
