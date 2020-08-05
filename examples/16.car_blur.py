@@ -43,9 +43,8 @@ visii.set_dome_light_texture(dome)
 
 game_running = True
 rotate_camera = False
-speed_camera = 10
-camera_movement_pos_old = [200,200]
-camera_movement_pos_now = [200,200]
+speed_camera = .01
+camera_movement = [0,0]
 
 x_rot = 0
 y_rot = 0 
@@ -90,8 +89,8 @@ visii.set_camera_entity(camera)
 # This function loads the 
 sdb = visii.import_obj(
     "sdb", # prefix name
-    'content/bmw/bmw.obj', #obj path
-    'content/bmw/', # mtl folder 
+    'content/bmw.obj', #obj path
+    'content/', # mtl folder 
     visii.vec3(0,0,0), # translation 
     visii.vec3(1), # scale here
     visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here
@@ -137,35 +136,55 @@ while game_running:
     # visii camera matrix 
     cam_matrix = camera.get_transform().get_local_to_world_matrix()
     to_add = visii.vec4(0,0,0,0)
+
+    keys = pygame.key.get_pressed()
+    mouse = pygame.mouse.get_pressed()
+    mouseRel = pygame.mouse.get_rel()
     
+    # print(mouseRel)
+
+    # camera control
+    # Forward and backward
+    if keys[pygame.K_w]:
+        to_add[2] = 1 * speed_camera * -1
+    if keys[pygame.K_s]:
+        to_add[2] = 1 * speed_camera
+
+    # left and right 
+    if keys[pygame.K_a]:
+        to_add[0] = 1 * speed_camera * -1
+    if keys[pygame.K_d]:
+        to_add[0] = 1 * speed_camera
+
+    # up and down
+    if keys[pygame.K_q]:
+        to_add[1] = 1 * speed_camera * -1
+    if keys[pygame.K_e]:
+        to_add[1] = 1 * speed_camera 
+
+    # camera rotation
+    if mouse[0]:
+        pygame.event.set_grab(True)
+        pygame.mouse.set_visible(False)
+        camera_movement = mouseRel
+        rotate_camera = True
+    else:
+        if rotate_camera:
+            pygame.mouse.set_pos([200,200])
+        pygame.event.set_grab(False)
+        pygame.mouse.set_visible(True)
+        rotate_camera = False
+            
     for event in pygame.event.get():
-        print(event)
+        # print(event)
 
         # Game is running check for quit
         if event.type == pygame.QUIT:
             game_running = False
+            
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 game_running = False
-            # camera control
-            # Forward and backward
-            if event.key == pygame.K_w:
-                print('hello')
-                to_add[2] = 1 * speed_camera * -1
-            if event.key == pygame.K_s:
-                to_add[2] = 1 * speed_camera
-
-            # left and right 
-            if event.key == pygame.K_a:
-                to_add[0] = 1 * speed_camera * -1
-            if event.key == pygame.K_d:
-                to_add[0] = 1 * speed_camera
-
-            # up and down
-            if event.key == pygame.K_q:
-                to_add[1] = 1 * speed_camera * -1
-            if event.key == pygame.K_e:
-                to_add[1] = 1 * speed_camera 
 
             # change speed movement
             if event.key == pygame.K_UP:
@@ -175,60 +194,35 @@ while game_running:
                 speed_camera /= 0.5
                 print('increase speed camera')
 
-        # camera rotation
-        if event.type == pygame.MOUSEMOTION and rotate_camera:
-            print('cam is moving')
-            camera_movement_pos_old = camera_movement_pos_now
-            camera_movement_pos_now = event.pos
-
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1: # left click grows radius 
-                rotate_camera = True
-                print('rotation')
-
-        if event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 1: # left click grows radius 
-                rotate_camera = False
-                print('no rotation')
-                camera_movement_pos_old = [200,200]
-                camera_movement_pos_now = [200,200]
-
     # set mouse in the middle when moving
 
     if rotate_camera:
-        x_rot -= (camera_movement_pos_old[0] - camera_movement_pos_now[0]) * 0.00005
-        y_rot -= (camera_movement_pos_old[1] - camera_movement_pos_now[1]) * 0.00005
+        x_rot -= (camera_movement[0]) * 0.001
+        y_rot -= (camera_movement[1]) * 0.001
 
-        # camera.get_transform().set_rotation(init_rot)
+        init_rot = visii.angleAxis(
+            visii.pi() * .5,
+            visii.vec3(1,0,0)
+        )
 
         rot_x_to_apply = visii.angleAxis( 
-            x_rot, 
+            x_rot + visii.pi() * 1.25, 
             # camera.get_transform().get_up()
             visii.vec3(0,1,0)
         )        
-        # camera.get_transform().add_rotation(rot)
-
 
         rot_y_to_apply = visii.angleAxis( 
             y_rot, 
-            # camera.get_transform().get_right()
             visii.vec3(1,0,0)
         ) 
-        # camera.get_transform().look_at(
-        #     at = camera.get_transform().get_position() + visii.vec3(0,1,0), # look at (world coordinate)
-        #     up = visii.vec3(0,0,1), # up vector
-        # )        
-
-        camera.get_transform().set_rotation(init_rot* rot_x_to_apply * rot_y_to_apply)
-
-        # camera.get_transform().set_rotation(rot * init_rot)
-        
-        pygame.mouse.set_pos([200,200])
+       
+        camera.get_transform().set_rotation(init_rot * rot_x_to_apply * rot_y_to_apply)
+ 
 
     # control the camera
-    if to_add[0]**2 > 0.001 or \
-       to_add[1]**2 > 0.001 or \
-       to_add[2]**2 > 0.001:
+    if abs(to_add[0]) > 0.0 or \
+       abs(to_add[1]) > 0.0 or \
+       abs(to_add[2]) > 0.0:
 
         to_add_world = cam_matrix * to_add
 
