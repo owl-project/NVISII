@@ -36,15 +36,14 @@ visii.set_dome_light_intensity(1)
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # load the textures
-dome = visii.texture.create_from_image("dome", "content/kiara_4_mid-morning_4k.hdr")
-floor_tex = visii.texture.create_from_image("floor",'content/photos_2020_5_11_fst_gray-wall-grunge.jpg')
+dome = visii.texture.create_from_image("dome", "content/teatro_massimo_2k.hdr")
 
 # we can add HDR images to act as dome
 visii.set_dome_light_texture(dome)
 
 game_running = True
 rotate_camera = False
-speed_camera = 0.1 
+speed_camera = 10
 camera_movement_pos_old = [200,200]
 camera_movement_pos_now = [200,200]
 
@@ -69,7 +68,7 @@ camera = visii.entity.create(
 camera.get_transform().look_at(
     at = visii.vec3(0,0,0) , # look at (world coordinate)
     up = visii.vec3(0,0,1), # up vector
-    eye = visii.vec3(-3,2.5,1.8)
+    eye = visii.vec3(-500,500,180)
 )
 
 init_rot = camera.get_transform().get_rotation()
@@ -94,7 +93,7 @@ sdb = visii.import_obj(
     'content/bmw/bmw.obj', #obj path
     'content/bmw/', # mtl folder 
     visii.vec3(0,0,0), # translation 
-    visii.vec3(0.005), # scale here
+    visii.vec3(1), # scale here
     visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here
 )
 
@@ -108,7 +107,7 @@ for i_s, s in enumerate(sdb):
     # print(s.get_name())
     # if 'car' in s.get_name():
     #     print(s.get_name())
-    s.get_transform().set_linear_velocity(visii.vec3(0.2, 0, .0))
+    s.get_transform().set_linear_velocity(visii.vec3(10, 0, .0))
     if "lightsglass" in s.get_name().lower() or "window" in s.get_name().lower():
         print(s.get_name())
         s.clear_material()
@@ -123,7 +122,7 @@ for i_s, s in enumerate(sdb):
     #     s.get_light().set_intensity(20)
     #     s.get_light().set_temperature(5000)
     if 'tire' in s.get_name().lower():
-        s.get_transform().set_angular_velocity(visii.angleAxis(3.14 * .005, visii.vec3(0,1,0)))
+        s.get_transform().set_angular_velocity(visii.angleAxis(3.14 * .05, visii.vec3(1,0,0)))
 
 # visii.entity.get("sdbcarShell_1").get_material().set_base_color(visii.vec3(1,0,0))
 
