@@ -15,3 +15,10 @@ rm salle_de_bain_separated.zip
 wget https://www.dropbox.com/s/p2xius4kd4olqg3/gradient.png
 wget https://www.dropbox.com/s/bxbkzmuy2mviyzb/Bricks051_2K-JPG.zip
 unzip Bricks051_2K-JPG.zip
+
+wget https://www.dropbox.com/s/na3vo8rca7feoiq/teatro_massimo_2k.hdr
+
+mkdir bmw 
+wget https://www.dropbox.com/s/22bug1he354oqpt/bmw.zip
+unzip bmw.zip 
+rm bmw.zip
