@@ -66,8 +66,8 @@ jobs:
         cmake ../ \
         -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
         -DPYTHON_VERSION="${{matrix.python-version}}" \
-        -DCMAKE_BUILD_TYPE=Release
-        cmake --build . --config Release --target install
+        -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+        cmake --build . --config RELWITHDEBINFO --target install
         cd ..
         cd install
         python setup.py bdist_wheel
