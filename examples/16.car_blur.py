@@ -32,7 +32,7 @@ opt = parser.parse_args()
 visii.initialize_interactive()
 visii.resize_window(1000,1000)
 visii.set_max_bounce_depth(50)
-visii.set_dome_light_intensity(1)
+visii.set_dome_light_intensity(.5)
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # load the textures
@@ -40,15 +40,20 @@ dome = visii.texture.create_from_image("dome", "content/teatro_massimo_2k.hdr")
 
 # we can add HDR images to act as dome
 visii.set_dome_light_texture(dome)
+visii.set_dome_light_rotation(visii.angleAxis(visii.pi() * .5, visii.vec3(0, 0, 1)))
 
 game_running = True
 rotate_camera = False
 speed_camera = .01
 camera_movement = [0,0]
 
+car_speed = 0
+car_speed_x = car_speed
+car_speed_y = -2 * car_speed
+
 x_rot = 0
 y_rot = 0 
-
+camera_height = 80
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 if not opt.noise is True: 
@@ -65,31 +70,54 @@ camera = visii.entity.create(
 )
 
 camera.get_transform().look_at(
-    at = visii.vec3(0,0,0) , # look at (world coordinate)
+    at = visii.vec3(-50,0,camera_height) , # look at (world coordinate)
     up = visii.vec3(0,0,1), # up vector
-    eye = visii.vec3(-500,500,180)
+    eye = visii.vec3(-500,500,100 + camera_height),
+    previous = False
 )
 
-init_rot = camera.get_transform().get_rotation()
+camera.get_transform().look_at(
+    at = visii.vec3(-50,0,camera_height) + visii.vec3(car_speed_x, car_speed_y, .0) , # look at (world coordinate)
+    up = visii.vec3(0,0,1), # up vector
+    eye = visii.vec3(-500,500,100 + camera_height),
+    previous = True
+)
 
-rot = visii.angleAxis( 
-    x_rot, 
-    visii.vec3(0,1,0)
-)        
-rot = rot * visii.angleAxis( 
-    y_rot, 
-    visii.vec3(1,0,0)
-) 
-camera.get_transform().add_rotation(rot)
+camera.get_camera().set_aperture_diameter(5000)
+camera.get_camera().set_focal_distance(500)
+
+# init_rot = camera.get_transform().get_rotation()
+
+# rot = visii.angleAxis( 
+#     x_rot, 
+#     visii.vec3(0,1,0)
+# )        
+# rot = rot * visii.angleAxis( 
+#     y_rot, 
+#     visii.vec3(1,0,0)
+# ) 
+# camera.get_transform().add_rotation(rot)
 
 visii.set_camera_entity(camera)
+
+floor = visii.entity.create(
+    name = "floor",
+    mesh = visii.mesh.create_plane("plane"),
+    material = visii.material.create("plane"),
+    transform = visii.transform.create("plane")
+)
+floor.get_transform().set_scale(visii.vec3(10000))
+floor.get_transform().set_position(visii.vec3(0, 0, -5))
+floor.get_material().set_base_color(visii.vec3(.0))
+floor.get_material().set_roughness(1)
+floor.get_material().set_specular(0)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # This function loads the 
 sdb = visii.import_obj(
     "sdb", # prefix name
-    'content/bmw.obj', #obj path
+    'content/bmw_alt.obj', #obj path
     'content/', # mtl folder 
     visii.vec3(0,0,0), # translation 
     visii.vec3(1), # scale here
@@ -102,16 +130,39 @@ sdb = visii.import_obj(
 # mirror.set_metallic(1)
 # mirror.set_base_color(visii.vec3(1))
 
+hl = visii.light.create("headlights")
+tl = visii.light.create("taillights")
+tl.set_color(visii.vec3(1,0,0))
+hl.set_intensity(10000)
+tl.set_intensity(10000)
+
 for i_s, s in enumerate(sdb):
     # print(s.get_name())
     # if 'car' in s.get_name():
     #     print(s.get_name())
-    s.get_transform().set_linear_velocity(visii.vec3(10, 0, .0))
+    s.get_transform().set_linear_velocity(visii.vec3(car_speed_x, car_speed_y, .0))
+
+    print(s.get_name())
+    if "carshell" in s.get_name().lower():
+        s.get_material().set_clearcoat(1)
+        s.get_material().set_clearcoat_roughness(0)
+        s.get_material().set_roughness(.1)
+
+    if "angeleye" in s.get_name().lower():
+        s.set_light(hl) 
+
+    if "lightsbulb" in s.get_name().lower():
+        s.set_light(hl)  
+
+    # if "taillight" in s.get_name().lower():
+        # s.set_light(tl)  
+
     if "lightsglass" in s.get_name().lower() or "window" in s.get_name().lower():
         print(s.get_name())
         s.clear_material()
         s.set_material(visii.material.create(s.get_name().lower()))
-        s.get_material().set_base_color(visii.vec3(1,0,0))
+        s.get_material().set_ior(1.0)
+        # s.get_material().set_base_color(visii.vec3(1,1,1))
         s.get_material().set_transmission(1)
         s.get_material().set_roughness(0)
         s.get_material().set_metallic(0)
@@ -120,10 +171,12 @@ for i_s, s in enumerate(sdb):
     #     s.set_light(visii.light.create('light' + str(i_s)))
     #     s.get_light().set_intensity(20)
     #     s.get_light().set_temperature(5000)
-    if 'tire' in s.get_name().lower():
-        s.get_transform().set_angular_velocity(visii.angleAxis(3.14 * .05, visii.vec3(1,0,0)))
+    # if 'tire' in s.get_name().lower():
+        # s.get_transform().set_angular_velocity(visii.angleAxis(3.14 * .05, visii.vec3(1,0,0)))
 
 # visii.entity.get("sdbcarShell_1").get_material().set_base_color(visii.vec3(1,0,0))
+
+visii.render_to_png(1024, 1024, 1000, "motion_blur_3")
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -217,6 +270,7 @@ while game_running:
         ) 
        
         camera.get_transform().set_rotation(init_rot * rot_x_to_apply * rot_y_to_apply)
+        camera.get_transform().clear_motion()
  
 
     # control the camera
