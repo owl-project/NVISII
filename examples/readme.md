@@ -91,7 +91,7 @@ for disocclusions.
 ## 14.normal_map.py
 A simple script that loads a texture, normal and roughness map and apply them to a flat surface. 
 
-## 15.camera_control.py
+## 15.camera_motion_car_blur.py
 An interactive demo for controlling the camera similar to to a first person shooter control using `w,a,s,d` and `q` and `e` for up and down. Using the left click on the mouse you can rotate the camera. Here is an [example](https://imgur.com/VYda2UF) of the sort of motion you can generate.
 
 ## Notes

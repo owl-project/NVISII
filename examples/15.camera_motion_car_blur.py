@@ -32,7 +32,7 @@ opt = parser.parse_args()
 visii.initialize_interactive()
 visii.resize_window(1000,1000)
 visii.set_max_bounce_depth(50)
-visii.set_dome_light_intensity(.5)
+visii.set_dome_light_intensity(.8)
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # load the textures
@@ -117,8 +117,8 @@ floor.get_material().set_specular(0)
 # This function loads the 
 sdb = visii.import_obj(
     "sdb", # prefix name
-    'content/bmw_alt.obj', #obj path
-    'content/', # mtl folder 
+    'content/bmw/bmw.obj', #obj path
+    'content/bmw/', # mtl folder 
     visii.vec3(0,0,0), # translation 
     visii.vec3(1), # scale here
     visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here
@@ -155,7 +155,16 @@ for i_s, s in enumerate(sdb):
         s.set_light(hl)  
 
     # if "taillight" in s.get_name().lower():
-        # s.set_light(tl)  
+    #     s.set_light(tl)  
+
+    if "tirerim" in s.get_name().lower():
+        s.clear_material()
+        s.set_material(visii.material.create(s.get_name().lower()))
+        # s.get_material().set_ior(1.0)
+        s.get_material().set_base_color(visii.vec3(0.6,0.6,0.6))
+        s.get_material().set_transmission(0)
+        s.get_material().set_roughness(0.1)
+        s.get_material().set_metallic(1)
 
     if "lightsglass" in s.get_name().lower() or "window" in s.get_name().lower():
         print(s.get_name())
@@ -176,7 +185,7 @@ for i_s, s in enumerate(sdb):
 
 # visii.entity.get("sdbcarShell_1").get_material().set_base_color(visii.vec3(1,0,0))
 
-visii.render_to_png(1024, 1024, 1000, "motion_blur_3")
+# visii.render_to_png(1024, 1024, 1000, "motion_blur_3")
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -271,7 +280,8 @@ while game_running:
        
         camera.get_transform().set_rotation(init_rot * rot_x_to_apply * rot_y_to_apply)
         camera.get_transform().clear_motion()
- 
+        camera.get_camera().set_aperture_diameter(5000)
+        camera.get_camera().set_focal_distance(500)
 
     # control the camera
     if abs(to_add[0]) > 0.0 or \
@@ -287,6 +297,8 @@ while game_running:
                 to_add_world[2]
             )
         )
+        camera.get_camera().set_aperture_diameter(5000)
+        camera.get_camera().set_focal_distance(500)
 
 # let's clean up the GPU
 visii.deinitialize()

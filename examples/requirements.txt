@@ -1,5 +1,7 @@
+visii
 pybullet
 noise
 numpy
 PIL
 scipy
+pygame
