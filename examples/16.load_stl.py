@@ -69,11 +69,8 @@ for vertice in mesh.vertices:
     vertices.append(visii.vec4(vertice[0],vertice[1],vertice[2],1))
 
 mesh = visii.mesh.create_from_data('stl_mesh',positions=vertices,normals=normals)
-# for indice in mesh.indices:
-#     indices.append(visii.vec3())
-# raise()
 
-# mesh = visii.mesh.create_from_obj("obj", opt.path_obj)
+# # # # # # # # # # # # # # # # # # # # # # # # #
 
 obj_entity = visii.entity.create(
     name="obj_entity",
@@ -81,10 +78,7 @@ obj_entity = visii.entity.create(
     transform = visii.transform.create("obj_entity"),
     material = visii.material.create("obj_entity")
 )
-# lets set the obj_entity up
-# obj_entity.get_transform().set_rotation( 
-#     visii.quat(0.7071, 0.7071, 0, 0)
-# )
+
 obj_entity.get_material().set_base_color(
     visii.vec3(0.9,0.12,0.08)
 )  

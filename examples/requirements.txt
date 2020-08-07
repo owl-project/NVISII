@@ -5,3 +5,4 @@ numpy
 PIL
 scipy
 pygame
+open3d

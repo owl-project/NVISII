@@ -94,6 +94,10 @@ A simple script that loads a texture, normal and roughness map and apply them to
 ## 15.camera_motion_car_blur.py
 An interactive demo for controlling the camera similar to to a first person shooter control using `w,a,s,d` and `q` and `e` for up and down. Using the left click on the mouse you can rotate the camera. Here is an [example](https://imgur.com/VYda2UF) of the sort of motion you can generate.
 
+## 16.load_stl.py
+This example shows how to use `open3d` to load a 3d `stl` object and render it with visii. 
+This is the exact same scene as `4.load_obj_file.py`. 
+
 ## Notes
 All these examples were developed and tested on Ubuntu 18.04 with cuda 11.0, NVIDIA drivers
 450.36.06 and using a NVIDIA TITAN RTX . 
