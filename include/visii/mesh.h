@@ -496,6 +496,23 @@ class Mesh : public StaticFactory
 			int segments = 4);
 
 		/** 
+		 * Creates a line from a circle extruded linearly between the specified start and stop positions.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param start The start position of the linear path.
+		 *  @param start The stop position of the linear path.
+		 *  @param radius The radius of the extruded circle
+		 *  @param segments Number of subdivisions around the circle.
+		 *  @returns a reference to the mesh component
+		 */
+		static Mesh* Mesh::createLine(
+			std::string name, 
+			glm::vec3 start, 
+			glm::vec3 stop, 
+			float     radius = 1.0, 
+			int  segments = 16);
+
+		/** 
 		 * Creates an uncapped tube (a cylinder with thickness) centered at the origin and aligned along the z-axis.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component

@@ -1898,6 +1898,38 @@ Mesh* Mesh::createTube(std::string name, float radius, float innerRadius, float 
 	}
 }
 
+Mesh* Mesh::createLine(std::string name, glm::vec3 start, glm::vec3 stop, float radius, int segments)
+{
+	using namespace generator;
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	try {		
+		ParametricPath parametricPath {
+			[start, stop](double t) {
+				std::cout<<t<<std::endl;
+				PathVertex vertex;				
+				vertex.position = (stop * float(t)) + (start * (1.0f - float(t)));
+				glm::vec3 tangent = glm::normalize(stop - start);
+				glm::vec3 B1;
+				glm::vec3 B2;
+				buildOrthonormalBasis(tangent, B1, B2);
+				vertex.tangent = tangent;
+				vertex.normal = B1;
+				vertex.texCoord = t;
+				return vertex;
+			},
+			((int32_t) 1) // number of segments
+		} ;
+		CircleShape circle_shape(radius, segments);
+		ExtrudeMesh<generator::CircleShape, generator::ParametricPath> extrude_mesh(circle_shape, parametricPath);
+		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
+		anyDirty = true;
+		return mesh;
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		throw;
+	}
+}
+
 Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius, int segments)
 {
 	if (positions.size() <= 1)
