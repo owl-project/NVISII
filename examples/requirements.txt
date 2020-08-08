@@ -1,5 +1,8 @@
+visii
 pybullet
 noise
 numpy
 PIL
 scipy
+pygame
+open3d

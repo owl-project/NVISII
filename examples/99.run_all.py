@@ -20,7 +20,7 @@ else:
 for test in sorted(glob.glob("*.py")):
     if  test == '99.run_all.py' or\
         test == '00.helloworld.py' or\
-        test == '15.camera_control.py':
+        '15' in test:
         continue
     # 
     print(f'running {test}')
