@@ -406,20 +406,44 @@ vec3 Transform::getPosition(bool previous)
 
 vec3 Transform::getRight(bool previous)
 {
-	if (previous) return glm::vec3(glm::column(prevLocalToParentMatrix, 0)); 
-	else return glm::vec3(glm::column(localToParentMatrix, 0)); 
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToParentMatrix, 0))); 
+	else return glm::normalize(glm::vec3(glm::column(localToParentMatrix, 0))); 
 }
 
 vec3 Transform::getUp(bool previous)
 {
-	if (previous) return glm::vec3(glm::column(prevLocalToParentMatrix, 1)); 
-	else return glm::vec3(glm::column(localToParentMatrix, 1)); 
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToParentMatrix, 1))); 
+	else return glm::normalize(glm::vec3(glm::column(localToParentMatrix, 1))); 
 }
 
 vec3 Transform::getForward(bool previous)
 {
-	if (previous) return glm::vec3(glm::column(prevLocalToParentMatrix, 2)); 
-	else return glm::vec3(glm::column(localToParentMatrix, 2)); 
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToParentMatrix, 2))); 
+	else return glm::normalize(glm::vec3(glm::column(localToParentMatrix, 2))); 
+}
+
+vec3 Transform::getWorldPosition(bool previous)
+{
+	if (previous) return glm::vec3(glm::column(prevLocalToWorldMatrix, 3)); 
+	else return glm::vec3(glm::column(localToWorldMatrix, 3)); 
+}
+
+vec3 Transform::getWorldRight(bool previous)
+{
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToWorldMatrix, 0))); 
+	else return glm::normalize(glm::vec3(glm::column(localToWorldMatrix, 0))); 
+}
+
+vec3 Transform::getWorldUp(bool previous)
+{
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToWorldMatrix, 1))); 
+	else return glm::normalize(glm::vec3(glm::column(localToWorldMatrix, 1))); 
+}
+
+vec3 Transform::getWorldForward(bool previous)
+{
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToWorldMatrix, 2))); 
+	else return glm::normalize(glm::vec3(glm::column(localToWorldMatrix, 2))); 
 }
 
 void Transform::setPosition(vec3 newPosition, bool previous)
