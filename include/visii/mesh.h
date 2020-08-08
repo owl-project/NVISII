@@ -568,6 +568,23 @@ class Mesh : public StaticFactory
 			ivec2 segments = ivec2(8, 8));
 
 		/** 
+		 * Creates a wireframe bounding box spanning the region between the minimum corner to 
+		 * the maximum corner, and aligned along the x, y, and z axis. 
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param min_corner The position of the bottom left near corner of the axis aligned bounding box.
+		 * @param max_corner The position of the top right far corner of the axis aligned bounding box.
+		 * @param size The side length in x (0), y (1) and z (2) direction. 
+		 * @param thickness The thickness of the wires in the wireframe.
+		 * @returns a reference to the mesh component
+		 */
+		static Mesh* createWireframeBoundingBox(
+			std::string name, 
+			vec3 min_corner = vec3(-1.0f), 
+			vec3 max_corner = vec3(1.0f), 
+			float thickness = .01f);
+
+		/** 
 		 * Creates a mesh component from an OBJ file (ignoring any .mtl files) 
 		 * 
 		 * @param name The name (used as a primary key) for this mesh component
