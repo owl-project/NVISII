@@ -625,19 +625,27 @@ class Mesh : public StaticFactory
 		 * supplied per vertex data must be a multiple of 3 in length. 
 		 * 
 		 * @param name The name (used as a primary key) for this mesh component
-		 * @param positions A list of 3D vertex positions. If indices aren't supplied, this must be a multiple of 3.
-		 * @param normals A list of 3D vertex normals. If indices aren't supplied, this must be a multiple of 3.
+		 * @param positions A list of vertex positions. If indices aren't supplied, this must be a multiple of 3.
+		 * @param position_dimensions The number of floats per position. Valid numbers are 3 or 4.
+		 * @param normals A list of vertex normals. If indices aren't supplied, this must be a multiple of 3.
+		 * @param normal_dimensions The number of floats per normal. Valid numbers are 3 or 4.
 		 * @param colors A list of per-vertex colors. If indices aren't supplied, this must be a multiple of 3.
+		 * @param color_dimensions The number of floats per color. Valid numbers are 3 or 4.
 		 * @param texcoords A list of 2D per-vertex texture coordinates. If indices aren't supplied, this must be a multiple of 3.
+		 * @param texcoord_dimensions The number of floats per texcoord. Valid numbers are 2. (3 might be supported later for 3D textures...)
 		 * @param indices A list of integer indices connecting vertex positions in a counterclockwise ordering to form triangles. If supplied, indices must be a multiple of 3.
 		 * @returns a reference to the mesh component
 		*/
 		static Mesh* createFromData(
 			std::string name,
-			std::vector<glm::vec4> positions, 
-			std::vector<glm::vec4> normals = std::vector<glm::vec4>(), 
-			std::vector<glm::vec4> colors = std::vector<glm::vec4>(), 
-			std::vector<glm::vec2> texcoords = std::vector<glm::vec2>(), 
+			std::vector<float> positions, 
+			uint32_t position_dimensions = 3,
+			std::vector<float> normals = std::vector<float>(), 
+			uint32_t normal_dimensions = 3, 
+			std::vector<float> colors = std::vector<float>(), 
+			uint32_t color_dimensions = 4, 
+			std::vector<float> texcoords = std::vector<float>(), 
+			uint32_t texcoord_dimensions = 2, 
 			std::vector<uint32_t> indices = std::vector<uint32_t>());
 
 		/**
@@ -923,13 +931,16 @@ class Mesh : public StaticFactory
 		// /* TODO: Explain this */
 		// void load_tetgen(std::string path);
 
-		/* Copies per vertex data to the GPU */
 		void loadData (
-			std::vector<glm::vec4> &positions, 
-			std::vector<glm::vec4> &normals, 
-			std::vector<glm::vec4> &colors, 
-			std::vector<glm::vec2> &texcoords,
-			std::vector<uint32_t> indices
+			std::vector<float> &positions_, 
+			uint32_t position_dimensions,
+			std::vector<float> &normals_,
+			uint32_t normal_dimensions, 
+			std::vector<float> &colors_, 
+			uint32_t color_dimensions,
+			std::vector<float> &texcoords_, 
+			uint32_t texcoord_dimensions,
+			std::vector<uint32_t> indices_
 		);
 		
 		/** Creates a procedural mesh from the given mesh generator, and copies per vertex to the GPU */

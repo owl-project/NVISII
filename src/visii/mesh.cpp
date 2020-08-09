@@ -231,7 +231,7 @@ void Mesh::computeMetadata()
 	// if (vulkan->is_ray_tracing_enabled()) {
 	// 	build_low_level_bvh(submit_immediately);
 	// }
-	this->meshStructs[id].numTris = triangleIndices.size() / 3;
+	this->meshStructs[id].numTris = uint32_t(triangleIndices.size()) / 3;
 	markDirty();
 }
 
@@ -1016,10 +1016,14 @@ void Mesh::loadObj(std::string objPath)
 // }
 
 void Mesh::loadData(
-	std::vector<glm::vec4> &positions_, 
-	std::vector<glm::vec4> &normals_, 
-	std::vector<glm::vec4> &colors_, 
-	std::vector<glm::vec2> &texcoords_, 
+	std::vector<float> &positions_, 
+	uint32_t position_dimensions,
+	std::vector<float> &normals_,
+	uint32_t normal_dimensions, 
+	std::vector<float> &colors_, 
+	uint32_t color_dimensions,
+	std::vector<float> &texcoords_, 
+	uint32_t texcoord_dimensions,
 	std::vector<uint32_t> indices_
 )
 {
@@ -1028,40 +1032,68 @@ void Mesh::loadData(
 	bool readingTexCoords = texcoords_.size() > 0;
 	bool readingIndices = indices_.size() > 0;
 
+	if ((position_dimensions != 3) && (position_dimensions != 4)) 
+		throw std::runtime_error( std::string("Error, invalid position dimensions. Possible position dimensions are 3 or 4."));
+	
+	if ((normal_dimensions != 3) && (normal_dimensions != 4)) 
+		throw std::runtime_error( std::string("Error, invalid normal dimensions. Possible normal dimensions are 3 or 4."));
+
+	if ((color_dimensions != 3) && (color_dimensions != 4)) 
+		throw std::runtime_error( std::string("Error, invalid color dimensions. Possible color dimensions are 3 or 4."));
+
+	if (texcoord_dimensions != 2) 
+		throw std::runtime_error( std::string("Error, invalid texcoord dimensions. Possible position dimensions are 2."));
+
 	if (positions_.size() == 0)
 		throw std::runtime_error( std::string("Error, no positions supplied. "));
 
-	if ((!readingIndices) && ((positions_.size() % 3) != 0))
+	if ((!readingIndices) && (((positions_.size() / position_dimensions) % 3) != 0))
 		throw std::runtime_error( std::string("Error: No indices provided, and length of positions (") + std::to_string(positions_.size()) + std::string(") is not a multiple of 3."));
 
 	if ((readingIndices) && ((indices_.size() % 3) != 0))
-		throw std::runtime_error( std::string("Error: Length of indices (") + std::to_string(triangleIndices.size()) + std::string(") is not a multiple of 3."));
+		throw std::runtime_error( std::string("Error: Length of indices (") + std::to_string(indices_.size()) + std::string(") is not a multiple of 3."));
 	
-	if (readingNormals && (normals_.size() != positions_.size()))
-		throw std::runtime_error( std::string("Error, length mismatch. Total normals: " + std::to_string(normals_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingNormals && ((normals_.size() / normal_dimensions) != (positions_.size() / position_dimensions)))
+		throw std::runtime_error( std::string("Error, length mismatch. Total normals: " + std::to_string(normals_.size() / normal_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
 
-	if (readingColors && (colors_.size() != positions_.size()))
-		throw std::runtime_error( std::string("Error, length mismatch. Total colors: " + std::to_string(colors_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingColors && ((colors_.size() / color_dimensions) != (positions_.size() / position_dimensions)))
+		throw std::runtime_error( std::string("Error, length mismatch. Total colors: " + std::to_string(colors_.size() / color_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
 		
-	if (readingTexCoords && (texcoords_.size() != positions_.size()))
-		throw std::runtime_error( std::string("Error, length mismatch. Total texcoords: " + std::to_string(texcoords_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingTexCoords && ((texcoords_.size() / texcoord_dimensions) != (positions_.size() / position_dimensions)))
+		throw std::runtime_error( std::string("Error, length mismatch. Total texcoords: " + std::to_string(texcoords_.size() / texcoord_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
 	
 	if (readingIndices) {
 		for (uint32_t i = 0; i < indices_.size(); ++i) {
 			if (indices_[i] >= positions_.size())
-				throw std::runtime_error( std::string("Error, index out of bounds. Index " + std::to_string(i) + " is greater than total positions: " + std::to_string(positions_.size())));
+				throw std::runtime_error( std::string("Error, index out of bounds. Index " + std::to_string(i) + " is greater than total positions: " + std::to_string(positions_.size() / position_dimensions)));
 		}
 	}
 		
 	std::vector<Vertex> vertices;
 
 	/* For each vertex */
-	for (int i = 0; i < positions_.size(); ++ i) {
+	for (int i = 0; i < positions_.size() / position_dimensions; ++ i) {
 		Vertex vertex = Vertex();
-		vertex.point = positions_[i];
-		if (readingNormals) vertex.normal = normals_[i];
-		if (readingColors) vertex.color = colors_[i];
-		if (readingTexCoords) vertex.texcoord = texcoords_[i];        
+		vertex.point.x = positions_[i * position_dimensions + 0];
+		vertex.point.y = positions_[i * position_dimensions + 1];
+		vertex.point.z = positions_[i * position_dimensions + 2];
+		vertex.point.w = (position_dimensions == 4) ? positions_[i * position_dimensions + 3] : 1.f;
+		if (readingNormals) {
+			vertex.normal.x = normals_[i * normal_dimensions + 0];
+			vertex.normal.y = normals_[i * normal_dimensions + 1];
+			vertex.normal.z = normals_[i * normal_dimensions + 2];
+			vertex.normal.w = (normal_dimensions == 4) ? normals_[i * normal_dimensions + 3] : 0.f;
+		}
+		if (readingColors) {
+			vertex.color.x = colors_[i * color_dimensions + 0];
+			vertex.color.y = colors_[i * color_dimensions + 1];
+			vertex.color.z = colors_[i * color_dimensions + 2];
+			vertex.color.w = (color_dimensions == 4) ? colors_[i * color_dimensions + 3] : 1.f;
+		}
+		if (readingTexCoords) {
+			vertex.texcoord.x = texcoords_[i * texcoord_dimensions + 0];      
+			vertex.texcoord.y = texcoords_[i * texcoord_dimensions + 1];      
+		}  
 		vertices.push_back(vertex);
 	}
 
@@ -1074,11 +1106,11 @@ void Mesh::loadData(
 	if ((allow_edits && !readingIndices) || (!readingNormals)) {
 		uniqueVertices = vertices;
 		for (int i = 0; i < vertices.size(); ++i) {
-			triangleIndices.push_back(i);
+			this->triangleIndices.push_back(i);
 		}
 	}
 	else if (readingIndices) {
-		triangleIndices = indices_;
+		this->triangleIndices = indices_;
 		uniqueVertices = vertices;
 	}
 	/* If indices werent supplied and editing isn't allowed, optimize by binning unique verts */
@@ -1091,18 +1123,22 @@ void Mesh::loadData(
 				uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
 				uniqueVertices.push_back(vertex);
 			}
-			triangleIndices.push_back(uniqueVertexMap[vertex]);
+			this->triangleIndices.push_back(uniqueVertexMap[vertex]);
 		}
 	}
 
 	/* Map vertices to buffers */
+	this->positions.resize(uniqueVertices.size());
+	this->colors.resize(uniqueVertices.size());
+	this->normals.resize(uniqueVertices.size());
+	this->texCoords.resize(uniqueVertices.size());
 	for (int i = 0; i < uniqueVertices.size(); ++i)
 	{
 		Vertex v = uniqueVertices[i];
-		positions.push_back(v.point);
-		colors.push_back(v.color);
-		normals.push_back(v.normal);
-		texCoords.push_back(v.texcoord);
+		this->positions[i] = v.point;
+		this->colors[i] = v.color;
+		this->normals[i] = v.normal;
+		this->texCoords[i] = v.texcoord;
 	}
 
 	if (!readingNormals) {
@@ -2249,16 +2285,24 @@ Mesh* Mesh::createFromObj(std::string name, std::string path)
 // 	}
 // }
 
-Mesh* Mesh::createFromData (
+Mesh* Mesh::createFromData(
 	std::string name,
-	std::vector<glm::vec4> positions, 
-	std::vector<glm::vec4> normals, 
-	std::vector<glm::vec4> colors, 
-	std::vector<glm::vec2> texcoords, 
-	std::vector<uint32_t> indices
+	std::vector<float> positions_, 
+	uint32_t position_dimensions,
+	std::vector<float> normals_, 
+	uint32_t normal_dimensions, 
+	std::vector<float> colors_, 
+	uint32_t color_dimensions, 
+	std::vector<float> texcoords_, 
+	uint32_t texcoord_dimensions, 
+	std::vector<uint32_t> indices_
 ) {
-	auto create = [&positions, &normals, &colors, &texcoords, &indices] (Mesh* mesh) {
-		mesh->loadData(positions, normals, colors, texcoords, indices);
+	auto create = [&positions_, position_dimensions, &normals_, normal_dimensions, 
+				   &colors_, color_dimensions, &texcoords_, texcoord_dimensions, &indices_] 
+				   (Mesh* mesh) 
+	{
+		mesh->loadData(positions_, position_dimensions, normals_, normal_dimensions, 
+			colors_, color_dimensions, texcoords_, texcoord_dimensions, indices_);
 	};
 	
 	try {
