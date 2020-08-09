@@ -84,25 +84,6 @@ vec3 toPolar(vec2 uv)
 // }
 
 inline __device__
-float3 missColor(const owl::Ray &ray)
-{
-    vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(normalize(ray.direction));
-    if (optixLaunchParams.environmentMapID != -1) 
-    {
-        vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
-        cudaTextureObject_t tex = optixLaunchParams.textureObjects[optixLaunchParams.environmentMapID];
-        if (!tex) return make_float3(1.f, 0.f, 1.f);
-
-        float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
-        return make_float3(texColor);
-    }
-
-    float t = 0.5f*(rayDir.z + 1.0f);
-    float3 c = (1.0f - t) * make_float3(pow(vec3(1.0f), vec3(2.2f))) + t * make_float3( pow(vec3(0.5f, 0.7f, 1.0f), vec3(2.2f)) );
-    return c;
-}
-
-inline __device__
 float3 missColor(const float3 dir)
 {
     vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(normalize(dir));
@@ -116,10 +97,19 @@ float3 missColor(const float3 dir)
         return make_float3(texColor);
     }
 
+    if (glm::any(glm::greaterThan(optixLaunchParams.domeLightColor, glm::vec3(0.f)))) return make_float3(optixLaunchParams.domeLightColor);
+
     float t = 0.5f*(rayDir.z + 1.0f);
     float3 c = (1.0f - t) * make_float3(pow(vec3(1.0f), vec3(2.2f))) + t * make_float3( pow(vec3(0.5f, 0.7f, 1.0f), vec3(2.2f)) );
     return c;
 }
+
+inline __device__
+float3 missColor(const owl::Ray &ray)
+{
+    return missColor(ray.direction);
+}
+
 
 OPTIX_MISS_PROGRAM(miss)()
 {

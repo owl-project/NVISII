@@ -50,12 +50,22 @@ void setCameraEntity(Entity* camera_entity);
 void setDomeLightIntensity(float intensity);
 
 /** 
+ * Sets the color which this dome light will emit.
+ * 
+ * @param The RGB color emitted that this dome light should emit.
+ */ 
+void setDomeLightColor(glm::vec3 color);
+
+/** 
  * Sets the texture used to color the dome light (aka the environment). 
  * Textures are sampled using a 2D to 3D latitude/longitude strategy.
  * 
  * @param texture The texture to sample for the dome light.
  */ 
 void setDomeLightTexture(Texture* texture);
+
+/** Disconnects the dome light texture, reverting back to any existing constant dome light color */
+void clearDomeLightTexture();
 
 /** 
  * Sets the rotation to apply to the dome light (aka the environment). 

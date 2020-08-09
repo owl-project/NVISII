@@ -504,6 +504,7 @@ void initializeOptix(bool headless)
         { "numLightEntities",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
         { "instanceToEntityMap",     OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
         { "domeLightIntensity",      OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
+        { "domeLightColor",          OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, domeLightColor)},
         { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
         { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
         { "maxBounceDepth",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxBounceDepth)},
@@ -612,6 +613,7 @@ void initializeOptix(bool headless)
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
     launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
     launchParamsSetRaw(OD.launchParams, "domeLightIntensity", &OD.LP.domeLightIntensity);
+    launchParamsSetRaw(OD.launchParams, "domeLightColor", &OD.LP.domeLightColor);
     launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
     launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
     launchParamsSetRaw(OD.launchParams, "maxBounceDepth", &OD.LP.maxBounceDepth);
@@ -757,6 +759,31 @@ void setDomeLightIntensity(float intensity)
     resetAccumulation();
 }
 
+void setDomeLightColor(vec3 color)
+{
+    color.r = glm::max(0.f, glm::min(color.r, 1.f));
+    color.g = glm::max(0.f, glm::min(color.g, 1.f));
+    color.b = glm::max(0.f, glm::min(color.b, 1.f));
+    OptixData.LP.domeLightColor = color;
+    resetAccumulation();
+}
+
+void clearDomeLightTexture()
+{
+    auto func = [] () {
+        OptixData.LP.environmentMapID = -1;
+        if (OptixData.environmentMapRowsBuffer) owlBufferRelease(OptixData.environmentMapRowsBuffer);
+        if (OptixData.environmentMapColsBuffer) owlBufferRelease(OptixData.environmentMapColsBuffer);
+        OptixData.environmentMapRowsBuffer = nullptr;
+        OptixData.environmentMapColsBuffer = nullptr;
+        OptixData.LP.environmentMapWidth = -1;
+        OptixData.LP.environmentMapHeight = -1;  
+    };
+
+    auto future = enqueueCommand(func);
+    future.wait();
+}
+
 void setDomeLightTexture(Texture* texture)
 {
     auto func = [texture] () {
@@ -808,7 +835,6 @@ void setDomeLightTexture(Texture* texture)
         OptixData.LP.environmentMapHeight = height;  
         resetAccumulation();        
     };
-
     auto future = enqueueCommand(func);
     future.wait();
 }
@@ -1111,6 +1137,7 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
     launchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
     launchParamsSetRaw(OptixData.launchParams, "domeLightIntensity", &OptixData.LP.domeLightIntensity);
+    launchParamsSetRaw(OptixData.launchParams, "domeLightColor", &OptixData.LP.domeLightColor);
     launchParamsSetRaw(OptixData.launchParams, "renderDataMode", &OptixData.LP.renderDataMode);
     launchParamsSetRaw(OptixData.launchParams, "renderDataBounce", &OptixData.LP.renderDataBounce);
     launchParamsSetRaw(OptixData.launchParams, "seed", &OptixData.LP.seed);
