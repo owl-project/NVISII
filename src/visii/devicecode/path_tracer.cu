@@ -229,6 +229,7 @@ void loadDisneyMaterial(const MaterialStruct &p, vec2 uv, DisneyMaterial &mat, f
     mat.ior = sampleTexture(p.ior_texture_id, uv, vec4(p.ior))[p.ior_texture_channel];
     mat.specular_transmission = sampleTexture(p.transmission_texture_id, uv, vec4(p.transmission))[p.transmission_texture_channel];
     mat.flatness = sampleTexture(p.subsurface_texture_id, uv, vec4(p.subsurface))[p.subsurface_texture_channel];
+    mat.subsurface_color = make_float3(sampleTexture(p.subsurface_color_texture_id, uv, vec4(p.subsurface_color)));
     mat.transmission_roughness = max(max(sampleTexture(p.transmission_roughness_texture_id, uv, vec4(p.transmission_roughness))[p.transmission_roughness_texture_channel], MIN_ROUGHNESS), roughnessMinimum);
 }
 

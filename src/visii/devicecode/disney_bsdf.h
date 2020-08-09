@@ -18,6 +18,7 @@
 
 struct DisneyMaterial {
 	float3 base_color;
+	float3 subsurface_color;
 	float metallic;
 
 	float specular;
@@ -286,6 +287,12 @@ __device__ float3 disney_diffuse_color(const DisneyMaterial &mat, const float3 &
 	return mat.base_color;
 }
 
+__device__ float3 disney_subsurface_color(const DisneyMaterial &mat, const float3 &n,
+	const float3 &w_o, const float3 &w_i)
+{
+	return mat.subsurface_color;
+}
+
 __device__ void disney_diffuse(const DisneyMaterial &mat, const float3 &n,
 	const float3 &w_o, const float3 &w_i, float3 &bsdf, float3 &color)
 {
@@ -311,7 +318,7 @@ __device__ void disney_subsurface(const DisneyMaterial &mat, const float3 &n,
     float Fss90 = i_dot_h*i_dot_h * mat.roughness;
     float Fss = lerp(1.0, Fss90, FL) * lerp(1.0, Fss90, FV);
     float ss = 1.25 * (Fss * (1. / (n_dot_i + n_dot_o) - .5) + .5);
-    color = disney_diffuse_color(mat, n, w_o, w_i);
+    color = disney_subsurface_color(mat, n, w_o, w_i);
 	bsdf = make_float3(M_1_PI * ss);
 }
 
@@ -521,7 +528,7 @@ __device__ float disney_clear_coat(const DisneyMaterial &mat, const float3 &n,
 	float d = gtr_1(dot(n, w_h), alpha);
 	float f = lerp(0.04f, 1.f, schlick_weight(dot(w_i, n)));
 	float g = smith_shadowing_ggx(dot(n, w_i), 0.25f) * smith_shadowing_ggx(dot(n, w_o), 0.25f);
-	return 0.25f * mat.clearcoat * d * f * g;
+	return /*0.25f * */mat.clearcoat * d * f * g;
 }
 
 __device__ float3 disney_sheen(const DisneyMaterial &mat, const float3 &n,
