@@ -505,7 +505,7 @@ class Mesh : public StaticFactory
 		 *  @param segments Number of subdivisions around the circle.
 		 *  @returns a reference to the mesh component
 		 */
-		static Mesh* Mesh::createLine(
+		static Mesh* createLine(
 			std::string name, 
 			glm::vec3 start, 
 			glm::vec3 stop, 
