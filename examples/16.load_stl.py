@@ -1,6 +1,8 @@
 import visii
-import open3d as o3d
 import argparse
+
+import numpy as np 
+import open3d as o3d
 
 parser = argparse.ArgumentParser()
 
@@ -46,9 +48,9 @@ camera = visii.entity.create(
 )
 
 camera.get_transform().look_at(
-    visii.vec3(0,0.1,0.1), # look at (world coordinate)
+    visii.vec3(0,0,0), # look at (world coordinate)
     visii.vec3(0,0,1), # up vector
-    visii.vec3(1,0.7,0.2), # camera_origin    
+    visii.vec3(0.2,0.2,0.2), # camera_origin    
 )
 visii.set_camera_entity(camera)
 
@@ -58,24 +60,27 @@ visii.set_dome_light_intensity(1)
 
 # let load the object using open3d
 mesh = o3d.io.read_triangle_mesh("content/dragon.stl")
-mesh = mesh.compute_vertex_normals()
 
-vertices = []
-normals = []
-for normal in mesh.vertex_normals:
-    normals.append(visii.vec4(normal[0],normal[1],normal[2],1))
+if not mesh.has_vertex_normals():
+    mesh = mesh.compute_vertex_normals()
 
-for vertice in mesh.vertices:
-    vertices.append(visii.vec4(vertice[0],vertice[1],vertice[2],1))
+normals = np.array(mesh.vertex_normals).flatten().tolist()
+vertices = np.array(mesh.vertices).flatten().tolist()
 
-mesh = visii.mesh.create_from_data('stl_mesh',positions=vertices,normals=normals)
+mesh = visii.mesh.create_from_data(
+    'stl_mesh',
+    positions=vertices,
+    normals=normals
+)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 obj_entity = visii.entity.create(
     name="obj_entity",
     mesh = mesh,
-    transform = visii.transform.create("obj_entity"),
+    transform = visii.transform.create("obj_entity",
+        scale=visii.vec3(0.3)
+    ),
     material = visii.material.create("obj_entity")
 )
 
