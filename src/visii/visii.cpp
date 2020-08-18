@@ -685,7 +685,7 @@ void initializeOptix(bool headless)
     #else
     scratchSizeInBytes = OD.denoiserSizes.withOverlapScratchSizeInBytes;
     #endif
-    
+
     OD.denoiserScratchBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
         scratchSizeInBytes, nullptr);
     OD.denoiserStateBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
@@ -796,6 +796,7 @@ void clearDomeLightTexture()
         OptixData.LP.environmentMapHeight = -1;  
     };
 
+    resetAccumulation();
     auto future = enqueueCommand(func);
     future.wait();
 }
