@@ -11,15 +11,17 @@
   * Initializes various backend systems required to render scene data.
   * 
   * @param window_on_top Keeps the window opened during an interactive session on top of any other windows.
+  * @param verbose If false, visii will avoid outputing any unneccessary text
 */
-void initializeInteractive(bool window_on_top = false);
+void initializeInteractive(bool window_on_top = false, bool verbose = true);
 
 /**
   * Initializes various backend systems required to render scene data.
   * 
   * This call avoids using any OpenGL resources, to enable 
+  * @param verbose If false, visii will avoid outputing any unneccessary text
 */
-void initializeHeadless();
+void initializeHeadless(bool verbose = true);
 
 /**
   * Cleans up any allocated resources

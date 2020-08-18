@@ -47,6 +47,7 @@ std::promise<void> exitSignal;
 std::thread renderThread;
 static bool initialized = false;
 static bool close = true;
+static bool verbose = true;
 
 static struct WindowData {
     GLFWwindow* window = nullptr;
@@ -1436,14 +1437,20 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
                 glfwSetWindowTitle(WindowData.window, 
                     (std::to_string(i) + std::string("/") + std::to_string(samplesPerPixel)).c_str());
             }
-            std::cout<< "\r" << i << "/" << samplesPerPixel;
+
+            if (verbose) {
+                std::cout<< "\r" << i << "/" << samplesPerPixel;
+            }
         }      
         if (!ViSII.headlessMode) {
             glfwSetWindowTitle(WindowData.window, 
                 (std::to_string(samplesPerPixel) + std::string("/") + std::to_string(samplesPerPixel) 
                 + std::string(" - done!")).c_str());
         }
-        std::cout<<"\r "<< samplesPerPixel << "/" << samplesPerPixel <<" - done!" << std::endl;
+        
+        if (verbose) {
+            std::cout<<"\r "<< samplesPerPixel << "/" << samplesPerPixel <<" - done!" << std::endl;
+        }
 
         synchronizeDevices();
 
@@ -1696,7 +1703,7 @@ void initializeComponentFactories()
 
 void reproject(glm::vec4 *samplesBuffer, glm::vec4 *t0AlbedoBuffer, glm::vec4 *t1AlbedoBuffer, glm::vec4 *mvecBuffer, glm::vec4 *scratchBuffer, glm::vec4 *imageBuffer, int width, int height);
 
-void initializeInteractive(bool windowOnTop)
+void initializeInteractive(bool windowOnTop, bool _verbose)
 {
     // don't initialize more than once
     if (initialized == true) {
@@ -1705,6 +1712,7 @@ void initializeInteractive(bool windowOnTop)
 
     initialized = true;
     close = false;
+    verbose = _verbose;
     initializeComponentFactories();
 
     auto loop = [windowOnTop]() {
@@ -1775,7 +1783,7 @@ void initializeInteractive(bool windowOnTop)
     future.wait();
 }
 
-void initializeHeadless()
+void initializeHeadless(bool _verbose)
 {
     // don't initialize more than once
     if (initialized == true) {
@@ -1784,6 +1792,8 @@ void initializeHeadless()
 
     initialized = true;
     close = false;
+    verbose = _verbose;
+
     initializeComponentFactories();
 
     auto loop = []() {
