@@ -600,6 +600,9 @@ class Transform : public StaticFactory
      * @param parent The transform component to constrain the current transform to. Any existing parent constraint is replaced.
     */
     void setParent(Transform * parent);
+    
+    Transform* getParent();
+    std::vector<Transform*> getChildren();
 
     /** Removes the parent-child relationship affecting this node. */
     void clearParent();

@@ -734,6 +734,21 @@ glm::mat4 Transform::getParentToLocalRotationMatrix(bool previous)
 	else return glm::toMat4(glm::inverse(rotation));
 }
 
+Transform* Transform::getParent() {
+	if ((this->parent < 0) || (this->parent >= MAX_TRANSFORMS)) return nullptr;
+	return &transforms[this->parent];
+}
+
+std::vector<Transform*> Transform::getChildren() {
+	std::vector<Transform*> children_list;
+	for (auto &cid : this->children){
+		// in theory I don't need to do this, but better safe than sorry.
+		if ((cid < 0) || (cid >= MAX_TRANSFORMS)) continue;
+		children_list.push_back(&transforms[cid]);
+	}
+	return children_list;
+}
+
 void Transform::setParent(Transform *parent) {
 	if (!parent)
 		throw std::runtime_error(std::string("Error: parent is empty"));
@@ -743,6 +758,15 @@ void Transform::setParent(Transform *parent) {
 	
 	if (parent->getId() == this->getId())
 		throw std::runtime_error(std::string("Error: a transform cannot be the parent of itself"));
+
+	// check for circular relationships
+	auto tmp = parent;
+	while (tmp->getParent() != nullptr) {
+		if (tmp->getParent()->getId() == this->getId()) {
+			throw std::runtime_error(std::string("Error: circular dependency detected"));
+		}
+		tmp = tmp->getParent();
+	}
 
 	this->parent = parent->getId();
 	transforms[parent->getId()].children.insert(this->id);
@@ -773,10 +797,7 @@ void Transform::addChild(Transform *object) {
 	if (object->getId() == this->getId())
 		throw std::runtime_error(std::string("Error: a transform cannot be the child of itself"));
 
-	children.insert(object->getId());
-	transforms[object->getId()].parent = this->id;
-	transforms[object->getId()].updateWorldMatrix();
-	transforms[object->getId()].markDirty();
+	object->setParent(&transforms[getId()]);
 }
 
 void Transform::removeChild(Transform *object) {

@@ -30,6 +30,9 @@
 #include <stb_image.h>
 #include <stb_image_write.h>
 
+#define USE_OPTIX70
+#undef USE_OPTIX71
+
 // #define __optix_optix_function_table_h__
 #include <optix_stubs.h>
 // OptixFunctionTable g_optixFunctionTable;
@@ -436,7 +439,13 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
     
     // Reconfigure denoiser
     optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes);
-    bufferResize(OD.denoiserScratchBuffer, OD.denoiserSizes.withOverlapScratchSizeInBytes);
+    uint64_t scratchSizeInBytes;
+    #ifdef USE_OPTIX70
+    scratchSizeInBytes = OD.denoiserSizes.recommendedScratchSizeInBytes;
+    #else
+    scratchSizeInBytes = OD.denoiserSizes.withOverlapScratchSizeInBytes;
+    #endif
+    bufferResize(OD.denoiserScratchBuffer, scratchSizeInBytes);
     bufferResize(OD.denoiserStateBuffer, OD.denoiserSizes.stateSizeInBytes);
     
     auto cudaStream = getStream(OD.context, 0);
@@ -448,7 +457,7 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
         (CUdeviceptr) bufferGetPointer(OD.denoiserStateBuffer, 0), 
         OD.denoiserSizes.stateSizeInBytes,
         (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0), 
-        OD.denoiserSizes.withOverlapScratchSizeInBytes
+        scratchSizeInBytes
     );
 
     resetAccumulation();
@@ -670,8 +679,15 @@ void initializeOptix(bool headless)
     OPTIX_CHECK(optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0));
 
     OPTIX_CHECK(optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes));
+    uint64_t scratchSizeInBytes;
+    #ifdef USE_OPTIX70
+    scratchSizeInBytes = OD.denoiserSizes.recommendedScratchSizeInBytes;
+    #else
+    scratchSizeInBytes = OD.denoiserSizes.withOverlapScratchSizeInBytes;
+    #endif
+    
     OD.denoiserScratchBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
-        OD.denoiserSizes.withOverlapScratchSizeInBytes, nullptr);
+        scratchSizeInBytes, nullptr);
     OD.denoiserStateBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
         OD.denoiserSizes.stateSizeInBytes, nullptr);
     OD.hdrIntensityBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(float),
@@ -685,7 +701,7 @@ void initializeOptix(bool headless)
         (CUdeviceptr) bufferGetPointer(OD.denoiserStateBuffer, 0), 
         OD.denoiserSizes.stateSizeInBytes,
         (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0), 
-        OD.denoiserSizes.withOverlapScratchSizeInBytes
+        scratchSizeInBytes
     ));
 
     OD.placeholder = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 1, nullptr);
@@ -1201,6 +1217,13 @@ void denoiseImage() {
 
     OptixImage2D outputLayer = colorLayer; // can I get away with this?
 
+    uint64_t scratchSizeInBytes;
+    #ifdef USE_OPTIX70
+    scratchSizeInBytes = OD.denoiserSizes.recommendedScratchSizeInBytes;
+    #else
+    scratchSizeInBytes = OD.denoiserSizes.withOverlapScratchSizeInBytes;
+    #endif
+
     // compute average pixel intensity for hdr denoising
     OPTIX_CHECK(optixDenoiserComputeIntensity(
         OD.denoiser, 
@@ -1208,7 +1231,7 @@ void denoiseImage() {
         &inputLayers[0], 
         (CUdeviceptr) bufferGetPointer(OD.hdrIntensityBuffer, 0),
         (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0),
-        OD.denoiserSizes.withOverlapScratchSizeInBytes));
+        scratchSizeInBytes));
 
     OptixDenoiserParams params;
     params.denoiseAlpha = 0;    // Don't touch alpha.
@@ -1227,7 +1250,7 @@ void denoiseImage() {
         /* inputOffsetY */ 0,
         &outputLayer,
         (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0),
-        OD.denoiserSizes.withOverlapScratchSizeInBytes
+        scratchSizeInBytes
     ));
 
     synchronizeDevices();
