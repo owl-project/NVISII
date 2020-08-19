@@ -6,6 +6,8 @@
 #include <optix_device.h>
 #include <owl/common/math/random.h>
 
+#include "visii/utilities/procedural_sky.h"
+
 typedef owl::common::LCG<4> Random;
 
 extern "C" __constant__ LaunchParams optixLaunchParams;
@@ -87,7 +89,7 @@ inline __device__
 float3 missColor(const float3 dir)
 {
     vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(normalize(dir));
-    if (optixLaunchParams.environmentMapID != -1) 
+    if (optixLaunchParams.environmentMapID >= 0) 
     {
         vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
         cudaTextureObject_t tex = optixLaunchParams.textureObjects[optixLaunchParams.environmentMapID];
@@ -96,7 +98,15 @@ float3 missColor(const float3 dir)
         float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
         return make_float3(texColor);
     }
+    if ((optixLaunchParams.environmentMapID == -2) && (optixLaunchParams.proceduralSkyTexture != 0)) {
+        vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
+        cudaTextureObject_t tex = optixLaunchParams.proceduralSkyTexture;
+        if (!tex) return make_float3(1.f, 0.f, 1.f);
 
+        float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
+        return make_float3(texColor);
+    }
+    
     if (glm::any(glm::greaterThan(optixLaunchParams.domeLightColor, glm::vec3(0.f)))) return make_float3(optixLaunchParams.domeLightColor);
 
     float t = 0.5f*(rayDir.z + 1.0f);

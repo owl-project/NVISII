@@ -62,6 +62,7 @@ struct LaunchParams {
     float* environmentMapCols = nullptr;
     int environmentMapWidth = 0;
     int environmentMapHeight = 0;
+    cudaTextureObject_t proceduralSkyTexture = 0;
     cudaTextureObject_t *textureObjects = nullptr;
 
     cudaTextureObject_t GGX_E_AVG_LOOKUP;

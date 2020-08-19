@@ -58,6 +58,16 @@ void setDomeLightIntensity(float intensity);
  */ 
 void setDomeLightColor(glm::vec3 color);
 
+// Testing
+void setDomeLightSky(
+    vec3 sun_position, 
+    vec3 sun_color = vec3(1.0f,1.0f,0.5f),
+    float sun_intensity = 10.f, 
+    float sun_size = .04f, 
+    float sun_size_convergence = 100.0f, 
+    vec3 sky_tint = vec3(.5f, .5f, .5f), 
+    float atmosphere_thickness = 1.0f);
+
 /** 
  * Sets the texture used to color the dome light (aka the environment). 
  * Textures are sampled using a 2D to 3D latitude/longitude strategy.
