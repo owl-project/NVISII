@@ -47,7 +47,7 @@
 std::promise<void> exitSignal;
 std::thread renderThread;
 static bool initialized = false;
-static bool close = true;
+static bool stop = true;
 static bool verbose = true;
 
 static struct WindowData {
@@ -1810,7 +1810,7 @@ void initializeInteractive(bool windowOnTop, bool _verbose)
     }
 
     initialized = true;
-    close = false;
+    stop = false;
     verbose = _verbose;
     initializeComponentFactories();
 
@@ -1828,7 +1828,7 @@ void initializeInteractive(bool windowOnTop, bool _verbose)
 
         initializeImgui();
 
-        while (!close)
+        while (!stop)
         {
             /* Poll events from the window */
             glfw->poll_events();
@@ -1868,7 +1868,7 @@ void initializeInteractive(bool windowOnTop, bool _verbose)
             drawGUI();
 
             processCommandQueue();
-            if (close) break;
+            if (stop) break;
         }
 
         ImGui::DestroyContext();
@@ -1891,7 +1891,7 @@ void initializeHeadless(bool _verbose)
     }
 
     initialized = true;
-    close = false;
+    stop = false;
     verbose = _verbose;
 
     initializeComponentFactories();
@@ -1902,10 +1902,10 @@ void initializeHeadless(bool _verbose)
 
         initializeOptix(/*headless = */ true);
 
-        while (!close)
+        while (!stop)
         {
             processCommandQueue();
-            if (close) break;
+            if (stop) break;
         }
     };
 
@@ -1941,8 +1941,8 @@ void deinitialize()
 {
     if (initialized == true) {
         /* cleanup window if open */
-        if (close == false) {
-            close = true;
+        if (stop == false) {
+            stop = true;
             renderThread.join();
         }
         if (OptixData.denoiser)

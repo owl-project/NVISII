@@ -1,7 +1,6 @@
 #pragma once
 
 #ifdef __CUDACC__
-#include "cuda_utils.h"
 #ifndef CUDA_DECORATOR
 #define CUDA_DECORATOR __both__
 #endif
