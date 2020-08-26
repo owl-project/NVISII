@@ -126,6 +126,17 @@ class Transform : public StaticFactory
       vec3 position = vec3(0.f) 
     );
 
+    /**
+     * Constructs a transform with the given name, initializing with the given matrix.
+     * 
+     * @param name A unique name for this transform.
+     * @param matrix The initial local to world transformation to be applied
+     * @returns a reference to a transform component
+    */
+    static Transform* createFromMatrix(std::string name, 
+      mat4 transform = mat4(1.0f)
+    );
+
     /** 
      * @param name The name of the transform to get
      * @returns a transform who's name matches the given name 

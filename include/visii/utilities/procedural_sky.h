@@ -26,10 +26,6 @@ inline CUDA_DECORATOR
 vec3 ProceduralSkybox(
     vec3 rd, 
     vec3 sunPos, 
-    vec3 sunColor = vec3(1.0f,1.0f,0.5f),
-    float sunIntensity = 10.f, 
-    float sunSize = .04f, 
-    float sunSizeConvergence = 100.0f, 
     vec3 skyTint = vec3(.5f, .5f, .5f), 
     float atmosphereThickness = 1.0f
 )
@@ -94,14 +90,6 @@ vec3 ProceduralSkybox(
     cOut = frontColor * kKmESun;
     
     vec3 skyColor = (cIn * (0.75f + 0.75f * dot(normalize(sunPos), -eyeRay) * dot(normalize(sunPos), -eyeRay))); 
-    float lightColorIntensity = glm::clamp(length(sunColor), 0.25f, 1.0f);
-    vec3 _sunColor = kHDSundiskIntensityFactor * glm::clamp(cOut,0.0f,1.0f) * sunColor / lightColorIntensity;	    
-    vec3 ray = -rd;
     vec3 color = skyColor;
-
-    float EyeCos = pow(glm::clamp(dot(normalize(sunPos), -ray),0.0f,1.0f), sunSizeConvergence);		
-	float temp = pow(1.0f + MIE_G2 - 2.0f * MIE_G * (-EyeCos), pow(sunSize,0.65f) * 10.f);
-    float sunAttenuation = (1.5f * ((1.0f - MIE_G2) / (2.0f + MIE_G2)) * (1.0 + EyeCos * EyeCos) / glm::max(temp,1.0e-4f));	
-    color += _sunColor * sunAttenuation * sunIntensity;
     return color;
 }

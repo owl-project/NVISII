@@ -78,6 +78,22 @@ Transform* Transform::create(std::string name,
 	}
 }
 
+Transform* Transform::createFromMatrix(std::string name, mat4 xfm) 
+{
+	auto createTransform = [xfm] (Transform* transform) {
+		dirtyTransforms.insert(transform);
+		transform->setTransform(xfm);
+	};
+
+	try {
+		return StaticFactory::create<Transform>(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS, createTransform);
+	}
+	catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+		throw;
+	}
+}
+
 std::shared_ptr<std::mutex> Transform::getEditMutex()
 {
 	return editMutex;

@@ -695,7 +695,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     ry = sample_cdf(rows, height, ry, &y, &row_pdf);
                     y = max(min(y, height - 1), 0);
                     rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
-                    lightDir = make_float3(toPolar(vec2((x + rx) / float(width), (y + ry)/float(height))));
+                    lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
                     lightPDFs[lid] = row_pdf * col_pdf * invjacobian;
                 } 
                 else 

@@ -828,18 +828,18 @@ vec3 toPolar(vec2 uv)
     return n;
 }
 
-void setDomeLightSky(vec3 sunPos, vec3 sunColor,float sunIntensity, float sunSize, float sunSizeConvergence, vec3 skyTint, float atmosphereThickness)
+void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness)
 {
-    auto func = [sunPos, sunColor, sunIntensity, sunSize, sunSizeConvergence, skyTint, atmosphereThickness] () {
+    auto func = [sunPos, skyTint, atmosphereThickness] () {
         /* Generate procedural sky */
-        uint32_t width = 1024;
-        uint32_t height = 512;
+        uint32_t width = 1024/2;
+        uint32_t height = 512/2;
         std::vector<glm::vec4> texels(width * height);
         for (uint32_t y = 0; y < height; ++y) {
             for (uint32_t x = 0; x < width; ++x) {
                 glm::vec2 uv = glm::vec2(x / float(width), y / float(height));
                 glm::vec3 dir = toPolar(uv);
-                glm::vec3 c = ProceduralSkybox(glm::vec3(dir.x, -dir.z, dir.y), glm::vec3(sunPos.x, sunPos.z, sunPos.y), sunColor, sunIntensity, sunSize, sunSizeConvergence, skyTint, atmosphereThickness);
+                glm::vec3 c = ProceduralSkybox(glm::vec3(dir.x, -dir.z, dir.y), glm::vec3(sunPos.x, sunPos.z, sunPos.y), skyTint, atmosphereThickness);
                 texels[x + y * width] = glm::vec4(c.r, c.g, c.b, 1.0f);
             }
         }
@@ -1877,6 +1877,7 @@ void initializeInteractive(bool windowOnTop, bool _verbose)
 
     renderThread = thread(loop);
 
+    // Waits for the render thread to start before returning
     auto wait = [] () {};
     auto future = enqueueCommand(wait);
     future.wait();
@@ -1903,13 +1904,6 @@ void initializeHeadless(bool _verbose)
 
         while (!close)
         {
-            // updateComponents();
-            // updateLaunchParams();
-            // traceRays();
-            // if (OptixData.enableDenoiser)
-            // {
-            //     denoiseImage();
-            // }
             processCommandQueue();
             if (close) break;
         }
@@ -1917,6 +1911,7 @@ void initializeHeadless(bool _verbose)
 
     renderThread = thread(loop);
 
+    // Waits for the render thread to start before returning
     auto wait = [] () {};
     auto future = enqueueCommand(wait);
     future.wait();
@@ -1935,9 +1930,15 @@ void clearAll()
 }
 
 
+#ifdef __unix__
+# include <unistd.h>
+#elif defined _WIN32
+# include <windows.h>
+#define sleep(x) Sleep(1000 * (x))
+#endif
+
 void deinitialize()
 {
-    clearAll();
     if (initialized == true) {
         /* cleanup window if open */
         if (close == false) {
@@ -1946,11 +1947,16 @@ void deinitialize()
         }
         if (OptixData.denoiser)
             OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
+        clearAll();
     }
     else {
         throw std::runtime_error("Error: already deinitialized!");
     }
     initialized = false;
+    // sleeping here. 
+    // Some strange bug with python where deinitialize immediately before interpreter exit
+    // on windows causes lockup. The sleep here fixes that lockup, suggesting some race condition...
+    sleep(1); 
 }
 
 void __test__(std::vector<std::string> args) {

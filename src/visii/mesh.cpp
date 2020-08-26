@@ -1103,13 +1103,7 @@ void Mesh::loadData(
 
 	/* Don't bin positions as unique when editing, since it's unexpected for a user to lose positions */
 	bool allow_edits = false; // temporary...
-	if ((allow_edits && !readingIndices) || (!readingNormals)) {
-		uniqueVertices = vertices;
-		for (int i = 0; i < vertices.size(); ++i) {
-			this->triangleIndices.push_back(i);
-		}
-	}
-	else if (readingIndices) {
+	if (readingIndices) {
 		this->triangleIndices = indices_;
 		uniqueVertices = vertices;
 	}
