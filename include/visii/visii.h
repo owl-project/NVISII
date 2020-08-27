@@ -58,7 +58,15 @@ void setDomeLightIntensity(float intensity);
  */ 
 void setDomeLightColor(glm::vec3 color);
 
-// Testing
+/** 
+ * Configures the procedural sky for the dome light (aka the environment).
+ * @param sun_position The position of the sun relative to [0,0,0]. As the sun 
+ * goes down (in Z), Rayleigh scattering will cause the sky to change colors.
+ * 
+ * @param sky_tint controls the relative color of the sky before Rayleigh scattering.
+ * @param atmosphere_thickness effects Rayleigh scattering. Thin atmospheres look more 
+ * like space, and thick atmospheres see more Rayleigh scattering.
+ */ 
 void setDomeLightSky(
     vec3 sun_position, 
     vec3 sky_tint = vec3(.5f, .5f, .5f), 
