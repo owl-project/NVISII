@@ -11,15 +11,17 @@
   * Initializes various backend systems required to render scene data.
   * 
   * @param window_on_top Keeps the window opened during an interactive session on top of any other windows.
+  * @param verbose If false, visii will avoid outputing any unneccessary text
 */
-void initializeInteractive(bool window_on_top = false);
+void initializeInteractive(bool window_on_top = false, bool verbose = true);
 
 /**
   * Initializes various backend systems required to render scene data.
   * 
   * This call avoids using any OpenGL resources, to enable 
+  * @param verbose If false, visii will avoid outputing any unneccessary text
 */
-void initializeHeadless();
+void initializeHeadless(bool verbose = true);
 
 /**
   * Cleans up any allocated resources
@@ -50,12 +52,28 @@ void setCameraEntity(Entity* camera_entity);
 void setDomeLightIntensity(float intensity);
 
 /** 
+ * Sets the color which this dome light will emit.
+ * 
+ * @param The RGB color emitted that this dome light should emit.
+ */ 
+void setDomeLightColor(glm::vec3 color);
+
+// Testing
+void setDomeLightSky(
+    vec3 sun_position, 
+    vec3 sky_tint = vec3(.5f, .5f, .5f), 
+    float atmosphere_thickness = 1.0f);
+
+/** 
  * Sets the texture used to color the dome light (aka the environment). 
  * Textures are sampled using a 2D to 3D latitude/longitude strategy.
  * 
  * @param texture The texture to sample for the dome light.
  */ 
 void setDomeLightTexture(Texture* texture);
+
+/** Disconnects the dome light texture, reverting back to any existing constant dome light color */
+void clearDomeLightTexture();
 
 /** 
  * Sets the rotation to apply to the dome light (aka the environment). 

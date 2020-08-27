@@ -231,7 +231,7 @@ void Mesh::computeMetadata()
 	// if (vulkan->is_ray_tracing_enabled()) {
 	// 	build_low_level_bvh(submit_immediately);
 	// }
-	this->meshStructs[id].numTris = triangleIndices.size() / 3;
+	this->meshStructs[id].numTris = uint32_t(triangleIndices.size()) / 3;
 	markDirty();
 }
 
@@ -1016,10 +1016,14 @@ void Mesh::loadObj(std::string objPath)
 // }
 
 void Mesh::loadData(
-	std::vector<glm::vec4> &positions_, 
-	std::vector<glm::vec4> &normals_, 
-	std::vector<glm::vec4> &colors_, 
-	std::vector<glm::vec2> &texcoords_, 
+	std::vector<float> &positions_, 
+	uint32_t position_dimensions,
+	std::vector<float> &normals_,
+	uint32_t normal_dimensions, 
+	std::vector<float> &colors_, 
+	uint32_t color_dimensions,
+	std::vector<float> &texcoords_, 
+	uint32_t texcoord_dimensions,
 	std::vector<uint32_t> indices_
 )
 {
@@ -1028,40 +1032,68 @@ void Mesh::loadData(
 	bool readingTexCoords = texcoords_.size() > 0;
 	bool readingIndices = indices_.size() > 0;
 
+	if ((position_dimensions != 3) && (position_dimensions != 4)) 
+		throw std::runtime_error( std::string("Error, invalid position dimensions. Possible position dimensions are 3 or 4."));
+	
+	if ((normal_dimensions != 3) && (normal_dimensions != 4)) 
+		throw std::runtime_error( std::string("Error, invalid normal dimensions. Possible normal dimensions are 3 or 4."));
+
+	if ((color_dimensions != 3) && (color_dimensions != 4)) 
+		throw std::runtime_error( std::string("Error, invalid color dimensions. Possible color dimensions are 3 or 4."));
+
+	if (texcoord_dimensions != 2) 
+		throw std::runtime_error( std::string("Error, invalid texcoord dimensions. Possible position dimensions are 2."));
+
 	if (positions_.size() == 0)
 		throw std::runtime_error( std::string("Error, no positions supplied. "));
 
-	if ((!readingIndices) && ((positions_.size() % 3) != 0))
+	if ((!readingIndices) && (((positions_.size() / position_dimensions) % 3) != 0))
 		throw std::runtime_error( std::string("Error: No indices provided, and length of positions (") + std::to_string(positions_.size()) + std::string(") is not a multiple of 3."));
 
 	if ((readingIndices) && ((indices_.size() % 3) != 0))
-		throw std::runtime_error( std::string("Error: Length of indices (") + std::to_string(triangleIndices.size()) + std::string(") is not a multiple of 3."));
+		throw std::runtime_error( std::string("Error: Length of indices (") + std::to_string(indices_.size()) + std::string(") is not a multiple of 3."));
 	
-	if (readingNormals && (normals_.size() != positions_.size()))
-		throw std::runtime_error( std::string("Error, length mismatch. Total normals: " + std::to_string(normals_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingNormals && ((normals_.size() / normal_dimensions) != (positions_.size() / position_dimensions)))
+		throw std::runtime_error( std::string("Error, length mismatch. Total normals: " + std::to_string(normals_.size() / normal_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
 
-	if (readingColors && (colors_.size() != positions_.size()))
-		throw std::runtime_error( std::string("Error, length mismatch. Total colors: " + std::to_string(colors_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingColors && ((colors_.size() / color_dimensions) != (positions_.size() / position_dimensions)))
+		throw std::runtime_error( std::string("Error, length mismatch. Total colors: " + std::to_string(colors_.size() / color_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
 		
-	if (readingTexCoords && (texcoords_.size() != positions_.size()))
-		throw std::runtime_error( std::string("Error, length mismatch. Total texcoords: " + std::to_string(texcoords_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingTexCoords && ((texcoords_.size() / texcoord_dimensions) != (positions_.size() / position_dimensions)))
+		throw std::runtime_error( std::string("Error, length mismatch. Total texcoords: " + std::to_string(texcoords_.size() / texcoord_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
 	
 	if (readingIndices) {
 		for (uint32_t i = 0; i < indices_.size(); ++i) {
 			if (indices_[i] >= positions_.size())
-				throw std::runtime_error( std::string("Error, index out of bounds. Index " + std::to_string(i) + " is greater than total positions: " + std::to_string(positions_.size())));
+				throw std::runtime_error( std::string("Error, index out of bounds. Index " + std::to_string(i) + " is greater than total positions: " + std::to_string(positions_.size() / position_dimensions)));
 		}
 	}
 		
 	std::vector<Vertex> vertices;
 
 	/* For each vertex */
-	for (int i = 0; i < positions_.size(); ++ i) {
+	for (int i = 0; i < positions_.size() / position_dimensions; ++ i) {
 		Vertex vertex = Vertex();
-		vertex.point = positions_[i];
-		if (readingNormals) vertex.normal = normals_[i];
-		if (readingColors) vertex.color = colors_[i];
-		if (readingTexCoords) vertex.texcoord = texcoords_[i];        
+		vertex.point.x = positions_[i * position_dimensions + 0];
+		vertex.point.y = positions_[i * position_dimensions + 1];
+		vertex.point.z = positions_[i * position_dimensions + 2];
+		vertex.point.w = (position_dimensions == 4) ? positions_[i * position_dimensions + 3] : 1.f;
+		if (readingNormals) {
+			vertex.normal.x = normals_[i * normal_dimensions + 0];
+			vertex.normal.y = normals_[i * normal_dimensions + 1];
+			vertex.normal.z = normals_[i * normal_dimensions + 2];
+			vertex.normal.w = (normal_dimensions == 4) ? normals_[i * normal_dimensions + 3] : 0.f;
+		}
+		if (readingColors) {
+			vertex.color.x = colors_[i * color_dimensions + 0];
+			vertex.color.y = colors_[i * color_dimensions + 1];
+			vertex.color.z = colors_[i * color_dimensions + 2];
+			vertex.color.w = (color_dimensions == 4) ? colors_[i * color_dimensions + 3] : 1.f;
+		}
+		if (readingTexCoords) {
+			vertex.texcoord.x = texcoords_[i * texcoord_dimensions + 0];      
+			vertex.texcoord.y = texcoords_[i * texcoord_dimensions + 1];      
+		}  
 		vertices.push_back(vertex);
 	}
 
@@ -1071,14 +1103,8 @@ void Mesh::loadData(
 
 	/* Don't bin positions as unique when editing, since it's unexpected for a user to lose positions */
 	bool allow_edits = false; // temporary...
-	if ((allow_edits && !readingIndices) || (!readingNormals)) {
-		uniqueVertices = vertices;
-		for (int i = 0; i < vertices.size(); ++i) {
-			triangleIndices.push_back(i);
-		}
-	}
-	else if (readingIndices) {
-		triangleIndices = indices_;
+	if (readingIndices) {
+		this->triangleIndices = indices_;
 		uniqueVertices = vertices;
 	}
 	/* If indices werent supplied and editing isn't allowed, optimize by binning unique verts */
@@ -1091,18 +1117,22 @@ void Mesh::loadData(
 				uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
 				uniqueVertices.push_back(vertex);
 			}
-			triangleIndices.push_back(uniqueVertexMap[vertex]);
+			this->triangleIndices.push_back(uniqueVertexMap[vertex]);
 		}
 	}
 
 	/* Map vertices to buffers */
+	this->positions.resize(uniqueVertices.size());
+	this->colors.resize(uniqueVertices.size());
+	this->normals.resize(uniqueVertices.size());
+	this->texCoords.resize(uniqueVertices.size());
 	for (int i = 0; i < uniqueVertices.size(); ++i)
 	{
 		Vertex v = uniqueVertices[i];
-		positions.push_back(v.point);
-		colors.push_back(v.color);
-		normals.push_back(v.normal);
-		texCoords.push_back(v.texcoord);
+		this->positions[i] = v.point;
+		this->colors[i] = v.color;
+		this->normals[i] = v.normal;
+		this->texCoords[i] = v.texcoord;
 	}
 
 	if (!readingNormals) {
@@ -1898,6 +1928,38 @@ Mesh* Mesh::createTube(std::string name, float radius, float innerRadius, float 
 	}
 }
 
+Mesh* Mesh::createLine(std::string name, glm::vec3 start, glm::vec3 stop, float radius, int segments)
+{
+	using namespace generator;
+	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+	try {		
+		ParametricPath parametricPath {
+			[start, stop](double t) {
+				std::cout<<t<<std::endl;
+				PathVertex vertex;				
+				vertex.position = (stop * float(t)) + (start * (1.0f - float(t)));
+				glm::vec3 tangent = glm::normalize(stop - start);
+				glm::vec3 B1;
+				glm::vec3 B2;
+				buildOrthonormalBasis(tangent, B1, B2);
+				vertex.tangent = tangent;
+				vertex.normal = B1;
+				vertex.texCoord = t;
+				return vertex;
+			},
+			((int32_t) 1) // number of segments
+		} ;
+		CircleShape circle_shape(radius, segments);
+		ExtrudeMesh<generator::CircleShape, generator::ParametricPath> extrude_mesh(circle_shape, parametricPath);
+		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
+		anyDirty = true;
+		return mesh;
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		throw;
+	}
+}
+
 Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> positions, float radius, int segments)
 {
 	if (positions.size() <= 1)
@@ -2053,6 +2115,116 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 	}
 }
 
+Mesh* Mesh::createWireframeBoundingBox(
+			std::string name, vec3 mn, vec3 mx, float width)
+{
+	auto create = [mn, mx, width] (Mesh* mesh) {
+		// First, start off with a normal box
+		std::vector<glm::vec2> uvs = {
+			{.666f, 0.f}, {1.00f, 0.f}, {.666f, .333f}, {1.00f, .333f}, // X
+			{0.f, .333f}, {.333f, .333f}, {0.f, .666f}, {.333f, .666f}, // Y
+			{.000f, 0.f}, {.333f, 0.f}, {000.f, .333f}, {.333f, .333f},  // Z
+			{.333f, 0.f}, {.666f, 0.f}, {.333f, .333f}, {.666f, .333f},  // -X
+			{0.f, .666f}, {.333f, .666f}, {0.f, 1.f}, {.333f, 1.f},  // -Y
+			{.333f, .333f}, {.666f, .333f}, {.333f, .666f}, {.666f, .666f}, // - Z
+		};
+		
+		// std::vector<glm::vec3> verts = {
+		// 	{mx[0], mn[1], mx[2]}, {mx[0], mn[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mn[0], mn[1], mx[2]}, // X
+		// 	{mx[0], mx[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mx[0], mx[1], mx[2]}, {mn[0], mx[1], mx[2]}, // Y
+		// 	{mx[0], mx[1], mx[2]}, {mn[0], mx[1], mn[2]}, {mx[0], mn[1], mx[2]}, {mn[0], mn[1], mx[2]}, // Z
+		// 	{mn[0], mx[1], mx[2]}, {mx[0], mn[1], mx[2]}, {mn[0], mn[1], mx[2]}, {mx[0], mx[1], mn[2]}, // -X
+		// 	{mn[0], mn[1], mx[2]}, {mn[0], mn[1], mn[2]}, {mx[0], mn[1], mx[2]}, {mx[0], mn[1], mn[2]}, // -Y
+		// 	{mn[0], mx[1], mn[2]}, {mx[0], mx[1], mx[2]}, {mn[0], mn[1], mn[2]}, {mx[0], mn[1], mn[2]}, // -Z
+		// };
+
+		std::vector<glm::vec3> verts = {
+			{mx[0], mn[1], mn[2]}, {mx[0], mx[1], mn[2]}, {mx[0], mn[1], mx[2]}, {mx[0], mx[1], mx[2]}, // X
+			{mn[0], mx[1], mn[2]}, {mx[0], mx[1], mn[2]}, {mn[0], mx[1], mx[2]}, {mx[0], mx[1], mx[2]}, // Y
+			{mn[0], mn[1], mx[2]}, {mx[0], mn[1], mx[2]}, {mn[0], mx[1], mx[2]}, {mx[0], mx[1], mx[2]}, // Z
+			{mn[0], mn[1], mn[2]}, {mn[0], mx[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mn[0], mx[1], mx[2]}, // -X
+			{mn[0], mn[1], mn[2]}, {mx[0], mn[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mx[0], mn[1], mx[2]}, // -Y
+			{mn[0], mn[1], mn[2]}, {mx[0], mn[1], mn[2]}, {mn[0], mx[1], mn[2]}, {mx[0], mx[1], mn[2]}, // -Z
+		};
+
+		std::vector<glm::vec3> normals = {
+			{1.f, 0.f, 0.f}, {1.f, 0.f, 0.f}, {1.f, 0.f, 0.f}, {1.f, 0.f, 0.f}, // X
+			{0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, // Y
+			{0.f, 0.f, 1.f}, {0.f, 0.f, 1.f}, {0.f, 0.f, 1.f}, {0.f, 0.f, 1.f}, // Z
+			{-1.f, 0.f, 0.f}, {-1.f, 0.f, 0.f}, {-1.f, 0.f, 0.f}, {-1.f, 0.f, 0.f}, // -X
+			{0.f, -1.f, 0.f}, {0.f, -1.f, 0.f}, {0.f, -1.f, 0.f}, {0.f, -1.f, 0.f}, // -Y
+			{0.f, 0.f, -1.f}, {0.f, 0.f, -1.f}, {0.f, 0.f, -1.f}, {0.f, 0.f, -1.f}, // -Z
+		};
+
+		std::vector<glm::ivec2> edges = { 
+			{0 + (0 * 4), 1 + (0 * 4)}, {1 + (0 * 4), 3 + (0 * 4)}, {2 + (0 * 4), 3 + (0 * 4)}, {0 + (0 * 4), 2 + (0 * 4)}, // X
+			{0 + (1 * 4), 1 + (1 * 4)}, {1 + (1 * 4), 3 + (1 * 4)}, {2 + (1 * 4), 3 + (1 * 4)}, {0 + (1 * 4), 2 + (1 * 4)}, // Y
+			{0 + (2 * 4), 1 + (2 * 4)}, {1 + (2 * 4), 3 + (2 * 4)}, {2 + (2 * 4), 3 + (2 * 4)}, {0 + (2 * 4), 2 + (2 * 4)}, // Z
+			{0 + (3 * 4), 1 + (3 * 4)}, {1 + (3 * 4), 3 + (3 * 4)}, {2 + (3 * 4), 3 + (3 * 4)}, {0 + (3 * 4), 2 + (3 * 4)}, // -X
+			{0 + (4 * 4), 1 + (4 * 4)}, {1 + (4 * 4), 3 + (4 * 4)}, {2 + (4 * 4), 3 + (4 * 4)}, {0 + (4 * 4), 2 + (4 * 4)}, // -Y
+			{0 + (5 * 4), 1 + (5 * 4)}, {1 + (5 * 4), 3 + (5 * 4)}, {2 + (5 * 4), 3 + (5 * 4)}, {0 + (5 * 4), 2 + (5 * 4)}, // -Z			
+		};
+
+
+		// Now, for each edge of that box, create a sub-box which will act as an edge for our wireframe box
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
+		uint32_t ioff = 0;
+		for (uint32_t eid = 0; eid < edges.size(); ++eid) {
+			glm::vec3 p0 = verts[edges[eid].x];//glm::all(glm::lessThanEqual(verts[edges[eid].x], verts[edges[eid].y])) ? verts[edges[eid].x] : verts[edges[eid].y];
+			glm::vec3 p1 = verts[edges[eid].y];//glm::all(glm::greaterThan(verts[edges[eid].x], verts[edges[eid].y])) ? verts[edges[eid].x] : verts[edges[eid].y];
+			glm::vec3 mn = glm::vec3(p0) - glm::vec3(width * .5f);
+			glm::vec3 mx = glm::vec3(p1) + glm::vec3(width * .5f);
+
+			std::vector<glm::vec3> edgeVerts = {
+				{mx[0], mn[1], mn[2]}, {mx[0], mx[1], mn[2]}, {mx[0], mn[1], mx[2]}, {mx[0], mx[1], mx[2]}, // X
+				{mn[0], mx[1], mn[2]}, {mx[0], mx[1], mn[2]}, {mn[0], mx[1], mx[2]}, {mx[0], mx[1], mx[2]}, // Y
+				{mn[0], mn[1], mx[2]}, {mx[0], mn[1], mx[2]}, {mn[0], mx[1], mx[2]}, {mx[0], mx[1], mx[2]}, // Z
+				{mn[0], mn[1], mn[2]}, {mn[0], mx[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mn[0], mx[1], mx[2]}, // -X
+				{mn[0], mn[1], mn[2]}, {mx[0], mn[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mx[0], mn[1], mx[2]}, // -Y
+				{mn[0], mn[1], mn[2]}, {mx[0], mn[1], mn[2]}, {mn[0], mx[1], mn[2]}, {mx[0], mx[1], mn[2]}, // -Z
+			};
+
+			// For all faces
+			for (uint32_t i = 0; i < 6; ++i) {
+				bool even = ((i % 2) == 0);
+				int face = -1;
+				if (i < 2) face = (even) ? 0 : 3; 
+				else if (i < 4) face = (even) ? 1 : 4; 
+				else if (i < 6) face = (even) ? 2 : 5; 
+				Vertex v1, v2, v3, v4;
+				v1.point = vec4(edgeVerts[face * 4 + 0], 1.f); v2.point = vec4(edgeVerts[face * 4 + 1], 1.f); 
+				v3.point = vec4(edgeVerts[face * 4 + 2], 1.f); v4.point = vec4(edgeVerts[face * 4 + 3], 1.f);
+				v1.texcoord = uvs[face * 4 + 0]; v2.texcoord = uvs[face * 4 + 1]; 
+				v3.texcoord = uvs[face * 4 + 2]; v4.texcoord = uvs[face * 4 + 3];
+				v1.normal = vec4(normals[face * 4 + 0], 0.f); v2.normal = vec4(normals[face * 4 + 1], 0.f);
+				v3.normal = vec4(normals[face * 4 + 2], 0.f); v4.normal = vec4(normals[face * 4 + 3], 0.f);
+				vertices.push_back(v1); vertices.push_back(v2); vertices.push_back(v3); vertices.push_back(v4);
+				indices.push_back(ioff + 0); indices.push_back(ioff + 1); indices.push_back(ioff + 2); // T0
+				indices.push_back(ioff + 1); indices.push_back(ioff + 3); indices.push_back(ioff + 2); // T1
+				ioff += 4; // add 4, since we added 4 new vertices.
+			}
+		}
+
+		for (auto &v : vertices) {
+			mesh->positions.push_back(v.point);
+			mesh->colors.push_back(v.color);
+			mesh->normals.push_back(v.normal);
+			mesh->texCoords.push_back(v.texcoord);
+		}
+		mesh->triangleIndices = indices;
+		mesh->computeMetadata();
+		mesh->markDirty();
+	};
+	
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		throw;
+	}
+}
+
 
 Mesh* Mesh::createFromObj(std::string name, std::string path)
 {
@@ -2107,16 +2279,24 @@ Mesh* Mesh::createFromObj(std::string name, std::string path)
 // 	}
 // }
 
-Mesh* Mesh::createFromData (
+Mesh* Mesh::createFromData(
 	std::string name,
-	std::vector<glm::vec4> positions, 
-	std::vector<glm::vec4> normals, 
-	std::vector<glm::vec4> colors, 
-	std::vector<glm::vec2> texcoords, 
-	std::vector<uint32_t> indices
+	std::vector<float> positions_, 
+	uint32_t position_dimensions,
+	std::vector<float> normals_, 
+	uint32_t normal_dimensions, 
+	std::vector<float> colors_, 
+	uint32_t color_dimensions, 
+	std::vector<float> texcoords_, 
+	uint32_t texcoord_dimensions, 
+	std::vector<uint32_t> indices_
 ) {
-	auto create = [&positions, &normals, &colors, &texcoords, &indices] (Mesh* mesh) {
-		mesh->loadData(positions, normals, colors, texcoords, indices);
+	auto create = [&positions_, position_dimensions, &normals_, normal_dimensions, 
+				   &colors_, color_dimensions, &texcoords_, texcoord_dimensions, &indices_] 
+				   (Mesh* mesh) 
+	{
+		mesh->loadData(positions_, position_dimensions, normals_, normal_dimensions, 
+			colors_, color_dimensions, texcoords_, texcoord_dimensions, indices_);
 	};
 	
 	try {

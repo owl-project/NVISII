@@ -78,6 +78,22 @@ Transform* Transform::create(std::string name,
 	}
 }
 
+Transform* Transform::createFromMatrix(std::string name, mat4 xfm) 
+{
+	auto createTransform = [xfm] (Transform* transform) {
+		dirtyTransforms.insert(transform);
+		transform->setTransform(xfm);
+	};
+
+	try {
+		return StaticFactory::create<Transform>(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS, createTransform);
+	}
+	catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+		throw;
+	}
+}
+
 std::shared_ptr<std::mutex> Transform::getEditMutex()
 {
 	return editMutex;
@@ -406,20 +422,44 @@ vec3 Transform::getPosition(bool previous)
 
 vec3 Transform::getRight(bool previous)
 {
-	if (previous) return glm::vec3(glm::column(prevLocalToParentMatrix, 0)); 
-	else return glm::vec3(glm::column(localToParentMatrix, 0)); 
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToParentMatrix, 0))); 
+	else return glm::normalize(glm::vec3(glm::column(localToParentMatrix, 0))); 
 }
 
 vec3 Transform::getUp(bool previous)
 {
-	if (previous) return glm::vec3(glm::column(prevLocalToParentMatrix, 1)); 
-	else return glm::vec3(glm::column(localToParentMatrix, 1)); 
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToParentMatrix, 1))); 
+	else return glm::normalize(glm::vec3(glm::column(localToParentMatrix, 1))); 
 }
 
 vec3 Transform::getForward(bool previous)
 {
-	if (previous) return glm::vec3(glm::column(prevLocalToParentMatrix, 2)); 
-	else return glm::vec3(glm::column(localToParentMatrix, 2)); 
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToParentMatrix, 2))); 
+	else return glm::normalize(glm::vec3(glm::column(localToParentMatrix, 2))); 
+}
+
+vec3 Transform::getWorldPosition(bool previous)
+{
+	if (previous) return glm::vec3(glm::column(prevLocalToWorldMatrix, 3)); 
+	else return glm::vec3(glm::column(localToWorldMatrix, 3)); 
+}
+
+vec3 Transform::getWorldRight(bool previous)
+{
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToWorldMatrix, 0))); 
+	else return glm::normalize(glm::vec3(glm::column(localToWorldMatrix, 0))); 
+}
+
+vec3 Transform::getWorldUp(bool previous)
+{
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToWorldMatrix, 1))); 
+	else return glm::normalize(glm::vec3(glm::column(localToWorldMatrix, 1))); 
+}
+
+vec3 Transform::getWorldForward(bool previous)
+{
+	if (previous) return glm::normalize(glm::vec3(glm::column(prevLocalToWorldMatrix, 2))); 
+	else return glm::normalize(glm::vec3(glm::column(localToWorldMatrix, 2))); 
 }
 
 void Transform::setPosition(vec3 newPosition, bool previous)
@@ -710,6 +750,21 @@ glm::mat4 Transform::getParentToLocalRotationMatrix(bool previous)
 	else return glm::toMat4(glm::inverse(rotation));
 }
 
+Transform* Transform::getParent() {
+	if ((this->parent < 0) || (this->parent >= MAX_TRANSFORMS)) return nullptr;
+	return &transforms[this->parent];
+}
+
+std::vector<Transform*> Transform::getChildren() {
+	std::vector<Transform*> children_list;
+	for (auto &cid : this->children){
+		// in theory I don't need to do this, but better safe than sorry.
+		if ((cid < 0) || (cid >= MAX_TRANSFORMS)) continue;
+		children_list.push_back(&transforms[cid]);
+	}
+	return children_list;
+}
+
 void Transform::setParent(Transform *parent) {
 	if (!parent)
 		throw std::runtime_error(std::string("Error: parent is empty"));
@@ -719,6 +774,15 @@ void Transform::setParent(Transform *parent) {
 	
 	if (parent->getId() == this->getId())
 		throw std::runtime_error(std::string("Error: a transform cannot be the parent of itself"));
+
+	// check for circular relationships
+	auto tmp = parent;
+	while (tmp->getParent() != nullptr) {
+		if (tmp->getParent()->getId() == this->getId()) {
+			throw std::runtime_error(std::string("Error: circular dependency detected"));
+		}
+		tmp = tmp->getParent();
+	}
 
 	this->parent = parent->getId();
 	transforms[parent->getId()].children.insert(this->id);
@@ -749,10 +813,7 @@ void Transform::addChild(Transform *object) {
 	if (object->getId() == this->getId())
 		throw std::runtime_error(std::string("Error: a transform cannot be the child of itself"));
 
-	children.insert(object->getId());
-	transforms[object->getId()].parent = this->id;
-	transforms[object->getId()].updateWorldMatrix();
-	transforms[object->getId()].markDirty();
+	object->setParent(&transforms[getId()]);
 }
 
 void Transform::removeChild(Transform *object) {

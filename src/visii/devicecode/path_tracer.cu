@@ -6,6 +6,8 @@
 #include <optix_device.h>
 #include <owl/common/math/random.h>
 
+#include "visii/utilities/procedural_sky.h"
+
 typedef owl::common::LCG<4> Random;
 
 extern "C" __constant__ LaunchParams optixLaunchParams;
@@ -43,9 +45,9 @@ vec3 toPolar(vec2 uv)
     float phi = M_PI * uv.y;
 
     vec3 n;
-    n.x = cos(theta) * sin(phi);
-    n.y = sin(theta) * sin(phi);
-    n.z = cos(phi);
+    n.x = __cosf(theta) * __sinf(phi);
+    n.y = __sinf(theta) * __sinf(phi);
+    n.z = __cosf(phi);
 
     //n = normalize(n);
     n.z = -n.z;
@@ -84,10 +86,10 @@ vec3 toPolar(vec2 uv)
 // }
 
 inline __device__
-float3 missColor(const owl::Ray &ray)
+float3 missColor(const float3 dir)
 {
-    vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(normalize(ray.direction));
-    if (optixLaunchParams.environmentMapID != -1) 
+    vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(normalize(dir));
+    if (optixLaunchParams.environmentMapID >= 0) 
     {
         vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
         cudaTextureObject_t tex = optixLaunchParams.textureObjects[optixLaunchParams.environmentMapID];
@@ -96,6 +98,16 @@ float3 missColor(const owl::Ray &ray)
         float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
         return make_float3(texColor);
     }
+    if ((optixLaunchParams.environmentMapID == -2) && (optixLaunchParams.proceduralSkyTexture != 0)) {
+        vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
+        cudaTextureObject_t tex = optixLaunchParams.proceduralSkyTexture;
+        if (!tex) return make_float3(1.f, 0.f, 1.f);
+
+        float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
+        return make_float3(texColor);
+    }
+    
+    if (glm::any(glm::greaterThan(optixLaunchParams.domeLightColor, glm::vec3(0.f)))) return make_float3(optixLaunchParams.domeLightColor);
 
     float t = 0.5f*(rayDir.z + 1.0f);
     float3 c = (1.0f - t) * make_float3(pow(vec3(1.0f), vec3(2.2f))) + t * make_float3( pow(vec3(0.5f, 0.7f, 1.0f), vec3(2.2f)) );
@@ -103,23 +115,11 @@ float3 missColor(const owl::Ray &ray)
 }
 
 inline __device__
-float3 missColor(const float3 dir)
+float3 missColor(const owl::Ray &ray)
 {
-    vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(normalize(dir));
-    if (optixLaunchParams.environmentMapID != -1) 
-    {
-        vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
-        cudaTextureObject_t tex = optixLaunchParams.textureObjects[optixLaunchParams.environmentMapID];
-        if (!tex) return make_float3(1.f, 0.f, 1.f);
-
-        float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
-        return make_float3(texColor);
-    }
-
-    float t = 0.5f*(rayDir.z + 1.0f);
-    float3 c = (1.0f - t) * make_float3(pow(vec3(1.0f), vec3(2.2f))) + t * make_float3( pow(vec3(0.5f, 0.7f, 1.0f), vec3(2.2f)) );
-    return c;
+    return missColor(ray.direction);
 }
+
 
 OPTIX_MISS_PROGRAM(miss)()
 {
@@ -229,6 +229,7 @@ void loadDisneyMaterial(const MaterialStruct &p, vec2 uv, DisneyMaterial &mat, f
     mat.ior = sampleTexture(p.ior_texture_id, uv, vec4(p.ior))[p.ior_texture_channel];
     mat.specular_transmission = sampleTexture(p.transmission_texture_id, uv, vec4(p.transmission))[p.transmission_texture_channel];
     mat.flatness = sampleTexture(p.subsurface_texture_id, uv, vec4(p.subsurface))[p.subsurface_texture_channel];
+    mat.subsurface_color = make_float3(sampleTexture(p.subsurface_color_texture_id, uv, vec4(p.subsurface_color)));
     mat.transmission_roughness = max(max(sampleTexture(p.transmission_roughness_texture_id, uv, vec4(p.transmission_roughness))[p.transmission_roughness_texture_channel], MIN_ROUGHNESS), roughnessMinimum);
 }
 
@@ -495,7 +496,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     ray.time = time;
     owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
                     /*the ray to trace*/ ray,
-                    /*prd*/ payload);
+                    /*prd*/ payload,
+                    OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
     // Shade each hit point on a path using NEE with MIS
     do {     
@@ -532,7 +534,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
             payload.tHit = -1.f;
             ray.time = time;
-            owl::traceRay( optixLaunchParams.world, ray, payload);
+            owl::traceRay( optixLaunchParams.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
             visibilitySkips++;
             if (visibilitySkips > 10) break; // avoid locking up.
 
@@ -599,7 +601,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             all(lessThan(abs(make_vec3(v_y)), vec3(EPSILON))) ||
             any(isnan(make_vec3(v_x))) || 
             any(isnan(make_vec3(v_y)))
-        ) {
+        ) 
+        {
             ortho_basis(v_x, v_y, v_z);
         }
 
@@ -663,6 +666,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         int forcedBsdf = -1;//rdForcedBsdf;//(bounce == optixLaunchParams.renderDataBounce) ? rdForcedBsdf : -1; 
 
         // first, sample the light source by importance sampling the light
+        // note, results in large instruction cache misses... needs optimizing
         for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid) 
         {
             uint32_t randomID = uint32_t(min(lcg_randomf(rng) * (numLights+1), float(numLights)));
@@ -670,7 +674,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // sample background
             if (randomID == numLights) {
                 sampledLightIDs[lid] = -1;
-                const uint32_t occlusionFlags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
                 float3 lightDir;
 
                 if (
@@ -678,6 +681,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     (optixLaunchParams.environmentMapRows != nullptr) && (optixLaunchParams.environmentMapCols != nullptr)
                 ) 
                 {
+                    // significant bottleneck here
                     // Vec3fa color = m_background->sample(dg, wi, tMax, RandomSampler_get2D(sampler));
                     float rx = lcg_randomf(rng);
                     float ry = lcg_randomf(rng);
@@ -691,7 +695,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     ry = sample_cdf(rows, height, ry, &y, &row_pdf);
                     y = max(min(y, height - 1), 0);
                     rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
-                    lightDir = make_float3(toPolar(vec2((x + rx) / float(width), (y + ry)/float(height))));
+                    lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
                     lightPDFs[lid] = row_pdf * col_pdf * invjacobian;
                 } 
                 else 
@@ -712,16 +716,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if (bsdfPDF > EPSILON) {
                     RayPayload payload;
                     owl::Ray ray;
-                    ray.tmin = EPSILON * 10.f;
-                    ray.tmax = 1e20f;
-                    ray.origin = hit_p;
-                    ray.direction = lightDir;
-                    payload.tHit = -1.f;
+                    ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f;
+                    ray.origin = hit_p; ray.direction = lightDir;
                     ray.time = time;
-                    owl::traceRay( optixLaunchParams.world, ray, payload, occlusionFlags);
-                    int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
-                    bool visible = (payload.instanceID == -1);
-
+                    owl::traceRay( optixLaunchParams.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT);
+                    bool visible = (ray.tmax < 1e20f);
                     if (visible) {
                         float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
                         float3 bsdf, bsdf_color;
@@ -802,7 +801,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             ray.direction = light_dir;
                             payload.tHit = -1.f;
                             ray.time = time;
-                            owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
+                            owl::traceRay( optixLaunchParams.world, ray, payload,  OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT);
                             if (payload.instanceID == -1) continue;
                             int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
                             bool visible = ((entityID == sampledLightIDs[lid]) || (entityID == -1));
@@ -841,7 +840,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         payload.instanceID = -1;
         payload.tHit = -1.f;
         ray.time = sampleTime(lcg_randomf(rng));
-        owl::traceRay(optixLaunchParams.world, ray, payload);
+        owl::traceRay(optixLaunchParams.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
         for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid)
         {

@@ -496,6 +496,23 @@ class Mesh : public StaticFactory
 			int segments = 4);
 
 		/** 
+		 * Creates a line from a circle extruded linearly between the specified start and stop positions.
+		 * 
+		 *  @param name The name (used as a primary key) for this mesh component
+		 *  @param start The start position of the linear path.
+		 *  @param start The stop position of the linear path.
+		 *  @param radius The radius of the extruded circle
+		 *  @param segments Number of subdivisions around the circle.
+		 *  @returns a reference to the mesh component
+		 */
+		static Mesh* createLine(
+			std::string name, 
+			glm::vec3 start, 
+			glm::vec3 stop, 
+			float     radius = 1.0, 
+			int  segments = 16);
+
+		/** 
 		 * Creates an uncapped tube (a cylinder with thickness) centered at the origin and aligned along the z-axis.
 		 * 
 		 *  @param name The name (used as a primary key) for this mesh component
@@ -568,6 +585,23 @@ class Mesh : public StaticFactory
 			ivec2 segments = ivec2(8, 8));
 
 		/** 
+		 * Creates a wireframe bounding box spanning the region between the minimum corner to 
+		 * the maximum corner, and aligned along the x, y, and z axis. 
+		 *
+		 * @param name The name (used as a primary key) for this mesh component
+		 * @param min_corner The position of the bottom left near corner of the axis aligned bounding box.
+		 * @param max_corner The position of the top right far corner of the axis aligned bounding box.
+		 * @param size The side length in x (0), y (1) and z (2) direction. 
+		 * @param thickness The thickness of the wires in the wireframe.
+		 * @returns a reference to the mesh component
+		 */
+		static Mesh* createWireframeBoundingBox(
+			std::string name, 
+			vec3 min_corner = vec3(-1.0f), 
+			vec3 max_corner = vec3(1.0f), 
+			float thickness = .01f);
+
+		/** 
 		 * Creates a mesh component from an OBJ file (ignoring any .mtl files) 
 		 * 
 		 * @param name The name (used as a primary key) for this mesh component
@@ -591,19 +625,27 @@ class Mesh : public StaticFactory
 		 * supplied per vertex data must be a multiple of 3 in length. 
 		 * 
 		 * @param name The name (used as a primary key) for this mesh component
-		 * @param positions A list of 3D vertex positions. If indices aren't supplied, this must be a multiple of 3.
-		 * @param normals A list of 3D vertex normals. If indices aren't supplied, this must be a multiple of 3.
+		 * @param positions A list of vertex positions. If indices aren't supplied, this must be a multiple of 3.
+		 * @param position_dimensions The number of floats per position. Valid numbers are 3 or 4.
+		 * @param normals A list of vertex normals. If indices aren't supplied, this must be a multiple of 3.
+		 * @param normal_dimensions The number of floats per normal. Valid numbers are 3 or 4.
 		 * @param colors A list of per-vertex colors. If indices aren't supplied, this must be a multiple of 3.
+		 * @param color_dimensions The number of floats per color. Valid numbers are 3 or 4.
 		 * @param texcoords A list of 2D per-vertex texture coordinates. If indices aren't supplied, this must be a multiple of 3.
+		 * @param texcoord_dimensions The number of floats per texcoord. Valid numbers are 2. (3 might be supported later for 3D textures...)
 		 * @param indices A list of integer indices connecting vertex positions in a counterclockwise ordering to form triangles. If supplied, indices must be a multiple of 3.
 		 * @returns a reference to the mesh component
 		*/
 		static Mesh* createFromData(
 			std::string name,
-			std::vector<glm::vec4> positions, 
-			std::vector<glm::vec4> normals = std::vector<glm::vec4>(), 
-			std::vector<glm::vec4> colors = std::vector<glm::vec4>(), 
-			std::vector<glm::vec2> texcoords = std::vector<glm::vec2>(), 
+			std::vector<float> positions, 
+			uint32_t position_dimensions = 3,
+			std::vector<float> normals = std::vector<float>(), 
+			uint32_t normal_dimensions = 3, 
+			std::vector<float> colors = std::vector<float>(), 
+			uint32_t color_dimensions = 4, 
+			std::vector<float> texcoords = std::vector<float>(), 
+			uint32_t texcoord_dimensions = 2, 
 			std::vector<uint32_t> indices = std::vector<uint32_t>());
 
 		/**
@@ -889,13 +931,16 @@ class Mesh : public StaticFactory
 		// /* TODO: Explain this */
 		// void load_tetgen(std::string path);
 
-		/* Copies per vertex data to the GPU */
 		void loadData (
-			std::vector<glm::vec4> &positions, 
-			std::vector<glm::vec4> &normals, 
-			std::vector<glm::vec4> &colors, 
-			std::vector<glm::vec2> &texcoords,
-			std::vector<uint32_t> indices
+			std::vector<float> &positions_, 
+			uint32_t position_dimensions,
+			std::vector<float> &normals_,
+			uint32_t normal_dimensions, 
+			std::vector<float> &colors_, 
+			uint32_t color_dimensions,
+			std::vector<float> &texcoords_, 
+			uint32_t texcoord_dimensions,
+			std::vector<uint32_t> indices_
 		);
 		
 		/** Creates a procedural mesh from the given mesh generator, and copies per vertex to the GPU */

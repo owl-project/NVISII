@@ -57,37 +57,11 @@ class Transform : public StaticFactory
     quat angularMotion = quat(1.f,0.f,0.f,0.f);
     vec3 scalarMotion = vec3(0.0);
 
-    // vec3 right = vec3(1.0, 0.0, 0.0);
-    // vec3 up = vec3(0.0, 1.0, 0.0);
-    // vec3 forward = vec3(0.0, 0.0, 1.0);
-
-    // vec3 prevRight = vec3(1.0, 0.0, 0.0);
-    // vec3 prevUp = vec3(0.0, 1.0, 0.0);
-    // vec3 prevForward = vec3(0.0, 0.0, 1.0);
-
     mat4 localToParentTransform = mat4(1);
-    // mat4 localToParentRotation = mat4(1);
-    // mat4 localToParentTranslation = mat4(1);
-    // mat4 localToParentScale = mat4(1);
-
-    // mat4 parentToLocalTransform = mat4(1);
-    // mat4 parentToLocalRotation = mat4(1);
-    // mat4 parentToLocalTranslation = mat4(1);
-    // mat4 parentToLocalScale = mat4(1);
-
     mat4 localToParentMatrix = mat4(1);
     mat4 parentToLocalMatrix = mat4(1);
 
     mat4 prevLocalToParentTransform = mat4(1);
-    // mat4 prevLocalToParentTranslation = mat4(1);
-    // mat4 prevLocalToParentRotation = mat4(1);
-    // mat4 prevLocalToParentScale = mat4(1);
-
-    // mat4 prevParentToLocalTransform = mat4(1);
-    // mat4 prevParentToLocalTranslation = mat4(1);
-    // mat4 prevParentToLocalRotation = mat4(1);
-    // mat4 prevParentToLocalScale = mat4(1);
-
     mat4 prevLocalToParentMatrix = mat4(1);
     mat4 prevParentToLocalMatrix = mat4(1);
 
@@ -98,24 +72,7 @@ class Transform : public StaticFactory
     mat4 prevLocalToWorldMatrix = mat4(1);
     mat4 prevWorldToLocalMatrix = mat4(1);
 
-    // from local to world decomposition. 
-    // May only approximate the localToWorldMatrix
-    // glm::vec3 worldScale;
-    // glm::quat worldRotation;
-    // glm::vec3 worldTranslation;
-    // glm::vec3 worldSkew;
-    // glm::vec4 worldPerspective;
-
-    // glm::vec3 prevWorldScale;
-    // glm::quat prevWorldRotation;
-    // glm::vec3 prevWorldTranslation;
-    // glm::vec3 prevWorldSkew;
-    // glm::vec4 prevWorldPerspective;
-    
-    // float interpolation = 1.0;
-
-    /* TODO */
-	static std::shared_ptr<std::mutex> editMutex;
+  	static std::shared_ptr<std::mutex> editMutex;
     static bool factoryInitialized;
 
     static Transform transforms[MAX_TRANSFORMS];
@@ -167,6 +124,17 @@ class Transform : public StaticFactory
       vec3 scale = vec3(1.0f), 
       quat rotation = quat(1.0f, 0.0f, 0.0f, 0.0f),
       vec3 position = vec3(0.f) 
+    );
+
+    /**
+     * Constructs a transform with the given name, initializing with the given matrix.
+     * 
+     * @param name A unique name for this transform.
+     * @param matrix The initial local to world transformation to be applied
+     * @returns a reference to a transform component
+    */
+    static Transform* createFromMatrix(std::string name, 
+      mat4 transform = mat4(1.0f)
     );
 
     /** 
@@ -396,28 +364,52 @@ class Transform : public StaticFactory
     // void addRotation(float angle, vec3 axis);
 
     /** 
-     * @param previous If true, returns the previous position.
-     * @returns a position vector describing where this transform will be translated to in its parent space. 
+     * @param previous If true, returns the previous parent-space position.
+     * @returns a position vector describing where this transform will be translated to in its' parent's space. 
      */
     vec3 getPosition(bool previous = false);
 
     /** 
-     * @param previous If true, returns the previous right vector.
-     * @returns a vector pointing right relative to the current transform placed in its parent's space. 
+     * @param previous If true, returns the previous parent-space right vector.
+     * @returns a vector pointing right relative to the current transform placed in its' parent's space. 
      */
     vec3 getRight(bool previous = false);
 
     /** 
-     * @param previous If true, returns the previous up vector.
-     * @returns a vector pointing up relative to the current transform placed in its parent's space. 
+     * @param previous If true, returns the previous parent-space up vector.
+     * @returns a vector pointing up relative to the current transform placed in its' parent's space. 
      */
     vec3 getUp(bool previous = false);
 
     /** 
-     * @param previous If true, returns the previous forward vector.
-     * @returns a vector pointing forward relative to the current transform placed in its parent's space. 
+     * @param previous If true, returns the previous parent-space forward vector.
+     * @returns a vector pointing forward relative to the current transform placed in its' parent's space. 
      */
     vec3 getForward(bool previous = false);
+
+    /** 
+     * @param previous If true, returns the previous world-space position.
+     * @returns a position vector describing where this transform will be translated to in world-space. 
+     */
+    vec3 getWorldPosition(bool previous = false);
+
+    /** 
+     * @param previous If true, returns the previous world-space right vector.
+     * @returns a vector pointing right relative to the current transform placed in world-space. 
+     */
+    vec3 getWorldRight(bool previous = false);
+
+    /** 
+     * @param previous If true, returns the previous world-space up vector.
+     * @returns a vector pointing up relative to the current transform placed in world-space. 
+     */
+    vec3 getWorldUp(bool previous = false);
+
+    /** 
+     * @param previous If true, returns the previous world-space forward vector.
+     * @returns a vector pointing forward relative to the current transform placed in world-space. 
+     */
+    vec3 getWorldForward(bool previous = false);
 
     /** 
      * Sets the position vector describing where this transform should be translated to when placed in its 
@@ -619,6 +611,9 @@ class Transform : public StaticFactory
      * @param parent The transform component to constrain the current transform to. Any existing parent constraint is replaced.
     */
     void setParent(Transform * parent);
+    
+    Transform* getParent();
+    std::vector<Transform*> getChildren();
 
     /** Removes the parent-child relationship affecting this node. */
     void clearParent();

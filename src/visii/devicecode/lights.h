@@ -174,7 +174,6 @@ void sampleDirectLight( vec3 pos,
 	vec3 e1, e2;
 	rand3 *= nPlanes;
 	vec3 s1, s2, s;
-	float dist1, dist2;
 	if (0.f <= rand3 && rand3 < 1.f) 
 	{
 		e1 = vec3(0., bbmax.y - bbmin.y, 0.);
