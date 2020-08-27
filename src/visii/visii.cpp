@@ -710,6 +710,8 @@ void initializeOptix(bool headless)
     ));
 
     OD.placeholder = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 1, nullptr);
+
+    setDomeLightSky(glm::vec3(0,0,10));
 }
 
 void initializeImgui()
@@ -782,6 +784,7 @@ void setDomeLightIntensity(float intensity)
 
 void setDomeLightColor(vec3 color)
 {
+    clearDomeLightTexture();
     color.r = glm::max(0.f, glm::min(color.r, 1.f));
     color.g = glm::max(0.f, glm::min(color.g, 1.f));
     color.b = glm::max(0.f, glm::min(color.b, 1.f));
@@ -803,7 +806,8 @@ void clearDomeLightTexture()
 
     resetAccumulation();
     auto future = enqueueCommand(func);
-    future.wait();
+    if (ViSII.render_thread_id != std::this_thread::get_id()) 
+        future.wait();
 }
 
 void generateDomeCDF()
@@ -898,7 +902,8 @@ void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness)
         resetAccumulation();
     };
     auto future = enqueueCommand(func);
-    future.wait();
+    if (ViSII.render_thread_id != std::this_thread::get_id()) 
+        future.wait();
 }
 
 void setDomeLightTexture(Texture* texture)
@@ -953,7 +958,8 @@ void setDomeLightTexture(Texture* texture)
         resetAccumulation();        
     };
     auto future = enqueueCommand(func);
-    future.wait();
+    if (ViSII.render_thread_id != std::this_thread::get_id()) 
+        future.wait();
 }
 
 void setDomeLightRotation(glm::quat rotation)
@@ -1246,6 +1252,8 @@ void updateComponents()
         OptixData.LP.viewT0 = transform.getWorldToLocalMatrix(/*previous = */ true);
         OptixData.LP.viewT1 = transform.getWorldToLocalMatrix(/*previous = */ false);
     }
+
+    
 }
 
 void updateLaunchParams()
