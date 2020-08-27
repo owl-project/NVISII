@@ -107,7 +107,7 @@ float3 missColor(const float3 dir)
         return make_float3(texColor);
     }
     
-    if (glm::any(glm::greaterThan(optixLaunchParams.domeLightColor, glm::vec3(0.f)))) return make_float3(optixLaunchParams.domeLightColor);
+    if (glm::any(glm::greaterThanEqual(optixLaunchParams.domeLightColor, glm::vec3(0.f)))) return make_float3(optixLaunchParams.domeLightColor);
 
     float t = 0.5f*(rayDir.z + 1.0f);
     float3 c = (1.0f - t) * make_float3(pow(vec3(1.0f), vec3(2.2f))) + t * make_float3( pow(vec3(0.5f, 0.7f, 1.0f), vec3(2.2f)) );
