@@ -16,12 +16,14 @@ class Texture : public StaticFactory
 	
 	/** 
 	 * Constructs a Texture with the given name.
+	 * @param name The name of the texture to create.
      * @return a Texture allocated by the renderer. 
 	*/
 	static Texture *create(std::string name);
 
 	/** 
 	 * Constructs a Texture with the given name from a image located on the filesystem. 
+	 * @param name The name of the texture to create.
 	 * Supported formats include JPEG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, and PNM
 	 * @param path The path to the image.
 	 * @param linear Indicates the image to load should not be gamma corrected.
@@ -31,12 +33,37 @@ class Texture : public StaticFactory
 
 	/** 
 	 * Constructs a Texture with the given name from custom user data.
+	 * @param name The name of the texture to create.
 	 * @param width The width of the image.
 	 * @param height The height of the image.
 	 * @param data A row major flattened vector of RGBA texels. The length of this vector should be 4 * width * height.
      * @returns a Texture allocated by the renderer. 
 	*/
 	static Texture *createFromData(std::string name, uint32_t width, uint32_t height, std::vector<float> data);
+
+	/** 
+	 * Constructs a Texture with the given name that mixes two different textures together.
+	 * @param name The name of the texture to create.
+	 * @param a The first of two textures to mix. 
+	 * @param b The second of two textures to mix. 
+	 * @param mix A value between 0 and 1 used to mix between the first and second textures.
+     * @returns a Texture allocated by the renderer. 
+	*/
+	static Texture *createMix(std::string name, Texture* a, Texture* b, float mix);
+
+	/** 
+	 * Constructs a Texture with the given name by applying a color transformation on the HSV space to an existing texture.
+	 * @param name The name of the texture to create.
+	 * @param t The texture to take pixels from
+	 * @param hue Specifies the hue rotation of the image. 360 degrees are mapped to [0,1]. 
+	 * The hue shifts of 0 (-180) and 1 (180) have the same result.
+	 * @param saturation A saturation of 0 removes hues from the image, resulting in a grayscale image. 
+	 * A shift greater than 1.0 increases saturation.
+	 * @param value is the overall brightness of the image. De/Increasing values shift an image darker/lighter.
+	 * @param mix A value between 0 and 1 used to mix between the original input and the HSV transformed image. 
+     * @returns a Texture allocated by the renderer. 
+	*/
+	static Texture* createHSV(std::string name, Texture* tex, float hue, float saturation, float value, float mix);
 
     /**
      * @param name The name of the Texture to get
@@ -100,6 +127,13 @@ class Texture : public StaticFactory
 
     /** @returns a flattened list of texels */
     std::vector<vec4> getTexels();
+
+	/**
+	 * Sample the texture at the given texture coordinates
+	 * @param uv A pair of values between [0,0] and [1,1]
+	 * @returns a sampled texture value
+	*/
+	vec4 sample(vec2 uv);
 
     /** @returns the width of the texture in texels */
     uint32_t getWidth();

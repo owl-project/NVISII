@@ -326,20 +326,24 @@ vec2 uniformUVWithinTriangle( const vec2 &uv1, const vec2 &uv2, const vec2 &uv3,
 }
 
 inline __device__
-void sampleTriangle(const vec3 &pos, const vec3 &n, 
+void sampleTriangle(const vec3 &pos, 
+					const vec3 &n1, const vec3 &n2, const vec3 &n3, 
 					const vec3 &v1, const vec3 &v2, const vec3 &v3, 
 					const vec2 &uv1, const vec2 &uv2, const vec2 &uv3, 
-					float rand1, float rand2, vec3 &dir, float &pdf, vec2 &uv)
+					float rand1, float rand2, vec3 &dir, float &pdf, vec2 &uv,
+					bool double_sided)
 {
 	vec3 p = uniformPointWithinTriangle( v1, v2, v3, rand1, rand2 );
+	vec3 n = uniformPointWithinTriangle( n1, n2, n3, rand1, rand2 );
 	uv = uniformUVWithinTriangle( uv1, uv2, uv3, rand1, rand2 );
 	float triangleArea = fabs(length(cross(v1-v2, v3-v2)) * 0.5);
-	float pdfA = 1.0 / triangleArea;
+	float pdfA = triangleArea;//1.0 / triangleArea;
 	dir = p - pos;
-	float d2 = dot(dir, dir);
-	dir /= sqrt(d2);
-	float aCosThere = max(0.0, fabs(dot(-dir,n)));
-	pdf = PdfAtoW( pdfA, d2, aCosThere );
+	float d2 = dot(dir, dir); 
+	float d = sqrt(d2); // linear
+	dir /= d;
+	float aCosThere = max(0.0, (double_sided) ? fabs(dot(-dir,n)) : dot(-dir,n));
+	pdf = PdfAtoW( pdfA, d2 + 1.0, aCosThere ); // adding 1 to remove singularity at 0
 }
 
 __device__

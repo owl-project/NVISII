@@ -672,7 +672,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             uint32_t randomID = uint32_t(min(lcg_randomf(rng) * (numLights+1), float(numLights)));
 
             // sample background
-            if (randomID == numLights) {
+            if (randomID == numLights)
+            {
                 sampledLightIDs[lid] = -1;
                 float3 lightDir;
 
@@ -708,6 +709,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     lightDir = make_float3(normalize(tbn * normalize(make_vec3(hemi_dir))) );
                     lightPDFs[lid] = 1.f;
                 }
+
+                lightPDFs[lid] /= (numLights + 1);
 
                 float dotNWi = fabs(dot(lightDir, v_z)); // for now, making all lights double sided.
                 
@@ -766,8 +769,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 // Sample the light to compute an incident light ray to this point
                 {    
                     owl::device::Buffer *vertexLists = (owl::device::Buffer *)optixLaunchParams.vertexLists.data;
+                    owl::device::Buffer *normalLists = (owl::device::Buffer *)optixLaunchParams.normalLists.data;
                     owl::device::Buffer *texCoordLists = (owl::device::Buffer *)optixLaunchParams.texCoordLists.data;
                     vec4 *vertices = (vec4*) vertexLists[light_entity.mesh_id].data;
+                    vec4 *normals = (vec4*) normalLists[light_entity.mesh_id].data;
                     vec2 *texCoords = (vec2*) texCoordLists[light_entity.mesh_id].data;
                     vec3 dir; 
                     vec2 uv;
@@ -775,19 +780,24 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     vec3 v1 = transform.localToWorld * vertices[triIndex.x];
                     vec3 v2 = transform.localToWorld * vertices[triIndex.y];
                     vec3 v3 = transform.localToWorld * vertices[triIndex.z];
+                    vec3 n1 = transform.localToWorld * normals[triIndex.x];
+                    vec3 n2 = transform.localToWorld * normals[triIndex.y];
+                    vec3 n3 = transform.localToWorld * normals[triIndex.z];
                     vec2 uv1 = texCoords[triIndex.x];
                     vec2 uv2 = texCoords[triIndex.y];
                     vec2 uv3 = texCoords[triIndex.z];
-                    vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
-                    sampleTriangle(pos, N, v1, v2, v3, uv1, uv2, uv3, lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv);
+                    // vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
+                    sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false);
                     vec3 normal = glm::vec3(n_l.x, n_l.y, n_l.z);
-                    float dotNWi = fabs(dot(dir, normal)); // for now, making all lights double sided.
+                    float dotNWi = abs(dot(dir, normal));
                     lightPDFs[lid] = abs(lightPDFs[lid]);
+                    lightPDFs[lid] /= (numLights);
+                    lightPDFs[lid] /= (mesh.numTris);
                     
                     float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
                     float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, uv, make_vec4(default_light_emission))) * light_light.intensity;
 
-                    if ((lightPDFs[lid] > EPSILON) && (dotNWi > EPSILON)) {
+                    if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
                         float3 light_dir = make_float3(dir.x, dir.y, dir.z);
                         light_dir = normalize(light_dir);
                         float bsdf_pdf;
@@ -849,7 +859,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 // if by sampling the brdf we also hit the light source...
                 if ((payload.instanceID == -1) && (sampledLightIDs[lid] == -1)) {
                     // Case where we hit the background, and also previously sampled the background   
-                    float dotNWi = fabs(dot(-v_gz, ray.direction)); // for now, making all lights double sided.
+                    float dotNWi = dot(-v_gz, ray.direction);
                     if (dotNWi > 0.f) {
                         float w = power_heuristic(1.f, bsdf_pdf, 1.f, lightPDFs[lid]);
                         float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / bsdf_pdf;
@@ -862,29 +872,32 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     bool visible = (entityID == sampledLightIDs[lid]);
                     // We hit the light we sampled previously
                     if (visible) {
-                        int3 indices; float3 p, p_e1, p_e2; float3 v_gz; float2 uv, uv_e1, uv_e2;
+                        int3 indices; float3 p, p_e1, p_e2; float3 lv_gz; 
+                        float2 uv, uv_e1, uv_e2;
                         loadMeshTriIndices(light_entity.mesh_id, payload.primitiveID, indices);
-                        loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, v_gz, p_e1, p_e2);
+                        loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, lv_gz, p_e1, p_e2);
                         loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
     
                         // Transform data into world space
-                        glm::mat4 xfm;
-                        xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
-                        xfm = glm::column(xfm, 1, vec4(payload.localToWorld[1], payload.localToWorld[5],  payload.localToWorld[9], 0.0f));
-                        xfm = glm::column(xfm, 2, vec4(payload.localToWorld[2], payload.localToWorld[6],  payload.localToWorld[10], 0.0f));
-                        xfm = glm::column(xfm, 3, vec4(payload.localToWorld[3], payload.localToWorld[7],  payload.localToWorld[11], 1.0f));
-                        glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
-                        p = make_float3(xfm * make_vec4(p, 1.0f));
-                        v_gz = make_float3(normalize(nxfm * normalize(make_vec3(v_gz))));
+                        // glm::mat4 xfm;
+                        // xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
+                        // xfm = glm::column(xfm, 1, vec4(payload.localToWorld[1], payload.localToWorld[5],  payload.localToWorld[9], 0.0f));
+                        // xfm = glm::column(xfm, 2, vec4(payload.localToWorld[2], payload.localToWorld[6],  payload.localToWorld[10], 0.0f));
+                        // xfm = glm::column(xfm, 3, vec4(payload.localToWorld[3], payload.localToWorld[7],  payload.localToWorld[11], 1.0f));
+                        // glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
+                        // p = make_float3(xfm * make_vec4(p, 1.0f));
+                        // lv_gz = make_float3(normalize(nxfm * normalize(make_vec3(lv_gz))));
     
                         float4 default_light_emission = make_float4(light_light.r, light_light.g, light_light.b, 0.f);
                         float3 lightEmission = make_float3(sampleTexture(light_light.color_texture_id, make_vec2(uv), make_vec4(default_light_emission))) * light_light.intensity;
     
                         float dist = distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
-                        float dotNWi = fabs(dot(-v_gz, ray.direction)); // for now, making all lights double sided.
-                        if (dotNWi > 0.f){
-                            float w = power_heuristic(1.f, bsdf_pdf, 1.f, lightPDFs[lid]);
-                            float3 Li = lightEmission * w / bsdf_pdf;
+                        float dotNWi = abs(dot(-v_gz, ray.direction)); // geometry term
+                        float pdf = bsdf_pdf * ((dist * dist) + 1.0f);
+                        // float dotWiN = dot(-lv_gz, ray.direction); // is light facing towards us? // Seems like this calculation isn't needed.
+                        if ((dotNWi > 0.f) /*&& (dotWiN > 0.f)*/) {
+                            float w = power_heuristic(1.f, pdf, 1.f, lightPDFs[lid]);
+                            float3 Li = lightEmission * w / pdf;
                             irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi)); // missing r^2 falloff?
                         }
                     }

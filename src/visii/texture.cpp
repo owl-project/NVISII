@@ -176,6 +176,81 @@ Texture* Texture::createFromData(std::string name, uint32_t width, uint32_t heig
 	}
 }
 
+Texture* Texture::createHSV(std::string name, Texture* tex, float hue, float saturation, float value, float mix)
+{
+    auto create = [tex, hue, saturation, value, mix] (Texture* l) {
+        if (!tex || !tex->isInitialized()) throw std::runtime_error(std::string("Error: input texture is null/uninitialized!")); 
+
+        uint32_t width = tex->getWidth();
+        uint32_t height = tex->getHeight();
+        l->texels.resize(width * height);
+        textureStructs[l->getId()].width = width;
+        textureStructs[l->getId()].height = height;
+
+        for (uint32_t y = 0; y < height; ++y) {
+            for (uint32_t x = 0; x < width; ++x) {
+                vec2 off = vec2(1 / float(width), 1 / float(height)); 
+                vec2 uv = vec2(x / float(width), y / float(height)) + .5f * off;
+                l->texels[y * width + x] = tex->sample(uv); // todo, transform in HSV space...
+            }
+        }
+        
+        l->markDirty();
+    };
+
+    try {
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+    } catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		throw;
+	}
+}
+
+Texture* Texture::createMix(std::string name, Texture* a, Texture* b, float mix)
+{
+    auto create = [a, b, mix] (Texture* l) {
+        if (!a || !a->isInitialized()) throw std::runtime_error(std::string("Error: Texture A is null/uninitialized!")); 
+        if (!b || !b->isInitialized()) throw std::runtime_error(std::string("Error: Texture B is null/uninitialized!")); 
+
+        uint32_t width = ::max(a->getWidth(), b->getWidth());
+        uint32_t height = ::max(a->getHeight(), b->getHeight());
+        l->texels.resize(width * height);
+        textureStructs[l->getId()].width = width;
+        textureStructs[l->getId()].height = height;
+
+        for (uint32_t y = 0; y < height; ++y) {
+            for (uint32_t x = 0; x < width; ++x) {
+                vec2 off = vec2(1 / float(width), 1 / float(height)); 
+                vec2 uv = vec2(x / float(width), y / float(height)) + .5f * off;
+                l->texels[y * width + x] = glm::mix(a->sample(uv), b->sample(uv), mix);
+            }
+        }
+        
+        l->markDirty();
+    };
+
+    try {
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+    } catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		throw;
+	}
+}
+
+vec4 Texture::sample(vec2 uv) {
+    uint32_t width = textureStructs[id].width;
+    uint32_t height = textureStructs[id].height;
+    vec2 coord = uv * vec2(width-1, height-1);
+    ivec2 coord_floor = glm::ivec2(glm::floor(coord));
+    ivec2 coord_ceil = glm::ivec2(glm::ceil(coord));
+    return texels[coord_floor.y * width + coord_floor.x]; // todo, interpolate four surrouding pixels
+    // vec2 remainder = coord - vec2(coord_floor);
+    // return glm::mix(
+    //     texels[coord_floor.y * width + coord_floor.x],
+    //     texels[coord_ceil.y * width + coord_ceil.x],
+    //     remainder);
+}
+
 std::shared_ptr<std::mutex> Texture::getEditMutex()
 {
 	return editMutex;

@@ -1706,12 +1706,12 @@ Mesh* Mesh::createDodecahedron(std::string name, float radius, int segments, int
 	}
 }
 
-Mesh* Mesh::createPlane(std::string name, vec2 size, ivec2 segments)
+Mesh* Mesh::createPlane(std::string name, vec2 size, ivec2 segments, bool flipZ)
 {
 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	try {
 		generator::PlaneMesh gen_mesh{size, segments};
-		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
+		mesh->generateProcedural(gen_mesh, flipZ);
 		anyDirty = true;
 		return mesh;
 	} catch (...) {

@@ -256,12 +256,14 @@ class Mesh : public StaticFactory
 		 * @param name The name (used as a primary key) for this mesh component
 		 * @param size Half of the side length in x (0) and y (1) direction.
 		 * @param segments Number of subdivisions in the x (0) and y (1) direction.
+		 * @param flip_z Flips the plane such that the face is pointed down negative Z instead of positive Z. 
 		 * @returns a reference to the mesh component
 		 */
 		static Mesh* createPlane(
 			std::string name,
 			vec2 size     = vec2(1.0, 1.0),
-			ivec2 segments = ivec2(8, 8));
+			ivec2 segments = ivec2(8, 8),
+			bool flip_z = false);
 
 		/** 
 		 * Creates a regular icosahedron centered at the origin and with a given radius.
