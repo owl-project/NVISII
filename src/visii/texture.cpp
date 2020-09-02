@@ -176,9 +176,27 @@ Texture* Texture::createFromData(std::string name, uint32_t width, uint32_t heig
 	}
 }
 
-Texture* Texture::createHSV(std::string name, Texture* tex, float hue, float saturation, float value, float mix)
+vec3 rgb2hsv(vec3 c)
 {
-    auto create = [tex, hue, saturation, value, mix] (Texture* l) {
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.b, c.g, K.w, K.z), vec4(c.g, c.b, K.x, K.y), step(c.b, c.g));
+    vec4 q = mix(vec4(p.x, p.y, p.w, c.r), vec4(c.r, p.y, p.z, p.x), step(p.x, c.r));
+
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10f;
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+vec3 hsv2rgb(vec3 c)
+{
+    vec4 K = vec4(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
+    vec3 p = abs(fract(vec3(c.x) + vec3(K)) * 6.0f - vec3(K.w));
+    return c.z * mix(vec3(K.x), clamp(p - vec3(K.x), 0.0f, 1.0f), c.y);
+}
+
+Texture* Texture::createHSV(std::string name, Texture* tex, float hue, float sat, float val, float alpha)
+{
+    auto create = [tex, hue, sat, val, alpha] (Texture* l) {
         if (!tex || !tex->isInitialized()) throw std::runtime_error(std::string("Error: input texture is null/uninitialized!")); 
 
         uint32_t width = tex->getWidth();
@@ -187,11 +205,18 @@ Texture* Texture::createHSV(std::string name, Texture* tex, float hue, float sat
         textureStructs[l->getId()].width = width;
         textureStructs[l->getId()].height = height;
 
+        float dh = (hue * 2.f) - 1.0f;
         for (uint32_t y = 0; y < height; ++y) {
             for (uint32_t x = 0; x < width; ++x) {
                 vec2 off = vec2(1 / float(width), 1 / float(height)); 
                 vec2 uv = vec2(x / float(width), y / float(height)) + .5f * off;
-                l->texels[y * width + x] = tex->sample(uv); // todo, transform in HSV space...
+                vec4 c = tex->sample(uv);
+                vec3 rgb = vec3(c);
+                vec3 hsv = rgb2hsv(rgb);
+                hsv.x = (hsv.x + dh) - (long)(hsv.x + dh);
+                hsv.y = clamp(sat * hsv.y, 0.f, 1.f); hsv.z = clamp(hsv.z * val, 0.f, 1.f);
+                rgb = mix(rgb, hsv2rgb(hsv), alpha);
+                l->texels[y * width + x] = vec4( rgb.r, rgb.g, rgb.b, c.a); // todo, transform in HSV space...
             }
         }
         
@@ -223,6 +248,68 @@ Texture* Texture::createMix(std::string name, Texture* a, Texture* b, float mix)
                 vec2 off = vec2(1 / float(width), 1 / float(height)); 
                 vec2 uv = vec2(x / float(width), y / float(height)) + .5f * off;
                 l->texels[y * width + x] = glm::mix(a->sample(uv), b->sample(uv), mix);
+            }
+        }
+        
+        l->markDirty();
+    };
+
+    try {
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+    } catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		throw;
+	}
+}
+
+Texture* Texture::createAdd(std::string name, Texture* a, Texture* b)
+{
+    auto create = [a, b] (Texture* l) {
+        if (!a || !a->isInitialized()) throw std::runtime_error(std::string("Error: Texture A is null/uninitialized!")); 
+        if (!b || !b->isInitialized()) throw std::runtime_error(std::string("Error: Texture B is null/uninitialized!")); 
+
+        uint32_t width = ::max(a->getWidth(), b->getWidth());
+        uint32_t height = ::max(a->getHeight(), b->getHeight());
+        l->texels.resize(width * height);
+        textureStructs[l->getId()].width = width;
+        textureStructs[l->getId()].height = height;
+
+        for (uint32_t y = 0; y < height; ++y) {
+            for (uint32_t x = 0; x < width; ++x) {
+                vec2 off = vec2(1 / float(width), 1 / float(height)); 
+                vec2 uv = vec2(x / float(width), y / float(height)) + .5f * off;
+                l->texels[y * width + x] = a->sample(uv) + b->sample(uv);
+            }
+        }
+        
+        l->markDirty();
+    };
+
+    try {
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+    } catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		throw;
+	}
+}
+
+Texture* Texture::createMultiply(std::string name, Texture* a, Texture* b)
+{
+    auto create = [a, b] (Texture* l) {
+        if (!a || !a->isInitialized()) throw std::runtime_error(std::string("Error: Texture A is null/uninitialized!")); 
+        if (!b || !b->isInitialized()) throw std::runtime_error(std::string("Error: Texture B is null/uninitialized!")); 
+
+        uint32_t width = ::max(a->getWidth(), b->getWidth());
+        uint32_t height = ::max(a->getHeight(), b->getHeight());
+        l->texels.resize(width * height);
+        textureStructs[l->getId()].width = width;
+        textureStructs[l->getId()].height = height;
+
+        for (uint32_t y = 0; y < height; ++y) {
+            for (uint32_t x = 0; x < width; ++x) {
+                vec2 off = vec2(1 / float(width), 1 / float(height)); 
+                vec2 uv = vec2(x / float(width), y / float(height)) + .5f * off;
+                l->texels[y * width + x] = a->sample(uv) * b->sample(uv);
             }
         }
         

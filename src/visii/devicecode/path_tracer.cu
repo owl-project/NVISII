@@ -448,7 +448,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     // If no camera is in use, just display some random noise...
     owl::Ray ray;
-    
     {
         EntityStruct    camera_entity;
         TransformStruct camera_transform;
@@ -465,32 +464,18 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     float3 accum_illum = make_float3(0.f);
     float3 pathThroughput = make_float3(1.f);
-    // float3 aovPathThroughput = make_float3(1.f);
     float3 renderData = make_float3(0.f);
     initializeRenderData(renderData);
 
     uint8_t bounce = 0;
+    uint8_t diffuseBounce = 0;
+    uint8_t specularBounce = 0;
     uint8_t visibilitySkips = 0;
 
     // direct here is used for final image clamping
     float3 directIllum = make_float3(0.f);
     float3 illum = make_float3(0.f);
-
-    // used for render metadata stuff. 
-    // float3 aovIllum = make_float3(0.f);
-    // float3 aovDirectIllum = make_float3(0.f);
-    // float3 aovIndirectIllum = make_float3(0.f);
-    // int8_t rdSampledBsdf = -1, rdForcedBsdf = -1;
-    // if ((optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_DIRECT_LIGHTING) ||
-    //     (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_DIRECT_LIGHTING)) rdForcedBsdf = 0;
-    // if ((optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_DIRECT_LIGHTING) ||
-    //     (optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_DIRECT_LIGHTING)) rdForcedBsdf = 1;
-    // if ((optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING) ||
-    //     (optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING)) rdForcedBsdf = 3;
     
-    
-    // uint16_t ray_count = 0;
-    // float roughnessMinimum = 0.f;
     RayPayload payload;
     payload.tHit = -1.f;
     ray.time = time;
@@ -910,34 +895,17 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // accumulate any radiance (ie pathThroughput * irradiance), and update the path throughput using the sampled BRDF
         float3 contribution = pathThroughput * irradiance;
         illum = illum + contribution;
-        // aovIllum = aovIllum + contribution;
-        // if (bounce >= optixLaunchParams.renderDataBounce) 
-        
         pathThroughput = (pathThroughput * bsdf * bsdf_color) / bsdf_pdf;
-        // aovPathThroughput = (aovPathThroughput * bsdf * bsdf_color) / bsdf_pdf;
-        // if (bounce == 0) {
-        // } else {
-        //     aovPathThroughput = (aovPathThroughput * bsdf * bsdf_color) / bsdf_pdf;
-        //     // aovPathThroughput = (aovPathThroughput * bsdf * bsdf_color) / bsdf_pdf;
-        // }
 
         if (bounce == 0) {
-            // aovPathThroughput = aovPathThroughput * bsdf_color;
             directIllum = illum;
-            // aovDirectIllum = aovIllum;
-            // rdSampledBsdf = sampledBsdf;
         }
 
-        // if (rdForcedBsdf != -1) {
-        //     if (aovPathThroughput.x < EPSILON && aovPathThroughput.y < EPSILON && aovPathThroughput.z < EPSILON) {
-        //         break;
-        //     }
-        // }
-        // else 
-        {
-            if (pathThroughput.x < EPSILON && pathThroughput.y < EPSILON && pathThroughput.z < EPSILON) {
-                break;
-            }
+        // Russian Roulette
+        // Randomly terminate a path with a probability inversely equal to the throughput
+        float pmax = max(pathThroughput.x, max(pathThroughput.y, pathThroughput.z));
+        if (lcg_randomf(rng) > pmax) {
+            break;
         }
 
         // // Do path regularization to reduce fireflies
@@ -948,8 +916,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // }
 
         // if the bounce count is less than the max bounce count, potentially add on radiance from the next hit location.
-        ++bounce;            
-    } while (bounce < optixLaunchParams.maxBounceDepth);
+        ++bounce;     
+        if (sampledBsdf == 0) diffuseBounce++;
+        else specularBounce++;
+    } while (diffuseBounce < optixLaunchParams.maxDiffuseBounceDepth && specularBounce < optixLaunchParams.maxSpecularBounceDepth);
 
     // clamp out any extreme fireflies
     glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);

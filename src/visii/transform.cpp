@@ -1,5 +1,6 @@
 #include <visii/transform.h>
 #include <visii/entity.h>
+#include <glm/gtx/matrix_decompose.hpp>
 
 Transform Transform::transforms[MAX_TRANSFORMS];
 TransformStruct Transform::transformStructs[MAX_TRANSFORMS];
@@ -328,20 +329,57 @@ void Transform::setTransform(glm::mat4 transformation, bool decompose, bool prev
 	}
 	if (decompose)
 	{
+		// glm::vec3 scale;
+		// glm::quat rotation;
+		// glm::vec3 translation;
+
+		// translation = glm::vec3(glm::column(transformation, 3));
+		// glm::mat3 rot = glm::mat3(transformation);
+		// float det = glm::determinant(rot);
+		// // if (abs(det) < glm::epsilon<float>()) {
+		// // 	throw std::runtime_error("Error: upper left 3x3 determinant must be non-zero");
+		// // }
+		// scale.x = length(glm::column(rot, 0));
+		// scale.y = length(glm::column(rot, 1));
+		// scale.z = length(glm::column(rot, 2));
+		// if (det < 0) {
+		// 	scale *= -1.f;
+		// 	rot *= -1.f;
+		// }
+		// rotation = glm::normalize(glm::quat_cast(rot));
+
 		glm::vec3 scale;
 		glm::quat rotation;
 		glm::vec3 translation;
 		glm::vec3 skew;
 		glm::vec4 perspective;
-		glm::decompose(transformation, scale, rotation, translation, skew, perspective);
-		// rotation = glm::conjugate(rotation);
+		bool worked = glm::decompose(transformation, scale, rotation, translation, skew, perspective);
+		
+		/* If the above didn't work, throw an exception */
+		if (!worked) {
+			throw std::runtime_error( 
+				std::string("Decomposition failed! Is the product of the 4x4 with the determinant of the upper left 3x3 nonzero?")
+				+ std::string("See Graphics Gems II: Decomposing a Matrix into Simple Transformations"));
+			// setScale(vec3(1.f), previous);
+			// setPosition(vec3(0.f), previous);
+			// setRotation(quat(1.f, 0.f, 0.f, 0.f), previous);
+			// setTransform(transformation, false, previous);
+			// return;
+		}
 
+		if (glm::length(skew) > .0001f) {
+			throw std::runtime_error( 
+				std::string("Decomposition failed! Skew detected in the upper left 3x3.")
+			);
+			return;
+		}
+			
 		/* Decomposition can return negative scales. We make the assumption this is impossible.*/
-
 		if (scale.x < 0.0) scale.x *= -1;
 		if (scale.y < 0.0) scale.y *= -1;
 		if (scale.z < 0.0) scale.z *= -1;
 		scale = glm::max(scale, glm::vec3(.0001f));
+		
 		
 		if (!(glm::any(glm::isnan(translation))))
 			setPosition(translation, previous);

@@ -110,11 +110,13 @@ void setDirectLightingClamp(float clamp);
  * Sets the maximum number of times that a ray originating from the camera can bounce through the scene to accumulate light.
  * For scenes containing only rough surfaces, this max bounce depth can be set to lower values.
  * For scenes containing complex transmissive or reflective objects like glass or metals, this 
- * max bounce depth might need to be increased to accurately render these objects. 
+ * max bounce depth might need to be increased to accurately render these objects. Specular and diffuse
+ * max bounce depth is separated to optimize these scenes.
  * 
- * @param depth The maximum number of bounces allowed per ray.
+ * @param diffuse_depth The maximum number of diffuse bounces allowed per ray.
+ * @param specular_depth The maximum number of specular (reflection/refraction) bounces allowed per ray.
  */ 
-void setMaxBounceDepth(uint32_t depth);
+void setMaxBounceDepth(uint32_t diffuse_depth, uint32_t specular_depth);
 
 /**
  * Sets the number of light samples to take per path vertex. A higher number of samples will reduce noise per frame, but

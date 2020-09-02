@@ -14,7 +14,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/matrix_interpolation.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
+// #include <glm/gtx/matrix_decompose.hpp>
 #include <map>
 #include <mutex>
 
@@ -315,8 +315,11 @@ class Transform : public StaticFactory
      * Sets an optional additional transform, useful for representing normally unsupported transformations
      * like sheers and projections. 
      * 
-     * @param transformation  a 4 by 4 column major transformation matrix
-     * @param decompose       attempts to use singular value decomposition to decompose the provided transform into a translation, rotation, and scale 
+     * @param transformation a 4 by 4 column major transformation matrix
+     * @param decompose attempts to use the technique described in "Graphics Gems II: Decomposing a Matrix Into Simple Transformations" 
+     * to represent the transform as a user controllable translation, rotation, and scale.
+     * If a sheer is detected, or if the decomposition failed, this will fall back to a non-decomposed transformation, and user 
+     * controllable translation, rotation, and scale will be set to identity values.
      * @param previous If true, edits the previous translation, rotation, and scale.
     */
     void setTransform(glm::mat4 transformation, bool decompose = true, bool previous = false);

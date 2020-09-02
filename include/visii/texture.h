@@ -52,6 +52,24 @@ class Texture : public StaticFactory
 	static Texture *createMix(std::string name, Texture* a, Texture* b, float mix);
 
 	/** 
+	 * Constructs a Texture with the given name that adds two different textures together.
+	 * @param name The name of the texture to create.
+	 * @param a The first of two textures to add. 
+	 * @param b The second of two textures to add. 
+	 * @returns a Texture allocated by the renderer. 
+	*/
+	static Texture *createAdd(std::string name, Texture* a, Texture* b);
+
+	/** 
+	 * Constructs a Texture with the given name that multiplies two different textures together.
+	 * @param name The name of the texture to create.
+	 * @param a The first of two textures to multiply. 
+	 * @param b The second of two textures to multiply. 
+	 * @returns a Texture allocated by the renderer. 
+	*/
+	static Texture *createMultiply(std::string name, Texture* a, Texture* b);
+
+	/** 
 	 * Constructs a Texture with the given name by applying a color transformation on the HSV space to an existing texture.
 	 * @param name The name of the texture to create.
 	 * @param t The texture to take pixels from
