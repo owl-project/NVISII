@@ -1225,25 +1225,25 @@ void updateComponents()
                 };
 
                 int off = MAX_TEXTURES + mid * NUM_MAT_PARAMS;
-                if (matStructs[mid].transmission_roughness_texture_id == -1) { genSTex(off + 0, materials[mid].getTransmissionRoughness()); }
+                if (matStructs[mid].transmission_roughness_texture_id == -1) { genRGBATex(off + 0, vec4(materials[mid].getTransmissionRoughness())); }
                 if (matStructs[mid].base_color_texture_id == -1)             { genRGBATex(off + 1, vec4(materials[mid].getBaseColor(), 1.f)); }
-                if (matStructs[mid].roughness_texture_id == -1)              { genSTex(off + 2, materials[mid].getRoughness()); }
-                if (matStructs[mid].alpha_texture_id == -1)                  { genSTex(off + 3, materials[mid].getAlpha()); }
+                if (matStructs[mid].roughness_texture_id == -1)              { genRGBATex(off + 2, vec4(materials[mid].getRoughness())); }
+                if (matStructs[mid].alpha_texture_id == -1)                  { genRGBATex(off + 3, vec4(materials[mid].getAlpha())); }
                 if (matStructs[mid].normal_map_texture_id == -1)             { genRGBATex(off + 4, vec4(0.5f, .5f, 1.f, 0.f)); }
                 if (matStructs[mid].subsurface_color_texture_id == -1)       { genRGBATex(off + 5, vec4(materials[mid].getSubsurfaceColor(), 1.f)); }
                 if (matStructs[mid].subsurface_radius_texture_id == -1)      { genRGBATex(off + 6, vec4(materials[mid].getSubsurfaceRadius(), 1.f)); }
-                if (matStructs[mid].subsurface_texture_id == -1)             { genSTex(off + 7, materials[mid].getSubsurface()); }
-                if (matStructs[mid].metallic_texture_id == -1)               { genSTex(off + 8, materials[mid].getMetallic()); }
-                if (matStructs[mid].specular_texture_id == -1)               { genSTex(off + 9, materials[mid].getSpecular()); }
-                if (matStructs[mid].specular_tint_texture_id == -1)          { genSTex(off + 10, materials[mid].getSpecularTint()); }
-                if (matStructs[mid].anisotropic_texture_id == -1)            { genSTex(off + 11, materials[mid].getAnisotropic()); }
-                if (matStructs[mid].anisotropic_rotation_texture_id == -1)   { genSTex(off + 12, materials[mid].getAnisotropicRotation()); }
-                if (matStructs[mid].sheen_texture_id == -1)                  { genSTex(off + 13, materials[mid].getSheen()); }
-                if (matStructs[mid].sheen_tint_texture_id == -1)             { genSTex(off + 14, materials[mid].getSheenTint()); }
-                if (matStructs[mid].clearcoat_texture_id == -1)              { genSTex(off + 15, materials[mid].getClearcoat()); }
-                if (matStructs[mid].clearcoat_roughness_texture_id == -1)    { genSTex(off + 16, materials[mid].getClearcoatRoughness()); }
-                if (matStructs[mid].ior_texture_id == -1)                    { genSTex(off + 17, materials[mid].getIor()); }
-                if (matStructs[mid].transmission_texture_id == -1)           { genSTex(off + 18, materials[mid].getTransmission()); }
+                if (matStructs[mid].subsurface_texture_id == -1)             { genRGBATex(off + 7, vec4(materials[mid].getSubsurface())); }
+                if (matStructs[mid].metallic_texture_id == -1)               { genRGBATex(off + 8, vec4(materials[mid].getMetallic())); }
+                if (matStructs[mid].specular_texture_id == -1)               { genRGBATex(off + 9, vec4(materials[mid].getSpecular())); }
+                if (matStructs[mid].specular_tint_texture_id == -1)          { genRGBATex(off + 10, vec4(materials[mid].getSpecularTint())); }
+                if (matStructs[mid].anisotropic_texture_id == -1)            { genRGBATex(off + 11, vec4(materials[mid].getAnisotropic())); }
+                if (matStructs[mid].anisotropic_rotation_texture_id == -1)   { genRGBATex(off + 12, vec4(materials[mid].getAnisotropicRotation())); }
+                if (matStructs[mid].sheen_texture_id == -1)                  { genRGBATex(off + 13, vec4(materials[mid].getSheen())); }
+                if (matStructs[mid].sheen_tint_texture_id == -1)             { genRGBATex(off + 14, vec4(materials[mid].getSheenTint())); }
+                if (matStructs[mid].clearcoat_texture_id == -1)              { genRGBATex(off + 15, vec4(materials[mid].getClearcoat())); }
+                if (matStructs[mid].clearcoat_roughness_texture_id == -1)    { genRGBATex(off + 16, vec4(materials[mid].getClearcoatRoughness())); }
+                if (matStructs[mid].ior_texture_id == -1)                    { genRGBATex(off + 17, vec4(materials[mid].getIor())); }
+                if (matStructs[mid].transmission_texture_id == -1)           { genRGBATex(off + 18, vec4(materials[mid].getTransmission())); }
                 
                 if (matStructs[mid].transmission_roughness_texture_id == -1) { OptixData.materialStructs[mid].transmission_roughness_texture_id = off + 0; }
                 if (matStructs[mid].base_color_texture_id == -1)             { OptixData.materialStructs[mid].base_color_texture_id = off + 1; }

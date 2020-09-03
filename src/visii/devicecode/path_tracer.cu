@@ -449,6 +449,9 @@ float3 faceNormalForward(const float3 &w_o, const float3 &gn, const float3 &n)
 
 __device__
 bool debugging() {
+    #ifndef DEBUGGING
+    return false;
+    #endif
     auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
     return glm::all(glm::equal(pixelID, ivec2(optixLaunchParams.frameSize.x / 2, optixLaunchParams.frameSize.y / 2)));
 }
@@ -663,7 +666,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         LightStruct light_light;
         light_material.base_color_texture_id = -1;
         
-        float3 n_l = v_z; //faceNormalForward(w_o, v_gz, v_z);
+        // float3 n_l = v_z; //faceNormalForward(w_o, v_gz, v_z);
         // if (dot(w_o, n_l) < 0.f) {
             // n_l = -n_l;
         // }
@@ -721,7 +724,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 float dotNWi = fabs(dot(lightDir, v_z)); // for now, making all lights double sided.
                 
                 float bsdfPDF;
-                disney_pdf(mat, n_l, w_o, lightDir, v_x, v_y, bsdfPDF, forcedBsdf);
+                disney_pdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdfPDF, forcedBsdf);
                 if (bsdfPDF > EPSILON) {
                     RayPayload payload;
                     owl::Ray ray;
@@ -733,7 +736,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     if (visible) {
                         float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
                         float3 bsdf, bsdf_color;
-                        disney_brdf(mat, n_l, w_o, lightDir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
+                        disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
                         float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / lightPDFs[lid];
                         irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
                     }
@@ -794,21 +797,21 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     vec2 uv3 = texCoords[triIndex.z];
                     // vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
                     sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false);
-                    vec3 normal = glm::vec3(n_l.x, n_l.y, n_l.z);
+                    vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
                     float dotNWi = abs(dot(dir, normal));
                     lightPDFs[lid] = abs(lightPDFs[lid]);
                     lightPDFs[lid] /= (numLights);
                     lightPDFs[lid] /= (mesh.numTris);
                     
                     float3 lightEmission;
-                    if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b);
+                    if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
                     else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * light_light.intensity;
 
                     if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
                         float3 light_dir = make_float3(dir.x, dir.y, dir.z);
                         light_dir = normalize(light_dir);
                         float bsdf_pdf;
-                        disney_pdf(mat, n_l, w_o, light_dir, v_x, v_y, bsdf_pdf, forcedBsdf);
+                        disney_pdf(mat, v_z, w_o, light_dir, v_x, v_y, bsdf_pdf, forcedBsdf);
                         if (bsdf_pdf > EPSILON) {
                             RayPayload payload;
                             owl::Ray ray;
@@ -825,7 +828,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             if (visible) {
                                 float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdf_pdf);
                                 float3 bsdf, bsdf_color;
-                                disney_brdf(mat, n_l, w_o, light_dir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
+                                disney_brdf(mat, v_z, w_o, light_dir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
                                 float3 Li = lightEmission * w / lightPDFs[lid];
                                 irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
                             }
@@ -867,7 +870,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if ((payload.instanceID == -1) && (sampledLightIDs[lid] == -1)) {
                     // Case where we hit the background, and also previously sampled the background   
                     float dotNWi = dot(-v_gz, ray.direction);
-                    if (dotNWi > 0.f) {
+                    if (dotNWi > 0.f) 
+                    {
                         float w = power_heuristic(1.f, bsdf_pdf, 1.f, lightPDFs[lid]);
                         float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / bsdf_pdf;
                         irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
@@ -896,14 +900,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         // lv_gz = make_float3(normalize(nxfm * normalize(make_vec3(lv_gz))));
     
                         float3 lightEmission;
-                        if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b);
+                        if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
                         else lightEmission = sampleTexture(light_light.color_texture_id, uv) * light_light.intensity;
     
                         float dist = distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
                         float dotNWi = abs(dot(-v_gz, ray.direction)); // geometry term
                         float pdf = bsdf_pdf * ((dist * dist) + 1.0f);
                         // float dotWiN = dot(-lv_gz, ray.direction); // is light facing towards us? // Seems like this calculation isn't needed.
-                        if ((dotNWi > 0.f) /*&& (dotWiN > 0.f)*/) {
+                        if ((dotNWi > 0.f) /*&& (dotWiN > 0.f)*/) 
+                        {
                             float w = power_heuristic(1.f, pdf, 1.f, lightPDFs[lid]);
                             float3 Li = lightEmission * w / pdf;
                             irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi)); // missing r^2 falloff?

@@ -337,13 +337,13 @@ void sampleTriangle(const vec3 &pos,
 	vec3 n = uniformPointWithinTriangle( n1, n2, n3, rand1, rand2 );
 	uv = uniformUVWithinTriangle( uv1, uv2, uv3, rand1, rand2 );
 	float triangleArea = fabs(length(cross(v1-v2, v3-v2)) * 0.5);
-	float pdfA = triangleArea;//1.0 / triangleArea;
+	float pdfA = 1.0 / triangleArea;
 	dir = p - pos;
 	float d2 = dot(dir, dir); 
 	float d = sqrt(d2); // linear
 	dir /= d;
 	float aCosThere = max(0.0, (double_sided) ? fabs(dot(-dir,n)) : dot(-dir,n));
-	pdf = PdfAtoW( pdfA, d2 + 1.0, aCosThere ); // adding 1 to remove singularity at 0
+	pdf = PdfAtoW( pdfA, d2, aCosThere ); // adding 1 to remove singularity at 0
 }
 
 __device__
