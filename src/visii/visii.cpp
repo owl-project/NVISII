@@ -97,7 +97,7 @@ static struct OptixData {
     OWLBuffer indexListsBuffer;
     OWLBuffer textureObjectsBuffer;
 
-    OWLTexture textureObjects[MAX_TEXTURES];
+    OWLTexture textureObjects[MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS];
 
     uint32_t numLightEntities;
 
@@ -121,6 +121,8 @@ static struct OptixData {
     OWLBuffer environmentMapRowsBuffer;
     OWLBuffer environmentMapColsBuffer;
     OWLTexture proceduralSkyTexture;
+
+    MaterialStruct materialStructs[MAX_MATERIALS];
 
     OWLBuffer placeholder;
 
@@ -566,20 +568,21 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "frameSize", &OD.LP.frameSize);
 
     /* Create Component Buffers */
+    // note, extra textures reserved for internal use
     OD.entityBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(EntityStruct),        MAX_ENTITIES,   nullptr);
     OD.transformBuffer           = deviceBufferCreate(OD.context, OWL_USER_TYPE(TransformStruct),     MAX_TRANSFORMS, nullptr);
     OD.cameraBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),        MAX_CAMERAS,    nullptr);
     OD.materialBuffer            = deviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),      MAX_MATERIALS,  nullptr);
     OD.meshBuffer                = deviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),          MAX_MESHES,     nullptr);
     OD.lightBuffer               = deviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),         MAX_LIGHTS,     nullptr);
-    OD.textureBuffer             = deviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       MAX_TEXTURES,   nullptr);
+    OD.textureBuffer             = deviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS,   nullptr);
     OD.lightEntitiesBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
     OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
     OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
     OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
-    OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        MAX_TEXTURES,   nullptr);
+    OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS,   nullptr);
 
     
 
@@ -1175,14 +1178,14 @@ void updateComponents()
         bufferUpload(OptixData.entityBuffer,    Entity::getFrontStruct());
     }
 
-    // Manage textures
-    if (Texture::areAnyDirty()) {
+    // Manage textures and materials
+    if (Texture::areAnyDirty() || Material::areAnyDirty()) {
         auto mutex = Texture::getEditMutex();
         std::lock_guard<std::mutex> lock(*mutex.get());
 
+        // Allocate cuda textures for all texture components
         Texture* textures = Texture::getFront();
-        std::vector<OWLTexture> textureObjects(Texture::getCount());
-        for (uint32_t tid = 0; tid < Texture::getCount(); ++tid) {
+        for (uint32_t tid = 0; tid < MAX_TEXTURES; ++tid) {
             if (!textures[tid].isDirty()) continue;
             if (OD.textureObjects[tid]) { owlTexture2DDestroy(OD.textureObjects[tid]); OD.textureObjects[tid] = nullptr; }
             if (!textures[tid].isInitialized()) continue;
@@ -1191,8 +1194,84 @@ void updateComponents()
                 textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
                 OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
         }
-        bufferUpload(OD.textureObjectsBuffer, OD.textureObjects);
+
+        // Create additional cuda textures for material constants
+
+        // Manage materials
+        {
+            auto mutex = Material::getEditMutex();
+            std::lock_guard<std::mutex> lock(*mutex.get());
+            Material* materials = Material::getFront();
+            MaterialStruct* matStructs = Material::getFrontStruct();
+            
+            for (uint32_t mid = 0; mid < MAX_MATERIALS; ++mid) {
+                if (!materials[mid].isInitialized()) continue;
+                if (!materials[mid].isDirty()) continue;
+
+                OptixData.materialStructs[mid] = matStructs[mid];
+
+                auto genSTex = [&OD](int index, float s) {
+                    if (OD.textureObjects[index]) { owlTexture2DDestroy(OD.textureObjects[index]); OD.textureObjects[index] = nullptr; }
+                    OD.textureObjects[index] = owlTexture2DCreate(
+                        OD.context, OWL_TEXEL_FORMAT_R32F,
+                        1,1, &s, OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
+                };
+
+                auto genRGBATex = [&OD](int index, vec4 c) {
+                    if (OD.textureObjects[index]) { owlTexture2DDestroy(OD.textureObjects[index]); OD.textureObjects[index] = nullptr; }
+                    OD.textureObjects[index] = owlTexture2DCreate(
+                        OD.context, OWL_TEXEL_FORMAT_RGBA32F,
+                        1,1, &c, OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
+                };
+
+                int off = MAX_TEXTURES + mid * NUM_MAT_PARAMS;
+                if (matStructs[mid].transmission_roughness_texture_id == -1) { genSTex(off + 0, materials[mid].getTransmissionRoughness()); }
+                if (matStructs[mid].base_color_texture_id == -1)             { genRGBATex(off + 1, vec4(materials[mid].getBaseColor(), 1.f)); }
+                if (matStructs[mid].roughness_texture_id == -1)              { genSTex(off + 2, materials[mid].getRoughness()); }
+                if (matStructs[mid].alpha_texture_id == -1)                  { genSTex(off + 3, materials[mid].getAlpha()); }
+                if (matStructs[mid].normal_map_texture_id == -1)             { genRGBATex(off + 4, vec4(0.5f, .5f, 1.f, 0.f)); }
+                if (matStructs[mid].subsurface_color_texture_id == -1)       { genRGBATex(off + 5, vec4(materials[mid].getSubsurfaceColor(), 1.f)); }
+                if (matStructs[mid].subsurface_radius_texture_id == -1)      { genRGBATex(off + 6, vec4(materials[mid].getSubsurfaceRadius(), 1.f)); }
+                if (matStructs[mid].subsurface_texture_id == -1)             { genSTex(off + 7, materials[mid].getSubsurface()); }
+                if (matStructs[mid].metallic_texture_id == -1)               { genSTex(off + 8, materials[mid].getMetallic()); }
+                if (matStructs[mid].specular_texture_id == -1)               { genSTex(off + 9, materials[mid].getSpecular()); }
+                if (matStructs[mid].specular_tint_texture_id == -1)          { genSTex(off + 10, materials[mid].getSpecularTint()); }
+                if (matStructs[mid].anisotropic_texture_id == -1)            { genSTex(off + 11, materials[mid].getAnisotropic()); }
+                if (matStructs[mid].anisotropic_rotation_texture_id == -1)   { genSTex(off + 12, materials[mid].getAnisotropicRotation()); }
+                if (matStructs[mid].sheen_texture_id == -1)                  { genSTex(off + 13, materials[mid].getSheen()); }
+                if (matStructs[mid].sheen_tint_texture_id == -1)             { genSTex(off + 14, materials[mid].getSheenTint()); }
+                if (matStructs[mid].clearcoat_texture_id == -1)              { genSTex(off + 15, materials[mid].getClearcoat()); }
+                if (matStructs[mid].clearcoat_roughness_texture_id == -1)    { genSTex(off + 16, materials[mid].getClearcoatRoughness()); }
+                if (matStructs[mid].ior_texture_id == -1)                    { genSTex(off + 17, materials[mid].getIor()); }
+                if (matStructs[mid].transmission_texture_id == -1)           { genSTex(off + 18, materials[mid].getTransmission()); }
+                
+                if (matStructs[mid].transmission_roughness_texture_id == -1) { OptixData.materialStructs[mid].transmission_roughness_texture_id = off + 0; }
+                if (matStructs[mid].base_color_texture_id == -1)             { OptixData.materialStructs[mid].base_color_texture_id = off + 1; }
+                if (matStructs[mid].roughness_texture_id == -1)              { OptixData.materialStructs[mid].roughness_texture_id = off + 2; }
+                if (matStructs[mid].alpha_texture_id == -1)                  { OptixData.materialStructs[mid].alpha_texture_id = off + 3; }
+                if (matStructs[mid].normal_map_texture_id == -1)             { OptixData.materialStructs[mid].normal_map_texture_id = off + 4; }
+                if (matStructs[mid].subsurface_color_texture_id == -1)       { OptixData.materialStructs[mid].subsurface_color_texture_id = off + 5; }
+                if (matStructs[mid].subsurface_radius_texture_id == -1)      { OptixData.materialStructs[mid].subsurface_radius_texture_id = off + 6; }
+                if (matStructs[mid].subsurface_texture_id == -1)             { OptixData.materialStructs[mid].subsurface_texture_id = off + 7; }
+                if (matStructs[mid].metallic_texture_id == -1)               { OptixData.materialStructs[mid].metallic_texture_id = off + 8; }
+                if (matStructs[mid].specular_texture_id == -1)               { OptixData.materialStructs[mid].specular_texture_id = off + 9; }
+                if (matStructs[mid].specular_tint_texture_id == -1)          { OptixData.materialStructs[mid].specular_tint_texture_id = off + 10; }
+                if (matStructs[mid].anisotropic_texture_id == -1)            { OptixData.materialStructs[mid].anisotropic_texture_id = off + 11; }
+                if (matStructs[mid].anisotropic_rotation_texture_id == -1)   { OptixData.materialStructs[mid].anisotropic_rotation_texture_id = off + 12; }
+                if (matStructs[mid].sheen_texture_id == -1)                  { OptixData.materialStructs[mid].sheen_texture_id = off + 13; }
+                if (matStructs[mid].sheen_tint_texture_id == -1)             { OptixData.materialStructs[mid].sheen_tint_texture_id = off + 14; }
+                if (matStructs[mid].clearcoat_texture_id == -1)              { OptixData.materialStructs[mid].clearcoat_texture_id = off + 15; }
+                if (matStructs[mid].clearcoat_roughness_texture_id == -1)    { OptixData.materialStructs[mid].clearcoat_roughness_texture_id = off + 16; }
+                if (matStructs[mid].ior_texture_id == -1)                    { OptixData.materialStructs[mid].ior_texture_id = off + 17; }
+                if (matStructs[mid].transmission_texture_id == -1)           { OptixData.materialStructs[mid].transmission_texture_id = off + 18; }
+            }
+
+
+            Material::updateComponents();
+            bufferUpload(OptixData.materialBuffer, OptixData.materialStructs);
+        }
         
+        bufferUpload(OD.textureObjectsBuffer, OD.textureObjects);
         Texture::updateComponents();
         bufferUpload(OptixData.textureBuffer, Texture::getFrontStruct());
     }
@@ -1230,15 +1309,6 @@ void updateComponents()
         Camera::updateComponents();
         bufferUpload(OptixData.cameraBuffer,    Camera::getFrontStruct());
     }    
-
-    // Manage materials
-    if (Material::areAnyDirty()) {
-        auto mutex = Material::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
-
-        Material::updateComponents();
-        bufferUpload(OptixData.materialBuffer,  Material::getFrontStruct());
-    }
 
     // Manage lights
     if (Light::areAnyDirty()) {

@@ -651,4 +651,23 @@ class Material : public StaticFactory
 
     /* Indicates this component has been edited */
     bool dirty = true;
+
+    // constant material data for when textures aren't set.
+    vec4 base_color = vec4(0.f);
+    vec4 subsurface_radius = vec4(0.f);
+    vec4 subsurface_color = vec4(0.f);
+    float subsurface = 0.f;
+    float metallic = 0.f;
+    float specular = 0.f;
+    float specular_tint = 0.f;
+    float roughness = 0.f;
+    float anisotropic = 0.f;
+    float anisotropic_rotation = 0.f;
+    float sheen = 0.f;
+    float sheen_tint = 0.f;
+    float clearcoat = 0.f;
+    float clearcoat_roughness = 0.f;
+    float ior = 0.f;
+    float transmission = 0.f;
+    float transmission_roughness = 0.f;
 };

@@ -19,23 +19,23 @@ Material::Material(std::string name, uint32_t id)
 	this->id = id;
 
 	/* Working off blender's principled BSDF */
-	materialStructs[id].base_color = vec4(.8, .8, .8, 1.0);
-	materialStructs[id].subsurface_radius = vec4(1.0, .2, .1, 1.0);
-	materialStructs[id].subsurface_color = vec4(.8, .8, .8, 1.0);
-	materialStructs[id].subsurface = 0.0;
-	materialStructs[id].metallic = 0.0;
-	materialStructs[id].specular = .5;
-	materialStructs[id].specular_tint = 0.0;
-	materialStructs[id].roughness = .5;
-	materialStructs[id].anisotropic = 0.0;
-	materialStructs[id].anisotropic_rotation = 0.0;
-	materialStructs[id].sheen = 0.0;
-	materialStructs[id].sheen_tint = 0.5;
-	materialStructs[id].clearcoat = 0.0;
-	materialStructs[id].clearcoat_roughness = .03f;
-	materialStructs[id].ior = 1.45f;
-	materialStructs[id].transmission = 0.0;
-	materialStructs[id].transmission_roughness = 0.0;
+	this->base_color = vec4(.8, .8, .8, 1.0);
+	this->subsurface_radius = vec4(1.0, .2, .1, 1.0);
+	this->subsurface_color = vec4(.8, .8, .8, 1.0);
+	this->subsurface = 0.0;
+	this->metallic = 0.0;
+	this->specular = .5;
+	this->specular_tint = 0.0;
+	this->roughness = .5;
+	this->anisotropic = 0.0;
+	this->anisotropic_rotation = 0.0;
+	this->sheen = 0.0;
+	this->sheen_tint = 0.5;
+	this->clearcoat = 0.0;
+	this->clearcoat_roughness = .03f;
+	this->ior = 1.45f;
+	this->transmission = 0.0;
+	this->transmission_roughness = 0.0;
 	materialStructs[id].transmission_roughness_texture_id = -1;
 	materialStructs[id].base_color_texture_id = -1;
 	materialStructs[id].roughness_texture_id = -1;
@@ -61,23 +61,6 @@ std::string Material::toString() {
 	output += "{\n";
 	output += "\ttype: \"Material\",\n";
 	output += "\tname: \"" + name + "\"\n";
-	// output += "\tbase_color: \"" + glm::to_string(materialStructs[id].base_color) + "\"\n";
-	// output += "\tsubsurface: \"" + std::to_string(materialStructs[id].subsurface) + "\"\n";
-	// output += "\tsubsurface_radius: \"" + glm::to_string(materialStructs[id].subsurface_radius) + "\"\n";
-	// output += "\tsubsurface_color: \"" + glm::to_string(materialStructs[id].subsurface_color) + "\"\n";
-	// output += "\tmetallic: \"" + std::to_string(materialStructs[id].metallic) + "\"\n";
-	// output += "\tspecular: \"" + std::to_string(materialStructs[id].specular) + "\"\n";
-	// output += "\tspecular_tint: \"" + std::to_string(materialStructs[id].specular_tint) + "\"\n";
-	// output += "\troughness: \"" + std::to_string(materialStructs[id].roughness) + "\"\n";
-	// output += "\tanisotropic: \"" + std::to_string(materialStructs[id].anisotropic) + "\"\n";
-	// output += "\tanisotropic_rotation: \"" + std::to_string(materialStructs[id].anisotropic_rotation) + "\"\n";
-	// output += "\tsheen: \"" + std::to_string(materialStructs[id].sheen) + "\"\n";
-	// output += "\tsheen_tint: \"" + std::to_string(materialStructs[id].sheen_tint) + "\"\n";
-	// output += "\tclearcoat: \"" + std::to_string(materialStructs[id].clearcoat) + "\"\n";
-	// output += "\tclearcoat_roughness: \"" + std::to_string(materialStructs[id].clearcoat_roughness) + "\"\n";
-	// output += "\tior: \"" + std::to_string(materialStructs[id].ior) + "\"\n";
-	// output += "\ttransmission: \"" + std::to_string(materialStructs[id].transmission) + "\"\n";
-	// output += "\ttransmission_roughness: \"" + std::to_string(materialStructs[id].transmission_roughness) + "\"\n";
 	output += "}";
 	return output;
 }
@@ -214,16 +197,14 @@ std::map<std::string, uint32_t> Material::getNameToIdMap()
 }
 
 void Material::setBaseColor(glm::vec3 color) {
-	materialStructs[id].base_color.r = color.r;
-	materialStructs[id].base_color.g = color.g;
-	materialStructs[id].base_color.b = color.b;
+	base_color.r = color.r;
+	base_color.g = color.g;
+	base_color.b = color.b;
 	markDirty();
 }
 
 glm::vec3 Material::getBaseColor() {
-	return vec3(materialStructs[id].base_color.r, 
-				materialStructs[id].base_color.g, 
-				materialStructs[id].base_color.b);
+	return vec3(base_color.r, base_color.g, base_color.b);
 }
 
 void Material::setBaseColorTexture(Texture *texture) 
@@ -239,16 +220,14 @@ void Material::clearBaseColorTexture() {
 }
 
 void Material::setSubsurfaceColor(glm::vec3 color) {
-	materialStructs[id].subsurface_color.r = color.r;
-	materialStructs[id].subsurface_color.g = color.g;
-	materialStructs[id].subsurface_color.b = color.b;
+	subsurface_color.r = color.r;
+	subsurface_color.g = color.g;
+	subsurface_color.b = color.b;
 	markDirty();
 }
 
 glm::vec3 Material::getSubsurfaceColor() {
-	return glm::vec3(materialStructs[id].subsurface_color.r, 
-					 materialStructs[id].subsurface_color.g, 
-					 materialStructs[id].subsurface_color.b);
+	return glm::vec3(subsurface_color.r, subsurface_color.g, subsurface_color.b);
 }
 
 void Material::setSubsurfaceColorTexture(Texture *texture) 
@@ -264,14 +243,12 @@ void Material::clearSubsurfaceColorTexture() {
 }
 
 void Material::setSubsurfaceRadius(glm::vec3 radius) {
-	materialStructs[id].subsurface_radius = glm::vec4(radius.x, radius.y, radius.z, 0.0);
+	subsurface_radius = glm::vec4(radius.x, radius.y, radius.z, 0.0);
 	markDirty();
 }
 
 glm::vec3 Material::getSubsurfaceRadius() {
-	return glm::vec3(materialStructs[id].subsurface_radius.x, 
-					 materialStructs[id].subsurface_radius.y, 
-					 materialStructs[id].subsurface_radius.z);
+	return glm::vec3(subsurface_radius.x, subsurface_radius.y, subsurface_radius.z);
 }
 
 void Material::setSubsurfaceRadiusTexture(Texture *texture) 
@@ -288,13 +265,13 @@ void Material::clearSubsurfaceRadiusTexture() {
 
 void Material::setAlpha(float a) 
 {
-	materialStructs[id].base_color.a = a;
+	base_color.a = a;
 	markDirty();
 }
 
 float Material::getAlpha()
 {
-	return materialStructs[id].base_color.a;
+	return base_color.a;
 }
 
 void Material::setAlphaTexture(Texture *texture, int channel) 
@@ -311,12 +288,12 @@ void Material::clearAlphaTexture() {
 }
 
 void Material::setSubsurface(float subsurface) {
-	materialStructs[id].subsurface = subsurface;
+	this->subsurface = subsurface;
 	markDirty();
 }
 
 float Material::getSubsurface() {
-	return materialStructs[id].subsurface;
+	return this->subsurface;
 }
 
 void Material::setSubsurfaceTexture(Texture *texture, int channel) 
@@ -333,12 +310,12 @@ void Material::clearSubsurfaceTexture() {
 }
 
 void Material::setMetallic(float metallic) {
-	materialStructs[id].metallic = metallic;
+	this->metallic = metallic;
 	markDirty();
 }
 
 float Material::getMetallic() {
-	return materialStructs[id].metallic;
+	return metallic;
 }
 
 void Material::setMetallicTexture(Texture *texture, int channel) 
@@ -355,12 +332,12 @@ void Material::clearMetallicTexture() {
 }
 
 void Material::setSpecular(float specular) {
-	materialStructs[id].specular = specular;
+	this->specular = specular;
 	markDirty();
 }
 
 float Material::getSpecular() {
-	return materialStructs[id].specular;
+	return specular;
 }
 
 void Material::setSpecularTexture(Texture *texture, int channel) 
@@ -377,12 +354,12 @@ void Material::clearSpecularTexture() {
 }
 
 void Material::setSpecularTint(float specular_tint) {
-	materialStructs[id].specular_tint = specular_tint;
+	this->specular_tint = specular_tint;
 	markDirty();
 }
 
 float Material::getSpecularTint() {
-	return materialStructs[id].specular_tint;
+	return specular_tint;
 }
 
 void Material::setSpecularTintTexture(Texture *texture, int channel) 
@@ -399,12 +376,12 @@ void Material::clearSpecularTintTexture() {
 }
 
 void Material::setRoughness(float roughness) {
-	materialStructs[id].roughness = roughness;
+	this->roughness = roughness;
 	markDirty();
 }
 
 float Material::getRoughness() {
-	return materialStructs[id].roughness;
+	return roughness;
 }
 
 void Material::setRoughnessTexture(Texture *texture, int channel) 
@@ -421,12 +398,12 @@ void Material::clearRoughnessTexture() {
 }
 
 void Material::setAnisotropic(float anisotropic) {
-	materialStructs[id].anisotropic = anisotropic;
+	this->anisotropic = anisotropic;
 	markDirty();
 }
 
 float Material::getAnisotropic() {
-	return materialStructs[id].anisotropic;
+	return anisotropic;
 }
 
 void Material::setAnisotropicTexture(Texture *texture, int channel) 
@@ -443,12 +420,12 @@ void Material::clearAnisotropicTexture() {
 }
 
 void Material::setAnisotropicRotation(float anisotropic_rotation) {
-	materialStructs[id].anisotropic_rotation = anisotropic_rotation;
+	this->anisotropic_rotation = anisotropic_rotation;
 	markDirty();
 }
 
 float Material::getAnisotropicRotation() {
-	return materialStructs[id].anisotropic_rotation;
+	return anisotropic_rotation;
 }
 
 void Material::setAnisotropicRotationTexture(Texture *texture, int channel) 
@@ -465,12 +442,12 @@ void Material::clearAnisotropicRotationTexture() {
 }
 
 void Material::setSheen(float sheen) {
-	materialStructs[id].sheen = sheen;
+	this->sheen = sheen;
 	markDirty();
 }
 
 float Material::getSheen() {
-	return materialStructs[id].sheen;
+	return sheen;
 }
 
 void Material::setSheenTexture(Texture *texture, int channel) 
@@ -487,12 +464,12 @@ void Material::clearSheenTexture() {
 }
 
 void Material::setSheenTint(float sheen_tint) {
-	materialStructs[id].sheen_tint = sheen_tint;
+	this->sheen_tint = sheen_tint;
 	markDirty();
 }
 
 float Material::getSheenTint() {
-	return materialStructs[id].sheen_tint;
+	return sheen_tint;
 }
 
 void Material::setSheenTintTexture(Texture *texture, int channel) 
@@ -509,12 +486,12 @@ void Material::clearSheenTintTexture() {
 }
 
 void Material::setClearcoat(float clearcoat) {
-	materialStructs[id].clearcoat = clearcoat;
+	this->clearcoat = clearcoat;
 	markDirty();
 }
 
 float Material::getClearcoat() {
-	return materialStructs[id].clearcoat;
+	return clearcoat;
 }
 
 void Material::setClearcoatTexture(Texture *texture, int channel) 
@@ -531,12 +508,12 @@ void Material::clearClearcoatTexture() {
 }
 
 void Material::setClearcoatRoughness(float clearcoat_roughness) {
-	materialStructs[id].clearcoat_roughness = clearcoat_roughness;
+	this->clearcoat_roughness = clearcoat_roughness;
 	markDirty();
 }
 
 float Material::getClearcoatRoughness() {
-	return materialStructs[id].clearcoat_roughness;
+	return clearcoat_roughness;
 }
 
 void Material::setClearcoatRoughnessTexture(Texture *texture, int channel) 
@@ -553,12 +530,12 @@ void Material::clearClearcoatRoughnessTexture() {
 }
 
 void Material::setIor(float ior) {
-	materialStructs[id].ior = ior;
+	this->ior = ior;
 	markDirty();
 }
 
 float Material::getIor() {
-	return materialStructs[id].ior;
+	return ior;
 }
 
 void Material::setIorTexture(Texture *texture, int channel) 
@@ -575,12 +552,12 @@ void Material::clearIorTexture() {
 }
 
 void Material::setTransmission(float transmission) {
-	materialStructs[id].transmission = transmission;
+	this->transmission = transmission;
 	markDirty();
 }
 
 float Material::getTransmission() {
-	return materialStructs[id].transmission;
+	return transmission;
 }
 
 void Material::setTransmissionTexture(Texture *texture, int channel) 
@@ -597,12 +574,12 @@ void Material::clearTransmissionTexture() {
 }
 
 void Material::setTransmissionRoughness(float transmission_roughness) {
-	materialStructs[id].transmission_roughness = transmission_roughness;
+	this->transmission_roughness = transmission_roughness;
 	markDirty();
 }
 
 float Material::getTransmissionRoughness() {
-	return materialStructs[id].transmission_roughness;
+	return transmission_roughness;
 }
 
 void Material::setTransmissionRoughnessTexture(Texture *texture, int channel) 
