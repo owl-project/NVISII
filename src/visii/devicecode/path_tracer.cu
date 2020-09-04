@@ -744,22 +744,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if (numLights == 0) continue;
                 sampledLightIDs[lid] = optixLaunchParams.lightEntities[randomID];
                 EntityStruct light_entity = optixLaunchParams.entities[sampledLightIDs[lid]];
-                
-                // shouldn't happen, but just in case...
-                if ((light_entity.light_id < 0) || (light_entity.light_id > MAX_LIGHTS)) continue;
-                if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_TRANSFORMS)) continue;
-            
                 LightStruct light_light = optixLaunchParams.lights[light_entity.light_id];
                 TransformStruct transform = optixLaunchParams.transforms[light_entity.transform_id];
-                MeshStruct mesh;
-                
-                bool is_area_light = false;
-                if ((light_entity.mesh_id >= 0) && (light_entity.mesh_id < MAX_MESHES)) {
-                    mesh = optixLaunchParams.meshes[light_entity.mesh_id];
-                    is_area_light = true;
-                };
-            
-                if (!is_area_light) continue;
+                MeshStruct mesh = optixLaunchParams.meshes[light_entity.mesh_id];
 
                 uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
                 owl::device::Buffer *indexLists = (owl::device::Buffer *)optixLaunchParams.indexLists.data;
