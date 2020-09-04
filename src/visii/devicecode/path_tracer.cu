@@ -131,7 +131,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     bool shadowray = prd.instanceID == -2;
     prd.instanceID = optixGetInstanceIndex();
     if (shadowray) return;
-    
+
     prd.barycentrics = optixGetTriangleBarycentrics();
     prd.primitiveID = optixGetPrimitiveIndex();
     prd.tHit = optixGetRayTmax();
@@ -813,7 +813,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
                             if (payload.instanceID == -1) continue;
                             int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
-                            bool visible = ((entityID == sampledLightIDs[lid]) || (entityID == -1));
+                            bool visible = (entityID == sampledLightIDs[lid]);
                             if (visible) {
                                 float w = 1.0f; //power_heuristic(1.f, lightPDFs[lid], 1.f, bsdf_pdf);
                                 float3 bsdf, bsdf_color;
