@@ -128,8 +128,11 @@ OPTIX_MISS_PROGRAM(miss)()
 OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 {
     RayPayload &prd = owl::getPRD<RayPayload>();
-    prd.barycentrics = optixGetTriangleBarycentrics();
+    bool shadowray = prd.instanceID == -2;
     prd.instanceID = optixGetInstanceIndex();
+    if (shadowray) return;
+    
+    prd.barycentrics = optixGetTriangleBarycentrics();
     prd.primitiveID = optixGetPrimitiveIndex();
     prd.tHit = optixGetRayTmax();
     optixGetObjectToWorldTransformMatrix(prd.localToWorld);
@@ -668,6 +671,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         owl::device::Buffer *vertexLists = (owl::device::Buffer *)optixLaunchParams.vertexLists.data;
         owl::device::Buffer *normalLists = (owl::device::Buffer *)optixLaunchParams.normalLists.data;
         owl::device::Buffer *texCoordLists = (owl::device::Buffer *)optixLaunchParams.texCoordLists.data;
+        const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
         for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid) 
         {
             uint32_t randomID = uint32_t(min(lcg_randomf(rng) * (numLights+1), float(numLights)));
@@ -718,12 +722,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 float bsdfPDF;
                 disney_pdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdfPDF, forcedBsdf);
                 if (bsdfPDF > EPSILON) {
-                    RayPayload payload;
+                    RayPayload payload; payload.instanceID = -2;
                     owl::Ray ray;
                     ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f;
                     ray.origin = hit_p; ray.direction = lightDir;
                     ray.time = time;
-                    owl::traceRay( optixLaunchParams.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT);
+                    owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
                     bool visible = (ray.tmax < 1e20f);
                     if (visible) {
                         float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
@@ -755,10 +759,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     mesh = optixLaunchParams.meshes[light_entity.mesh_id];
                     is_area_light = true;
                 };
-
-                const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT;
-                    // | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
-                    // | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT;
             
                 if (!is_area_light) continue;
 
@@ -802,7 +802,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         float bsdf_pdf;
                         disney_pdf(mat, v_z, w_o, light_dir, v_x, v_y, bsdf_pdf, forcedBsdf);
                         if (bsdf_pdf > EPSILON) {
-                            RayPayload payload;
+                            RayPayload payload; payload.instanceID = -2;
                             owl::Ray ray;
                             ray.tmin = EPSILON * 10.f;
                             ray.tmax = 1e20f;
@@ -810,7 +810,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                             ray.direction = light_dir;
                             payload.tHit = -1.f;
                             ray.time = time;
-                            owl::traceRay( optixLaunchParams.world, ray, payload,  OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT);
+                            owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
                             if (payload.instanceID == -1) continue;
                             int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
                             bool visible = ((entityID == sampledLightIDs[lid]) || (entityID == -1));
