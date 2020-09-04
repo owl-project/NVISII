@@ -850,6 +850,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // terminate if the bsdf probability is impossible, or if the bsdf filters out all light
         if (bsdf_pdf < EPSILON || all_zero(bsdf) || all_zero(bsdf_color)) {
+            float3 contribution = pathThroughput * irradiance;
+            illum = illum + contribution;
             break;
         }
 
