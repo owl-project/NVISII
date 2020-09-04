@@ -78,6 +78,7 @@ static struct OptixData {
     OWLBuffer frameBuffer;
     OWLBuffer normalBuffer;
     OWLBuffer albedoBuffer;
+    OWLBuffer reservoirBuffer;
     OWLBuffer scratchBuffer;
     OWLBuffer mvecBuffer;
     OWLBuffer accumBuffer;
@@ -438,6 +439,7 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
     bufferResize(OD.frameBuffer, width * height);
     bufferResize(OD.normalBuffer, width * height);
     bufferResize(OD.albedoBuffer, width * height);
+    bufferResize(OD.reservoirBuffer, width * height);
     bufferResize(OD.scratchBuffer, width * height);
     bufferResize(OD.mvecBuffer, width * height);    
     bufferResize(OD.accumBuffer, width * height);
@@ -498,6 +500,7 @@ void initializeOptix(bool headless)
         { "frameBuffer",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, frameBuffer)},
         { "normalBuffer",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, normalBuffer)},
         { "albedoBuffer",            OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, albedoBuffer)},
+        { "reservoirBuffer",         OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, reservoirBuffer)},
         { "scratchBuffer",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, scratchBuffer)},
         { "mvecBuffer",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, mvecBuffer)},
         { "accumPtr",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
@@ -556,12 +559,14 @@ void initializeOptix(bool headless)
     OD.accumBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.normalBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.albedoBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.reservoirBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(Reservoir),512*512, nullptr);
     OD.scratchBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.mvecBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.LP.frameSize = glm::ivec2(512, 512);
     launchParamsSetBuffer(OD.launchParams, "frameBuffer", OD.frameBuffer);
     launchParamsSetBuffer(OD.launchParams, "normalBuffer", OD.normalBuffer);
     launchParamsSetBuffer(OD.launchParams, "albedoBuffer", OD.albedoBuffer);
+    launchParamsSetBuffer(OD.launchParams, "reservoirBuffer", OD.reservoirBuffer);
     launchParamsSetBuffer(OD.launchParams, "scratchBuffer", OD.scratchBuffer);
     launchParamsSetBuffer(OD.launchParams, "mvecBuffer", OD.mvecBuffer);
     launchParamsSetBuffer(OD.launchParams, "accumPtr", OD.accumBuffer);
@@ -2102,6 +2107,9 @@ void __test__(std::vector<std::string> args) {
     }
     else if (option == std::string("diffuse_motion_vectors")) {
         OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_MOTION_VECTORS;
+    }
+    else if (option == std::string("reservoir")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::RESERVOIR;
     }
     else {
         throw std::runtime_error(std::string("Error, unknown option : \"") + option + std::string("\". ")

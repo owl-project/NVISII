@@ -15,12 +15,36 @@
 #include <visii/light_struct.h>
 #include <visii/texture_struct.h>
 
+#define RESERVOIR_LIMIT 10
+struct Reservoir {
+  float sample;
+  float weight_sum = 0;
+  float num_samples = 0;
+  float W; // multiply final sample by this
+  
+  __both__ void update(
+      float x_i, 
+      float p /* must be between 0 and 1 */, 
+      float p_hat /* is allowed to be above 1 */, 
+      float rnd) 
+  {
+    float w_i = p_hat / p;
+    weight_sum += w_i;
+    num_samples += 1;
+    if (rnd < (w_i / weight_sum)) {
+      sample = x_i;
+    }
+    W = (1.f / p_hat)  * ( (1.f / num_samples) * weight_sum );
+  }
+};
+
 struct LaunchParams {
     glm::ivec2 frameSize;
     uint64_t frameID = 0;
     glm::vec4 *frameBuffer;
     glm::vec4 *albedoBuffer;
     glm::vec4 *normalBuffer;
+    Reservoir *reservoirBuffer;
     glm::vec4 *scratchBuffer;
     glm::vec4 *mvecBuffer;
     glm::vec4 *accumPtr;
@@ -94,6 +118,7 @@ enum RenderDataFlags : uint32_t {
   TRANSMISSION_DIRECT_LIGHTING = 16,
   TRANSMISSION_INDIRECT_LIGHTING = 17,
   RAY_DIRECTION = 18,
+  RESERVOIR = 19
 };
 
 #define MAX_LIGHT_SAMPLES 10
