@@ -1167,6 +1167,7 @@ void updateComponents()
             if (!entities[eid].isInitialized()) continue;
             if (!entities[eid].getTransform()) continue;
             if (!entities[eid].getLight()) continue;
+            if (!entities[eid].getMesh()) continue;
             OD.lightEntities.push_back(eid);
         }
         bufferResize(OptixData.lightEntitiesBuffer, OD.lightEntities.size());

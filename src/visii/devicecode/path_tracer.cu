@@ -742,7 +742,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             else 
             {
                 if (numLights == 0) continue;
-                randomID = min(randomID, numLights - 1);
                 sampledLightIDs[lid] = optixLaunchParams.lightEntities[randomID];
                 EntityStruct light_entity = optixLaunchParams.entities[sampledLightIDs[lid]];
                 
