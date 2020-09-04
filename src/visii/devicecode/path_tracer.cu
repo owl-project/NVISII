@@ -659,17 +659,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         
         int numLights = optixLaunchParams.numLightEntities;
         float3 irradiance = make_float3(0.f);
-        // float3 lightEmission = make_float3(0.f);
-
-        EntityStruct light_entity;
-        MaterialStruct light_material;
-        LightStruct light_light;
-        light_material.base_color_texture_id = -1;
-        
-        // float3 n_l = v_z; //faceNormalForward(w_o, v_gz, v_z);
-        // if (dot(w_o, n_l) < 0.f) {
-            // n_l = -n_l;
-        // }
 
         // note, rdForcedBsdf is -1 by default
         int forcedBsdf = -1;//rdForcedBsdf;//(bounce == optixLaunchParams.renderDataBounce) ? rdForcedBsdf : -1; 
@@ -751,13 +740,13 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if (numLights == 0) continue;
                 randomID = min(randomID, numLights - 1);
                 sampledLightIDs[lid] = optixLaunchParams.lightEntities[randomID];
-                light_entity = optixLaunchParams.entities[sampledLightIDs[lid]];
+                EntityStruct light_entity = optixLaunchParams.entities[sampledLightIDs[lid]];
                 
                 // shouldn't happen, but just in case...
                 if ((light_entity.light_id < 0) || (light_entity.light_id > MAX_LIGHTS)) continue;
                 if ((light_entity.transform_id < 0) || (light_entity.transform_id > MAX_TRANSFORMS)) continue;
             
-                light_light = optixLaunchParams.lights[light_entity.light_id];
+                LightStruct light_light = optixLaunchParams.lights[light_entity.light_id];
                 TransformStruct transform = optixLaunchParams.transforms[light_entity.transform_id];
                 MeshStruct mesh;
                 
