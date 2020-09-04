@@ -721,6 +721,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 
                 float bsdfPDF;
                 disney_pdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdfPDF, forcedBsdf);
+
+                float3 bsdf, bsdf_color;
+                disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
+
                 if (bsdfPDF > EPSILON) {
                     RayPayload payload; payload.instanceID = -2;
                     owl::Ray ray;
@@ -731,8 +735,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     bool visible = (ray.tmax < 1e20f);
                     if (visible) {
                         float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
-                        float3 bsdf, bsdf_color;
-                        disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
+                        
                         float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / lightPDFs[lid];
                         irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
                     }
@@ -757,50 +760,51 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 ivec3 triIndex = indices[random_tri_id];   
                 
                 // Sample the light to compute an incident light ray to this point
-                {    
-                    auto &ltw = transform.localToWorld;
-                    vec3 dir; vec2 uv;
-                    vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
-                    sampleTriangle(pos, 
-                        ltw * normals[triIndex.x], ltw * normals[triIndex.y], ltw * normals[triIndex.z], 
-                        ltw * vertices[triIndex.x], ltw * vertices[triIndex.y], ltw * vertices[triIndex.z], // Might be a bug here with normal transform...
-                        texCoords[triIndex.x], texCoords[triIndex.y], texCoords[triIndex.z], 
-                        lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false);
-                    vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
-                    float dotNWi = abs(dot(dir, normal));
-                    lightPDFs[lid] = abs(lightPDFs[lid]);
-                    lightPDFs[lid] /= (numLights);
-                    lightPDFs[lid] /= (mesh.numTris);
-                    
-                    float3 lightEmission;
-                    if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
-                    else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * light_light.intensity;
+                auto &ltw = transform.localToWorld;
+                vec3 dir; vec2 uv;
+                vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
+                sampleTriangle(pos, 
+                    ltw * normals[triIndex.x], ltw * normals[triIndex.y], ltw * normals[triIndex.z], 
+                    ltw * vertices[triIndex.x], ltw * vertices[triIndex.y], ltw * vertices[triIndex.z], // Might be a bug here with normal transform...
+                    texCoords[triIndex.x], texCoords[triIndex.y], texCoords[triIndex.z], 
+                    lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false);
+                vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
+                float dotNWi = abs(dot(dir, normal));
+                lightPDFs[lid] = abs(lightPDFs[lid]);
+                lightPDFs[lid] /= (numLights);
+                lightPDFs[lid] /= (mesh.numTris);
+                
+                float3 light_dir = make_float3(dir.x, dir.y, dir.z);
 
-                    if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
-                        float3 light_dir = make_float3(dir.x, dir.y, dir.z);
-                        light_dir = normalize(light_dir);
-                        float bsdf_pdf;
-                        disney_pdf(mat, v_z, w_o, light_dir, v_x, v_y, bsdf_pdf, forcedBsdf);
-                        if (bsdf_pdf > EPSILON) {
-                            RayPayload payload; payload.instanceID = -2;
-                            owl::Ray ray;
-                            ray.tmin = EPSILON * 10.f;
-                            ray.tmax = 1e20f;
-                            ray.origin = hit_p;
-                            ray.direction = light_dir;
-                            payload.tHit = -1.f;
-                            ray.time = time;
-                            owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
-                            if (payload.instanceID == -1) continue;
-                            int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
-                            bool visible = (entityID == sampledLightIDs[lid]);
-                            if (visible) {
-                                float w = 1.0f; //power_heuristic(1.f, lightPDFs[lid], 1.f, bsdf_pdf);
-                                float3 bsdf, bsdf_color;
-                                disney_brdf(mat, v_z, w_o, light_dir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
-                                float3 Li = lightEmission * w / lightPDFs[lid];
-                                irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
-                            }
+                float3 lightEmission;
+                if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
+                else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * light_light.intensity;
+
+                float bsdf_pdf;
+                disney_pdf(mat, v_z, w_o, light_dir, v_x, v_y, bsdf_pdf, forcedBsdf);
+                
+                float3 bsdf, bsdf_color;
+                disney_brdf(mat, v_z, w_o, light_dir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
+
+                if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
+                    if (bsdf_pdf > EPSILON) {
+                        RayPayload payload; payload.instanceID = -2;
+                        owl::Ray ray;
+                        ray.tmin = EPSILON * 10.f;
+                        ray.tmax = 1e20f;
+                        ray.origin = hit_p;
+                        ray.direction = light_dir;
+                        payload.tHit = -1.f;
+                        ray.time = time;
+                        owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
+                        if (payload.instanceID == -1) continue;
+                        int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
+                        bool visible = (entityID == sampledLightIDs[lid]);
+                        if (visible) {
+                            float w = 1.0f; //power_heuristic(1.f, lightPDFs[lid], 1.f, bsdf_pdf);
+                            
+                            float3 Li = lightEmission * w / lightPDFs[lid];
+                            irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
                         }
                     }
                 }
