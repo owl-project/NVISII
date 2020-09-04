@@ -751,27 +751,21 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
                 owl::device::Buffer *indexLists = (owl::device::Buffer *)optixLaunchParams.indexLists.data;
                 ivec3 *indices = (ivec3*) indexLists[light_entity.mesh_id].data;
+                vec4 *vertices = (vec4*) vertexLists[light_entity.mesh_id].data;
+                vec4 *normals = (vec4*) normalLists[light_entity.mesh_id].data;
+                vec2 *texCoords = (vec2*) texCoordLists[light_entity.mesh_id].data;
                 ivec3 triIndex = indices[random_tri_id];   
                 
                 // Sample the light to compute an incident light ray to this point
                 {    
-                    vec4 *vertices = (vec4*) vertexLists[light_entity.mesh_id].data;
-                    vec4 *normals = (vec4*) normalLists[light_entity.mesh_id].data;
-                    vec2 *texCoords = (vec2*) texCoordLists[light_entity.mesh_id].data;
-                    vec3 dir; 
-                    vec2 uv;
+                    auto &ltw = transform.localToWorld;
+                    vec3 dir; vec2 uv;
                     vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
-                    vec3 v1 = transform.localToWorld * vertices[triIndex.x];
-                    vec3 v2 = transform.localToWorld * vertices[triIndex.y];
-                    vec3 v3 = transform.localToWorld * vertices[triIndex.z];
-                    vec3 n1 = transform.localToWorld * normals[triIndex.x];
-                    vec3 n2 = transform.localToWorld * normals[triIndex.y];
-                    vec3 n3 = transform.localToWorld * normals[triIndex.z];
-                    vec2 uv1 = texCoords[triIndex.x];
-                    vec2 uv2 = texCoords[triIndex.y];
-                    vec2 uv3 = texCoords[triIndex.z];
-                    // vec3 N = normalize(cross( normalize(v2 - v1), normalize(v3 - v1)));
-                    sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false);
+                    sampleTriangle(pos, 
+                        ltw * normals[triIndex.x], ltw * normals[triIndex.y], ltw * normals[triIndex.z], 
+                        ltw * vertices[triIndex.x], ltw * vertices[triIndex.y], ltw * vertices[triIndex.z], // Might be a bug here with normal transform...
+                        texCoords[triIndex.x], texCoords[triIndex.y], texCoords[triIndex.z], 
+                        lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false);
                     vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
                     float dotNWi = abs(dot(dir, normal));
                     lightPDFs[lid] = abs(lightPDFs[lid]);
