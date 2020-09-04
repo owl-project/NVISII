@@ -32,14 +32,34 @@ interact(moveCamera, x=(-10, 10, .001), y=(-10, 10, .001), z=(-10, 10, .001))
 camera_entity.get_camera().use_perspective_from_fov(field_of_view = 0.785398, aspect = 1080.0/1080.0)
 
 #%%
-tex = v.texture.create_from_image("texture", "../data/dome.hdr")
-v.set_dome_light_texture(tex)
+# tex = v.texture.create_from_image("texture", "../data/dome.hdr")
+# v.set_dome_light_texture(tex)
+# v.set_dome_light_color(v.vec3(1,0,0))
+# v.set_dome_light_sky(sun_position=v.vec3(1,1,0))
+sun = v.entity.create(
+    name = "sun",
+    mesh = v.mesh.create_sphere("sun"),
+    transform = v.transform.create("sun"),
+    light = v.light.create("sun")
+)
+#%%
 
+#%%
+from ipywidgets import interact
+def moveSun(x=0,y=3,z=10, atmosphere_thickness = 1.0, hue=0, sat=0, val=.5):
+    sun.get_light().set_intensity(10)
+    sun.get_transform().set_position(v.vec3(x,y,z))
+    rgb = colorsys.hsv_to_rgb(hue, sat, val)
+    v.set_dome_light_sky(sun_position=v.vec3(x,y,z), atmosphere_thickness = atmosphere_thickness, sky_tint = v.vec3(rgb[0], rgb[1], rgb[2]))
+interact(moveSun, 
+    x=(-100, 100, .001), y=(-100, 100, .001), z=(-100, 100, .001), 
+    atmosphere_thickness = (0.0, 2.0, .01),
+    hue=(0.0, 1.0, .001), sat=(0.0, 1.0, .001), val=(0.0, 1.0, .001))
 
 #%%
 # tex = v.texture.create_from_image("texture", "../data/dome.hdr")
 # v.set_dome_light_texture(tex)
-
+# v.set_dome_light_color(v.vec3(1))
 
 #%%
 entities_obj = v.import_obj(
@@ -55,6 +75,8 @@ entities_obj = v.import_obj(
 # Light 
 light = entities_obj[0]
 light.set_light(v.light.create("areaLight1"),)
+# light.material()
+# light.clear_light()
 
 #%% Light 
 floor = entities_obj[1]
@@ -72,6 +94,9 @@ inner = entities_obj[4]
 def changeColor(hue=0, sat=0, val=1): 
     rgb = colorsys.hsv_to_rgb(hue, sat, val)
     inner.get_material().set_base_color(v.vec3(rgb[0], rgb[1], rgb[2]))
+def changeSubsurfaceColor(hue=0, sat=0, val=1): 
+    rgb = colorsys.hsv_to_rgb(hue, sat, val)
+    inner.get_material().set_subsurface_color(v.vec3(rgb[0], rgb[1], rgb[2]))
 def changeRoughness(roughness=0): inner.get_material().set_roughness(roughness)
 def changeTransmission(transmission=0): inner.get_material().set_transmission(transmission)    
 def changeIor(ior=1.57): inner.get_material().set_ior(ior)
@@ -95,12 +120,16 @@ interact(changeMetallic, metallic=(0.0, 1.0, .001))
 interact(changeSpecularTint, specular_tint=(0.0, 1.0, .001))
 interact(changeSpecular, specular=(0.0, 2.0, .001))
 interact(changeSubsurface, subsurface=(0.0, 1.0, .001))
+interact(changeSubsurfaceColor, hue=(0.0, 1.0, .001), sat=(0.0, 1.0, .001), val=(0.0, 1.0, .001))
 interact(changeTransmissionRoughess, transmission_roughness=(0.0, 1.0, .001))
 interact(changeAnisotropy, anisotropy=(0.0, 1.0, .001))
 #%%
 def changeColor(hue=0, sat=0, val=1): 
     rgb = colorsys.hsv_to_rgb(hue, sat, val)
     outer.get_material().set_base_color(v.vec3(rgb[0], rgb[1], rgb[2]))
+def changeSubsurfaceColor(hue=0, sat=0, val=1): 
+    rgb = colorsys.hsv_to_rgb(hue, sat, val)
+    outer.get_material().set_subsurface_color(v.vec3(rgb[0], rgb[1], rgb[2]))
 def changeRoughness(roughness=1): outer.get_material().set_roughness(roughness)
 def changeTransmission(transmission=0): outer.get_material().set_transmission(transmission)    
 def changeIor(ior=1.57): outer.get_material().set_ior(ior)
@@ -124,6 +153,7 @@ interact(changeMetallic, metallic=(0.0, 1.0, .001))
 interact(changeSpecularTint, specular_tint=(0.0, 1.0, .001))
 interact(changeSpecular, specular=(0.0, 2.0, .001))
 interact(changeSubsurface, subsurface=(0.0, 1.0, .001))
+interact(changeSubsurfaceColor, hue=(0.0, 1.0, .001), sat=(0.0, 1.0, .001), val=(0.0, 1.0, .001))
 interact(changeTransmissionRoughess, transmission_roughness=(0.0, 1.0, .001))
 interact(changeAnisotropy, anisotropy=(0.0, 1.0, .001))
 #%%
@@ -150,8 +180,13 @@ interact(changeAngularVelocity, ax=(-1.0, 1.0, .001), ay=(-1.0, 1.0, .001), az=(
 def changeDomeLightIntensity(dome_intensity=1): v.set_dome_light_intensity(dome_intensity)
 interact(changeDomeLightIntensity, dome_intensity=(0.0, 4.0, .001))
 #%%
-def changeLightIntensity(intensity=100): light.get_light().set_intensity(intensity)
-interact(changeLightIntensity, intensity=(0.0, 1000.0, .001))
+def changeLightIntensity(intensity=10): light.get_light().set_intensity(intensity)
+interact(changeLightIntensity, intensity=(0.0, 100.0, .010))
+#%%
+# def changeColor(hue=0, sat=0, val=1): 
+#     rgb = colorsys.hsv_to_rgb(hue, sat, val)
+#     v.set_dome_light_color(v.vec3(rgb[0], rgb[1], rgb[2]))
+# interact(changeColor, hue=(0.0, 1.0, .001), sat=(0.0, 1.0, .001), val=(0.0, 1.0, .001))
 
 #%%
 def moveLight(x = 0, y = 0, z = 3): light.get_transform().set_position(v.vec3(x,y,z))
@@ -369,5 +404,16 @@ norm2 = v.texture.create_from_image("N4", "../data/RustedMetal_N.png", linear=Tr
 
 # %%
 outer.get_material().set_normal_map_texture(norm2)
+
+# %%
+teapot = v.entity.create(
+    name = "teapot",
+    mesh = v.mesh.create_teapotahedron("teapot"),
+    transform = v.transform.create("teapot"),
+    material = v.material.create("teapot")
+)
+# %%
+teapot.get_transform().set_scale(v.vec3(.25))
+outer.get_transform().add_child(teapot.get_transform())
 
 # %%
