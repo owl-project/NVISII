@@ -671,6 +671,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         owl::device::Buffer *vertexLists = (owl::device::Buffer *)optixLaunchParams.vertexLists.data;
         owl::device::Buffer *normalLists = (owl::device::Buffer *)optixLaunchParams.normalLists.data;
         owl::device::Buffer *texCoordLists = (owl::device::Buffer *)optixLaunchParams.texCoordLists.data;
+        auto &i2e = optixLaunchParams.instanceToEntityMap;
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
         for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid) 
         {
@@ -719,25 +720,27 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
                 float dotNWi = fabs(dot(lightDir, v_z)); // for now, making all lights double sided.
                 
+                float3 lightEmission = (missColor(ray) * optixLaunchParams.domeLightIntensity);
+
                 float bsdfPDF;
                 disney_pdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdfPDF, forcedBsdf);
 
-                float3 bsdf, bsdf_color;
-                disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
+                float3 bsdf, bsdfColor;
+                disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
 
-                if (bsdfPDF > EPSILON) {
+                if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON) && (bsdfPDF > EPSILON)) {
                     RayPayload payload; payload.instanceID = -2;
                     owl::Ray ray;
                     ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f;
                     ray.origin = hit_p; ray.direction = lightDir;
                     ray.time = time;
                     owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
-                    bool visible = (ray.tmax < 1e20f);
+                    bool visible = (randomID == numLights) ?
+                        (ray.tmax < 1e20f) : (payload.instanceID >= 0 && i2e[payload.instanceID] == sampledLightIDs[lid]);
                     if (visible) {
-                        float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
-                        
-                        float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / lightPDFs[lid];
-                        irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
+                        float w = 1.0f; //power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
+                        float3 Li = lightEmission * w / lightPDFs[lid];
+                        irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi));
                     }
                 }
             }
@@ -774,38 +777,31 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 lightPDFs[lid] /= (numLights);
                 lightPDFs[lid] /= (mesh.numTris);
                 
-                float3 light_dir = make_float3(dir.x, dir.y, dir.z);
+                float3 lightDir = make_float3(dir.x, dir.y, dir.z);
 
                 float3 lightEmission;
                 if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
                 else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * light_light.intensity;
 
-                float bsdf_pdf;
-                disney_pdf(mat, v_z, w_o, light_dir, v_x, v_y, bsdf_pdf, forcedBsdf);
+                float bsdfPDF;
+                disney_pdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdfPDF, forcedBsdf);
                 
-                float3 bsdf, bsdf_color;
-                disney_brdf(mat, v_z, w_o, light_dir, v_x, v_y, bsdf, bsdf_color, forcedBsdf);
+                float3 bsdf, bsdfColor;
+                disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
 
-                if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
-                    if (bsdf_pdf > EPSILON) {
-                        RayPayload payload; payload.instanceID = -2;
-                        owl::Ray ray;
-                        ray.tmin = EPSILON * 10.f;
-                        ray.tmax = 1e20f;
-                        ray.origin = hit_p;
-                        ray.direction = light_dir;
-                        payload.tHit = -1.f;
-                        ray.time = time;
-                        owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
-                        if (payload.instanceID == -1) continue;
-                        int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
-                        bool visible = (entityID == sampledLightIDs[lid]);
-                        if (visible) {
-                            float w = 1.0f; //power_heuristic(1.f, lightPDFs[lid], 1.f, bsdf_pdf);
-                            
-                            float3 Li = lightEmission * w / lightPDFs[lid];
-                            irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
-                        }
+                if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON) && (bsdfPDF > EPSILON)) {
+                    RayPayload payload; payload.instanceID = -2;
+                    owl::Ray ray;
+                    ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f;
+                    ray.origin = hit_p; ray.direction = lightDir;
+                    ray.time = time;
+                    owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
+                    bool visible = (randomID == numLights) ?
+                        (ray.tmax < 1e20f) : (payload.instanceID >= 0 && i2e[payload.instanceID] == sampledLightIDs[lid]);
+                    if (visible) {
+                        float w = 1.0f; //power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
+                        float3 Li = lightEmission * w / lightPDFs[lid];
+                        irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi));
                     }
                 }
             }
