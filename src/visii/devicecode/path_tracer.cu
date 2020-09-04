@@ -681,8 +681,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 bsdf, bsdfColor;
             float3 lightEmission;
             float3 lightDir;
-
-
+            int numTris;
             
             // sample background
             if (randomID == numLights)
@@ -722,8 +721,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     lightPDFs[lid] = 1.f;
                 }
 
-                lightPDFs[lid] /= (numLights + 1);
-
+                numTris = 1.f;
                 dotNWi = fabs(dot(lightDir, v_z)); // for now, making all lights double sided.
                 lightEmission = (missColor(ray) * optixLaunchParams.domeLightIntensity);
                 disney_pdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdfPDF, forcedBsdf);
@@ -757,11 +755,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     texCoords[triIndex.x], texCoords[triIndex.y], texCoords[triIndex.z], 
                     lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false);
                 vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
-                dotNWi = abs(dot(dir, normal));
-                lightPDFs[lid] = abs(lightPDFs[lid]);
-                lightPDFs[lid] /= (numLights);
-                lightPDFs[lid] /= (mesh.numTris);
                 
+                dotNWi = abs(dot(dir, normal));
+                numTris = mesh.numTris;
                 lightDir = make_float3(dir.x, dir.y, dir.z);
                 if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
                 else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * light_light.intensity;
@@ -769,6 +765,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
             }
 
+            lightPDFs[lid] *= (1.f / (numLights + 1)) * (1.f / (numTris));
             if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON) && (bsdfPDF > EPSILON)) {
                 RayPayload payload; payload.instanceID = -2;
                 owl::Ray ray;
