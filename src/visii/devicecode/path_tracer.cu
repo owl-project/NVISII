@@ -676,6 +676,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // first, sample the light source by importance sampling the light
         // note, results in large instruction cache misses... needs optimizing
+        owl::device::Buffer *vertexLists = (owl::device::Buffer *)optixLaunchParams.vertexLists.data;
+        owl::device::Buffer *normalLists = (owl::device::Buffer *)optixLaunchParams.normalLists.data;
+        owl::device::Buffer *texCoordLists = (owl::device::Buffer *)optixLaunchParams.texCoordLists.data;
         for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid) 
         {
             uint32_t randomID = uint32_t(min(lcg_randomf(rng) * (numLights+1), float(numLights)));
@@ -777,9 +780,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 
                 // Sample the light to compute an incident light ray to this point
                 {    
-                    owl::device::Buffer *vertexLists = (owl::device::Buffer *)optixLaunchParams.vertexLists.data;
-                    owl::device::Buffer *normalLists = (owl::device::Buffer *)optixLaunchParams.normalLists.data;
-                    owl::device::Buffer *texCoordLists = (owl::device::Buffer *)optixLaunchParams.texCoordLists.data;
                     vec4 *vertices = (vec4*) vertexLists[light_entity.mesh_id].data;
                     vec4 *normals = (vec4*) normalLists[light_entity.mesh_id].data;
                     vec2 *texCoords = (vec2*) texCoordLists[light_entity.mesh_id].data;
