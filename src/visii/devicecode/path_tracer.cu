@@ -697,10 +697,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             uint32_t lid = 0;
             // reservoir doesn't work with numLightSamples above...
             float rnd = lcg_randomf(rng);
-            // if (bounce == 0) {
-            //     reservoir.update(rnd, 1.f, 1.f, lcg_randomf(rng));
-            //     rnd = reservoir.sample;
-            // }
 
             rnd *= (numLights+1);
             float rnd1 = int(rnd);
@@ -708,92 +704,117 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             uint32_t randomID = uint32_t(min(rnd1, float(numLights)));
             
             float dotNWi;
+            float dist;
             float3 bsdf, bsdfColor;
             float3 lightEmission;
             float3 lightDir;
             int numTris;
 
-            // sample background
-            if (randomID == numLights)
+            for (uint32_t resTry = 0; resTry <= 1; ++resTry) 
             {
-                sampledLightIDs[lid] = -1;
-
-                if (
-                    (optixLaunchParams.environmentMapWidth != 0) && (optixLaunchParams.environmentMapHeight != 0) &&
-                    (optixLaunchParams.environmentMapRows != nullptr) && (optixLaunchParams.environmentMapCols != nullptr)
-                ) 
+                // sample background
+                if (randomID == numLights)
                 {
-                    // significant bottleneck here
-                    // Vec3fa color = m_background->sample(dg, wi, tMax, RandomSampler_get2D(sampler));
-                    float rx = lcg_randomf(rng);
-                    float ry = lcg_randomf(rng);
-                    float* rows = optixLaunchParams.environmentMapRows;
-                    float* cols = optixLaunchParams.environmentMapCols;
-                    int width = optixLaunchParams.environmentMapWidth;
-                    int height = optixLaunchParams.environmentMapHeight;
-                    float invjacobian = width * height / float(4 * M_PI);
-                    float row_pdf, col_pdf;
-                    unsigned x, y;
-                    ry = sample_cdf(rows, height, ry, &y, &row_pdf);
-                    y = max(min(y, height - 1), 0);
-                    rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
-                    lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
-                    lightPDFs[lid] = row_pdf * col_pdf * invjacobian;
-                } 
+                    sampledLightIDs[lid] = -1;
+
+                    if (
+                        (optixLaunchParams.environmentMapWidth != 0) && (optixLaunchParams.environmentMapHeight != 0) &&
+                        (optixLaunchParams.environmentMapRows != nullptr) && (optixLaunchParams.environmentMapCols != nullptr)
+                    ) 
+                    {
+                        // significant bottleneck here
+                        // Vec3fa color = m_background->sample(dg, wi, tMax, RandomSampler_get2D(sampler));
+                        float rx = lcg_randomf(rng);
+                        float ry = lcg_randomf(rng);
+                        float* rows = optixLaunchParams.environmentMapRows;
+                        float* cols = optixLaunchParams.environmentMapCols;
+                        int width = optixLaunchParams.environmentMapWidth;
+                        int height = optixLaunchParams.environmentMapHeight;
+                        float invjacobian = width * height / float(4 * M_PI);
+                        float row_pdf, col_pdf;
+                        unsigned x, y;
+                        ry = sample_cdf(rows, height, ry, &y, &row_pdf);
+                        y = max(min(y, height - 1), 0);
+                        rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
+                        lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
+                        lightPDFs[lid] = row_pdf * col_pdf * invjacobian;
+                    } 
+                    else 
+                    {            
+                        glm::mat3 tbn;
+                        tbn = glm::column(tbn, 0, make_vec3(v_x) );
+                        tbn = glm::column(tbn, 1, make_vec3(v_y) );
+                        tbn = glm::column(tbn, 2, make_vec3(v_z) );            
+                        const float3 hemi_dir = normalize(cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
+                        lightDir = make_float3(normalize(tbn * normalize(make_vec3(hemi_dir))) );
+                        lightPDFs[lid] = 1.f;
+                    }
+
+                    numTris = 1.f;
+                    dist = 1.f;
+                    dotNWi = fabs(dot(lightDir, v_z)); // for now, making all lights double sided.
+                    lightEmission = (missColor(ray) * optixLaunchParams.domeLightIntensity);
+                    disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
+                }
+                // sample light sources
                 else 
-                {            
-                    glm::mat3 tbn;
-                    tbn = glm::column(tbn, 0, make_vec3(v_x) );
-                    tbn = glm::column(tbn, 1, make_vec3(v_y) );
-                    tbn = glm::column(tbn, 2, make_vec3(v_z) );            
-                    const float3 hemi_dir = normalize(cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
-                    lightDir = make_float3(normalize(tbn * normalize(make_vec3(hemi_dir))) );
-                    lightPDFs[lid] = 1.f;
+                {
+                    if (numLights == 0) continue;
+                    sampledLightIDs[lid] = optixLaunchParams.lightEntities[randomID];
+                    EntityStruct light_entity = optixLaunchParams.entities[sampledLightIDs[lid]];
+                    LightStruct light_light = optixLaunchParams.lights[light_entity.light_id];
+                    TransformStruct transform = optixLaunchParams.transforms[light_entity.transform_id];
+                    MeshStruct mesh = optixLaunchParams.meshes[light_entity.mesh_id];
+
+                    uint32_t random_tri_id = uint32_t(min(rnd2 * mesh.numTris, float(mesh.numTris - 1)));
+                    owl::device::Buffer *indexLists = (owl::device::Buffer *)optixLaunchParams.indexLists.data;
+                    ivec3 *indices = (ivec3*) indexLists[light_entity.mesh_id].data;
+                    vec4 *vertices = (vec4*) vertexLists[light_entity.mesh_id].data;
+                    vec4 *normals = (vec4*) normalLists[light_entity.mesh_id].data;
+                    vec2 *texCoords = (vec2*) texCoordLists[light_entity.mesh_id].data;
+                    ivec3 triIndex = indices[random_tri_id];   
+                    
+                    // Sample the light to compute an incident light ray to this point
+                    auto &ltw = transform.localToWorld;
+                    vec3 dir; vec2 uv;
+                    vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
+                    sampleTriangle(pos, 
+                        ltw * normals[triIndex.x], ltw * normals[triIndex.y], ltw * normals[triIndex.z], 
+                        ltw * vertices[triIndex.x], ltw * vertices[triIndex.y], ltw * vertices[triIndex.z], // Might be a bug here with normal transform...
+                        texCoords[triIndex.x], texCoords[triIndex.y], texCoords[triIndex.z], 
+                        lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false);
+                    vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
+                    
+                    dotNWi = abs(dot(dir, normal));
+                    numTris = mesh.numTris;
+                    lightDir = make_float3(dir.x, dir.y, dir.z);
+                    if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
+                    else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * light_light.intensity;
+                    disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
                 }
 
-                numTris = 1.f;
-                dotNWi = fabs(dot(lightDir, v_z)); // for now, making all lights double sided.
-                lightEmission = (missColor(ray) * optixLaunchParams.domeLightIntensity);
-                disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
-            }
-            // sample light sources
-            else 
-            {
-                if (numLights == 0) continue;
-                sampledLightIDs[lid] = optixLaunchParams.lightEntities[randomID];
-                EntityStruct light_entity = optixLaunchParams.entities[sampledLightIDs[lid]];
-                LightStruct light_light = optixLaunchParams.lights[light_entity.light_id];
-                TransformStruct transform = optixLaunchParams.transforms[light_entity.transform_id];
-                MeshStruct mesh = optixLaunchParams.meshes[light_entity.mesh_id];
+                // update reservoir
+                if (/*false && */(bounce == 0) && (resTry == 0)) {
+                    // p /* must be between 0 and 1 */, 
+                    // p_hat /* is allowed to be above 1 */, 
+                    // float w_i = p_hat / p;
+                    float p = 1.0f;//(1.f / float(numLights + 1.f)) * (1.f / float(numTris));
+                    float3 Li = lightEmission;//bsdf * bsdfColor * ((lightEmission / (dist * dist)) / lightPDFs[lid]) * fabs(dotNWi);
+                    float p_hat = max(Li.x, max(Li.y, Li.z));
+                    reservoir.update(rnd, p_hat / p, lcg_randomf(rng));
+                    reservoir.W = (1.f / p_hat)  * ((1.f / reservoir.M) * reservoir.w_sum);
+                    if (reservoir.sample == rnd) break;
 
-                uint32_t random_tri_id = uint32_t(min(rnd2 * mesh.numTris, float(mesh.numTris - 1)));
-                owl::device::Buffer *indexLists = (owl::device::Buffer *)optixLaunchParams.indexLists.data;
-                ivec3 *indices = (ivec3*) indexLists[light_entity.mesh_id].data;
-                vec4 *vertices = (vec4*) vertexLists[light_entity.mesh_id].data;
-                vec4 *normals = (vec4*) normalLists[light_entity.mesh_id].data;
-                vec2 *texCoords = (vec2*) texCoordLists[light_entity.mesh_id].data;
-                ivec3 triIndex = indices[random_tri_id];   
-                
-                // Sample the light to compute an incident light ray to this point
-                auto &ltw = transform.localToWorld;
-                vec3 dir; vec2 uv;
-                vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
-                sampleTriangle(pos, 
-                    ltw * normals[triIndex.x], ltw * normals[triIndex.y], ltw * normals[triIndex.z], 
-                    ltw * vertices[triIndex.x], ltw * vertices[triIndex.y], ltw * vertices[triIndex.z], // Might be a bug here with normal transform...
-                    texCoords[triIndex.x], texCoords[triIndex.y], texCoords[triIndex.z], 
-                    lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false);
-                vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
-                
-                dotNWi = abs(dot(dir, normal));
-                numTris = mesh.numTris;
-                lightDir = make_float3(dir.x, dir.y, dir.z);
-                if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
-                else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * light_light.intensity;
-                disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
+                    rnd = reservoir.sample;
+                    rnd *= (numLights+1);
+                    float rnd1 = int(rnd);
+                    float rnd2 = rnd - int(rnd);
+                    uint32_t randomID = uint32_t(min(rnd1, float(numLights)));
+                }
+                else break;
             }
 
-            lightPDFs[lid] *= (1.f / (numLights + 1)) * (1.f / (numTris));
+            lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
             if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
                 RayPayload payload; payload.instanceID = -2;
                 owl::Ray ray;
@@ -805,7 +826,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     (ray.tmax < 1e20f) : (payload.instanceID >= 0 && i2e[payload.instanceID] == sampledLightIDs[lid]);
                 if (visible) {
                     if (randomID != numLights) lightEmission = lightEmission / (payload.tHit * payload.tHit);
-                    float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
+                    float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF) * reservoir.W;
                     float3 Li = (lightEmission * w) / lightPDFs[lid];
                     irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi));
                 }
@@ -951,11 +972,16 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     float3 color = make_float3(accum_color);
     optixLaunchParams.frameBuffer[fbOfs] = vec4(
-        color.x,
-        color.y,
-        color.z,
+        // color.x,
+        // color.y,
+        // color.z,
+        accum_illum.x, // testing
+        accum_illum.y, // testing
+        accum_illum.z, // testing
         1.0f
     );
+
+
     
     // vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
     // vec4 oldNormal = optixLaunchParams.normalBuffer[fbOfs];

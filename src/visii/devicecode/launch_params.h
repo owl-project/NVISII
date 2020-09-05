@@ -18,23 +18,20 @@
 #define RESERVOIR_LIMIT 10
 struct Reservoir {
   float sample;
-  float weight_sum = 0;
-  float num_samples = 0;
+  float w_sum = 0;
+  float M = 0; // number of samples
   float W; // multiply final sample by this
   
   __both__ void update(
       float x_i, 
-      float p /* must be between 0 and 1 */, 
-      float p_hat /* is allowed to be above 1 */, 
+      float w_i, 
       float rnd) 
   {
-    float w_i = p_hat / p;
-    weight_sum += w_i;
-    num_samples += 1;
-    if (rnd < (w_i / weight_sum)) {
+    w_sum += w_i;
+    M += 1;
+    if (rnd < (w_i / w_sum)) {
       sample = x_i;
     }
-    W = (1.f / p_hat)  * ( (1.f / num_samples) * weight_sum );
   }
 };
 
