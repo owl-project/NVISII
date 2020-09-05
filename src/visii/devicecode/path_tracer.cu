@@ -666,8 +666,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // note, rdForcedBsdf is -1 by default
         int forcedBsdf = -1;//rdForcedBsdf;//(bounce == optixLaunchParams.renderDataBounce) ? rdForcedBsdf : -1; 
 
-        // first, sample the light source by importance sampling the light
-        // note, results in large instruction cache misses... needs optimizing
+        // first, sample the BRDF so that we can use the sampled direction for MIS
+        float3 w_i;
+        float bsdfPDF;
+        int sampledBsdf = -1;
+        float3 bsdf, bsdfColor;
+        sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
+
+        // next, sample the light source by importance sampling the light
         owl::device::Buffer *vertexLists = (owl::device::Buffer *)optixLaunchParams.vertexLists.data;
         owl::device::Buffer *normalLists = (owl::device::Buffer *)optixLaunchParams.normalLists.data;
         owl::device::Buffer *texCoordLists = (owl::device::Buffer *)optixLaunchParams.texCoordLists.data;
@@ -678,7 +684,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             uint32_t lid = 0;
             uint32_t randomID = uint32_t(min(lcg_randomf(rng) * (numLights+1), float(numLights)));
             float dotNWi;
-            float bsdfPDF;
             float3 bsdf, bsdfColor;
             float3 lightEmission;
             float3 lightDir;
@@ -725,7 +730,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 numTris = 1.f;
                 dotNWi = fabs(dot(lightDir, v_z)); // for now, making all lights double sided.
                 lightEmission = (missColor(ray) * optixLaunchParams.domeLightIntensity);
-                disney_pdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdfPDF, forcedBsdf);
                 disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
             }
             // sample light sources
@@ -762,12 +766,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 lightDir = make_float3(dir.x, dir.y, dir.z);
                 if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
                 else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * light_light.intensity;
-                disney_pdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdfPDF, forcedBsdf);
                 disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
             }
 
             lightPDFs[lid] *= (1.f / (numLights + 1)) * (1.f / (numTris));
-            if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON) && (bsdfPDF > EPSILON)) {
+            if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
                 RayPayload payload; payload.instanceID = -2;
                 owl::Ray ray;
                 ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f;
@@ -784,23 +787,17 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
         }
 
-        // next, sample a light source by importance sampling the BDRF
-        float3 w_i;
-        float bsdf_pdf;
-        int sampledBsdf = -1;
-        float3 bsdf, bsdf_color;
-        sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdf_pdf, sampledBsdf, bsdf, bsdf_color, forcedBsdf);
-
         // For segmentations, lighting metadata extraction dependent on sampling the BSDF
         saveLightingColorRenderData(renderData, bounce, v_z, w_o, w_i, mat);
 
         // terminate if the bsdf probability is impossible, or if the bsdf filters out all light
-        if (bsdf_pdf < EPSILON || all_zero(bsdf) || all_zero(bsdf_color)) {
+        if (bsdfPDF < EPSILON || all_zero(bsdf) || all_zero(bsdfColor)) {
             float3 contribution = pathThroughput * irradiance;
             illum = illum + contribution;
             break;
         }
 
+        // sample a light source by importance sampling the BDRF
         // trace the next ray along that sampled BRDF direction
         ray.origin = hit_p;
         ray.direction = w_i;
@@ -821,9 +818,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     float dotNWi = dot(-v_gz, ray.direction);
                     if (dotNWi > 0.f) 
                     {
-                        float w = power_heuristic(1.f, bsdf_pdf, 1.f, lightPDFs[lid]);
-                        float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / bsdf_pdf;
-                        irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi));
+                        float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
+                        float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / bsdfPDF;
+                        irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi));
                     }
                 }
                 else if (payload.instanceID != -1) {
@@ -846,25 +843,25 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
                         float dist = distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
                         float dotNWi = abs(dot(-v_gz, ray.direction)); // geometry term
-                        float pdf = bsdf_pdf * ((dist * dist) + 1.0f);
+                        float pdf = bsdfPDF * ((dist * dist) + 1.0f);
                         // float dotWiN = dot(-lv_gz, ray.direction); // is light facing towards us? // Seems like this calculation isn't needed.
                         if ((dotNWi > 0.f) /*&& (dotWiN > 0.f)*/) 
                         {
                             float w = power_heuristic(1.f, pdf, 1.f, lightPDFs[lid]);
                             float3 Li = (lightEmission * w) / pdf;
-                            irradiance = irradiance + (bsdf * bsdf_color * Li * fabs(dotNWi)); // missing r^2 falloff?
+                            irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi)); // missing r^2 falloff?
                         }
                     }
                 }
             }
         }
 
-        irradiance = irradiance / float(optixLaunchParams.numLightSamples);
+        // irradiance = irradiance / float(optixLaunchParams.numLightSamples);
 
         // accumulate any radiance (ie pathThroughput * irradiance), and update the path throughput using the sampled BRDF
         float3 contribution = pathThroughput * irradiance;
         illum = illum + contribution;
-        pathThroughput = (pathThroughput * bsdf * bsdf_color) / bsdf_pdf;
+        pathThroughput = (pathThroughput * bsdf * bsdfColor) / bsdfPDF;
 
         if (bounce == 0) {
             directIllum = illum;
