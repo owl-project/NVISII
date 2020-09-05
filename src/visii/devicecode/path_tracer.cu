@@ -130,11 +130,11 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     RayPayload &prd = owl::getPRD<RayPayload>();
     bool shadowray = prd.instanceID == -2;
     prd.instanceID = optixGetInstanceIndex();
+    prd.tHit = optixGetRayTmax();
     if (shadowray) return;
 
     prd.barycentrics = optixGetTriangleBarycentrics();
     prd.primitiveID = optixGetPrimitiveIndex();
-    prd.tHit = optixGetRayTmax();
     optixGetObjectToWorldTransformMatrix(prd.localToWorld);
     
     OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
@@ -780,6 +780,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 bool visible = (randomID == numLights) ?
                     (ray.tmax < 1e20f) : (payload.instanceID >= 0 && i2e[payload.instanceID] == sampledLightIDs[lid]);
                 if (visible) {
+                    if (randomID != numLights) lightEmission = lightEmission / (payload.tHit * payload.tHit);
                     float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
                     float3 Li = (lightEmission * w) / lightPDFs[lid];
                     irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi));
@@ -819,7 +820,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     if (dotNWi > 0.f) 
                     {
                         float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
-                        float3 Li = (missColor(ray) * optixLaunchParams.domeLightIntensity) * w / bsdfPDF;
+                        float3 lightEmission = missColor(ray) * optixLaunchParams.domeLightIntensity;
+                        float3 Li = (lightEmission * w) / bsdfPDF;
                         irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi));
                     }
                 }
@@ -834,21 +836,22 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         EntityStruct light_entity = optixLaunchParams.entities[sampledLightIDs[lid]];
                         LightStruct light_light = optixLaunchParams.lights[light_entity.light_id];
                         loadMeshTriIndices(light_entity.mesh_id, payload.primitiveID, indices);
-                        loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, lv_gz, p_e1, p_e2);
+                        // loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, lv_gz, p_e1, p_e2);
                         loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
+
+                        float dist = payload.tHit;// distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
+                        float dotNWi = abs(dot(-v_gz, ray.direction)); // geometry term
 
                         float3 lightEmission;
                         if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
                         else lightEmission = sampleTexture(light_light.color_texture_id, uv) * light_light.intensity;
+                        lightEmission = lightEmission / (dist * dist);
 
-                        float dist = distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
-                        float dotNWi = abs(dot(-v_gz, ray.direction)); // geometry term
-                        float pdf = bsdfPDF * ((dist * dist) + 1.0f);
                         // float dotWiN = dot(-lv_gz, ray.direction); // is light facing towards us? // Seems like this calculation isn't needed.
                         if ((dotNWi > 0.f) /*&& (dotWiN > 0.f)*/) 
                         {
-                            float w = power_heuristic(1.f, pdf, 1.f, lightPDFs[lid]);
-                            float3 Li = (lightEmission * w) / pdf;
+                            float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
+                            float3 Li = (lightEmission * w) / bsdfPDF;
                             irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi)); // missing r^2 falloff?
                         }
                     }
