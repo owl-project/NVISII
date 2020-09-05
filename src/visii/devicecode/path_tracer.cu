@@ -840,16 +840,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, lv_gz, p_e1, p_e2);
                         loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
 
-                        // Transform data into world space
-                        // glm::mat4 xfm;
-                        // xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
-                        // xfm = glm::column(xfm, 1, vec4(payload.localToWorld[1], payload.localToWorld[5],  payload.localToWorld[9], 0.0f));
-                        // xfm = glm::column(xfm, 2, vec4(payload.localToWorld[2], payload.localToWorld[6],  payload.localToWorld[10], 0.0f));
-                        // xfm = glm::column(xfm, 3, vec4(payload.localToWorld[3], payload.localToWorld[7],  payload.localToWorld[11], 1.0f));
-                        // glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
-                        // p = make_float3(xfm * make_vec4(p, 1.0f));
-                        // lv_gz = make_float3(normalize(nxfm * normalize(make_vec3(lv_gz))));
-
                         float3 lightEmission;
                         if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
                         else lightEmission = sampleTexture(light_light.color_texture_id, uv) * light_light.intensity;
