@@ -778,7 +778,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 ray.time = time;
                 owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
                 bool visible = (randomID == numLights) ?
-                    (ray.tmax < 1e20f) : (payload.instanceID >= 0 && i2e[payload.instanceID] == sampledLightIDs[lid]);
+                    (payload.instanceID == -2) : (payload.instanceID >= 0 && i2e[payload.instanceID] == sampledLightIDs[lid]);
                 if (visible) {
                     if (randomID != numLights) lightEmission = lightEmission / (payload.tHit * payload.tHit);
                     float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
@@ -816,12 +816,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 // if by sampling the brdf we also hit the light source...
                 if ((payload.instanceID == -1) && (sampledLightIDs[lid] == -1)) {
                     // Case where we hit the background, and also previously sampled the background   
-                    float dotNWi = dot(-v_gz, ray.direction);
-                    if (dotNWi > 0.f) 
-                    {
-                        float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
-                        float3 lightEmission = missColor(ray) * optixLaunchParams.domeLightIntensity;
-                        float3 Li = (lightEmission * w) / bsdfPDF;
+                    float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
+                    float3 lightEmission = missColor(ray) * optixLaunchParams.domeLightIntensity;
+                    float3 Li = (lightEmission * w) / bsdfPDF;
+                    float dotNWi = dot(v_gz, ray.direction);  // geometry term
+                    if (dotNWi > 0.f) {
                         irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi));
                     }
                 }
@@ -840,7 +839,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
 
                         float dist = payload.tHit;// distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
-                        float dotNWi = abs(dot(-v_gz, ray.direction)); // geometry term
+                        float dotNWi = dot(v_gz, ray.direction); // geometry term
 
                         float3 lightEmission;
                         if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
