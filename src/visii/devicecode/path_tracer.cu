@@ -673,8 +673,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         owl::device::Buffer *texCoordLists = (owl::device::Buffer *)optixLaunchParams.texCoordLists.data;
         auto &i2e = optixLaunchParams.instanceToEntityMap;
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
-        for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid) 
+        // for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid) 
         {
+            uint32_t lid = 0;
             uint32_t randomID = uint32_t(min(lcg_randomf(rng) * (numLights+1), float(numLights)));
             float dotNWi;
             float bsdfPDF;
@@ -809,8 +810,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         ray.time = sampleTime(lcg_randomf(rng));
         owl::traceRay(optixLaunchParams.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
-        for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid)
+        // for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid)
         {
+            uint32_t lid = 0;
             if (lightPDFs[lid] > EPSILON) 
             {
                 // if by sampling the brdf we also hit the light source...
@@ -837,7 +839,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         loadMeshTriIndices(light_entity.mesh_id, payload.primitiveID, indices);
                         loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, lv_gz, p_e1, p_e2);
                         loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
-    
+
                         // Transform data into world space
                         // glm::mat4 xfm;
                         // xfm = glm::column(xfm, 0, vec4(payload.localToWorld[0], payload.localToWorld[4],  payload.localToWorld[8], 0.0f));
@@ -847,11 +849,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         // glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
                         // p = make_float3(xfm * make_vec4(p, 1.0f));
                         // lv_gz = make_float3(normalize(nxfm * normalize(make_vec3(lv_gz))));
-    
+
                         float3 lightEmission;
                         if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
                         else lightEmission = sampleTexture(light_light.color_texture_id, uv) * light_light.intensity;
-    
+
                         float dist = distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
                         float dotNWi = abs(dot(-v_gz, ray.direction)); // geometry term
                         float pdf = bsdf_pdf * ((dist * dist) + 1.0f);
