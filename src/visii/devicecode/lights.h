@@ -343,7 +343,7 @@ void sampleTriangle(const vec3 &pos,
 	float d = sqrt(d2); // linear
 	dir /= d;
 	float aCosThere = max(0.0, (double_sided) ? fabs(dot(-dir,n)) : dot(-dir,n));
-	pdf = PdfAtoW( pdfA, d2, aCosThere ); // adding 1 to remove singularity at 0
+	pdf = PdfAtoW( pdfA, d2, aCosThere );
 }
 
 __device__
