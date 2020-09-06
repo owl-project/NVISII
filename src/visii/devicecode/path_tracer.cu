@@ -769,7 +769,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
             }
 
-            lightPDFs[lid] *= (1.f / (numLights + 1)) * (1.f / (numTris));
+            lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
             if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
                 RayPayload payload; payload.instanceID = -2;
                 owl::Ray ray;
