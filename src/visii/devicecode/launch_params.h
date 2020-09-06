@@ -15,23 +15,29 @@
 #include <visii/light_struct.h>
 #include <visii/texture_struct.h>
 
-#define RESERVOIR_LIMIT 10
+// #define RESERVOIR_LIMIT 8.0f
 struct Reservoir {
   float sample;
   float w_sum = 0;
   float M = 0; // number of samples
-  float W; // multiply final sample by this
+  // float w_first; // multiply final sample by this
   
   __both__ void update(
       float x_i, 
       float w_i, 
-      float rnd) 
+      float rnd,
+      float rnd2) 
   {
+    // if (rnd2 < 1.f / RESERVOIR_LIMIT) {
+    //   M = 0;
+    //   w_sum = 0;
+    // }
+
     w_sum += w_i;
     M += 1;
     if (rnd < (w_i / w_sum)) {
       sample = x_i;
-    }
+    }    
   }
 };
 

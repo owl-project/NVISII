@@ -522,7 +522,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     }
 
     Reservoir reservoir = optixLaunchParams.reservoirBuffer[fbOfs];
-    if (optixLaunchParams.frameID == 0) { reservoir = Reservoir(); }
+    float reservoir_w;
+    // if (optixLaunchParams.frameID == 0) { reservoir = Reservoir(); }
 
     // Shade each hit point on a path using NEE with MIS
     do {     
@@ -812,9 +813,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     float p = 1.f / (numLights + 1.f);
                     float3 Li = (visible) ? bsdf * bsdfColor * (lightEmission / (dist * dist)) : make_float3(0.f);
                     float p_hat = max(max(Li.x, max(Li.y, Li.z)), 0.1);
-                    reservoir.update(rnd, p_hat / p, lcg_randomf(rng));
+                    reservoir.update(rnd, p_hat / p, lcg_randomf(rng), lcg_randomf(rng));
                     if (reservoir.sample == rnd) {
-                        reservoir.W = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
+                        reservoir_w = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
                         break;
                     }
                 }
@@ -822,7 +823,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     float p = 1.f / (numLights + 1.f);
                     float3 Li = (visible) ? bsdf * bsdfColor * (lightEmission / (dist * dist)) : make_float3(0.f);
                     float p_hat = max(max(Li.x, max(Li.y, Li.z)), 0.1);
-                    reservoir.W = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
+                    reservoir_w = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
                 }
 
                 rnd = reservoir.sample;
@@ -841,7 +842,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
 
             if (bounce == 0) {
-                lightPDFs[lid] = 1.f / reservoir.W;
+                lightPDFs[lid] = 1.f / reservoir_w;
             }
             else {
                 lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
@@ -849,7 +850,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
             if (visible && lightPDFs[lid] > 0.0 && dotNWi > EPSILON) {
                 lightEmission = lightEmission / (dist * dist);
-                float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF) * reservoir.W;
+                float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF) * reservoir_w;
                 float3 Li = (lightEmission * w) / lightPDFs[lid];
                 irradiance = irradiance + (bsdf * bsdfColor * Li);
             }
