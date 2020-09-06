@@ -697,11 +697,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             uint32_t lid = 0;
             // reservoir doesn't work with numLightSamples above...
             float rnd = lcg_randomf(rng);
-
-            rnd *= (numLights+1);
-            float rnd1 = int(rnd);
-            float rnd2 = rnd - int(rnd);
-            uint32_t randomID = uint32_t(min(rnd1, float(numLights)));
             
             float dotNWi;
             float dist;
@@ -709,9 +704,37 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 lightEmission;
             float3 lightDir;
             int numTris;
+            uint32_t randomID;
 
             for (uint32_t resTry = 0; resTry <= 1; ++resTry) 
             {
+                float rnd1 = floor(rnd * (numLights+1));
+                float rnd2 = (rnd * (numLights+1)) - rnd1;
+                randomID = uint32_t(min(rnd1, float(numLights)));
+
+                {
+                    //     //testing // seems to work now...
+                    //     float p = 1.f / (numLights + 1.f);
+                    //     float p_hat = (randomID == 0) ? 10000000.f : 0.1f;
+                    //     reservoir.update(rnd, p_hat / p, lcg_randomf(rng));
+                        
+                    //     rnd = reservoir.sample;
+                    //     rnd1 = floor(rnd);
+                    //     randomID = uint32_t(min(rnd1, float(numLights)));
+                    //     p_hat = (randomID == 0) ? 10000000.f : 0.1f;
+                    //     p = 1.f / (numLights + 1.f);
+
+                    //     reservoir.W = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
+                    //     optixLaunchParams.reservoirBuffer[fbOfs] = reservoir;
+                    //     if (randomID == 0) {
+                    //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 1.0, 0.0, 1.0);
+                    //         return;
+                    //     } else {
+                    //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 0.0, 0.0, 1.0);
+                    //         return;
+                    //     }
+                }
+                
                 // sample background
                 if (randomID == numLights)
                 {
@@ -793,28 +816,58 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
                 }
 
+                if (bounce != 0) break;
+
                 // update reservoir
-                if (/*false && */(bounce == 0) && (resTry == 0)) {
+                if (resTry == 0) {
                     // p /* must be between 0 and 1 */, 
                     // p_hat /* is allowed to be above 1 */, 
                     // float w_i = p_hat / p;
-                    float p = 1.0f;//(1.f / float(numLights + 1.f)) * (1.f / float(numTris));
-                    float3 Li = lightEmission;//bsdf * bsdfColor * ((lightEmission / (dist * dist)) / lightPDFs[lid]) * fabs(dotNWi);
-                    float p_hat = max(Li.x, max(Li.y, Li.z));
-                    reservoir.update(rnd, p_hat / p, lcg_randomf(rng));
-                    reservoir.W = (1.f / p_hat)  * ((1.f / reservoir.M) * reservoir.w_sum);
-                    if (reservoir.sample == rnd) break;
+                    // float p = (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
+                    // float3 Li = lightEmission;//bsdf * bsdfColor * ((lightEmission / (dist * dist)) / lightPDFs[lid]) * fabs(dotNWi);
+                    // float p_hat = max(max(Li.x, max(Li.y, Li.z)), 0.001);
 
-                    rnd = reservoir.sample;
-                    rnd *= (numLights+1);
-                    float rnd1 = int(rnd);
-                    float rnd2 = rnd - int(rnd);
-                    uint32_t randomID = uint32_t(min(rnd1, float(numLights)));
+                    float p = 1.f / (numLights + 1.f);
+                    // float p_hat = (randomID == 0) ? 10000000.f : 0.1f;
+                    float3 Li = bsdf * bsdfColor * (lightEmission / (dist * dist));
+                    float p_hat = max(max(Li.x, max(Li.y, Li.z)), 0.1);
+                    reservoir.update(rnd, p_hat / p, lcg_randomf(rng));
+
+                    if (reservoir.sample == rnd) {
+                        reservoir.W = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
+                        break;
+                    }
                 }
-                else break;
+                else {
+                    float p = 1.f / (numLights + 1.f);
+                    // float p_hat = (randomID == 0) ? 10000000.f : 0.1f;
+                    float3 Li = bsdf * bsdfColor * (lightEmission / (dist * dist));
+                    float p_hat = max(max(Li.x, max(Li.y, Li.z)), 0.1);
+                    reservoir.W = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
+                }
+
+                rnd = reservoir.sample;
             }
 
-            lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
+            // testing
+            // {
+            //     optixLaunchParams.reservoirBuffer[fbOfs] = reservoir;
+            //     if (randomID == 0) {
+            //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 1.0, 0.0, 1.0);
+            //         return;
+            //     } else {
+            //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 0.0, 0.0, 1.0);
+            //         return;
+            //     }
+            // }
+
+            if (bounce == 0) {
+                lightPDFs[lid] = 1.f / reservoir.W;
+            }
+            else {
+                lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
+            }
+
             if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
                 RayPayload payload; payload.instanceID = -2;
                 owl::Ray ray;
@@ -971,12 +1024,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     float3 color = make_float3(accum_color);
     optixLaunchParams.frameBuffer[fbOfs] = vec4(
-        // color.x,
-        // color.y,
-        // color.z,
-        accum_illum.x, // testing
-        accum_illum.y, // testing
-        accum_illum.z, // testing
+        color.x,
+        color.y,
+        color.z,
+        // accum_illum.x, // testing
+        // accum_illum.y, // testing
+        // accum_illum.z, // testing
         1.0f
     );
 
@@ -999,7 +1052,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // temporary for debugging
         if (optixLaunchParams.renderDataMode == RenderDataFlags::RESERVOIR) {
-            uint32_t randomID = uint32_t(min(reservoir.sample * (optixLaunchParams.numLightEntities+1), float(optixLaunchParams.numLightEntities)));
+            float rnd = reservoir.sample;
+            int numLights = optixLaunchParams.numLightEntities;
+
+            rnd *= (numLights+1);
+            float rnd1 = floor(rnd);
+            float rnd2 = rnd - rnd1;
+            uint32_t randomID = uint32_t(min(rnd1, float(numLights)));
+
             vec3 c = randomColor(randomID);
             optixLaunchParams.frameBuffer[fbOfs] = vec4( c.r, c.g, c.b, 1.0f);
         }
