@@ -783,7 +783,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     if (randomID != numLights) lightEmission = lightEmission / (payload.tHit * payload.tHit);
                     float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
                     float3 Li = (lightEmission * w) / lightPDFs[lid];
-                    irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi));
+                    irradiance = irradiance + (bsdf * bsdfColor * Li);
                 }
             }
         }
@@ -821,7 +821,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     float3 Li = (lightEmission * w) / bsdfPDF;
                     float dotNWi = dot(v_gz, ray.direction);  // geometry term
                     if (dotNWi > 0.f) {
-                        irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi));
+                        irradiance = irradiance + (bsdf * bsdfColor * Li);
                     }
                 }
                 else if (payload.instanceID != -1) {
@@ -846,12 +846,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         else lightEmission = sampleTexture(light_light.color_texture_id, uv) * light_light.intensity;
                         lightEmission = lightEmission / (dist * dist);
 
-                        // float dotWiN = dot(-lv_gz, ray.direction); // is light facing towards us? // Seems like this calculation isn't needed.
                         if ((dotNWi > 0.f) /*&& (dotWiN > 0.f)*/) 
                         {
                             float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
                             float3 Li = (lightEmission * w) / bsdfPDF;
-                            irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi)); // missing r^2 falloff?
+                            irradiance = irradiance + (bsdf * bsdfColor * Li);
                         }
                     }
                 }
