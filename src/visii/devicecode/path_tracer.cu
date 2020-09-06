@@ -705,35 +705,13 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 lightDir;
             int numTris;
             uint32_t randomID;
+            bool visible;
 
             for (uint32_t resTry = 0; resTry <= 1; ++resTry) 
             {
                 float rnd1 = floor(rnd * (numLights+1));
                 float rnd2 = (rnd * (numLights+1)) - rnd1;
                 randomID = uint32_t(min(rnd1, float(numLights)));
-
-                {
-                    //     //testing // seems to work now...
-                    //     float p = 1.f / (numLights + 1.f);
-                    //     float p_hat = (randomID == 0) ? 10000000.f : 0.1f;
-                    //     reservoir.update(rnd, p_hat / p, lcg_randomf(rng));
-                        
-                    //     rnd = reservoir.sample;
-                    //     rnd1 = floor(rnd);
-                    //     randomID = uint32_t(min(rnd1, float(numLights)));
-                    //     p_hat = (randomID == 0) ? 10000000.f : 0.1f;
-                    //     p = 1.f / (numLights + 1.f);
-
-                    //     reservoir.W = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
-                    //     optixLaunchParams.reservoirBuffer[fbOfs] = reservoir;
-                    //     if (randomID == 0) {
-                    //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 1.0, 0.0, 1.0);
-                    //         return;
-                    //     } else {
-                    //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 0.0, 0.0, 1.0);
-                    //         return;
-                    //     }
-                }
                 
                 // sample background
                 if (randomID == numLights)
@@ -816,23 +794,25 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
                 }
 
+                // compute visibility
+                RayPayload payload; payload.instanceID = -2;
+                owl::Ray ray;
+                ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f;
+                ray.origin = hit_p; ray.direction = lightDir;
+                ray.time = time;
+                owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
+                visible = (randomID == numLights) ?
+                    (payload.instanceID == -2) : (payload.instanceID >= 0 && i2e[payload.instanceID] == sampledLightIDs[lid]);
+                if (visible && randomID != numLights) dist = payload.tHit;
+                
                 if (bounce != 0) break;
 
                 // update reservoir
                 if (resTry == 0) {
-                    // p /* must be between 0 and 1 */, 
-                    // p_hat /* is allowed to be above 1 */, 
-                    // float w_i = p_hat / p;
-                    // float p = (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
-                    // float3 Li = lightEmission;//bsdf * bsdfColor * ((lightEmission / (dist * dist)) / lightPDFs[lid]) * fabs(dotNWi);
-                    // float p_hat = max(max(Li.x, max(Li.y, Li.z)), 0.001);
-
                     float p = 1.f / (numLights + 1.f);
-                    // float p_hat = (randomID == 0) ? 10000000.f : 0.1f;
-                    float3 Li = bsdf * bsdfColor * (lightEmission / (dist * dist));
+                    float3 Li = (visible) ? bsdf * bsdfColor * (lightEmission / (dist * dist)) : make_float3(0.f);
                     float p_hat = max(max(Li.x, max(Li.y, Li.z)), 0.1);
                     reservoir.update(rnd, p_hat / p, lcg_randomf(rng));
-
                     if (reservoir.sample == rnd) {
                         reservoir.W = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
                         break;
@@ -840,26 +820,25 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 }
                 else {
                     float p = 1.f / (numLights + 1.f);
-                    // float p_hat = (randomID == 0) ? 10000000.f : 0.1f;
-                    float3 Li = bsdf * bsdfColor * (lightEmission / (dist * dist));
+                    float3 Li = (visible) ? bsdf * bsdfColor * (lightEmission / (dist * dist)) : make_float3(0.f);
                     float p_hat = max(max(Li.x, max(Li.y, Li.z)), 0.1);
                     reservoir.W = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
                 }
 
                 rnd = reservoir.sample;
-            }
 
-            // testing
-            // {
-            //     optixLaunchParams.reservoirBuffer[fbOfs] = reservoir;
-            //     if (randomID == 0) {
-            //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 1.0, 0.0, 1.0);
-            //         return;
-            //     } else {
-            //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 0.0, 0.0, 1.0);
-            //         return;
-            //     }
-            // }
+                // testing
+                // {
+                //     optixLaunchParams.reservoirBuffer[fbOfs] = reservoir;
+                //     if (randomID == 0) {
+                //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 1.0, 0.0, 1.0);
+                //         return;
+                //     } else {
+                //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 0.0, 0.0, 1.0);
+                //         return;
+                //     }
+                // }
+            }
 
             if (bounce == 0) {
                 lightPDFs[lid] = 1.f / reservoir.W;
@@ -868,22 +847,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
             }
 
-            if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
-                RayPayload payload; payload.instanceID = -2;
-                owl::Ray ray;
-                ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f;
-                ray.origin = hit_p; ray.direction = lightDir;
-                ray.time = time;
-                owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
-                bool visible = (randomID == numLights) ?
-                    (payload.instanceID == -2) : (payload.instanceID >= 0 && i2e[payload.instanceID] == sampledLightIDs[lid]);
-                if (visible) {
-                    if (randomID != numLights) lightEmission = lightEmission / (payload.tHit * payload.tHit);
-                    float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF) * reservoir.W;
-                    float3 Li = (lightEmission * w) / lightPDFs[lid];
-                    irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi));
-                }
+            if (visible && lightPDFs[lid] > 0.0 && dotNWi > EPSILON) {
+                lightEmission = lightEmission / (dist * dist);
+                float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF) * reservoir.W;
+                float3 Li = (lightEmission * w) / lightPDFs[lid];
+                irradiance = irradiance + (bsdf * bsdfColor * Li * fabs(dotNWi));
             }
+
+            // if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
+            // }
         }
 
         // For segmentations, lighting metadata extraction dependent on sampling the BSDF
