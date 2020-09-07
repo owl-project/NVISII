@@ -24,6 +24,7 @@ struct RayPayload {
 
 inline __both__ vec3 randomColor(int i)
 {
+    i *= 10;
     int r = unsigned(i)*13*17 + 0x234235;
     int g = unsigned(i)*7*3*5 + 0x773477;
     int b = unsigned(i)*11*19 + 0x223766;
@@ -521,9 +522,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         printf("dClock : %f\n", stop_clock - start_clock);
     }
 
-    Reservoir reservoir = optixLaunchParams.reservoirBuffer[fbOfs];
+    OnlineReservoir reservoir = optixLaunchParams.reservoirBuffer[fbOfs];
     float reservoir_w;
-    if (optixLaunchParams.frameID == 0) { reservoir = Reservoir(); }
+    if (optixLaunchParams.frameID == 0) { reservoir.reset(); }
 
     // Shade each hit point on a path using NEE with MIS
     do {     
@@ -813,11 +814,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     (bsdf * bsdfColor * (lightEmission / (dist * dist))) / lightPDFs[lid] 
                     : make_float3(0.f);
                 if (bounce != 0) break;
+                if (all(lessThanEqual(make_vec3(Li), vec3(0.f)))) continue;
 
                 // update reservoir
                 float p = (1.f / float(numLights + 1.f));// * (1.f / float(numTris));
-                float p_hat = max(max(Li.x, max(Li.y, Li.z)), 1.0);
-                reservoir_w = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
+                float p_hat = max(max(Li.x, max(Li.y, Li.z)), .001);
+                reservoir_w = reservoir.getWeight(p_hat);
                 if (resTry == 0) {
                     reservoir.update(rnd, p_hat / p, lcg_randomf(rng), lcg_randomf(rng));
                     if (reservoir.sample == rnd) break;

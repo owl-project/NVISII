@@ -15,12 +15,11 @@
 #include <visii/light_struct.h>
 #include <visii/texture_struct.h>
 
-// #define RESERVOIR_LIMIT 8.0f
-struct Reservoir {
+struct OfflineReservoir {
   float sample;
   float w_sum = 0;
   float M = 0; // number of samples
-  // float w_first; // multiply final sample by this
+  // Compute W using (1/p_hat) * (w_sum/M)
   
   __both__ void update(
       float x_i, 
@@ -28,16 +27,52 @@ struct Reservoir {
       float rnd,
       float rnd2) 
   {
-    // if (rnd2 < 1.f / RESERVOIR_LIMIT) {
-    //   M = 0;
-    //   w_sum = 0;
-    // }
-
     w_sum += w_i;
     M += 1;
     if (rnd < (w_i / w_sum)) {
       sample = x_i;
     }    
+  }
+
+  __both__ void reset()
+  {
+    M = 0.f;
+    w_sum = 0.f;
+  }
+
+  __both__ float getWeight(float p_hat) {
+    return (1.f / p_hat) * (w_sum / M);
+  }
+};
+
+#define RESERVOIR_LIMIT 128.0f
+struct OnlineReservoir {
+  float sample;
+  float w_avg = 0.f;
+  float M = 0.f; // number of samples
+  // Compute W using (1/p_hat) * (w_avg)
+  
+  __both__ void update(
+      float x_i, 
+      float w_i, 
+      float rnd,
+      float rnd2) 
+  {
+    M = M + 1.f;
+    if (M > RESERVOIR_LIMIT) M = RESERVOIR_LIMIT;
+    w_avg = w_avg * ((M-1.f) / M) + w_i * (1.f / M);
+    if (rnd < (w_i / (w_avg * M))) {
+      sample = x_i;
+    }    
+  }
+
+  __both__ void reset()
+  {
+    M = 1.f;
+  }
+
+  __both__ float getWeight(float p_hat) {
+    return (1.f / p_hat) * w_avg;
   }
 };
 
@@ -47,7 +82,7 @@ struct LaunchParams {
     glm::vec4 *frameBuffer;
     glm::vec4 *albedoBuffer;
     glm::vec4 *normalBuffer;
-    Reservoir *reservoirBuffer;
+    OnlineReservoir *reservoirBuffer;
     glm::vec4 *scratchBuffer;
     glm::vec4 *mvecBuffer;
     glm::vec4 *accumPtr;

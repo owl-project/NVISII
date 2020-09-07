@@ -559,7 +559,7 @@ void initializeOptix(bool headless)
     OD.accumBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.normalBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.albedoBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.reservoirBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(Reservoir),512*512, nullptr);
+    OD.reservoirBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(OnlineReservoir),512*512, nullptr);
     OD.scratchBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.mvecBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.LP.frameSize = glm::ivec2(512, 512);
