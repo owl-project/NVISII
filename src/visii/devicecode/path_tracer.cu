@@ -523,7 +523,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     Reservoir reservoir = optixLaunchParams.reservoirBuffer[fbOfs];
     float reservoir_w;
-    // if (optixLaunchParams.frameID == 0) { reservoir = Reservoir(); }
+    if (optixLaunchParams.frameID == 0) { reservoir = Reservoir(); }
 
     // Shade each hit point on a path using NEE with MIS
     do {     
@@ -704,6 +704,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 bsdf, bsdfColor;
             float3 lightEmission;
             float3 lightDir;
+            float3 Li;
             int numTris;
             uint32_t randomID;
             bool visible;
@@ -713,6 +714,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 float rnd1 = floor(rnd * (numLights+1));
                 float rnd2 = (rnd * (numLights+1)) - rnd1;
                 randomID = uint32_t(min(rnd1, float(numLights)));
+                reservoir_w = 1.f;
                 
                 // sample background
                 if (randomID == numLights)
@@ -806,54 +808,41 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     (payload.instanceID == -2) : (payload.instanceID >= 0 && i2e[payload.instanceID] == sampledLightIDs[lid]);
                 if (visible && randomID != numLights) dist = payload.tHit;
                 
+                lightPDFs[lid] = lightPDFs[lid] * (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
+                Li = (visible && lightPDFs[lid] > 0.0 && dotNWi > EPSILON) ? 
+                    (bsdf * bsdfColor * (lightEmission / (dist * dist))) / lightPDFs[lid] 
+                    : make_float3(0.f);
                 if (bounce != 0) break;
 
                 // update reservoir
+                float p = (1.f / float(numLights + 1.f));// * (1.f / float(numTris));
+                float p_hat = max(max(Li.x, max(Li.y, Li.z)), 1.0);
+                reservoir_w = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
                 if (resTry == 0) {
-                    float p = 1.f / (numLights + 1.f);
-                    float3 Li = (visible) ? bsdf * bsdfColor * (lightEmission / (dist * dist)) : make_float3(0.f);
-                    float p_hat = max(max(Li.x, max(Li.y, Li.z)), 0.1);
                     reservoir.update(rnd, p_hat / p, lcg_randomf(rng), lcg_randomf(rng));
-                    if (reservoir.sample == rnd) {
-                        reservoir_w = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
-                        break;
-                    }
+                    if (reservoir.sample == rnd) break;
                 }
-                else {
-                    float p = 1.f / (numLights + 1.f);
-                    float3 Li = (visible) ? bsdf * bsdfColor * (lightEmission / (dist * dist)) : make_float3(0.f);
-                    float p_hat = max(max(Li.x, max(Li.y, Li.z)), 0.1);
-                    reservoir_w = (1.f / p_hat)  * (1.f / reservoir.M) * reservoir.w_sum;
-                }
-
                 rnd = reservoir.sample;
-
-                // testing
-                // {
-                //     optixLaunchParams.reservoirBuffer[fbOfs] = reservoir;
-                //     if (randomID == 0) {
-                //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 1.0, 0.0, 1.0);
-                //         return;
-                //     } else {
-                //         optixLaunchParams.frameBuffer[fbOfs] = vec4(0.0, 0.0, 0.0, 1.0);
-                //         return;
-                //     }
-                // }
             }
 
-            if (bounce == 0) {
-                lightPDFs[lid] = 1.f / reservoir_w;
-            }
-            else {
-                lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
-            }
+            // testing
+            // {
+            //     optixLaunchParams.reservoirBuffer[fbOfs] = reservoir;
+            //     vec3 c = make_vec3(Li);//randomColor(randomID);
+            //     optixLaunchParams.frameBuffer[fbOfs] = vec4(c.r, c.g, c.b, 1.0);
+            //     return;
+            // }
 
-            if (visible && lightPDFs[lid] > 0.0 && dotNWi > EPSILON) {
-                lightEmission = lightEmission / (dist * dist);
-                float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF) * reservoir_w;
-                float3 Li = (lightEmission * w) / lightPDFs[lid];
-                irradiance = irradiance + (bsdf * bsdfColor * Li);
-            }
+            float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
+            irradiance = irradiance + Li * reservoir_w * w;//(bsdf * bsdfColor * Li);
+
+            // if (visible && lightPDFs[lid] > 0.0 && dotNWi > EPSILON) {
+            //     lightEmission = lightEmission / (dist * dist);
+            //     lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
+            //     // float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
+            //     // float3 Li = (lightEmission * w * reservoir_w) / lightPDFs[lid];
+            //     irradiance = irradiance + Li * reservoir_w;//(bsdf * bsdfColor * Li);
+            // }
 
             // if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
             // }
