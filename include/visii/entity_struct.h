@@ -1,6 +1,7 @@
 /* File shared by both host and device */
 #pragma once
 
+#include <glm/glm.hpp>
 #include <stdint.h>
 #define MAX_ENTITIES 100000
 
@@ -26,4 +27,6 @@ struct EntityStruct {
 	int32_t light_id = -1;
 	int32_t mesh_id = -1;
 	int32_t visibilityFlags = 1;
+	glm::vec4 bbmin = glm::vec4(0.f);
+	glm::vec4 bbmax = glm::vec4(0.f);
 };

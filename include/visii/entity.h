@@ -193,6 +193,15 @@ public:
 	*/
 	void setVisibility(bool camera = true);
 
+	/** @returns the minimum axis aligned bounding box position. Requires a transform and mesh component to be attached. */
+	glm::vec3 getMinAabbCorner();
+	
+	/** @returns the maximum axis aligned bounding box position. Requires a transform and mesh component to be attached. */
+	glm::vec3 getMaxAabbCorner();
+
+	/** @returns the center of the aligned bounding box. Requires a transform and mesh component to be attached. */
+	glm::vec3 getAabbCenter();
+
 	/** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
 	static std::shared_ptr<std::mutex> getEditMutex();
 };

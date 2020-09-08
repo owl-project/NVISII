@@ -201,6 +201,21 @@ void Entity::setVisibility(bool camera)
 	markDirty();
 }
 
+glm::vec3 Entity::getMinAabbCorner()
+{
+	return entityStructs[id].bbmin;
+}
+
+glm::vec3 Entity::getMaxAabbCorner()
+{
+	return entityStructs[id].bbmax;
+}
+
+glm::vec3 Entity::getAabbCenter()
+{
+	return entityStructs[id].bbmin + (entityStructs[id].bbmax - entityStructs[id].bbmin) * .5f;
+}
+
 void Entity::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
