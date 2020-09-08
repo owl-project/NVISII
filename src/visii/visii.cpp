@@ -543,6 +543,8 @@ void initializeOptix(bool headless)
         { "GGX_E_LOOKUP",            OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_LOOKUP)},
         { "renderDataMode",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, renderDataMode)},
         { "renderDataBounce",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, renderDataBounce)},
+        { "sceneBBMin",              OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, sceneBBMin)},
+        { "sceneBBMax",              OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, sceneBBMax)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = launchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
@@ -1351,6 +1353,8 @@ void updateLaunchParams()
     launchParamsSetBuffer(OptixData.launchParams, "environmentMapCols", OptixData.environmentMapColsBuffer);
     launchParamsSetRaw(OptixData.launchParams, "environmentMapWidth", &OptixData.LP.environmentMapWidth);
     launchParamsSetRaw(OptixData.launchParams, "environmentMapHeight", &OptixData.LP.environmentMapHeight);
+    launchParamsSetRaw(OptixData.launchParams, "sceneBBMin", &OptixData.LP.sceneBBMin);
+    launchParamsSetRaw(OptixData.launchParams, "sceneBBMax", &OptixData.LP.sceneBBMax);
 
     OptixData.LP.frameID ++;
 }
@@ -2013,15 +2017,15 @@ void clearAll()
 }
 
 glm::vec3 getSceneMinAabbCorner() {
-    return glm::vec3(0.f);
+    return OptixData.LP.sceneBBMin;
 }
 
 glm::vec3 getSceneMaxAabbCorner() {
-    return glm::vec3(0.f);
+    return OptixData.LP.sceneBBMax;
 }
 
 glm::vec3 getSceneAabbCenter() {
-    return glm::vec3(0.f);
+    return OptixData.LP.sceneBBMin + (OptixData.LP.sceneBBMax - OptixData.LP.sceneBBMin) * .5f;
 }
 
 #ifdef __unix__

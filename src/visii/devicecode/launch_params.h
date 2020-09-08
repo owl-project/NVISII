@@ -72,6 +72,9 @@ struct LaunchParams {
     // Used to extract metadata from the renderer.
     uint32_t renderDataMode = 0;
     uint32_t renderDataBounce = 0;
+
+    glm::vec3 sceneBBMin = glm::vec3(0.f);
+    glm::vec3 sceneBBMax = glm::vec3(0.f);
 };
 
 enum RenderDataFlags : uint32_t { 
