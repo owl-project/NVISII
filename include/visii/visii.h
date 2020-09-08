@@ -233,5 +233,14 @@ std::vector<Entity*> importOBJ(std::string name_prefix, std::string file_path, s
         glm::vec3 scale = glm::vec3(1.0f),
         glm::quat rotation = glm::angleAxis(0.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
 
+/** @returns the minimum axis aligned bounding box position for the axis aligned bounding box containing all scene geometry*/
+glm::vec3 getSceneMinAabbCorner();
+
+/** @returns the maximum axis aligned bounding box position for the axis aligned bounding box containing all scene geometry*/
+glm::vec3 getSceneMaxAabbCorner();
+
+/** @returns the center of the aligned bounding box for the axis aligned bounding box containing all scene geometry*/
+glm::vec3 getSceneAabbCenter();
+
 // This is for internal testing purposes. Don't call this unless you know what you're doing.
 void __test__(std::vector<std::string> args);

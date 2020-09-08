@@ -2012,6 +2012,17 @@ void clearAll()
     Light::clearAll();
 }
 
+glm::vec3 getSceneMinAabbCorner() {
+    return glm::vec3(0.f);
+}
+
+glm::vec3 getSceneMaxAabbCorner() {
+    return glm::vec3(0.f);
+}
+
+glm::vec3 getSceneAabbCenter() {
+    return glm::vec3(0.f);
+}
 
 #ifdef __unix__
 # include <unistd.h>
