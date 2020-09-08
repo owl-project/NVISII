@@ -773,7 +773,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
                 RayPayload payload; payload.instanceID = -2;
                 owl::Ray ray;
-                ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f;
+                ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f; // Consider shrinking the length of this ray depending on triangle sampled pos.
                 ray.origin = hit_p; ray.direction = lightDir;
                 ray.time = time;
                 owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
