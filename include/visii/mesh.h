@@ -667,6 +667,9 @@ class Mesh : public StaticFactory
 
 		/** @returns the name of this component */
 		std::string getName();
+
+		/** @returns the unique integer ID for this component */
+	  	int32_t getId();
 		
 		/** @returns A map whose key is a mesh name and whose value is the ID for that mesh */
 		static std::map<std::string, uint32_t> getNameToIdMap();
@@ -692,17 +695,11 @@ class Mesh : public StaticFactory
 		/** Indicates whether or not any meshes are "out of date" and need to be updated through the "update components" function*/
 		static bool areAnyDirty();
 
-        /** @returns True if the mesh has been modified since the previous frame, and False otherwise */
-        bool isDirty() { return dirty; }
-
-        /** @returns True if the mesh has not been modified since the previous frame, and False otherwise */
-        bool isClean() { return !dirty; }
+		/** @returns a list of meshes that have been modified since the previous frame */
+    	static std::set<Mesh*> getDirtyMeshes();
 
         /** Tags the current component as being modified since the previous frame. */
         void markDirty();
-
-        /** Tags the current component as being unmodified since the previous frame. */
-        void markClean() { dirty = false; }
 		
 		/** @returns a json string representation of the current component */
 		std::string toString();
@@ -839,6 +836,8 @@ class Mesh : public StaticFactory
 		/** Creates a mesh with the given name and id. */
 		Mesh(std::string name, uint32_t id);
 
+		static std::set<Mesh*> dirtyMeshes;
+
 		/* TODO */
 		static std::shared_ptr<std::mutex> editMutex;
 		
@@ -949,8 +948,6 @@ class Mesh : public StaticFactory
 		template <class Generator>
 		void generateProcedural(Generator &mesh, bool flip_z)
 		{
-			std::lock_guard<std::mutex>lock(*editMutex.get());
-
 			std::vector<Vertex> vertices;
 
 			auto genVerts = mesh.vertices();
@@ -977,10 +974,4 @@ class Mesh : public StaticFactory
 
 			computeMetadata();
 		}
-
-		/* Indicates that one of the components has been edited */
-		static bool anyDirty;
-
-		/* Indicates this component has been edited */
-		bool dirty = true;
 };

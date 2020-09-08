@@ -1045,33 +1045,35 @@ void updateComponents()
     if (Texture::areAnyDirty()) resetAccumulation();
 
     // Manage Meshes: Build / Rebuild BLAS
-    if (Mesh::areAnyDirty()) {
+    auto dirtyMeshes = Mesh::getDirtyMeshes();
+    if (dirtyMeshes.size() > 0) {
         auto mutex = Mesh::getEditMutex();
         std::lock_guard<std::mutex> lock(*mutex.get());
-        Mesh* meshes = Mesh::getFront();
-        for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
-            if (!meshes[mid].isDirty()) continue;
-            if (OD.meshes[mid].vertices) { owlBufferRelease(OD.meshes[mid].vertices); OD.meshes[mid].vertices = nullptr; }
-            if (OD.meshes[mid].colors) { owlBufferRelease(OD.meshes[mid].colors); OD.meshes[mid].colors = nullptr; }
-            if (OD.meshes[mid].normals) { owlBufferRelease(OD.meshes[mid].normals); OD.meshes[mid].normals = nullptr; }
-            if (OD.meshes[mid].texCoords) { owlBufferRelease(OD.meshes[mid].texCoords); OD.meshes[mid].texCoords = nullptr; }
-            if (OD.meshes[mid].indices) { owlBufferRelease(OD.meshes[mid].indices); OD.meshes[mid].indices = nullptr; }
-            if (OD.meshes[mid].geom) { owlGeomRelease(OD.meshes[mid].geom); OD.meshes[mid].geom = nullptr; }
-            if (OD.meshes[mid].blas) { owlGroupRelease(OD.meshes[mid].blas); OD.meshes[mid].blas = nullptr; }
-            if (!meshes[mid].isInitialized()) continue;
-            if (meshes[mid].getTriangleIndices().size() == 0) continue;
-            OD.meshes[mid].vertices  = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getVertices().size(), meshes[mid].getVertices().data());
-            OD.meshes[mid].colors    = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getColors().size(), meshes[mid].getColors().data());
-            OD.meshes[mid].normals   = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), meshes[mid].getNormals().size(), meshes[mid].getNormals().data());
-            OD.meshes[mid].texCoords = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2), meshes[mid].getTexCoords().size(), meshes[mid].getTexCoords().data());
-            OD.meshes[mid].indices   = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t), meshes[mid].getTriangleIndices().size(), meshes[mid].getTriangleIndices().data());
-            OD.meshes[mid].geom      = geomCreate(OD.context, OD.trianglesGeomType);
-            trianglesSetVertices(OD.meshes[mid].geom, OD.meshes[mid].vertices, meshes[mid].getVertices().size(), sizeof(vec4), 0);
-            trianglesSetIndices(OD.meshes[mid].geom, OD.meshes[mid].indices, meshes[mid].getTriangleIndices().size() / 3, sizeof(ivec3), 0);
-            OD.meshes[mid].blas = trianglesGeomGroupCreate(OD.context, 1, &OD.meshes[mid].geom);
-            groupBuildAccel(OD.meshes[mid].blas);          
+        for (auto &m : dirtyMeshes) {
+            if (OD.meshes[m->getId()].vertices) { owlBufferRelease(OD.meshes[m->getId()].vertices); OD.meshes[m->getId()].vertices = nullptr; }
+            if (OD.meshes[m->getId()].colors) { owlBufferRelease(OD.meshes[m->getId()].colors); OD.meshes[m->getId()].colors = nullptr; }
+            if (OD.meshes[m->getId()].normals) { owlBufferRelease(OD.meshes[m->getId()].normals); OD.meshes[m->getId()].normals = nullptr; }
+            if (OD.meshes[m->getId()].texCoords) { owlBufferRelease(OD.meshes[m->getId()].texCoords); OD.meshes[m->getId()].texCoords = nullptr; }
+            if (OD.meshes[m->getId()].indices) { owlBufferRelease(OD.meshes[m->getId()].indices); OD.meshes[m->getId()].indices = nullptr; }
+            if (OD.meshes[m->getId()].geom) { owlGeomRelease(OD.meshes[m->getId()].geom); OD.meshes[m->getId()].geom = nullptr; }
+            if (OD.meshes[m->getId()].blas) { owlGroupRelease(OD.meshes[m->getId()].blas); OD.meshes[m->getId()].blas = nullptr; }
+            if (!m->isInitialized()) continue;
+            if (m->getTriangleIndices().size() == 0) continue;
+            OD.meshes[m->getId()].vertices  = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getVertices().size(), m->getVertices().data());
+            OD.meshes[m->getId()].colors    = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getColors().size(), m->getColors().data());
+            OD.meshes[m->getId()].normals   = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getNormals().size(), m->getNormals().data());
+            OD.meshes[m->getId()].texCoords = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2), m->getTexCoords().size(), m->getTexCoords().data());
+            OD.meshes[m->getId()].indices   = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t), m->getTriangleIndices().size(), m->getTriangleIndices().data());
+            OD.meshes[m->getId()].geom      = geomCreate(OD.context, OD.trianglesGeomType);
+            trianglesSetVertices(OD.meshes[m->getId()].geom, OD.meshes[m->getId()].vertices, m->getVertices().size(), sizeof(vec4), 0);
+            trianglesSetIndices(OD.meshes[m->getId()].geom, OD.meshes[m->getId()].indices, m->getTriangleIndices().size() / 3, sizeof(ivec3), 0);
+            OD.meshes[m->getId()].blas = trianglesGeomGroupCreate(OD.context, 1, &OD.meshes[m->getId()].geom);
+            groupBuildAccel(OD.meshes[m->getId()].blas);          
         }
 
+
+        // To do: make sparse. Right now iterating over all these pointers, which is a bit pricy CPU side.
+        auto meshes = Mesh::getFront();
         std::vector<OWLBuffer> vertexLists(Mesh::getCount(), nullptr);
         std::vector<OWLBuffer> indexLists(Mesh::getCount(), nullptr);
         std::vector<OWLBuffer> normalLists(Mesh::getCount(), nullptr);
@@ -1081,7 +1083,7 @@ void updateComponents()
             if (!meshes[mid].isInitialized()) continue;
             if (meshes[mid].getTriangleIndices().size() == 0) continue;
             if ((!OD.meshes[mid].vertices) || (!OD.meshes[mid].indices)) {
-                std::cout<<"Mesh ID"<< mid << " is dirty?" << meshes[mid].isDirty() << std::endl;
+                // std::cout<<"Mesh ID"<< mid << " is dirty?" << meshes[mid].isDirty() << std::endl;
                 std::cout<<"nverts : " << meshes[mid].getVertices().size() << std::endl;
                 std::cout<<"nindices : " << meshes[mid].getTriangleIndices().size() << std::endl;
                 throw std::runtime_error("ERROR: vertices/indices is nullptr");

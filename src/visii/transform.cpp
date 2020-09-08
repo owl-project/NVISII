@@ -29,7 +29,7 @@ bool Transform::isInitialized()
 }
 
 bool Transform::areAnyDirty() {
-	return dirtyTransforms.size();
+	return dirtyTransforms.size() > 0;
 };
 
 std::set<Transform*> Transform::getDirtyTransforms()
@@ -105,7 +105,9 @@ Transform* Transform::get(std::string name) {
 }
 
 void Transform::remove(std::string name) {
-	int32_t oldID = transforms->getId();
+	auto t = get(name);
+	if (!t) return;
+	int32_t oldID = t->getId();
 	StaticFactory::remove(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
 	dirtyTransforms.insert(&transforms[oldID]);
 }
