@@ -1,6 +1,6 @@
 # ViSII - A VIrtual Scene Imaging Interface
 
-![ViSII domain randomization examples](https://i.imgur.com/DomCxGy.png)
+![ViSII examples](https://i.imgur.com/A3MDFzy.png)
 
 ViSII is a python-enabled ray tracing based renderer built on top of NVIDIA OptiX (C++/CUDA backend). 
 The tool allows you to define complex scenes: 3d meshes, object materials, lights, loading textures, _etc._, and render 
@@ -36,7 +36,7 @@ If you need more information about how to install NVIDIA drivers and CUDA on Ubu
 
 ## Getting Started 
 
-We wrote 10 basic examples covering most of the functionalities of ViSII, [here](examples/). 
+We wrote different examples covering most of the functionalities of ViSII, [here](examples/). 
 You can also find more extensive documentation [here](https://owl-project.github.io/ViSII/).
 
 ## Building 
