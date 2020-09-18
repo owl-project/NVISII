@@ -138,6 +138,12 @@ public:
 
     /** @returns the constant intensity used by this light. */
     float getIntensity();
+
+    /**
+     * Controls whether or not the surface area of the light should effect overall light intensity.
+     * @param use if True, allows the area of the light to affect intensity.
+    */
+    void useSurfaceArea(bool use);
     
 private:
     /* Creates an uninitialized light. Useful for preallocation. */

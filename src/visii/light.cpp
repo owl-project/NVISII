@@ -97,13 +97,18 @@ void Light::setTemperature(float kelvin)
 
 void Light::setIntensity(float intensity)
 {
-    lightStructs[id].intensity = intensity;
+    lightStructs[id].intensity = intensity * 1000.f;
     markDirty();
 }
 
 float Light::getIntensity()
 {
-    return lightStructs[id].intensity;
+    return lightStructs[id].intensity / 1000.f;
+}
+
+void Light::useSurfaceArea(bool use) 
+{
+    lightStructs[id].use_surface_area = use;
 }
 
 /* SSBO logic */

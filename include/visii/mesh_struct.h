@@ -7,8 +7,6 @@ using namespace glm;
 
 /* Note: the purpose of many of these parameters is for occlusion queries in a potential rasterizer framework */
 struct MeshStruct {
-    mat4 bb_local_to_parent;
-
     /* The last computed average of all mesh positions */
     vec4 center; // 16
     

@@ -103,7 +103,6 @@ Mesh::Mesh(std::string name, uint32_t id)
 	this->name = name;
 	this->id = id;
 	this->meshStructs[id].show_bounding_box = 0;
-	this->meshStructs[id].bb_local_to_parent = glm::mat4(1.0);
 	this->meshStructs[id].numTris = 0;
 }
 
@@ -212,6 +211,7 @@ std::vector<uint32_t> Mesh::getTriangleIndices() {
 
 void Mesh::computeMetadata()
 {
+	// Compute AABB and center
 	glm::vec4 s(0.0);
 	meshStructs[id].bbmin = glm::vec4(std::numeric_limits<float>::max());
 	meshStructs[id].bbmax = glm::vec4( std::numeric_limits<float>::lowest());
@@ -226,20 +226,13 @@ void Mesh::computeMetadata()
 	s /= (float)positions.size();
 	meshStructs[id].center = s;
 
-	meshStructs[id].bb_local_to_parent = glm::mat4(1.0);
-	meshStructs[id].bb_local_to_parent = glm::translate(meshStructs[id].bb_local_to_parent, glm::vec3(meshStructs[id].bbmax + meshStructs[id].bbmin) * .5f);
-	meshStructs[id].bb_local_to_parent = glm::scale(meshStructs[id].bb_local_to_parent, glm::vec3(meshStructs[id].bbmax - meshStructs[id].bbmin) * .5f);
-
+	// Bounding Sphere
 	meshStructs[id].bounding_sphere_radius = 0.0;
 	for (int i = 0; i < positions.size(); i += 1) {
 		meshStructs[id].bounding_sphere_radius = std::max(meshStructs[id].bounding_sphere_radius, 
 			glm::distance(glm::vec4(positions[i].x, positions[i].y, positions[i].z, 0.0f), meshStructs[id].center));
 	}
-	
-	// auto vulkan = Libraries::Vulkan::Get();
-	// if (vulkan->is_ray_tracing_enabled()) {
-	// 	build_low_level_bvh(submit_immediately);
-	// }
+
 	this->meshStructs[id].numTris = uint32_t(triangleIndices.size()) / 3;
 	markDirty();
 }
