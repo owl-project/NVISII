@@ -39,8 +39,8 @@ class Texture : public StaticFactory
 	 * @param data A row major flattened vector of RGBA texels. The length of this vector should be 4 * width * height.
      * @returns a Texture allocated by the renderer. 
 	*/
-	static Texture *createFromData(std::string name, uint32_t width, uint32_t height, std::vector<float> data);
-
+	static Texture *createFromData(std::string name, uint32_t width, uint32_t height, const float* data, uint32_t length);
+	
 	/** 
 	 * Constructs a Texture with the given name that mixes two different textures together.
 	 * @param name The name of the texture to create.

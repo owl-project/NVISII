@@ -59,6 +59,10 @@ else:
 
 %}
 
+%begin %{
+#define SWIG_PYTHON_CAST_MODE
+%}
+
 /* -------- Features --------------*/
 %include "exception.i"
 %exception {
@@ -69,9 +73,22 @@ else:
   }
 }
 
+// numpy stuff
+%{
+#define SWIG_FILE_WITH_INIT
+%}
+%include "numpy.i"
+%init %{
+import_array();
+%}
+
+
+%apply (float* INPLACE_ARRAY_FLAT, int DIM_FLAT) {(const float* data, uint32_t length)};
+
+
+
 %{
 #include "visii/visii.h"
-
 #include "visii/camera.h"
 #include "visii/entity.h"
 #include "visii/light.h"

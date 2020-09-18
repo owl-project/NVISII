@@ -142,9 +142,9 @@ endif()
 if(WIN32 OR NOT Python_INCLUDE_DIRS)
 set(PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
 if(PYTHON_VERSION)
-  find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development)
+  find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development NumPy)
 else()
-  find_package(Python  COMPONENTS Development)
+  find_package(Python  COMPONENTS Development NumPy)
 endif()
 endif()
 
@@ -166,8 +166,9 @@ if (MSVC AND NOT Python_LIBRARIES)
     "in the \"Advanced Options\" tab of the Python installation wizard, and to run with python_d.exe")
 endif()
 include_directories(SYSTEM ${Python_INCLUDE_DIRS})
+include_directories(SYSTEM ${Python_NumPy_INCLUDE_DIRS})
 
-# # glm
+# glm
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
 
 # geometry generator
