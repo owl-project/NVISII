@@ -143,6 +143,7 @@ void Transform::markDirty() {
 	auto entityPointers = Entity::getFront();
 	for (auto &eid : entities) {
 		entityPointers[eid].markDirty();
+		entityPointers[eid].computeMetadata();
 	}
 };
 

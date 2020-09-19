@@ -248,13 +248,41 @@ void Entity::markDirty() {
 	dirtyEntities.insert(this);
 };
 
+void Entity::computeMetadata()
+{
+	if ((getMesh() == nullptr) || (getTransform() == nullptr)) {
+		entityStructs[id].bbmin = entityStructs[id].bbmax = vec4(0.f);
+	}
+	else {
+		mat4 ltw = getTransform()->getLocalToWorldMatrix();
+		vec3 lbbmin = vec3(ltw * vec4(getMesh()->getMinAabbCorner(), 1.f));
+		vec3 lbbmax = vec3(ltw * vec4(getMesh()->getMaxAabbCorner(), 1.f));
+		vec3 p[8];
+		p[0] = vec3(lbbmin.x, lbbmin.y, lbbmin.z);
+		p[1] = vec3(lbbmin.x, lbbmin.y, lbbmax.z);
+		p[2] = vec3(lbbmin.x, lbbmax.y, lbbmin.z);
+		p[3] = vec3(lbbmin.x, lbbmax.y, lbbmax.z);
+		p[4] = vec3(lbbmax.x, lbbmin.y, lbbmin.z);
+		p[5] = vec3(lbbmax.x, lbbmin.y, lbbmax.z);
+		p[6] = vec3(lbbmax.x, lbbmax.y, lbbmin.z);
+		p[7] = vec3(lbbmax.x, lbbmax.y, lbbmax.z);
+		vec3 bbmin = p[0], bbmax = p[0];
+		for (int i = 1; i < 8; ++i) {
+			bbmin = glm::min(bbmin, p[i]);
+			bbmax = glm::max(bbmax, p[i]);
+		}
+		entityStructs[id].bbmin = vec4(bbmin, 1.f);
+		entityStructs[id].bbmax = vec4(bbmax, 1.f);
+	}
+}
+
 void Entity::updateComponents()
 {
 	if (dirtyEntities.size() == 0) return;
-	for (auto &e : dirtyEntities) {
-		if (!e->isInitialized()) continue;
-		// compute aabb
-	}
+	// for (auto &e : dirtyEntities) {
+	// 	if (!e->isInitialized()) continue;
+	// 	//
+	// }
 	dirtyEntities.clear();
 }
 

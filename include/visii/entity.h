@@ -56,7 +56,7 @@ private:
      * Note: for internal use only.
 	 */
 	Entity(std::string name, uint32_t id);
-
+	
 	static std::set<Entity*> dirtyEntities;
 
 public:
@@ -197,4 +197,6 @@ public:
 
 	/** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
 	static std::shared_ptr<std::mutex> getEditMutex();
+
+	void computeMetadata();
 };

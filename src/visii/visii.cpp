@@ -1332,9 +1332,7 @@ void updateComponents()
         OptixData.LP.proj = camera.getProjection();
         OptixData.LP.viewT0 = transform.getWorldToLocalMatrix(/*previous = */ true);
         OptixData.LP.viewT1 = transform.getWorldToLocalMatrix(/*previous = */ false);
-    }
-
-    
+    }   
 }
 
 void updateLaunchParams()
