@@ -5,11 +5,9 @@
 Transform Transform::transforms[MAX_TRANSFORMS];
 TransformStruct Transform::transformStructs[MAX_TRANSFORMS];
 std::map<std::string, uint32_t> Transform::lookupTable;
-
 std::shared_ptr<std::mutex> Transform::editMutex;
 bool Transform::factoryInitialized = false;
 std::set<Transform*> Transform::dirtyTransforms;
-static bool mutexAcquired = false;
 
 void Transform::initializeFactory()
 {
@@ -233,9 +231,6 @@ glm::quat safeQuatLookAt(
 
 void Transform::lookAt(vec3 at, vec3 up, vec3 eye, bool previous)
 {
-	// if (!mutexAcquired) {
-	// 	std::lock_guard<std::mutex>lock(*editMutex.get());
-	// }
 	if (previous) {
 		useRelativeAngularMotionBlur = false;
 	}

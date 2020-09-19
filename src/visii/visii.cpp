@@ -1102,9 +1102,12 @@ void updateComponents()
     }    
 
     // Manage Entities: Build / Rebuild TLAS
-    if (Entity::areAnyDirty()) {
+    auto dirtyEntities = Entity::getDirtyEntities();
+    if (dirtyEntities.size() > 0) {
         auto mutex = Entity::getEditMutex();
         std::lock_guard<std::mutex> lock(*mutex.get());
+
+        Entity::updateComponents();
 
         std::vector<OWLGroup> instances;
         std::vector<glm::mat4> t0InstanceTransforms;
@@ -1179,7 +1182,6 @@ void updateComponents()
         OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
         launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
 
-        Entity::updateComponents();
         bufferUpload(OptixData.entityBuffer,    Entity::getFrontStruct());
     }
 

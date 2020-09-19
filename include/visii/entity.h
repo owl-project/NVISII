@@ -57,11 +57,7 @@ private:
 	 */
 	Entity(std::string name, uint32_t id);
 
-	/** Indicates that one of the components has been edited */
-    static bool anyDirty;
-
-    /** Indicates this component has been edited */
-    bool dirty = true;
+	static std::set<Entity*> dirtyEntities;
 
 public:
     /**
@@ -100,6 +96,9 @@ public:
 	/** @returns the name of this component */
 	std::string getName();
 
+	/** @returns the unique integer ID for this component */
+	int32_t getId();
+
 	/** @returns A map whose key is an entity name and whose value is the ID for that entity */
 	static std::map<std::string, uint32_t> getNameToIdMap();
 
@@ -124,20 +123,14 @@ public:
     /** @returns a string representation of the current component */
 	std::string toString();
 
-	/** Indicates whether or not any entities are "out of date" and need to be updated through the "update components" function */
+	/** @return True if any the entities has been modified since the previous frame, and False otherwise */
 	static bool areAnyDirty();
 
-    /** @returns True if the Entity has been modified since the previous frame, and False otherwise */
-	bool isDirty() { return dirty; }
+    /** @returns a list of entities that have been modified since the previous frame */
+    static std::set<Entity*> getDirtyEntities();
 
-    /** @returns True if the Entity has not been modified since the previous frame, and False otherwise */
-	bool isClean() { return !dirty; }
-
-    /** Tags the current component as being modified, and in need of updating. */
+    /** Tags the current component as being modified since the previous frame. */
 	void markDirty();
-
-    /** Tags the current component as being unmodified, or updated. */
-	void markClean() { dirty = false; }
 
     /** Returns the simplified struct used to represent the current component */
 	EntityStruct &getStruct();

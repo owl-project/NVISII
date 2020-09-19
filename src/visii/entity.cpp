@@ -10,7 +10,7 @@ EntityStruct Entity::entityStructs[MAX_ENTITIES];
 std::map<std::string, uint32_t> Entity::lookupTable;
 std::shared_ptr<std::mutex> Entity::editMutex;
 bool Entity::factoryInitialized = false;
-bool Entity::anyDirty = true;
+std::set<Entity*> Entity::dirtyEntities;
 
 Entity::Entity() {
 	this->initialized = false;
@@ -235,23 +235,27 @@ bool Entity::isInitialized()
 
 bool Entity::areAnyDirty()
 {
-	return anyDirty;
+	return dirtyEntities.size() > 0;
 }
 
+std::set<Entity*> Entity::getDirtyEntities()
+{
+	return dirtyEntities;
+}
+
+
 void Entity::markDirty() {
-	dirty = true;
-	anyDirty = true;
+	dirtyEntities.insert(this);
 };
 
 void Entity::updateComponents()
 {
-	if (!areAnyDirty()) return;
-	
-	for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
-		if (entities[eid].isDirty()) 
-			entities[eid].markClean();
+	if (dirtyEntities.size() == 0) return;
+	for (auto &e : dirtyEntities) {
+		if (!e->isInitialized()) continue;
+		// compute aabb
 	}
-	anyDirty = false;
+	dirtyEntities.clear();
 }
 
 void Entity::clearAll()
@@ -274,15 +278,16 @@ Entity* Entity::create(
 	Camera* camera
     )
 {
-	auto entity =  StaticFactory::create(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
-	try {
+	auto createEntity = [transform, material, mesh, light, camera] (Entity* entity) {
 		entity->setVisibility(true);
 		if (transform) entity->setTransform(transform);
 		if (material) entity->setMaterial(material);
 		if (camera) entity->setCamera(camera);
 		if (mesh) entity->setMesh(mesh);
 		if (light) entity->setLight(light);
-		return entity;
+	};
+	try {
+		return StaticFactory::create<Entity>(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES, createEntity);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
 		throw;
@@ -305,8 +310,9 @@ void Entity::remove(std::string name) {
 	entity->clearMaterial();
 	entity->clearMesh();
 	entity->clearTransform();
+	int32_t oldID = entity->getId();
 	StaticFactory::remove(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
-	anyDirty = true;
+	dirtyEntities.insert(&entities[oldID]);
 }
 
 EntityStruct* Entity::getFrontStruct() {
@@ -324,6 +330,11 @@ uint32_t Entity::getCount() {
 std::string Entity::getName()
 {
     return name;
+}
+
+int32_t Entity::getId()
+{
+    return id;
 }
 
 std::map<std::string, uint32_t> Entity::getNameToIdMap()
