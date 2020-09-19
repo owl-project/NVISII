@@ -437,6 +437,21 @@ void saveGeometricRenderData(
 }
 
 __device__
+void saveHeatmapRenderData(
+    float3 &renderData, 
+    int bounce,
+    uint64_t start_clock
+)
+{
+    if (optixLaunchParams.renderDataMode != RenderDataFlags::HEATMAP) return;
+    // if (bounce < optixLaunchParams.renderDataBounce) return;
+
+    uint64_t absClock = clock()-start_clock;
+    float relClock = /*global.clockScale **/ absClock / 10000000.f;
+    renderData = make_float3(relClock);
+}
+
+__device__
 float3 faceNormalForward(const float3 &w_o, const float3 &gn, const float3 &n)
 {
     float3 new_n = n;
@@ -462,8 +477,7 @@ bool debugging() {
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
-    float start_clock, stop_clock;
-    start_clock = clock();
+    uint64_t start_clock = clock();
     
     LCGRand rng = get_rng(optixLaunchParams.frameID + optixLaunchParams.seed * 10007);
     float time = sampleTime(lcg_randomf(rng));
@@ -505,11 +519,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     /*the ray to trace*/ ray,
                     /*prd*/ payload,
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
-
-    stop_clock = clock();
-    if (debugging()) {
-        printf("dClock : %f\n", stop_clock - start_clock);
-    }
 
     // Shade each hit point on a path using NEE with MIS
     do {     
@@ -568,10 +577,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
             LightStruct entityLight = optixLaunchParams.lights[entity.light_id];
             float3 lightEmission;
-            if (entityLight.color_texture_id == -1) lightEmission = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
-            else lightEmission = sampleTexture(entityLight.color_texture_id, uv) * entityLight.intensity;
+            if (entityLight.color_texture_id == -1) lightEmission = make_float3(entityLight.r, entityLight.g, entityLight.b);
+            else lightEmission = sampleTexture(entityLight.color_texture_id, uv);
             float dist = payload.tHit;
-            lightEmission = lightEmission / (dist * dist);
+            if (bounce != 0) lightEmission = (lightEmission * entityLight.intensity) / (dist * dist);
             float3 contribution = pathThroughput * lightEmission;
             illum = illum + contribution;
             if (bounce == 0) directIllum = illum;
@@ -870,7 +879,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         ++bounce;     
         if (sampledBsdf == 0) diffuseBounce++;
         else specularBounce++;
-    } while (diffuseBounce < optixLaunchParams.maxDiffuseBounceDepth && specularBounce < optixLaunchParams.maxSpecularBounceDepth);
+    } while (diffuseBounce < optixLaunchParams.maxDiffuseBounceDepth && specularBounce < optixLaunchParams.maxSpecularBounceDepth);   
+
+    // For segmentations, save heatmap metadata
+    saveHeatmapRenderData(renderData, bounce, start_clock);
 
     // clamp out any extreme fireflies
     glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
@@ -900,7 +912,18 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     /* Write to AOVs, progressively refining results */
     auto fbOfs = pixelID.x+optixLaunchParams.frameSize.x * ((optixLaunchParams.frameSize.y - 1) -  pixelID.y);
     float4 &prev_color = (float4&) optixLaunchParams.accumPtr[fbOfs];
-    float4 accum_color = make_float4((accum_illum + float(optixLaunchParams.frameID) * make_float3(prev_color)) / float(optixLaunchParams.frameID + 1), 1.0f);
+    float4 accum_color;
+
+    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) 
+    {
+        accum_color = make_float4((accum_illum + float(optixLaunchParams.frameID) * make_float3(prev_color)) / float(optixLaunchParams.frameID + 1), 1.0f);
+    }
+    else {
+        // Override framebuffer output if user requested to render metadata
+        accum_illum = make_float3(renderData.x, renderData.y, renderData.z);
+        accum_color = make_float4((accum_illum + float(optixLaunchParams.frameID) * make_float3(prev_color)) / float(optixLaunchParams.frameID + 1), 1.0f);
+    }
+    
     optixLaunchParams.accumPtr[fbOfs] = vec4(
         accum_color.x, 
         accum_color.y, 
@@ -915,7 +938,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         color.z,
         1.0f
     );
-    
     // vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
     // vec4 oldNormal = optixLaunchParams.normalBuffer[fbOfs];
     // if (any(isnan(oldAlbedo))) oldAlbedo = vec4(1.f);
@@ -926,10 +948,5 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     // vec4 accumAlbedo = (newAlbedo + float(optixLaunchParams.frameID) * oldAlbedo) / float(optixLaunchParams.frameID + 1);
     // vec4 accumNormal = (newNormal + float(optixLaunchParams.frameID) * oldNormal) / float(optixLaunchParams.frameID + 1);
     // optixLaunchParams.albedoBuffer[fbOfs] = accumAlbedo;
-    // optixLaunchParams.normalBuffer[fbOfs] = accumNormal;
-
-    // Override framebuffer output if user requested to render metadata
-    if (optixLaunchParams.renderDataMode != RenderDataFlags::NONE) {
-        optixLaunchParams.frameBuffer[fbOfs] = vec4( renderData.x, renderData.y, renderData.z, 1.0f);
-    }
+    // optixLaunchParams.normalBuffer[fbOfs] = accumNormal;    
 }

@@ -1741,6 +1741,9 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         else if (option == std::string("diffuse_motion_vectors")) {
             OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_MOTION_VECTORS;
         }
+        else if (option == std::string("heatmap")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::HEATMAP;
+        }
         else {
             throw std::runtime_error(std::string("Error, unknown option : \"") + _option + std::string("\". ")
             + std::string("See documentation for available options"));
@@ -2120,6 +2123,9 @@ void __test__(std::vector<std::string> args) {
     }
     else if (option == std::string("diffuse_motion_vectors")) {
         OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_MOTION_VECTORS;
+    }
+    else if (option == std::string("heatmap")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::HEATMAP;
     }
     else {
         throw std::runtime_error(std::string("Error, unknown option : \"") + option + std::string("\". ")
