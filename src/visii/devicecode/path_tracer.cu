@@ -331,6 +331,9 @@ void initializeRenderData(float3 &renderData)
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
         renderData = make_float3(0.0, 0.0, -1.0);
     }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::HEATMAP) {
+        renderData = make_float3(0.0, 0.0, 0.0);
+    }
 }
 
 __device__
