@@ -451,6 +451,7 @@ void saveHeatmapRenderData(
 
     uint64_t absClock = clock()-start_clock;
     float relClock = /*global.clockScale **/ absClock / 10000000.f;
+    relClock = min(relClock, 1.f);
     renderData = make_float3(relClock);
 }
 
