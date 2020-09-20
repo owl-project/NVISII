@@ -159,8 +159,11 @@ Texture* Texture::createFromImage(std::string name, std::string path, bool linea
 
 Texture* Texture::createFromData(std::string name, uint32_t width, uint32_t height, const float* data, uint32_t length)
 {
+    if (length != (width * height * 4)) { throw std::runtime_error("Error: width * height * 4 does not equal length of data!"); }
+    if (width == 0) { throw std::runtime_error("Error: width must be greater than 0!"); }
+    if (height == 0) { throw std::runtime_error("Error: height must be greater than 0!"); }
+
     auto create = [width, height, length, data] (Texture* l) {
-        if (length != (width * height * 4)) { throw std::runtime_error("Error: width * height * 4 does not equal length of data!"); }
         l->texels.resize(width * height);
         memcpy(l->texels.data(), data, width * height * 4 * sizeof(float));
         textureStructs[l->getId()].width = width;
