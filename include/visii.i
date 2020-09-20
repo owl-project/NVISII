@@ -41,6 +41,11 @@ if hasattr(sys, 'gettotalrefcount'):
 %pythonbegin %{
 
 import os, sys, platform, math
+try:
+    from . import version
+    __version__ = version.__version__
+except ImportError:
+    pass
 
 __this_dir__= os.path.dirname(os.path.abspath(__file__))
 
