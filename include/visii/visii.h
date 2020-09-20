@@ -13,15 +13,24 @@
   * @param window_on_top Keeps the window opened during an interactive session on top of any other windows.
   * @param verbose If false, visii will avoid outputing any unneccessary text
 */
-void initializeInteractive(bool window_on_top = false, bool verbose = true);
+void initializeInteractive(bool window_on_top = false, bool verbose = false);
 
 /**
   * Initializes various backend systems required to render scene data.
   * 
-  * This call avoids using any OpenGL resources, to enable 
+  * This call avoids using any OpenGL resources, to enable use on systems without displays.
   * @param verbose If false, visii will avoid outputing any unneccessary text
 */
-void initializeHeadless(bool verbose = true);
+void initializeHeadless(bool verbose = false);
+
+/**
+  * Initializes various backend systems required to render scene data.
+  * 
+  * @param headless If true, avoids using any OpenGL resources, to enable use on systems without displays.
+  * @param window_on_top Keeps the window opened during an interactive session on top of any other windows. (assuming headless is False)
+  * @param verbose If false, visii will avoid outputing any unneccessary text
+*/
+void initialize(bool headless = false, bool window_on_top = false, bool verbose = false);
 
 /**
   * Cleans up any allocated resources
@@ -241,6 +250,9 @@ glm::vec3 getSceneMaxAabbCorner();
 
 /** @returns the center of the aligned bounding box for the axis aligned bounding box containing all scene geometry*/
 glm::vec3 getSceneAabbCenter();
+
+// This is for internal purposes. Forces the scene bounds to update.
+void updateSceneAabb();
 
 // This is for internal testing purposes. Don't call this unless you know what you're doing.
 void __test__(std::vector<std::string> args);

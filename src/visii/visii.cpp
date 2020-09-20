@@ -2009,6 +2009,11 @@ void initializeHeadless(bool _verbose)
     future.wait();
 }
 
+void initialize(bool headless, bool windowOnTop, bool verbose) {
+    if (headless) initializeHeadless(verbose);
+    else initializeInteractive(windowOnTop, verbose);
+}
+
 void clearAll()
 {
     setCameraEntity(nullptr);
@@ -2031,6 +2036,20 @@ glm::vec3 getSceneMaxAabbCorner() {
 
 glm::vec3 getSceneAabbCenter() {
     return OptixData.LP.sceneBBMin + (OptixData.LP.sceneBBMax - OptixData.LP.sceneBBMin) * .5f;
+}
+
+void updateSceneAabb()
+{
+    bool first = true;
+    auto entities = Entity::getFront();
+    for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
+        if (!(entities[eid].isInitialized() && entities[eid].getMesh() && entities[eid].getTransform())) continue;
+        OptixData.LP.sceneBBMin = (first) ? entities[eid].getMinAabbCorner() : 
+          glm::min(OptixData.LP.sceneBBMin, entities[eid].getMinAabbCorner());
+        OptixData.LP.sceneBBMax = (first) ? entities[eid].getMaxAabbCorner() : 
+          glm::max(OptixData.LP.sceneBBMax, entities[eid].getMaxAabbCorner());
+        first = false;
+    }
 }
 
 #ifdef __unix__

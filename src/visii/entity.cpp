@@ -4,6 +4,7 @@
 #include <visii/transform.h>
 #include <visii/material.h>
 #include <visii/mesh.h>
+#include <visii/visii.h>
 
 Entity Entity::entities[MAX_ENTITIES];
 EntityStruct Entity::entityStructs[MAX_ENTITIES];
@@ -274,6 +275,8 @@ void Entity::computeMetadata()
 		entityStructs[id].bbmin = vec4(bbmin, 1.f);
 		entityStructs[id].bbmax = vec4(bbmax, 1.f);
 	}
+
+	updateSceneAabb();
 }
 
 void Entity::updateComponents()
