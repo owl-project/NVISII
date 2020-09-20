@@ -43,7 +43,7 @@ jobs:
         echo ${pythonLocation}
         echo %pythonLocation%
         ls ${pythonLocation}
-        python -m pip install --upgrade pip setuptools setuptools_scm wheel
+        python -m pip install --upgrade pip setuptools setuptools_scm wheel numpy
 
     # Download external dependencies
     - name: Download Dependencies
