@@ -93,6 +93,7 @@ jobs:
           PY=${{ matrix.python-version }}
           PYVER=${PY:2:1}.${PY:3:1}
           PYTHONXDOTYMU=python${PY:2:1}.${PY:8:3}
+          PYTHONXDOTY=python${PY:2:1}.${PY:3:1}
           echo $PYTHONXDOTYMU
           PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
           echo $PYTHONXDOTYMU
@@ -104,17 +105,17 @@ jobs:
           cd build
           
           # tmate for debugging
-          wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
-          tar xf tmate-2.4.0-static-linux-amd64.tar.xz
-          cd tmate-2.4.0-static-linux-amd64
-          ./tmate -F
+          #wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+          #tar xf tmate-2.4.0-static-linux-amd64.tar.xz
+          #cd tmate-2.4.0-static-linux-amd64
+          #./tmate -F
           
            cmake ../ \
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
           -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYMU/ \
-          -DPython_NumPy_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/lib/$PYTHONXDOTYMU/site-packages/numpy/core/include/ \
+          -DPython_NumPy_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/lib/$PYTHONXDOTY/site-packages/numpy/core/include/ \
           -DPython_VERSION_MAJOR=${PY:2:1} \
           -DPython_VERSION_MINOR=${PY:3:1} \
           -DCMAKE_BUILD_TYPE=Release \
