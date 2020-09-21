@@ -114,7 +114,7 @@ jobs:
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
           -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYMU/ \
-          -DPython_NumPy_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/lib/$PYTHONXDOTYMU/site-packages/numpy/core/include \
+          -DPython_NumPy_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/lib/$PYTHONXDOTYMU/site-packages/numpy/core/include/ \
           -DPython_VERSION_MAJOR=${PY:2:1} \
           -DPython_VERSION_MINOR=${PY:3:1} \
           -DCMAKE_BUILD_TYPE=Release \

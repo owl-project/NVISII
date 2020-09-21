@@ -167,6 +167,8 @@ if (MSVC AND NOT Python_LIBRARIES)
 endif()
 include_directories(SYSTEM ${Python_INCLUDE_DIRS})
 include_directories(SYSTEM ${Python_NumPy_INCLUDE_DIRS})
+message(WARN "Numpy Include Dir is: ")
+message(WARN ${Python_NumPy_INCLUDE_DIRS})
 
 # glm
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
