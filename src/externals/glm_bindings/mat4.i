@@ -2,6 +2,38 @@
 // 2018 Dan Wilcox <danomatika@gmail.com>
 
 // ----- detail/type_mat4hpp -----
+%typemap(in) glm::mat4 (void *argp = 0, int res = 0) {
+  int res = SWIG_ConvertPtr($input, &argp, $descriptor(glm::mat4*), $disown | 0);
+  if (!SWIG_IsOK(res)) 
+  { 
+    if (!PySequence_Check($input)) {
+      PyErr_SetString(PyExc_ValueError, "in method '" "$symname" "', argument " "$argnum" " Expected either a sequence or mat4");
+      return NULL;
+    }
+
+    if (PySequence_Length($input) != 16) {
+      PyErr_SetString(PyExc_ValueError,"in method '" "$symname" "', argument " "$argnum" " Size mismatch. Expected 16 elements");
+      return NULL;
+    }
+
+    float vals[16];
+    for (int i = 0; i < 16; i++) {
+      PyObject *o = PySequence_GetItem($input,i);
+      if (PyNumber_Check(o)) {
+        vals[i] = (float) PyFloat_AsDouble(o);
+      } else {
+        PyErr_SetString(PyExc_ValueError,"in method '" "$symname" "', argument " "$argnum" " Sequence elements must be numbers");      
+        return NULL;
+      }
+    }
+    $1 = glm::make_mat4(vals);
+  }   
+  else {
+    glm::mat4 * temp = reinterpret_cast< glm::mat4 * >(argp);
+    $1 = *temp;
+    if (SWIG_IsNewObj(res)) delete temp;
+  }
+}
 
 struct mat4 {
 

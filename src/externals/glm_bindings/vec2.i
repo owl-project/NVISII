@@ -2,6 +2,36 @@
 // 2018 Dan Wilcox <danomatika@gmail.com>
 
 // ----- detail/type_vec2.hpp -----
+%typemap(in) glm::vec2 (void *argp = 0, int res = 0) {
+  int res = SWIG_ConvertPtr($input, &argp, $descriptor(glm::vec2*), $disown | 0);
+  if (!SWIG_IsOK(res)) 
+  { 
+    if (!PySequence_Check($input)) {
+      PyErr_SetString(PyExc_ValueError, "in method '" "$symname" "', argument " "$argnum" " Expected either a sequence or vec2");
+      return NULL;
+    }
+
+    if (PySequence_Length($input) != 2) {
+      PyErr_SetString(PyExc_ValueError,"in method '" "$symname" "', argument " "$argnum" " Size mismatch. Expected 2 elements");
+      return NULL;
+    }
+
+    for (int i = 0; i < 2; i++) {
+      PyObject *o = PySequence_GetItem($input,i);
+      if (PyNumber_Check(o)) {
+        $1[i] = (float) PyFloat_AsDouble(o);
+      } else {
+        PyErr_SetString(PyExc_ValueError,"in method '" "$symname" "', argument " "$argnum" " Sequence elements must be numbers");      
+        return NULL;
+      }
+    }
+  }   
+  else {
+    glm::vec2 * temp = reinterpret_cast< glm::vec2 * >(argp);
+    $1 = *temp;
+    if (SWIG_IsNewObj(res)) delete temp;
+  }
+}
 
 struct vec2 {
 
