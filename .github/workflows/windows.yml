@@ -47,7 +47,7 @@ jobs:
 
     - name: Download Dependencies
       run: |
-        choco install cuda --version=10.2.89.20191206  
+        choco install cuda --version=10.2.89.20191206  --execution-timeout=3000
         refreshenv
 
     - name: Windows configure/install cmake project
