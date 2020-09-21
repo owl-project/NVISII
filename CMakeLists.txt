@@ -169,6 +169,13 @@ include_directories(SYSTEM ${Python_INCLUDE_DIRS})
 include_directories(SYSTEM ${Python_NumPy_INCLUDE_DIRS})
 message(WARN "Numpy Include Dir is: ")
 message(WARN ${Python_NumPy_INCLUDE_DIRS})
+if (NOT EXISTS ${Python_NumPy_INCLUDE_DIRS})
+message(ERROR "ERROR, numpy include dir does not exist!")
+endif()
+
+if (NOT EXISTS ${Python_NumPy_INCLUDE_DIRS}/numpy/arrayObject.h)
+message(ERROR "ERROR, arrayObject does not exist!")
+endif()
 
 # glm
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
