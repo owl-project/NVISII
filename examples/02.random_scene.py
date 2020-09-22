@@ -3,14 +3,14 @@ import random
 import colorsys
 
 NB_OBJS = 10000
-SAMPLES_PER_PIXEL = 256
+SAMPLES_PER_PIXEL = 16
 WIDTH = 1000 
 HEIGHT = 500
 USE_DENOISER = True
 FILE_NAME = "tmp.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize_headless()
+visii.initialize(headless = True, verbose = True)
 
 if USE_DENOISER is True: 
     visii.enable_denoiser()
@@ -29,15 +29,16 @@ camera = visii.entity.create(
 
 # set the view camera transform
 camera.get_transform().look_at(
-    visii.vec3(0,0,0), # look at (world coordinate)
-    visii.vec3(1,0,0), # up vector
-    visii.vec3(0,0,5), # camera_origin    
+    at = (0,0,0), # look at (world coordinate)
+    up = (1,0,0), # up vector
+    eye = (0,0,5), # camera_origin    
 )
 # set the camera
 visii.set_camera_entity(camera)
 
 # Change the dome light intensity
-visii.set_dome_light_intensity(1)
+visii.set_dome_light_intensity(2.2)
+visii.set_dome_light_sky(sun_position=[1,2,3])
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -158,9 +159,10 @@ def add_random_obj(name = "name"):
 # create a random scene, the values are hard coded in the function defines the values
 for i in range(NB_OBJS):
     add_random_obj(str(i))
+    mn = visii.get_scene_min_aabb_corner()
+    mx = visii.get_scene_max_aabb_corner()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-
 visii.render_to_png(
     width = WIDTH, 
     height = HEIGHT, 

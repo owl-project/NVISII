@@ -1,25 +1,24 @@
 import visii
 
-
 SAMPLES_PER_PIXEL = 50
 WIDTH = 500 
 HEIGHT = 500 
 USE_DENOISER = True
 FILE_NAME = "tmp.png"
 
-# # # # # # # # # # # # # # # # # # # # # # # # #
+# headless - no window
+# verbose - output number of frames rendered, etc..
+visii.initialize(headless = True, verbose = True)
 
-visii.initialize_headless()
+# Uses a neural network to denoise ray traced
+if USE_DENOISER: visii.enable_denoiser()
 
-if USE_DENOISER is True: 
-    visii.enable_denoiser()
-
-# Lets create an entity that will serve as our camera.
-
-# All visii objects have a name that can be used for easy lookup later.
+# First, lets create an entity that will serve as our camera.
 camera = visii.entity.create(name = "camera")
 
 # To place the camera into our scene, we'll add a "transform" component 
+# Note that all visii objects have a "name" that can be used for easy lookup later.
+# These names must be unique per component-type, but can be reused across types.
 camera.set_transform(visii.transform.create(name = "camera_transform"))
 
 # To make our camera entity act like a "camera", we'll add a camera component
