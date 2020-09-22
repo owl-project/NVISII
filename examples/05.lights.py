@@ -5,7 +5,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--spp', 
-                    default=100,
+                    default=256,
                     type=int,
                     help = "number of sample per pixel, higher the more costly")
 parser.add_argument('--width', 
@@ -65,7 +65,7 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light_1')
 )
-obj_entity.get_light().set_intensity(200000)
+obj_entity.get_light().set_intensity(.001)
 obj_entity.get_light().set_temperature(8000)
 
 #lets set the size and placement of the light
@@ -88,7 +88,7 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light_2')
 )
-obj_entity.get_light().set_intensity(70000)
+obj_entity.get_light().set_intensity(.0001)
 
 # you can also set the light color manually
 obj_entity.get_light().set_color(
@@ -114,7 +114,7 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light_3')
 )
-obj_entity.get_light().set_intensity(10000)
+obj_entity.get_light().set_intensity(.0004)
 
 obj_entity.get_light().set_color(
     visii.vec3(0,1,1)
