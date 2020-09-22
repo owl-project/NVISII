@@ -139,6 +139,20 @@ public:
     /** @returns the constant intensity used by this light. */
     float getIntensity();
 
+    /** 
+     * Modifies the intensity, or brightness, that this light component will emit it's color by a power of 2.
+     * Increasing the exposure by 1 will double the energy emitted by the light. 
+     * An exposure of 0 produces an unmodified intensity.
+     * An exposure of -1 cuts the intensity of the light in half.
+     * light_intensity = intensity * pow(2, exposureExposure)
+     * 
+     * @param exposure How powerful the light source is in emitting light.
+    */
+    void setExposure(float exposure);
+
+    /** @returns the constant exposure used by this light. */
+    float getExposure();
+
     /**
      * Controls whether or not the surface area of the light should effect overall light intensity.
      * @param use if True, allows the area of the light to affect intensity.

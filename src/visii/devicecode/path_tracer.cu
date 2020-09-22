@@ -584,7 +584,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if (entityLight.color_texture_id == -1) lightEmission = make_float3(entityLight.r, entityLight.g, entityLight.b);
             else lightEmission = sampleTexture(entityLight.color_texture_id, uv);
             float dist = payload.tHit;
-            if (bounce != 0) lightEmission = (lightEmission * entityLight.intensity) / (dist * dist);
+            if (bounce != 0) lightEmission = (lightEmission * (entityLight.intensity * pow(2.f, entityLight.exposure))) / (dist * dist);
             float3 contribution = pathThroughput * lightEmission;
             illum = illum + contribution;
             if (bounce == 0) directIllum = illum;
@@ -761,8 +761,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 dotNWi = max(dot(dir, normal), 0.f);
                 numTris = mesh.numTris;
                 lightDir = make_float3(dir.x, dir.y, dir.z);
-                if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
-                else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * light_light.intensity;
+                if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
+                else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * (light_light.intensity * pow(2.f, light_light.exposure));
                 disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
             }
 
@@ -839,8 +839,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         float dotNWi = max(dot(v_gz, ray.direction), 0.f); // geometry term
 
                         float3 lightEmission;
-                        if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
-                        else lightEmission = sampleTexture(light_light.color_texture_id, uv) * light_light.intensity;
+                        if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
+                        else lightEmission = sampleTexture(light_light.color_texture_id, uv) * (light_light.intensity * pow(2.f, light_light.exposure));
                         lightEmission = lightEmission / (dist * dist);
 
                         if (dotNWi > 0.f) 

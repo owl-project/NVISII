@@ -23,6 +23,7 @@ Light::Light(std::string name, uint32_t id)
     this->lightStructs[id].g = 1.f;
     this->lightStructs[id].b = 1.f;
     this->lightStructs[id].intensity = 1.0;
+    this->lightStructs[id].exposure = 0.0;
     this->lightStructs[id].color_texture_id = -1;
 }
 
@@ -97,13 +98,24 @@ void Light::setTemperature(float kelvin)
 
 void Light::setIntensity(float intensity)
 {
-    lightStructs[id].intensity = intensity * 1000.f;
+    lightStructs[id].intensity = intensity;
     markDirty();
 }
 
 float Light::getIntensity()
 {
-    return lightStructs[id].intensity / 1000.f;
+    return lightStructs[id].intensity;
+}
+
+void Light::setExposure(float exposure)
+{
+    lightStructs[id].exposure = exposure;
+    markDirty();
+}
+
+float Light::getExposure()
+{
+    return lightStructs[id].exposure;
 }
 
 void Light::useSurfaceArea(bool use) 
