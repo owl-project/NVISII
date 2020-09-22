@@ -726,7 +726,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 }
 
                 numTris = 1.f;
-                dotNWi = fabs(dot(lightDir, v_z)); // for now, making all lights double sided.
+                dotNWi = max(dot(lightDir, v_z), 0.f);
                 lightEmission = (missColor(ray) * optixLaunchParams.domeLightIntensity);
                 disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
             }
@@ -758,7 +758,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
                 vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
                 
-                dotNWi = abs(dot(dir, normal));
+                dotNWi = max(dot(dir, normal), 0.f);
                 numTris = mesh.numTris;
                 lightDir = make_float3(dir.x, dir.y, dir.z);
                 if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
@@ -816,7 +816,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
                     float3 lightEmission = missColor(ray) * optixLaunchParams.domeLightIntensity;
                     float3 Li = (lightEmission * w) / bsdfPDF;
-                    float dotNWi = dot(v_gz, ray.direction);  // geometry term
+                    float dotNWi = max(dot(v_gz, ray.direction), 0.f);  // geometry term
                     if (dotNWi > 0.f) {
                         irradiance = irradiance + (bsdf * bsdfColor * Li);
                     }
@@ -836,7 +836,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
 
                         float dist = payload.tHit;
-                        float dotNWi = dot(v_gz, ray.direction); // geometry term
+                        float dotNWi = max(dot(v_gz, ray.direction), 0.f); // geometry term
 
                         float3 lightEmission;
                         if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
