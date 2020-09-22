@@ -91,6 +91,10 @@ import_array();
 %apply (float* INPLACE_ARRAY_FLAT, int DIM_FLAT) {(const float* data, uint32_t length)};
 
 
+/* -------- GLM Vector Math Library --------------*/
+%feature("autodoc","2");
+%include "glm.i"
+%feature("autodoc", "");
 
 %{
 #include "visii/visii.h"
@@ -102,12 +106,6 @@ import_array();
 #include "visii/material.h"
 #include "visii/mesh.h"
 %}
-
-/* -------- GLM Vector Math Library --------------*/
-%feature("autodoc","2");
-%include "glm.i"
-%feature("autodoc", "");
-
 
 /* STD Vectors */
 %include "std_vector.i"

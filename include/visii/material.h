@@ -63,7 +63,7 @@ class Material : public StaticFactory
      * @param clearcoat_roughness Microfacet surface roughness of clearcoat specular. 
     */
     static Material* create(std::string name,
-      vec3  base_color = vec3(.8f, .8f, .8f),
+      glm::vec3  base_color = glm::vec3(.8f, .8f, .8f),
       float roughness = .5f,
       float metallic = 0.f, 
       float specular = .5f,
@@ -72,8 +72,8 @@ class Material : public StaticFactory
       float transmission_roughness = 0.f, 
       float ior = 1.45f, 
       float alpha = 1.0f, 
-      vec3  subsurface_radius = vec3(1.0, .2, .1),
-      vec3  subsurface_color = vec3(0.8f, 0.8f, 0.8f),
+      glm::vec3  subsurface_radius = glm::vec3(1.0, .2, .1),
+      glm::vec3  subsurface_color = glm::vec3(0.8f, 0.8f, 0.8f),
       float subsurface = 0.f,
       float anisotropic = 0.f, 
       float anisotropic_rotation = 0.f,
@@ -154,7 +154,7 @@ class Material : public StaticFactory
      * 
      * @param color a red, green, blue color intensity vector, usually between 0 and 1 
     */
-    void setBaseColor(vec3 color);
+    void setBaseColor(glm::vec3 color);
     
     /** 
      * The diffuse or metal surface color. Texture is expected to be RGB. Overrides any existing constant base color. 
@@ -171,7 +171,7 @@ class Material : public StaticFactory
      *
      * @returns the color intensity vector 
     */
-    vec3 getBaseColor();
+    glm::vec3 getBaseColor();
 
     /** 
      * Mix between diffuse and subsurface scattering. 
@@ -206,7 +206,7 @@ class Material : public StaticFactory
      *
      * @param subsurface_radius control the subsurface radius. The X, Y and Z values of this vector are mapped to the R, G and B radius values, respectively. 
     */
-    void setSubsurfaceRadius(vec3 subsurfaceRadius);
+    void setSubsurfaceRadius(glm::vec3 subsurfaceRadius);
 
     /** 
      * Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
@@ -225,14 +225,14 @@ class Material : public StaticFactory
      * 
      * @returns The subsurface scattering distance is specified separately for the RGB channels. 
     */
-    vec3 getSubsurfaceRadius();
+    glm::vec3 getSubsurfaceRadius();
 
     /**
      * The subsurface scattering base color. 
      * 
      * @param color the color intensity vector, usually between 0 and 1 
     */
-    void setSubsurfaceColor(vec3 color);
+    void setSubsurfaceColor(glm::vec3 color);
 
     /** 
      * The subsurface scattering base color. Overrides any existing constant subsurface color 
@@ -249,7 +249,7 @@ class Material : public StaticFactory
      * 
      * @returns the color intensity vector, usually between 0 and 1 
     */
-    vec3 getSubsurfaceColor();    
+    glm::vec3 getSubsurfaceColor();    
 
     /** 
      * Blends between a non-metallic and metallic material model. 
@@ -653,9 +653,9 @@ class Material : public StaticFactory
     bool dirty = true;
 
     // constant material data for when textures aren't set.
-    vec4 base_color = vec4(0.f);
-    vec4 subsurface_radius = vec4(0.f);
-    vec4 subsurface_color = vec4(0.f);
+    glm::vec4 base_color = glm::vec4(0.f);
+    glm::vec4 subsurface_radius = glm::vec4(0.f);
+    glm::vec4 subsurface_color = glm::vec4(0.f);
     float subsurface = 0.f;
     float metallic = 0.f;
     float specular = 0.f;

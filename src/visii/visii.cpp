@@ -719,6 +719,8 @@ void initializeOptix(bool headless)
     OD.placeholder = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 1, nullptr);
 
     setDomeLightSky(glm::vec3(0,0,10));
+
+    OptixData.LP.sceneBBMin = OptixData.LP.sceneBBMax = glm::vec3(0.f);
 }
 
 void initializeImgui()
@@ -2038,16 +2040,23 @@ glm::vec3 getSceneAabbCenter() {
     return OptixData.LP.sceneBBMin + (OptixData.LP.sceneBBMax - OptixData.LP.sceneBBMin) * .5f;
 }
 
-void updateSceneAabb()
+void updateSceneAabb(Entity* entity)
 {
+    // If updated entity AABB lies within scene AABB, return. 
+    glm::vec3 bbmin = entity->getMinAabbCorner();
+    glm::vec3 bbmax = entity->getMaxAabbCorner();
+
+    if (glm::all(glm::greaterThan(bbmin, glm::vec3(OptixData.LP.sceneBBMin))) && 
+        glm::all(glm::lessThan(bbmax, glm::vec3(OptixData.LP.sceneBBMax)))) return;
+
+    // otherwise, recompute scene AABB
     bool first = true;
-    auto entities = Entity::getFront();
-    for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
-        if (!(entities[eid].isInitialized() && entities[eid].getMesh() && entities[eid].getTransform())) continue;
-        OptixData.LP.sceneBBMin = (first) ? entities[eid].getMinAabbCorner() : 
-          glm::min(OptixData.LP.sceneBBMin, entities[eid].getMinAabbCorner());
-        OptixData.LP.sceneBBMax = (first) ? entities[eid].getMaxAabbCorner() : 
-          glm::max(OptixData.LP.sceneBBMax, entities[eid].getMaxAabbCorner());
+    auto entities = Entity::getRenderableEntities();
+    for (auto &e : entities) {
+        OptixData.LP.sceneBBMin = (first) ? e->getMinAabbCorner() : 
+          glm::min(OptixData.LP.sceneBBMin, e->getMinAabbCorner());
+        OptixData.LP.sceneBBMax = (first) ? e->getMaxAabbCorner() : 
+          glm::max(OptixData.LP.sceneBBMax, e->getMaxAabbCorner());
         first = false;
     }
 }

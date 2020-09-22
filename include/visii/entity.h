@@ -58,6 +58,7 @@ private:
 	Entity(std::string name, uint32_t id);
 	
 	static std::set<Entity*> dirtyEntities;
+	static std::set<Entity*> renderableEntities;
 
 public:
     /**
@@ -129,6 +130,9 @@ public:
     /** @returns a list of entities that have been modified since the previous frame */
     static std::set<Entity*> getDirtyEntities();
 
+	/** @returns a list of entities that are renderable (ie, can be seen) by the camera. (note, currently ignores visibility) */
+    static std::set<Entity*> getRenderableEntities();
+
     /** Tags the current component as being modified since the previous frame. */
 	void markDirty();
 
@@ -198,5 +202,9 @@ public:
 	/** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
 	static std::shared_ptr<std::mutex> getEditMutex();
 
-	void computeMetadata();
+	/** For internal use. */
+	void computeAabb();
+
+	/** For internal use. */
+	void updateRenderables();
 };

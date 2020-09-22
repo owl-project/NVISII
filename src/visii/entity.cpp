@@ -12,6 +12,7 @@ std::map<std::string, uint32_t> Entity::lookupTable;
 std::shared_ptr<std::mutex> Entity::editMutex;
 bool Entity::factoryInitialized = false;
 std::set<Entity*> Entity::dirtyEntities;
+std::set<Entity*> Entity::renderableEntities;
 
 Entity::Entity() {
 	this->initialized = false;
@@ -244,12 +245,22 @@ std::set<Entity*> Entity::getDirtyEntities()
 	return dirtyEntities;
 }
 
+std::set<Entity*> Entity::getRenderableEntities()
+{
+	return renderableEntities;
+}
 
 void Entity::markDirty() {
 	dirtyEntities.insert(this);
+	// if (transformChanged || meshChanged || materialAssigned || lightAssigned)
+	// todo, optimize this...
+	{
+		updateRenderables();
+		computeAabb();
+	}
 };
 
-void Entity::computeMetadata()
+void Entity::computeAabb()
 {
 	if ((getMesh() == nullptr) || (getTransform() == nullptr)) {
 		entityStructs[id].bbmin = entityStructs[id].bbmax = vec4(0.f);
@@ -276,7 +287,16 @@ void Entity::computeMetadata()
 		entityStructs[id].bbmax = vec4(bbmax, 1.f);
 	}
 
-	updateSceneAabb();
+	updateSceneAabb(this);
+}
+
+void Entity::updateRenderables() 
+{
+	if (!isInitialized()) renderableEntities.erase(this);
+	else if (!getTransform()) renderableEntities.erase(this);
+	else if (!getMesh()) renderableEntities.erase(this);
+	else if (!(getMaterial() || getLight())) renderableEntities.erase(this);
+	else renderableEntities.insert(this);
 }
 
 void Entity::updateComponents()

@@ -77,8 +77,8 @@ void setDomeLightColor(glm::vec3 color);
  * like space, and thick atmospheres see more Rayleigh scattering.
  */ 
 void setDomeLightSky(
-    vec3 sun_position, 
-    vec3 sky_tint = vec3(.5f, .5f, .5f), 
+    glm::vec3 sun_position, 
+    glm::vec3 sky_tint = vec3(.5f, .5f, .5f), 
     float atmosphere_thickness = 1.0f);
 
 /** 
@@ -144,7 +144,7 @@ void setLightSampleCount(uint32_t count);
  * @param x_sample_interval The interval to sample rays within along the x axis. A value of [0,1] will sample the entire pixel x axis.
  * @param y_sample_interval The interval to sample rays within along the y axis. A value of [0,1] will sample the entire pixel y axis.
  */ 
-void samplePixelArea(vec2 x_sample_interval = vec2(0.f, 1.f), vec2 y_sample_interval = vec2(0.f, 1.f));
+void samplePixelArea(glm::vec2 x_sample_interval = glm::vec2(0.f, 1.f), glm::vec2 y_sample_interval = glm::vec2(0.f, 1.f));
 
 /** 
  * Sets the interval of time that rays should sample. By default, rays sample the entire
@@ -154,7 +154,7 @@ void samplePixelArea(vec2 x_sample_interval = vec2(0.f, 1.f), vec2 y_sample_inte
  * 
  * @param time_sample_interval The interval to sample rays within along in time. A value of [0,1] will result in motion blur across the entire frame.
  */ 
-void sampleTimeInterval(vec2 time_sample_interval = vec2(0.f, 1.f));
+void sampleTimeInterval(glm::vec2 time_sample_interval = glm::vec2(0.f, 1.f));
 
 /**
   * If using interactive mode, resizes the window to the specified dimensions.
@@ -252,7 +252,7 @@ glm::vec3 getSceneMaxAabbCorner();
 glm::vec3 getSceneAabbCenter();
 
 // This is for internal purposes. Forces the scene bounds to update.
-void updateSceneAabb();
+void updateSceneAabb(Entity* entity);
 
 // This is for internal testing purposes. Don't call this unless you know what you're doing.
 void __test__(std::vector<std::string> args);
