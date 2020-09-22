@@ -84,7 +84,7 @@ noise = visii.texture.create_from_data(
     'noise',
     shape[0],
     shape[1],
-    data.reshape(shape[0]*shape[1],4).astype(np.float32).flatten().tolist()
+    data.reshape(shape[0]*shape[1],4).astype(np.float32)
 )    
 
 visii.set_dome_light_intensity(1)
