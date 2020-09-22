@@ -10,11 +10,11 @@ import pybullet as p
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--nb_objects', 
-                    default=10,
+                    default=50,
                     type=int,
                     help = "number of objects to simulate")   
 parser.add_argument('--spp', 
-                    default=20,
+                    default=64,
                     type=int,
                     help = "number of sample per pixel, higher the more costly")
 parser.add_argument('--width', 
@@ -55,30 +55,23 @@ if not opt.noise is True:
 
 
 # Create a camera
-# Lets create an entity that will serve as our camera. 
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
     camera = visii.camera.create_perspective_from_fov(
         name = "camera", 
-        field_of_view = 0.785398, 
+        field_of_view = 0.85,
         aspect = float(opt.width)/float(opt.height)
     )
 )
-
-# set the view camera transform
 camera.get_transform().look_at(
-    visii.vec3(0,0,0), # look at (world coordinate)
-    visii.vec3(0,0,1), # up vector
-    visii.vec3(10,0,7), # camera_origin    
+    at = (0,0,0),
+    up = (0,0,1),
+    eye = (10,0,2),
 )
-# set the camera
 visii.set_camera_entity(camera)
 
-# Change the dome light intensity
-visii.set_dome_light_intensity(1)
-
-# Physics init 
+# ISetup bullet physics stuff
 seconds_per_step = .01
 frames_per_second = 30.0
 physicsClient = p.connect(p.DIRECT) # non-graphical version
@@ -87,6 +80,23 @@ p.setTimeStep(seconds_per_step)
 
 # Lets set the scene
 
+# Change the dome light intensity
+visii.set_dome_light_intensity(1.0)
+
+# atmospheric thickness makes the sky go orange, almost like a sunset
+visii.set_dome_light_sky(sun_position=(10,10,10), atmosphere_thickness=1.0, saturation=3.0)
+
+# Lets add a sun light
+sun = visii.entity.create(
+    name = "sun",
+    mesh = visii.mesh.create_sphere("sphere"),
+    transform = visii.transform.create("sun"),
+    light = visii.light.create("sun")
+)
+sun.get_transform().set_position((10,10,10))
+sun.get_light().set_temperature(5000)
+sun.get_light().set_intensity(1)
+
 floor = visii.entity.create(
     name="floor",
     mesh = visii.mesh.create_plane("floor"),
@@ -94,14 +104,14 @@ floor = visii.entity.create(
     material = visii.material.create("floor")
 )
 # floor.get_transform().set_position(0,0,-0.1)
-floor.get_transform().set_position(visii.vec3(0,0,0))
-floor.get_transform().set_scale(visii.vec3(10))
+floor.get_transform().set_position((0,0,0))
+floor.get_transform().set_scale((10, 10, 10))
 
 floor.get_material().set_transmission(0)
-floor.get_material().set_metallic(1.0)
+floor.get_material().set_metallic(0.0)
 floor.get_material().set_roughness(0.1)
 
-floor.get_material().set_base_color(visii.vec3(0.5,0.5,0.5))
+floor.get_material().set_base_color((0.5,0.5,0.5))
 
 # Set the collision with the floor mesh
 # first lets get the vertices 
@@ -118,7 +128,7 @@ scale = [scale[0],scale[1],scale[2]]
 rot = floor.get_transform().get_rotation()
 rot = [rot[0],rot[1],rot[2],rot[3]]
 
-# create a collision shape that is a convez hull
+# create a collision shape that is a convex hull
 obj_col_id = p.createCollisionShape(
     p.GEOM_MESH,
     vertices = vertices,
@@ -131,8 +141,6 @@ p.createMultiBody(
     basePosition = pos,
     baseOrientation= rot,
 )    
-print(f"added collision for {floor.get_name()}, at {pos}, {rot}")
-
 
 # lets create a bunch of objects 
 # mesh = visii.mesh.create_torus('mesh')
@@ -208,9 +216,6 @@ for i in range(opt.nb_objects):
         }
     )
 
-    print(f"added collision for {name}, at {pos}, {rot}")
-
-
     # Material setting
     rgb = colorsys.hsv_to_rgb(
         random.uniform(0,1),
@@ -218,13 +223,7 @@ for i in range(opt.nb_objects):
         random.uniform(0.7,1)
     )
 
-    obj.get_material().set_base_color(
-        visii.vec3(
-            rgb[0],
-            rgb[1],
-            rgb[2],
-        )
-    )  
+    obj.get_material().set_base_color(rgb)
 
     obj_mat = obj.get_material()
     r = random.randint(0,2)
@@ -276,21 +275,10 @@ for i in range (int(opt.nb_frames)):
 
         # get the visii entity for that object
         obj_entity = visii.entity.get(ids['visii_id'])
-        obj_entity.get_transform().set_position(visii.vec3(
-                                                pos[0],
-                                                pos[1],
-                                                pos[2]
-                                                )
-                                            )
+        obj_entity.get_transform().set_position(pos)
 
         # visii quat expects w as the first argument
-        obj_entity.get_transform().set_rotation(visii.quat(
-                                                rot[3],
-                                                rot[0],
-                                                rot[1],
-                                                rot[2]
-                                                )   
-                                            )
+        obj_entity.get_transform().set_rotation((rot[3],rot[0],rot[1],rot[2]))
     print(f'rendering frame {str(i).zfill(5)}/{str(opt.nb_frames).zfill(5)}')
     visii.render_to_png(
         width=int(opt.width), 

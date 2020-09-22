@@ -841,9 +841,9 @@ vec3 toPolar(vec2 uv)
     return n;
 }
 
-void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness)
+void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float saturation)
 {
-    auto func = [sunPos, skyTint, atmosphereThickness] () {
+    auto func = [sunPos, skyTint, atmosphereThickness, saturation] () {
         /* Generate procedural sky */
         uint32_t width = 1024/2;
         uint32_t height = 512/2;
@@ -852,7 +852,7 @@ void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness)
             for (uint32_t x = 0; x < width; ++x) {
                 glm::vec2 uv = glm::vec2(x / float(width), y / float(height));
                 glm::vec3 dir = toPolar(uv);
-                glm::vec3 c = ProceduralSkybox(glm::vec3(dir.x, -dir.z, dir.y), glm::vec3(sunPos.x, sunPos.z, sunPos.y), skyTint, atmosphereThickness);
+                glm::vec3 c = ProceduralSkybox(glm::vec3(dir.x, -dir.z, dir.y), glm::vec3(sunPos.x, sunPos.z, sunPos.y), skyTint, atmosphereThickness, saturation);
                 texels[x + y * width] = glm::vec4(c.r, c.g, c.b, 1.0f);
             }
         }

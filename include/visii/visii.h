@@ -75,11 +75,13 @@ void setDomeLightColor(glm::vec3 color);
  * @param sky_tint controls the relative color of the sky before Rayleigh scattering.
  * @param atmosphere_thickness effects Rayleigh scattering. Thin atmospheres look more 
  * like space, and thick atmospheres see more Rayleigh scattering.
+ * @param saturation causes the sky to appear more or less "vibrant"
  */ 
 void setDomeLightSky(
     glm::vec3 sun_position, 
     glm::vec3 sky_tint = vec3(.5f, .5f, .5f), 
-    float atmosphere_thickness = 1.0f);
+    float atmosphere_thickness = 1.0f,
+    float saturation = 1.0f);
 
 /** 
  * Sets the texture used to color the dome light (aka the environment). 

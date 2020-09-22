@@ -26,7 +26,8 @@ vec3 ProceduralSkybox(
     vec3 rd, 
     vec3 sunPos, 
     vec3 skyTint = vec3(.5f, .5f, .5f), 
-    float atmosphereThickness = 1.0f
+    float atmosphereThickness = 1.0f,
+    float saturation = 1.0f
 )
 {
     #define OUTER_RADIUS 1.025f
@@ -89,6 +90,13 @@ vec3 ProceduralSkybox(
     cOut = frontColor * kKmESun;
     
     vec3 skyColor = (cIn * (0.75f + 0.75f * dot(normalize(sunPos), -eyeRay) * dot(normalize(sunPos), -eyeRay))); 
+    skyColor = pow(skyColor, vec3(1.0f / 2.2f));
+
+    vec3 W = vec3(0.2125f, 0.7154f, 0.0721f);
+    vec3 intensity = vec3(dot(skyColor, W));
+    skyColor = glm::mix(intensity, skyColor, saturation);
+
+    skyColor = pow(skyColor, vec3(2.2f));
     vec3 color = skyColor;
     return color;
 }
