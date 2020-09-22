@@ -48,7 +48,7 @@ else:
     print(f'created folder {opt.outf}/')
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.initialize_headless()
+visii.initialize(headless=False)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
@@ -67,7 +67,7 @@ camera = visii.entity.create(
 camera.get_transform().look_at(
     at = (0,0,0),
     up = (0,0,1),
-    eye = (10,0,2),
+    eye = (10,0,4),
 )
 visii.set_camera_entity(camera)
 
@@ -84,7 +84,7 @@ p.setTimeStep(seconds_per_step)
 visii.set_dome_light_intensity(1.0)
 
 # atmospheric thickness makes the sky go orange, almost like a sunset
-visii.set_dome_light_sky(sun_position=(10,10,10), atmosphere_thickness=1.0, saturation=3.0)
+visii.set_dome_light_sky(sun_position=(10,10,10), atmosphere_thickness=1.0, saturation=1.0)
 
 # Lets add a sun light
 sun = visii.entity.create(
@@ -94,7 +94,7 @@ sun = visii.entity.create(
     light = visii.light.create("sun")
 )
 sun.get_transform().set_position((10,10,10))
-sun.get_light().set_temperature(5000)
+sun.get_light().set_temperature(5780)
 sun.get_light().set_intensity(1)
 
 floor = visii.entity.create(
@@ -250,16 +250,6 @@ for i in range(opt.nb_objects):
             obj_mat.set_roughness(random.uniform(0,.1)) # default is 1  
         else:
             obj_mat.set_roughness(random.uniform(0.9,1)) # default is 1  
-
-    obj_mat.set_sheen(random.uniform(0,1))  # degault is 0     
-    obj_mat.set_clearcoat(random.uniform(0,1))  # degault is 0     
-    obj_mat.set_specular(random.uniform(0,1))  # degault is 0     
-
-    r = random.randint(0,1)
-    if r == 0:
-        obj_mat.set_anisotropic(random.uniform(0,0.1))  # degault is 0     
-    else:
-        obj_mat.set_anisotropic(random.uniform(0.9,1))  # degault is 0     
 
 # Lets run the simulation for a few steps. 
 for i in range (int(opt.nb_frames)):
