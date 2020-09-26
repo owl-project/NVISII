@@ -11,18 +11,9 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import subprocess
 import sys
 sys.path.insert(0, os.path.abspath('../../install/'))
-
-def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-try:
-    import visii
-except:
-    install("visii")
-    import visii
+sys.path.insert(0, '/usr/local/cuda-10.2/targets/x86_64-linux/lib/stubs/')
 
 # -- Project information -----------------------------------------------------
 

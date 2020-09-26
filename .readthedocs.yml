@@ -17,8 +17,12 @@ sphinx:
 # formats:
 #   - pdf
 
-# # Optionally set the version of Python and requirements required to build your docs
+# Optionally set the version of Python and requirements required to build your docs
 # python:
-#   version: 3.7
+#   version: 3.8
 #   install:
-#     - requirements: docs/requirements.txt
+#     - requirements: docs/source/requirements.txt
+
+conda: 
+  environment: docs/source/environment.yml
+  
