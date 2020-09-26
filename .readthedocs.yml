@@ -23,6 +23,6 @@ sphinx:
 #   install:
 #     - requirements: docs/source/requirements.txt
 
-conda: 
-  environment: docs/source/environment.yml
+# conda: 
+#   environment: docs/source/environment.yml
   
