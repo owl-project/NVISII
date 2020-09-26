@@ -12,21 +12,8 @@
 #
 import os
 import sys
-import subprocess
-
-def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
 sys.path.insert(0, os.path.abspath('../../install/'))
-stub = open("/home/docs/libcuda.so.1", "wb")
-stub.close()
-install("visii")
-
-#print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/"))
-#print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/"))
-#print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/"))
-#print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/lib/"))
-#print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/lib/stubs/"))
 
 # -- Project information -----------------------------------------------------
 
