@@ -13,7 +13,13 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../install/'))
-sys.path.insert(0, '/usr/local/cuda-10.2/targets/x86_64-linux/lib/stubs/')
+sys.path.insert(0, '/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/lib/stubs/')
+
+print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/"))
+print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/"))
+print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/"))
+print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/lib/"))
+print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/lib/stubs/"))
 
 # -- Project information -----------------------------------------------------
 
