@@ -58,15 +58,15 @@ static struct WindowData {
 /* Embedded via cmake */
 extern "C" char ptxCode[];
 
-struct MeshData {
-    OWLBuffer vertices;
-    OWLBuffer colors;
-    OWLBuffer normals;
-    OWLBuffer texCoords;
-    OWLBuffer indices;
-    OWLGeom geom;
-    OWLGroup blas;
-};
+// struct MeshData {
+//     OWLBuffer vertices;
+//     OWLBuffer colors;
+//     OWLBuffer normals;
+//     OWLBuffer texCoords;
+//     OWLBuffer indices;
+//     OWLGeom geom;
+//     OWLGroup blas;
+// };
 
 static struct OptixData {
     OWLContext context;
@@ -104,7 +104,14 @@ static struct OptixData {
     OWLRayGen rayGen;
     OWLMissProg missProg;
     OWLGeomType trianglesGeomType;
-    MeshData meshes[MAX_MESHES];
+
+    OWLBuffer vertexLists[MAX_MESHES];
+    OWLBuffer normalLists[MAX_MESHES];
+    OWLBuffer texCoordLists[MAX_MESHES];
+    OWLBuffer indexLists[MAX_MESHES];
+    OWLGeom geomList[MAX_MESHES];
+    OWLGroup blasList[MAX_MESHES];
+
     OWLGroup tlas = nullptr;
 
     std::vector<uint32_t> lightEntities;
@@ -1052,53 +1059,32 @@ void updateComponents()
         auto mutex = Mesh::getEditMutex();
         std::lock_guard<std::mutex> lock(*mutex.get());
         for (auto &m : dirtyMeshes) {
-            if (OD.meshes[m->getId()].vertices) { owlBufferRelease(OD.meshes[m->getId()].vertices); OD.meshes[m->getId()].vertices = nullptr; }
-            if (OD.meshes[m->getId()].colors) { owlBufferRelease(OD.meshes[m->getId()].colors); OD.meshes[m->getId()].colors = nullptr; }
-            if (OD.meshes[m->getId()].normals) { owlBufferRelease(OD.meshes[m->getId()].normals); OD.meshes[m->getId()].normals = nullptr; }
-            if (OD.meshes[m->getId()].texCoords) { owlBufferRelease(OD.meshes[m->getId()].texCoords); OD.meshes[m->getId()].texCoords = nullptr; }
-            if (OD.meshes[m->getId()].indices) { owlBufferRelease(OD.meshes[m->getId()].indices); OD.meshes[m->getId()].indices = nullptr; }
-            if (OD.meshes[m->getId()].geom) { owlGeomRelease(OD.meshes[m->getId()].geom); OD.meshes[m->getId()].geom = nullptr; }
-            if (OD.meshes[m->getId()].blas) { owlGroupRelease(OD.meshes[m->getId()].blas); OD.meshes[m->getId()].blas = nullptr; }
+            if (OD.vertexLists[m->getId()]) { owlBufferRelease(OD.vertexLists[m->getId()]); OD.vertexLists[m->getId()] = nullptr; }
+            if (OD.normalLists[m->getId()]) { owlBufferRelease(OD.normalLists[m->getId()]); OD.normalLists[m->getId()] = nullptr; }
+            if (OD.texCoordLists[m->getId()]) { owlBufferRelease(OD.texCoordLists[m->getId()]); OD.texCoordLists[m->getId()] = nullptr; }
+            if (OD.indexLists[m->getId()]) { owlBufferRelease(OD.indexLists[m->getId()]); OD.indexLists[m->getId()] = nullptr; }
+            if (OD.geomList[m->getId()]) { owlGeomRelease(OD.geomList[m->getId()]); OD.geomList[m->getId()] = nullptr; }
+            if (OD.blasList[m->getId()]) { owlGroupRelease(OD.blasList[m->getId()]); OD.blasList[m->getId()] = nullptr; }
             if (!m->isInitialized()) continue;
-            if (m->getTriangleIndices().size() == 0) continue;
-            OD.meshes[m->getId()].vertices  = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getVertices().size(), m->getVertices().data());
-            OD.meshes[m->getId()].colors    = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getColors().size(), m->getColors().data());
-            OD.meshes[m->getId()].normals   = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getNormals().size(), m->getNormals().data());
-            OD.meshes[m->getId()].texCoords = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2), m->getTexCoords().size(), m->getTexCoords().data());
-            OD.meshes[m->getId()].indices   = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t), m->getTriangleIndices().size(), m->getTriangleIndices().data());
-            OD.meshes[m->getId()].geom      = geomCreate(OD.context, OD.trianglesGeomType);
-            trianglesSetVertices(OD.meshes[m->getId()].geom, OD.meshes[m->getId()].vertices, m->getVertices().size(), sizeof(vec4), 0);
-            trianglesSetIndices(OD.meshes[m->getId()].geom, OD.meshes[m->getId()].indices, m->getTriangleIndices().size() / 3, sizeof(ivec3), 0);
-            OD.meshes[m->getId()].blas = trianglesGeomGroupCreate(OD.context, 1, &OD.meshes[m->getId()].geom);
-            groupBuildAccel(OD.meshes[m->getId()].blas);          
-        }
-
-
-        // To do: make sparse. Right now iterating over all these pointers, which is a bit pricy CPU side.
-        auto meshes = Mesh::getFront();
-        std::vector<OWLBuffer> vertexLists(Mesh::getCount(), nullptr);
-        std::vector<OWLBuffer> indexLists(Mesh::getCount(), nullptr);
-        std::vector<OWLBuffer> normalLists(Mesh::getCount(), nullptr);
-        std::vector<OWLBuffer> texCoordLists(Mesh::getCount(), nullptr);
-        for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
-            // If a mesh is initialized, vertex and index buffers should already be created, and so 
-            if (!meshes[mid].isInitialized()) continue;
-            if (meshes[mid].getTriangleIndices().size() == 0) continue;
-            if ((!OD.meshes[mid].vertices) || (!OD.meshes[mid].indices)) {
-                // std::cout<<"Mesh ID"<< mid << " is dirty?" << meshes[mid].isDirty() << std::endl;
-                std::cout<<"nverts : " << meshes[mid].getVertices().size() << std::endl;
-                std::cout<<"nindices : " << meshes[mid].getTriangleIndices().size() << std::endl;
-                throw std::runtime_error("ERROR: vertices/indices is nullptr");
+            if (m->getTriangleIndices().size() == 0) {
+                throw std::runtime_error("ERROR: indices is 0");
             }
-            vertexLists[mid] = OD.meshes[mid].vertices;
-            normalLists[mid] = OD.meshes[mid].normals;
-            texCoordLists[mid] = OD.meshes[mid].texCoords;
-            indexLists[mid] = OD.meshes[mid].indices;
+
+            OD.vertexLists[m->getId()]  = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getVertices().size(), m->getVertices().data());
+            OD.normalLists[m->getId()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getNormals().size(), m->getNormals().data());
+            OD.texCoordLists[m->getId()] = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2), m->getTexCoords().size(), m->getTexCoords().data());
+            OD.indexLists[m->getId()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t), m->getTriangleIndices().size(), m->getTriangleIndices().data());
+            OD.geomList[m->getId()]      = geomCreate(OD.context, OD.trianglesGeomType);
+            trianglesSetVertices(OD.geomList[m->getId()], OD.vertexLists[m->getId()], m->getVertices().size(), sizeof(vec4), 0);
+            trianglesSetIndices(OD.geomList[m->getId()], OD.indexLists[m->getId()], m->getTriangleIndices().size() / 3, sizeof(ivec3), 0);
+            OD.blasList[m->getId()] = trianglesGeomGroupCreate(OD.context, 1, &OD.geomList[m->getId()]);
+            groupBuildAccel(OD.blasList[m->getId()]);          
         }
-        bufferUpload(OD.vertexListsBuffer, vertexLists.data());
-        bufferUpload(OD.texCoordListsBuffer, texCoordLists.data());
-        bufferUpload(OD.indexListsBuffer, indexLists.data());
-        bufferUpload(OD.normalListsBuffer, normalLists.data());
+
+        bufferUpload(OD.vertexListsBuffer, OD.vertexLists);
+        bufferUpload(OD.texCoordListsBuffer, OD.texCoordLists);
+        bufferUpload(OD.indexListsBuffer, OD.indexLists);
+        bufferUpload(OD.normalListsBuffer, OD.normalLists);
         Mesh::updateComponents();
         bufferUpload(OptixData.meshBuffer, Mesh::getFrontStruct());
     }    
@@ -1108,8 +1094,6 @@ void updateComponents()
     if (dirtyEntities.size() > 0) {
         auto mutex = Entity::getEditMutex();
         std::lock_guard<std::mutex> lock(*mutex.get());
-
-        Entity::updateComponents();
 
         std::vector<OWLGroup> instances;
         std::vector<glm::mat4> t0InstanceTransforms;
@@ -1123,8 +1107,14 @@ void updateComponents()
             if (!entities[eid].getMesh()) continue;
             if (!entities[eid].getMaterial() && !entities[eid].getLight()) continue;
 
-            OWLGroup blas = OD.meshes[entities[eid].getMesh()->getId()].blas;
-            if (!blas) return;
+            OWLGroup blas = OD.blasList[entities[eid].getMesh()->getId()];
+            if (!blas) {
+                // Not sure why, but the mesh this entity references hasn't been constructed yet.
+                // Mark it as dirty. It should be available in a subsequent frame
+                entities[eid].getMesh()->markDirty();
+                return; 
+                // throw std::runtime_error("ERROR: entity missing BLAS");
+            }
             glm::mat4 prevLocalToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */true);
             glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */false);
             t0InstanceTransforms.push_back(prevLocalToWorld);            
@@ -1184,6 +1174,7 @@ void updateComponents()
         OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
         launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
 
+        Entity::updateComponents();
         bufferUpload(OptixData.entityBuffer,    Entity::getFrontStruct());
     }
 

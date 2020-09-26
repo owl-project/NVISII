@@ -234,7 +234,6 @@ void Mesh::computeMetadata()
 	}
 
 	this->meshStructs[id].numTris = uint32_t(triangleIndices.size()) / 3;
-	markDirty();
 }
 
 // void Mesh::save_tetrahedralization(float quality_bound, float maximum_volume)
@@ -399,7 +398,7 @@ void Mesh::updateComponents()
 	if (dirtyMeshes.size() == 0) return;
 	for (auto &m : dirtyMeshes) {
 		if (!m->isInitialized()) continue;
-		m->computeMetadata();
+		// m->computeMetadata();
 	}
 	dirtyMeshes.clear();
 } 
@@ -666,7 +665,6 @@ void Mesh::loadObj(std::string objPath)
 	}
 
 	computeMetadata();
-	markDirty();
 }
 
 
@@ -1137,7 +1135,6 @@ void Mesh::loadData(
 	}
 
 	computeMetadata();
-	markDirty();
 }
 
 // void Mesh::edit_position(uint32_t index, glm::vec4 new_position)
@@ -2259,8 +2256,8 @@ Mesh* Mesh::createWireframeBoundingBox(
 Mesh* Mesh::createFromObj(std::string name, std::string path)
 {
 	auto create = [path] (Mesh* mesh) {
-		dirtyMeshes.insert(mesh);
 		mesh->loadObj(path);
+		dirtyMeshes.insert(mesh);
 	};
 	
 	try {
@@ -2323,9 +2320,9 @@ Mesh* Mesh::createFromData(
 				   &colors_, color_dimensions, &texcoords_, texcoord_dimensions, &indices_] 
 				   (Mesh* mesh) 
 	{
-		dirtyMeshes.insert(mesh);
 		mesh->loadData(positions_, position_dimensions, normals_, normal_dimensions, 
 			colors_, color_dimensions, texcoords_, texcoord_dimensions, indices_);
+		dirtyMeshes.insert(mesh);
 	};
 	
 	try {

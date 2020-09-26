@@ -336,6 +336,7 @@ Entity* Entity::create(
 		if (camera) entity->setCamera(camera);
 		if (mesh) entity->setMesh(mesh);
 		if (light) entity->setLight(light);
+		dirtyEntities.insert(entity);
 	};
 	try {
 		return StaticFactory::create<Entity>(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES, createEntity);
