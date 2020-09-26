@@ -13,9 +13,15 @@
 import os
 import sys
 import subprocess
+
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
 sys.path.insert(0, os.path.abspath('../../install/'))
-subprocess.run('wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin; mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600; apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub; add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"; apt-get update; apt-get --no-install-recommends -y install cuda-toolkit-10-2', shell=True)
-sys.path.insert(0, '/usr/local/cuda/lib64/stubs/')
+stub = open("/home/docs/libcuda.so.1", "rb")
+stub.close()
+sys.path.insert(0, '/home/docs/')
+install("visii")
 
 #print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/"))
 #print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/"))
