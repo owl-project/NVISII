@@ -20,7 +20,7 @@ def install(package):
 
 try:
     import visii
-except ImportError:
+except:
     install("visii")
     import visii
 
