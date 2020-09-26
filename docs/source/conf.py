@@ -18,7 +18,7 @@ def install(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
 sys.path.insert(0, os.path.abspath('../../install/'))
-stub = open("/home/docs/libcuda.so.1", "rb")
+stub = open("/home/docs/libcuda.so.1", "wb")
 stub.close()
 sys.path.insert(0, '/home/docs/')
 install("visii")
