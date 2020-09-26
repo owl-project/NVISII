@@ -12,14 +12,16 @@
 #
 import os
 import sys
+import subprocess
 sys.path.insert(0, os.path.abspath('../../install/'))
-sys.path.insert(0, '/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/lib/stubs/')
+subprocess.run('wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin; sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600; sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub; sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"; sudo apt-get update; sudo apt-get --no-install-recommends -y install cuda-toolkit-10-2')
+sys.path.insert(0, '/usr/local/cuda/lib64/stubs/')
 
-print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/"))
-print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/"))
-print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/"))
-print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/lib/"))
-print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/lib/stubs/"))
+#print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/"))
+#print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/"))
+#print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/"))
+#print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/lib/"))
+#print(os.listdir("/home/docs/checkouts/readthedocs.org/user_builds/visii/conda/latest/pkgs/cuda-toolkit/lib/stubs/"))
 
 # -- Project information -----------------------------------------------------
 
