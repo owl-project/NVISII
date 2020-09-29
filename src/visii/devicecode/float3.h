@@ -86,7 +86,7 @@ __device__ float3 normalize(const float3 &v) {
 	if (l < 0.f) {
 		l = 0.0001f;
 	}
-	const float c = 1.f / length(v);
+	const float c = __frsqrt_rn(v.x * v.x + v.y * v.y + v.z * v.z);  //1.f / length(v);
 	return make_float3(v.x * c, v.y * c, v.z * c);
 }
 
