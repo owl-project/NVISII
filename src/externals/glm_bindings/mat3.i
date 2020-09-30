@@ -31,6 +31,40 @@
   }
 }
 
+%typemap(in) glm::mat3 const & (void *argp = 0, int res = 0, glm::mat3 tmp) {
+  int res = SWIG_ConvertPtr($input, &argp, $descriptor(glm::mat3*), $disown | 0);
+  if (!SWIG_IsOK(res)) 
+  { 
+    if (!PySequence_Check($input)) {
+      PyErr_SetString(PyExc_ValueError, "in method '" "$symname" "', argument " "$argnum" " Expected either a sequence or mat3");
+      return NULL;
+    }
+
+    if (PySequence_Length($input) != 9) {
+      PyErr_SetString(PyExc_ValueError,"in method '" "$symname" "', argument " "$argnum" " Size mismatch. Expected 9 elements");
+      return NULL;
+    }
+
+    float vals[9];
+    for (int i = 0; i < 9; i++) {
+      PyObject *o = PySequence_GetItem($input,i);
+      if (PyNumber_Check(o)) {
+        vals[i] = (float) PyFloat_AsDouble(o);
+      } else {
+        PyErr_SetString(PyExc_ValueError,"in method '" "$symname" "', argument " "$argnum" " Sequence elements must be numbers");      
+        return NULL;
+      }
+    }
+    tmp = glm::make_mat3(vals);
+    $1 = &tmp;
+  }   
+  else {
+    glm::mat3 * temp = reinterpret_cast< glm::mat3 * >(argp);
+    $1 = temp;
+    if (SWIG_IsNewObj(res)) delete temp;
+  }
+}
+
 struct mat3 {
 
     static length_t length();
