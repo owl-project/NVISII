@@ -102,6 +102,7 @@ namespace Libraries {
         glfwWindowHint(GLFW_DECORATED, (decorated) ? GLFW_TRUE : GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, (resizable) ? GLFW_TRUE : GLFW_FALSE);
         glfwWindowHint(GLFW_FLOATING, (floating) ? GLFW_TRUE : GLFW_FALSE);
+        glfwWindowHint( GLFW_DOUBLEBUFFER, GL_FALSE );
 
         Window window = {};
         auto ptr = glfwCreateWindow(width, height, key.c_str(), NULL, NULL);
@@ -134,6 +135,7 @@ namespace Libraries {
         
         auto window = Windows()[key];
         glfwMakeContextCurrent(window.ptr);
+        glfwSwapInterval( 0 );
 
         if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
         {
@@ -155,6 +157,7 @@ namespace Libraries {
             throw std::runtime_error( std::string("Error: window does not exist, cannot make context current."));
         
         auto window = Windows()[key];
+        glFlush();
         glfwSwapBuffers(window.ptr);
     }
 

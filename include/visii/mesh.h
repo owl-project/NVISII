@@ -10,6 +10,7 @@
 #include <iostream>
 #include <map>
 #include <mutex>
+#include <array>
 
 /* External includes */
 #include <glm/glm.hpp>
@@ -857,7 +858,7 @@ class Mesh : public StaticFactory
         static std::map<std::string, uint32_t> lookupTable;
 
         // /* Lists of per vertex data. These might not match GPU memory if editing is disabled. */
-        std::vector<glm::vec4> positions;
+        std::vector<std::array<float, 3>> positions;
         std::vector<glm::vec4> normals;
         std::vector<glm::vec4> colors;
         std::vector<glm::vec2> texCoords;
@@ -958,7 +959,8 @@ class Mesh : public StaticFactory
             auto genVerts = mesh.vertices();
             while (!genVerts.done()) {
                 auto vertex = genVerts.generate();
-                positions.push_back(glm::vec4(vertex.position.x, vertex.position.y, vertex.position.z, 1.0f));
+                std::array<float, 3> p = {vertex.position.x, vertex.position.y, vertex.position.z};
+                positions.push_back(p);
                 if (flip_z)
                     normals.push_back(glm::vec4(-vertex.normal.x, -vertex.normal.y, -vertex.normal.z, 0.0f));
                 else

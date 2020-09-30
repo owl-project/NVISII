@@ -162,11 +162,7 @@ void Mesh::markDirty() {
 // }
 
 std::vector<std::array<float, 3>> Mesh::getVertices() {
-	std::vector<std::array<float, 3>> verts(positions.size());
-	for (size_t i = 0; i < positions.size(); ++i) {
-		verts[i] = {positions[i][0], positions[i][1], positions[i][2]};
-	}
-	return verts;
+	return positions;
 }
 
 std::vector<glm::vec4> Mesh::getColors() {
@@ -247,10 +243,11 @@ void Mesh::computeMetadata()
 	meshStructs[id].bbmax.w = 0.f;
 	meshStructs[id].bbmin.w = 0.f;
 	for (int i = 0; i < positions.size(); i += 1)
-	{
-		s += glm::vec4(positions[i].x, positions[i].y, positions[i].z, 0.0f);
-		meshStructs[id].bbmin = glm::vec4(glm::min(glm::vec3(positions[i]), glm::vec3(meshStructs[id].bbmin)), 0.0);
-		meshStructs[id].bbmax = glm::vec4(glm::max(glm::vec3(positions[i]), glm::vec3(meshStructs[id].bbmax)), 0.0);
+	{	
+		auto p = glm::vec3(positions[i][0], positions[i][1], positions[i][2]);
+		s += glm::vec4(p[0], p[1], p[2], 0.0f);
+		meshStructs[id].bbmin = glm::vec4(glm::min(p, glm::vec3(meshStructs[id].bbmin)), 0.0);
+		meshStructs[id].bbmax = glm::vec4(glm::max(p, glm::vec3(meshStructs[id].bbmax)), 0.0);
 	}
 	s /= (float)positions.size();
 	meshStructs[id].center = s;
@@ -258,8 +255,9 @@ void Mesh::computeMetadata()
 	// Bounding Sphere
 	meshStructs[id].bounding_sphere_radius = 0.0;
 	for (int i = 0; i < positions.size(); i += 1) {
+		glm::vec3 p = glm::vec3(positions[i][0], positions[i][1], positions[i][2]);
 		meshStructs[id].bounding_sphere_radius = std::max(meshStructs[id].bounding_sphere_radius, 
-			glm::distance(glm::vec4(positions[i].x, positions[i].y, positions[i].z, 0.0f), meshStructs[id].center));
+			glm::distance(glm::vec4(p.x, p.y, p.z, 0.0f), meshStructs[id].center));
 	}
 
 	this->meshStructs[id].numTris = uint32_t(triangleIndices.size()) / 3;
@@ -683,7 +681,7 @@ void Mesh::loadObj(std::string objPath)
 	for (int i = 0; i < uniqueVertices.size(); ++i)
 	{
 		Vertex v = uniqueVertices[i];
-		positions.push_back(v.point);
+		positions.push_back({v.point.x, v.point.y, v.point.z});
 		colors.push_back(v.color);
 		normals.push_back(v.normal);
 		texCoords.push_back(v.texcoord);
@@ -1153,7 +1151,7 @@ void Mesh::loadData(
 	for (int i = 0; i < uniqueVertices.size(); ++i)
 	{
 		Vertex v = uniqueVertices[i];
-		this->positions[i] = v.point;
+		this->positions[i] = {v.point.x, v.point.y, v.point.z};
 		this->colors[i] = v.color;
 		this->normals[i] = v.normal;
 		this->texCoords[i] = v.texcoord;
@@ -1265,9 +1263,9 @@ void Mesh::generateSmoothNormals()
 		uint32_t i3 = triangleIndices[f + 2];
 
 		// p1, p2 and p3 are the positions in the face (f)
-		auto p1 = glm::vec3(positions[i1]);
-		auto p2 = glm::vec3(positions[i2]);
-		auto p3 = glm::vec3(positions[i3]);
+		auto p1 = glm::vec3(positions[i1][0], positions[i1][1], positions[i1][2]);
+		auto p2 = glm::vec3(positions[i2][0], positions[i2][1], positions[i2][2]);
+		auto p3 = glm::vec3(positions[i3][0], positions[i3][1], positions[i3][2]);
 
 		// calculate facet normal of the triangle  using cross product;
 		// both components are "normalized" against a common point chosen as the base
@@ -2264,7 +2262,7 @@ Mesh* Mesh::createWireframeBoundingBox(
 		}
 
 		for (auto &v : vertices) {
-			mesh->positions.push_back(v.point);
+			mesh->positions.push_back({v.point.x, v.point.y, v.point.z});
 			mesh->colors.push_back(v.color);
 			mesh->normals.push_back(v.normal);
 			mesh->texCoords.push_back(v.texcoord);
