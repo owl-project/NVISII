@@ -97,6 +97,8 @@ import_array();
 %feature("autodoc", "");
 
 %{
+#include <vector>
+#include <array>
 #include "visii/visii.h"
 #include "visii/camera.h"
 #include "visii/entity.h"
@@ -108,9 +110,15 @@ import_array();
 %}
 
 /* STD Vectors */
+%include "std_array.i"
 %include "std_vector.i"
 namespace std {
+  %template(Float3) array<float, 3>;
+  %template(Float4) std::array<float, 4>;
+
   %template(FloatVector) vector<float>;
+  %template(Float3Vector) vector<array<float, 3>>;
+  %template(Float4Vector) vector<array<float, 4>>;
   %template(UINT32Vector) vector<uint32_t>;
   %template(StringVector) vector<string>;
   %template(EntityVector) vector<Entity*>;

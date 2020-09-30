@@ -190,10 +190,10 @@ __device__
 void loadMeshVertexData(int meshID, int3 indices, float2 barycentrics, float3 &position, float3 &geometricNormal, float3 &edge1, float3 &edge2)
 {
     owl::device::Buffer *vertexLists = (owl::device::Buffer *)optixLaunchParams.vertexLists.data;
-    float4 *vertices = (float4*) vertexLists[meshID].data;
-    const float3 A = make_float3(vertices[indices.x]);
-    const float3 B = make_float3(vertices[indices.y]);
-    const float3 C = make_float3(vertices[indices.z]);
+    float3 *vertices = (float3*) vertexLists[meshID].data;
+    const float3 A = vertices[indices.x];
+    const float3 B = vertices[indices.y];
+    const float3 C = vertices[indices.z];
     edge1 = B - A;
     edge2 = C - A;
     position = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
@@ -742,7 +742,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
                 owl::device::Buffer *indexLists = (owl::device::Buffer *)optixLaunchParams.indexLists.data;
                 ivec3 *indices = (ivec3*) indexLists[light_entity.mesh_id].data;
-                vec4 *vertices = (vec4*) vertexLists[light_entity.mesh_id].data;
+                float3 *vertices = (float3*) vertexLists[light_entity.mesh_id].data;
                 vec4 *normals = (vec4*) normalLists[light_entity.mesh_id].data;
                 vec2 *texCoords = (vec2*) texCoordLists[light_entity.mesh_id].data;
                 ivec3 triIndex = indices[random_tri_id];   
@@ -753,7 +753,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
                 sampleTriangle(pos, 
                     ltw * normals[triIndex.x], ltw * normals[triIndex.y], ltw * normals[triIndex.z], 
-                    ltw * vertices[triIndex.x], ltw * vertices[triIndex.y], ltw * vertices[triIndex.z], // Might be a bug here with normal transform...
+                    ltw * make_vec4(vertices[triIndex.x], 1.0f), ltw * make_vec4(vertices[triIndex.y], 1.0f), ltw * make_vec4(vertices[triIndex.z], 1.0f), // Might be a bug here with normal transform...
                     texCoords[triIndex.x], texCoords[triIndex.y], texCoords[triIndex.z], 
                     lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
                 vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);

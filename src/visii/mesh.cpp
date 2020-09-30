@@ -136,8 +136,37 @@ void Mesh::markDirty() {
 	}
 };
 
-std::vector<glm::vec4> Mesh::getVertices() {
-	return positions;
+// std::vector<float> Mesh::getVertices(uint32_t vertex_dimensions) {
+
+// 	std::array<float, 4> test;
+// 	std::cout<<sizeof(test)<<std::endl;
+// 	if ((vertex_dimensions != 3) && (vertex_dimensions != 4)) {
+// 		throw std::runtime_error("Error, vertex dimensions must be either 3 or 4");
+// 	}
+
+// 	if (vertex_dimensions == 4) {
+// 		std::vector<float> verts(positions.size() * 4);
+// 		memcpy(verts.data(), positions.data(), positions.size() * 4 * sizeof(float));
+// 		return verts;
+// 	}
+
+// 	if (vertex_dimensions == 3) {
+// 		std::vector<float> verts(positions.size() * 3);
+// 		for (size_t i = 0; i < positions.size(); ++i) {
+// 			verts[i * 3 + 0] = positions[i][0];
+// 			verts[i * 3 + 1] = positions[i][1];
+// 			verts[i * 3 + 2] = positions[i][2];
+// 		}
+// 		return verts;
+// 	}
+// }
+
+std::vector<std::array<float, 3>> Mesh::getVertices() {
+	std::vector<std::array<float, 3>> verts(positions.size());
+	for (size_t i = 0; i < positions.size(); ++i) {
+		verts[i] = {positions[i][0], positions[i][1], positions[i][2]};
+	}
+	return verts;
 }
 
 std::vector<glm::vec4> Mesh::getColors() {

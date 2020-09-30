@@ -6,6 +6,7 @@ import colorsys
 import subprocess 
 import math
 import pybullet as p 
+import numpy as np
 
 parser = argparse.ArgumentParser()
 
@@ -72,11 +73,11 @@ camera.get_transform().look_at(
 visii.set_camera_entity(camera)
 
 # ISetup bullet physics stuff
-seconds_per_step = .01
+seconds_per_step = 1.0 / 240.0
 frames_per_second = 30.0
-physicsClient = p.connect(p.DIRECT) # non-graphical version
+physicsClient = p.connect(p.GUI) # non-graphical version
 p.setGravity(0,0,-10)
-p.setTimeStep(seconds_per_step)
+# p.setTimeStep(seconds_per_step)
 
 # Lets set the scene
 
@@ -95,7 +96,7 @@ sun = visii.entity.create(
 )
 sun.get_transform().set_position((10,10,10))
 sun.get_light().set_temperature(5780)
-sun.get_light().set_intensity(1)
+sun.get_light().set_intensity(1000)
 
 floor = visii.entity.create(
     name="floor",
@@ -115,10 +116,7 @@ floor.get_material().set_base_color((0.5,0.5,0.5))
 
 # Set the collision with the floor mesh
 # first lets get the vertices 
-vertices = []
-
-for v in floor.get_mesh().get_vertices():
-    vertices.append([v[0],v[1],v[2]])
+vertices = floor.get_mesh().get_vertices()
 
 # get the position of the object
 pos = floor.get_transform().get_position()
@@ -149,9 +147,7 @@ mesh = visii.mesh.create_teapotahedron('mesh')
 
 # set up for pybullet - here we will use indices for 
 # objects with holes 
-vertices = []
-for v in mesh.get_vertices():
-    vertices.append([float(v[0]),float(v[1]),float(v[2])])
+vertices = mesh.get_vertices()
 indices = list(mesh.get_triangle_indices())
 
 ids_pybullet_and_visii_names = []
@@ -171,12 +167,12 @@ for i in range(opt.nb_objects):
         random.uniform(-4,4),
         random.uniform(2,5)
     )
-    rot = visii.quat(
+    rot = visii.normalize(visii.quat(
         random.uniform(-1,1),
         random.uniform(-1,1),
         random.uniform(-1,1),
         random.uniform(-1,1),
-    )
+    ))
     scale = visii.vec3(
         random.uniform(0.2,0.5),
     )
@@ -253,7 +249,8 @@ for i in range(opt.nb_objects):
 
 # Lets run the simulation for a few steps. 
 for i in range (int(opt.nb_frames)):
-    steps_per_frame = math.ceil( (1.0 / seconds_per_step) / frames_per_second)
+    steps_per_frame = math.ceil( 1.0 / (seconds_per_step * frames_per_second) )
+    print(steps_per_frame)
     for j in range(steps_per_frame):
         p.stepSimulation()
 
@@ -268,7 +265,7 @@ for i in range (int(opt.nb_frames)):
         obj_entity.get_transform().set_position(pos)
 
         # visii quat expects w as the first argument
-        obj_entity.get_transform().set_rotation((rot[3],rot[0],rot[1],rot[2]))
+        obj_entity.get_transform().set_rotation(rot)
     print(f'rendering frame {str(i).zfill(5)}/{str(opt.nb_frames).zfill(5)}')
     visii.render_to_png(
         width=int(opt.width), 

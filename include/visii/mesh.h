@@ -704,8 +704,13 @@ class Mesh : public StaticFactory
         /** @returns a json string representation of the current component */
         std::string toString();
         
-        /** @returns a list of per vertex positions */
-        std::vector<glm::vec4> getVertices();
+        /** 
+         * @param vertex_dimensions The number of floats per vertex to return. Valid numbers are 3 or 4.
+         * @returns a list of per vertex positions 
+         */
+        // std::vector<float> getVertices(uint32_t vertex_dimensions = 3);
+        
+        std::vector<std::array<float, 3>> getVertices();
 
         /** @returns a list of per vertex colors */
         std::vector<glm::vec4> getColors();

@@ -1070,12 +1070,12 @@ void updateComponents()
                 throw std::runtime_error("ERROR: indices is 0");
             }
 
-            OD.vertexLists[m->getId()]  = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getVertices().size(), m->getVertices().data());
+            OD.vertexLists[m->getId()]  = deviceBufferCreate(OD.context, OWL_FLOAT3, m->getVertices().size(), m->getVertices().data());
             OD.normalLists[m->getId()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getNormals().size(), m->getNormals().data());
             OD.texCoordLists[m->getId()] = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2), m->getTexCoords().size(), m->getTexCoords().data());
             OD.indexLists[m->getId()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t), m->getTriangleIndices().size(), m->getTriangleIndices().data());
             OD.geomList[m->getId()]      = geomCreate(OD.context, OD.trianglesGeomType);
-            trianglesSetVertices(OD.geomList[m->getId()], OD.vertexLists[m->getId()], m->getVertices().size(), sizeof(vec4), 0);
+            trianglesSetVertices(OD.geomList[m->getId()], OD.vertexLists[m->getId()], m->getVertices().size(), sizeof(std::array<float, 3>), 0);
             trianglesSetIndices(OD.geomList[m->getId()], OD.indexLists[m->getId()], m->getTriangleIndices().size() / 3, sizeof(ivec3), 0);
             OD.blasList[m->getId()] = trianglesGeomGroupCreate(OD.context, 1, &OD.geomList[m->getId()]);
             groupBuildAccel(OD.blasList[m->getId()]);          
