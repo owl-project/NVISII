@@ -1,7 +1,4 @@
 // glm::vec4 bindings
-// 2018 Dan Wilcox <danomatika@gmail.com>
-
-// ----- detail/type_vec4.hpp -----
 %typemap(in) glm::vec4 (void *argp = 0, int res = 0) {
   int res = SWIG_ConvertPtr($input, &argp, $descriptor(glm::vec4*), $disown | 0);
   if (!SWIG_IsOK(res)) 

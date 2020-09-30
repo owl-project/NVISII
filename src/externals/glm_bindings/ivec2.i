@@ -1,5 +1,4 @@
 // glm::ivec2 bindings
-// 2018 Dan Wilcox <danomatika@gmail.com>
 %typemap(in) glm::ivec2 (void *argp = 0, int res = 0) {
   int res = SWIG_ConvertPtr($input, &argp, $descriptor(glm::ivec2*), $disown | 0);
   if (!SWIG_IsOK(res)) 

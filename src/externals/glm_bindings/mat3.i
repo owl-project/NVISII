@@ -1,7 +1,3 @@
-// glm::mat3 bindings
-// 2018 Dan Wilcox <danomatika@gmail.com>
-
-// ----- detail/type_mat3.hpp -----
 %typemap(in) glm::mat3 (void *argp = 0, int res = 0) {
   int res = SWIG_ConvertPtr($input, &argp, $descriptor(glm::mat3*), $disown | 0);
   if (!SWIG_IsOK(res)) 
@@ -74,18 +70,11 @@ bool operator!=(mat3 const & m1, mat3 const & m2);
 
     // [] getter
     // out of bounds throws a string, which causes a Lua error
-    vec3 __getitem__(int i) throw (std::out_of_range) {
-        #ifdef SWIGLUA
-            if(i < 1 || i > $self->length()) {
-                throw std::out_of_range("in glm::mat3::__getitem__()");
-            }
-            return (*$self)[i-1];
-        #else
-            if(i < 0 || i >= $self->length()) {
-                throw std::out_of_range("in glm::mat3::__getitem__()");
-            }
-            return (*$self)[i];
-        #endif
+    vec3 &__getitem__(int i) throw (std::out_of_range) {
+        if(i < 0 || i >= $self->length()) {
+            throw std::out_of_range("in glm::mat3::__getitem__()");
+        }
+        return (*$self)[i];
     }
 
     // [] setter

@@ -1,7 +1,5 @@
 // glm::mat4 bindings
-// 2018 Dan Wilcox <danomatika@gmail.com>
 
-// ----- detail/type_mat4hpp -----
 %typemap(in) glm::mat4 (void *argp = 0, int res = 0) {
   int res = SWIG_ConvertPtr($input, &argp, $descriptor(glm::mat4*), $disown | 0);
   if (!SWIG_IsOK(res)) 
@@ -75,34 +73,20 @@ bool operator!=(mat4 const & m1, mat4 const & m2);
 
     // [] getter
     // out of bounds throws a string, which causes a Lua error
-    vec4 __getitem__(int i) throw (std::out_of_range) {
-        #ifdef SWIGLUA
-            if(i < 1 || i > $self->length()) {
-                throw std::out_of_range("in glm::mat4::__getitem__()");
-            }
-            return (*$self)[i-1];
-        #else
-            if(i < 0 || i >= $self->length()) {
-                throw std::out_of_range("in glm::mat4::__getitem__()");
-            }
-            return (*$self)[i];
-        #endif
+    vec4& __getitem__(int i) throw (std::out_of_range) {
+        if(i < 0 || i >= $self->length()) {
+            throw std::out_of_range("in glm::mat4::__getitem__()");
+        }
+        return (*$self)[i];
     }
 
     // [] setter
     // out of bounds throws a string, which causes a Lua error
     void __setitem__(int i, vec4 v) throw (std::out_of_range) {
-        #ifdef SWIGLUA
-            if(i < 1 || i > $self->length()) {
-                throw std::out_of_range("in glm::mat4::__setitem__()");
-            }
-            (*$self)[i-1] = v;
-        #else
-            if(i < 0 || i >= $self->length()) {
-                throw std::out_of_range("in glm::mat4::__setitem__()");
-            }
-            (*$self)[i] = v;
-        #endif
+        if(i < 0 || i >= $self->length()) {
+            throw std::out_of_range("in glm::mat4::__setitem__()");
+        }
+        (*$self)[i] = v;
     }
 
     // tostring operator
