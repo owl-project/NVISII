@@ -148,7 +148,7 @@ mesh = visii.mesh.create_teapotahedron('mesh')
 # set up for pybullet - here we will use indices for 
 # objects with holes 
 vertices = mesh.get_vertices()
-indices = list(mesh.get_triangle_indices())
+indices = mesh.get_triangle_indices()
 
 ids_pybullet_and_visii_names = []
 

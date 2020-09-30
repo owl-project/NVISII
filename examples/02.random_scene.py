@@ -80,30 +80,24 @@ def add_random_obj(name = "name"):
     mesh = visii.mesh.get(f'mesh_{obj_id}')
     obj.set_mesh(mesh)
 
-    obj.get_transform().set_position(
-        visii.vec3(
-            random.uniform(-5,5),
-            random.uniform(-5,5),
-            random.uniform(-10,3)
-        )
-    )
+    obj.get_transform().set_position((
+        random.uniform(-5,5),
+        random.uniform(-5,5),
+        random.uniform(-10,3)
+    ))
 
-    obj.get_transform().set_rotation(
-        visii.quat(
-            random.uniform(0,1),
-            random.uniform(0,1),
-            random.uniform(0,1),
-            random.uniform(0,1)
-        )
-    )
+    obj.get_transform().set_rotation((
+        random.uniform(0,1),
+        random.uniform(0,1),
+        random.uniform(0,1),
+        random.uniform(0,1)
+    ))
 
-    obj.get_transform().set_scale(
-        visii.vec3(
-            random.uniform(0.15,0.2),
-            random.uniform(0.15,0.2),
-            random.uniform(0.15,0.2)
-        )
-    )  
+    obj.get_transform().set_scale((
+        random.uniform(0.15,0.2),
+        random.uniform(0.15,0.2),
+        random.uniform(0.15,0.2)
+    ))  
 
     rgb = colorsys.hsv_to_rgb(
         random.uniform(0,1),
@@ -111,13 +105,7 @@ def add_random_obj(name = "name"):
         random.uniform(0.7,1)
     )
 
-    obj.get_material().set_base_color(
-        visii.vec3(
-            rgb[0],
-            rgb[1],
-            rgb[2],
-        )
-    )  
+    obj.get_material().set_base_color(rgb)
 
     obj_mat = obj.get_material()
     r = random.randint(0,2)
@@ -159,8 +147,8 @@ def add_random_obj(name = "name"):
 # create a random scene, the values are hard coded in the function defines the values
 for i in range(NB_OBJS):
     add_random_obj(str(i))
-    mn = visii.get_scene_min_aabb_corner()
-    mx = visii.get_scene_max_aabb_corner()
+    print("\rcreating random object", i, end="")
+print(" - done!")
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.render_to_png(
