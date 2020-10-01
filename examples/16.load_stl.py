@@ -1,3 +1,11 @@
+import sys, os, math, colorsys
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+import sys, os, math, colorsys
+os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
+sys.path.append(os.path.join(os.getcwd(), "..", "install"))
+
+
+
 import visii
 import argparse
 
@@ -32,7 +40,7 @@ parser.add_argument('--out',
 opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize_headless()
+visii.initialize(headless = True, verbose = True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
@@ -48,9 +56,9 @@ camera = visii.entity.create(
 )
 
 camera.get_transform().look_at(
-    visii.vec3(0,0,0), # look at (world coordinate)
-    visii.vec3(0,0,1), # up vector
-    visii.vec3(0.2,0.2,0.2), # camera_origin    
+    at = (0,0,0),
+    up = (0,0,1),
+    eye = (0.2,0.2,0.2),
 )
 visii.set_camera_entity(camera)
 
@@ -79,14 +87,12 @@ obj_entity = visii.entity.create(
     name="obj_entity",
     mesh = mesh,
     transform = visii.transform.create("obj_entity",
-        scale=visii.vec3(0.3)
+        scale=(0.3, 0.3, 0.3)
     ),
     material = visii.material.create("obj_entity")
 )
 
-obj_entity.get_material().set_base_color(
-    visii.vec3(0.9,0.12,0.08)
-)  
+obj_entity.get_material().set_base_color((0.9,0.12,0.08))  
 obj_entity.get_material().set_roughness(0.7)   
 obj_entity.get_material().set_specular(1)   
 obj_entity.get_material().set_sheen(1)

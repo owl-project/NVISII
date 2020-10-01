@@ -1,9 +1,3 @@
-import sys, os, math, colorsys
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-import sys, os, math, colorsys
-os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
-sys.path.append(os.path.join(os.getcwd(), "..", "install"))
-
 import os 
 import visii
 import random

@@ -30,8 +30,6 @@ opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize_interactive()
-visii.resize_window(1000,1000)
-visii.set_max_bounce_depth(50)
 visii.set_dome_light_intensity(.8)
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -133,8 +131,8 @@ sdb = visii.import_obj(
 hl = visii.light.create("headlights")
 tl = visii.light.create("taillights")
 tl.set_color(visii.vec3(1,0,0))
-hl.set_intensity(10000)
-tl.set_intensity(10000)
+hl.set_intensity(1000)
+tl.set_intensity(1000)
 
 for i_s, s in enumerate(sdb):
     # print(s.get_name())

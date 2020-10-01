@@ -29,7 +29,7 @@ parser.add_argument('--out',
 opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize_headless()
+visii.initialize(headless = True, verbose = True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
@@ -45,9 +45,9 @@ camera = visii.entity.create(
 )
 
 camera.get_transform().look_at(
-    visii.vec3(0,0,0), # look at (world coordinate)
-    visii.vec3(0,0,1), # up vector
-    visii.vec3(0,0,3), # camera_origin    
+    at = (0,0,0),
+    up = (0,0,1),
+    eye = (0,0,3),
 )
 visii.set_camera_entity(camera)
 
@@ -64,19 +64,15 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light')
 )
-obj_entity.get_light().set_intensity(10000)
+obj_entity.get_light().set_intensity(10)
 
 obj_entity.get_light().set_temperature(5000)
 
-obj_entity.get_transform().set_scale(
-    visii.vec3(0.2)
-)
-obj_entity.get_transform().set_position(
-    visii.vec3(1,0,2)
-)
+obj_entity.get_transform().set_scale((0.2, 0.2, 0.2))
+obj_entity.get_transform().set_position((1,0,2))
 obj_entity.get_transform().look_at(
-    at =  visii.vec3(0,0,0), # look at (world coordinate)
-    up = visii.vec3(0,0,1), # up vector
+    at = (0,0,0),
+    up = (0,0,1),
 )
 obj_entity.get_transform().add_rotation(visii.quat(0,0,1,0))
 
@@ -110,18 +106,11 @@ mat.set_roughness_texture(rough_tex)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 visii.render_to_png(
     width=int(opt.width), 
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
     image_path=f"{opt.out}"
-)
-visii.render_to_hdr(
-    width=int(opt.width), 
-    height=int(opt.height), 
-    samples_per_pixel=int(opt.spp),
-    image_path=f"{(opt.out).replace('png', 'hdr')}"
 )
 
 # let's clean up the GPU

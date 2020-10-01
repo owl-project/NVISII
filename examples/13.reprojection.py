@@ -39,7 +39,7 @@ else:
     print(f'created folder {opt.outf}/')
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize_headless()
+visii.initialize(headless=False, verbose=True)
 
 camera = visii.entity.create(
     name = "camera",
@@ -51,19 +51,20 @@ camera = visii.entity.create(
     )
 )
 
+# Add some motion to the camera
 angle = 0
 camera.get_transform().look_at(
-    visii.vec3(0,0,.1), # look at (world coordinate)
-    visii.vec3(0,0,1), # up vector
-    visii.vec3(math.sin(angle), math.cos(angle),.2),
+    at = (0,0,.1),
+    up = (0,0,1),
+    eye = (math.sin(angle), math.cos(angle),.2),
     previous = True
 )
 
 angle = -visii.pi() * .05
 camera.get_transform().look_at(
-    visii.vec3(0,0,.1), # look at (world coordinate)
-    visii.vec3(0,0,1), # up vector
-    visii.vec3(math.sin(angle), math.cos(angle),.2),
+    at = (0,0,.1),
+    up = (0,0,1),
+    eye = (math.sin(angle), math.cos(angle),.2),
     previous = False
 )
 
@@ -88,27 +89,26 @@ mesh1 = visii.entity.create(
 )
 
 mesh1.get_material().set_roughness(1.0)
-mesh1.get_material().set_base_color(
-    visii.vec3(1.0, 0.0, 0.0))
+mesh1.get_material().set_base_color((1.0, 0.0, 0.0))
 
-mesh1.get_transform().set_position(visii.vec3(-0.05, 0.0, 0), previous=True)
-mesh1.get_transform().set_scale(visii.vec3(0.1), previous = False)
-mesh1.get_transform().set_scale(visii.vec3(0.1), previous = True)
-mesh1.get_transform().set_position(visii.vec3(0.05, 0.0, 0), previous=False)
+mesh1.get_transform().set_position((-0.05, 0.0, 0), previous=True)
+mesh1.get_transform().set_scale((0.1, 0.1, 0.1), previous = False)
+mesh1.get_transform().set_scale((0.1, 0.1, 0.1), previous = True)
+mesh1.get_transform().set_position((0.05, 0.0, 0), previous=False)
 
 tex = visii.texture.create_from_image("dome", "./content/kiara_4_mid-morning_4k.hdr")
 visii.set_dome_light_texture(tex)
-visii.set_dome_light_intensity(10)
+visii.set_dome_light_intensity(.3)
 
 visii.set_direct_lighting_clamp(10.0)
 visii.set_indirect_lighting_clamp(10.0)
-visii.set_max_bounce_depth(0)
-visii.sample_pixel_area(visii.vec2(.5), visii.vec2(.5))
+visii.set_max_bounce_depth(0, 0)
+visii.sample_pixel_area((.5, .5), (.5, .5))
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 # First, let's render out the scene with motion blur to understand
 # how the object is moving
-visii.sample_time_interval(visii.vec2(0.0, 1.0))
+visii.sample_time_interval((0.0, 1.0))
 visii.render_to_png(width=opt.width, height=opt.height, samples_per_pixel=opt.spp,
     image_path=f"{opt.outf}/motion_blur.png"
 )
@@ -118,7 +118,7 @@ def save_image(data, name):
     img.save(name)
 
 # Now let's render out the where the object is at time = 0 and time = 1
-visii.sample_time_interval(visii.vec2(0.0, 0.0)) # only sample at t = 0
+visii.sample_time_interval((0.0, 0.0)) # only sample at t = 0
 t0_array = visii.render(
     width=opt.width, 
     height=opt.height, 
@@ -128,7 +128,7 @@ t0_array = visii.render(
 t0_array = np.array(t0_array).reshape(opt.height,opt.width,4)
 save_image(t0_array, f"{opt.outf}/t0.png")
 
-visii.sample_time_interval(visii.vec2(1.0, 1.0)) # only sample at t = 1
+visii.sample_time_interval((1.0, 1.0)) # only sample at t = 1
 t1_array = visii.render(
     width=opt.width, 
     height=opt.height, 
@@ -140,7 +140,7 @@ save_image(t1_array, f"{opt.outf}/t1.png")
 
 # Next, let's obtain segmentation data for both
 # these timesteps to do the reprojection
-visii.sample_time_interval(visii.vec2(0.0, 0.0))
+visii.sample_time_interval((0.0, 0.0))
 t0_base_colors_array = visii.render_data(
     width=opt.width, 
     height=opt.height, 
@@ -152,7 +152,7 @@ t0_base_colors_array = visii.render_data(
 t0_base_colors_array = np.array(t0_base_colors_array).reshape(opt.height,opt.width,4)
 save_image(t0_base_colors_array, f"{opt.outf}/t0_base_color.png")
 
-visii.sample_time_interval(visii.vec2(1.0, 1.0))
+visii.sample_time_interval((1.0, 1.0))
 t1_base_colors_array = visii.render_data(
     width=opt.width, 
     height=opt.height, 
@@ -165,7 +165,7 @@ t1_base_colors_array = np.array(t1_base_colors_array).reshape(opt.height,opt.wid
 save_image(t1_base_colors_array, f"{opt.outf}/t1_base_color.png")
 
 # After that, get diffuse motion vectors at T1 to drive the reprojection
-visii.sample_time_interval(visii.vec2(1.0, 1.0))
+visii.sample_time_interval((1.0, 1.0))
 t1_motion_vectors_array = visii.render_data(
     width=opt.width, 
     height=opt.height, 
