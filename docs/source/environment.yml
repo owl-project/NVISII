@@ -1,0 +1,6 @@
+name: visii_docs
+dependencies:
+  - cudatoolkit=10.2
+  - numpy
+  - pip:
+    - visii
