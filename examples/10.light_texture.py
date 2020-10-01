@@ -65,23 +65,20 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light')
 )
-obj_entity.get_light().set_intensity(1000)
+obj_entity.get_light().set_intensity(4)
+obj_entity.get_light().set_exposure(-1)
 
 # lets set the color texture as the color of the light
 obj_entity.get_light().set_color_texture(tex)
 
-obj_entity.get_transform().set_scale(
-    visii.vec3(0.6,0.6,0.2)
-)
-obj_entity.get_transform().set_position(
-    visii.vec3(0.5,-0.4,0.7)
-)
+obj_entity.get_transform().set_scale((0.6,0.6,0.2))
+obj_entity.get_transform().set_position((0.5,-0.4,0.7))
 
 obj_entity.get_transform().look_at(
-    visii.vec3(0,0,0),
-    visii.vec3(0,0,1),
+    at = (0,0,0),
+    up = (0,0,1),
 )
-obj_entity.get_transform().add_rotation(visii.quat(0,0,1,0))
+obj_entity.get_transform().add_rotation((0,1,0,0))
 
 
 obj_entity = visii.entity.create(
@@ -93,20 +90,17 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light_2')
 )
-obj_entity.get_light().set_intensity(100000)
+obj_entity.get_light().set_intensity(3)
+obj_entity.get_light().set_exposure(-5)
 
 # you can also set the light color manually
 obj_entity.get_light().set_color_texture(tex)
 
 #lets set the size and placement of the light
-obj_entity.get_transform().set_scale(
-    visii.vec3(0.1)
-)
-obj_entity.get_transform().set_position(
-    visii.vec3(-0.5,0.4,0)
-)
+obj_entity.get_transform().set_scale((0.1, 0.1, 0.1))
+obj_entity.get_transform().set_position((-0.5,0.4,0))
 obj_entity.get_transform().set_rotation(
-    visii.angleAxis(90, visii.vec3(0,0,1))
+    visii.angleAxis(90, (0,0,1))
 )
 
 # # # # # # # # # # # # # # # # # # # # # # # # #

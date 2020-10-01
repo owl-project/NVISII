@@ -328,6 +328,9 @@ void initializeRenderData(float3 &renderData)
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::BASE_COLOR) {
         renderData = make_float3(0.0, 0.0, 0.0);
     }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::TEXTURE_COORDINATES) {
+        renderData = make_float3(0.0, 0.0, 0.0);
+    }
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
         renderData = make_float3(0.0, 0.0, -1.0);
     }
@@ -409,7 +412,7 @@ __device__
 void saveGeometricRenderData(
     float3 &renderData, 
     int bounce, float depth, 
-    float3 w_p, float3 w_n, float3 w_o,
+    float3 w_p, float3 w_n, float3 w_o, float2 uv, 
     int entity_id, float3 diffuse_mvec,
     DisneyMaterial &mat)
 {
@@ -433,6 +436,9 @@ void saveGeometricRenderData(
     }
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::BASE_COLOR) {
         renderData = mat.base_color;
+    }
+    else if (optixLaunchParams.renderDataMode == RenderDataFlags::TEXTURE_COORDINATES) {
+        renderData = make_float3(uv.x, uv.y, 0.0);
     }
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::RAY_DIRECTION) {
         renderData = -w_o;
@@ -576,27 +582,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         loadMeshUVData(entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
         loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_z);
 
-        // If the entity we hit is a light, terminate the path.
-        // Note that NEE/MIS will also potentially terminate the path, preventing double-counting.
-        if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
-            LightStruct entityLight = optixLaunchParams.lights[entity.light_id];
-            float3 lightEmission;
-            if (entityLight.color_texture_id == -1) lightEmission = make_float3(entityLight.r, entityLight.g, entityLight.b);
-            else lightEmission = sampleTexture(entityLight.color_texture_id, uv);
-            float dist = payload.tHit;
-            if (bounce != 0) lightEmission = (lightEmission * (entityLight.intensity * pow(2.f, entityLight.exposure))) / (dist * dist);
-            float3 contribution = pathThroughput * lightEmission;
-            illum = illum + contribution;
-            if (bounce == 0) directIllum = illum;
-            break;
-        }
-
         // Load material data for the hit object
         DisneyMaterial mat; MaterialStruct entityMaterial;
         if (entity.material_id >= 0 && entity.material_id < MAX_MATERIALS) {
             entityMaterial = optixLaunchParams.materials[entity.material_id];
+            loadDisneyMaterial(entityMaterial, uv, mat, MIN_ROUGHNESS);
         }
-        loadDisneyMaterial(entityMaterial, uv, mat, MIN_ROUGHNESS);
         
         // Compute tangent and bitangent based on UVs
         {
@@ -626,8 +617,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_x = make_float3(normalize(nxfm * make_vec3(v_x)));
             v_y = cross(v_z, v_x);
             v_x = cross(v_y, v_z);
-        }       
-
+        }    
+        
         // Fallback for tangent and bitangent if UVs result in degenerate vectors.
         if (
             all(lessThan(abs(make_vec3(v_x)), vec3(EPSILON))) || 
@@ -645,19 +636,43 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             tbn = glm::column(tbn, 0, make_vec3(v_x) );
             tbn = glm::column(tbn, 1, make_vec3(v_y) );
             tbn = glm::column(tbn, 2, make_vec3(v_z) );   
-            float3 dN = sampleTexture(entityMaterial.normal_map_texture_id, uv);
+            float3 dN;
+            if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
+                dN = make_float3(0.5f, .5f, 1.f);
+            } else {
+                dN = sampleTexture(entityMaterial.normal_map_texture_id, uv);
+            }            
             dN = (dN * make_float3(2.0f)) - make_float3(1.f);   
             v_z = make_float3(normalize(tbn * normalize(make_vec3(dN))) );
         }
 
         // If we didn't it glass, flip the surface normal to face forward.
-        if (mat.specular_transmission == 0.f) {
+        if ((mat.specular_transmission == 0.f) && (entity.light_id == -1)) {
             v_z = faceNormalForward(w_o, v_gz, v_z);
         }
 
         // For segmentations, save geometric metadata
-        saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, entityID, diffuseMotion, mat);
-                    
+        saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, uv, entityID, diffuseMotion, mat);
+
+        // If the entity we hit is a light, terminate the path.
+        // Note that NEE/MIS will also potentially terminate the path, preventing double-counting.
+        if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
+            float dotNWi = max(dot(ray.direction, v_z), 0.f);
+            if ((dotNWi > EPSILON) && (bounce != 0)) break;
+
+            LightStruct entityLight = optixLaunchParams.lights[entity.light_id];
+            float3 lightEmission;
+            if (entityLight.color_texture_id == -1) lightEmission = make_float3(entityLight.r, entityLight.g, entityLight.b);
+            else lightEmission = sampleTexture(entityLight.color_texture_id, uv);
+            float dist = payload.tHit;
+            lightEmission = (lightEmission * entityLight.intensity);
+            if (bounce != 0) lightEmission = (lightEmission * pow(2.f, entityLight.exposure)) / (dist * dist);
+            float3 contribution = pathThroughput * lightEmission;
+            illum = illum + contribution;
+            if (bounce == 0) directIllum = illum;
+            break;
+        }
+
         // Next, we'll be sampling direct light sources
         int32_t sampledLightIDs[MAX_LIGHT_SAMPLES] = {-2};
         float lightPDFs[MAX_LIGHT_SAMPLES] = {0.f};
@@ -688,7 +703,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 lightEmission;
             float3 lightDir;
             int numTris;
-            
+
             // sample background
             if (randomID == numLights) {
                 sampledLightIDs[lid] = -1;
@@ -726,9 +741,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 }
 
                 numTris = 1.f;
-                dotNWi = max(dot(lightDir, v_z), 0.f);
-                lightEmission = (missColor(ray) * optixLaunchParams.domeLightIntensity);
-                disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
+                lightEmission = (missColor(lightDir) * optixLaunchParams.domeLightIntensity);
             }
             // sample light sources
             else 
@@ -756,16 +769,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     ltw * make_vec4(vertices[triIndex.x], 1.0f), ltw * make_vec4(vertices[triIndex.y], 1.0f), ltw * make_vec4(vertices[triIndex.z], 1.0f), // Might be a bug here with normal transform...
                     texCoords[triIndex.x], texCoords[triIndex.y], texCoords[triIndex.z], 
                     lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
-                vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
                 
-                dotNWi = max(dot(dir, normal), 0.f);
                 numTris = mesh.numTris;
                 lightDir = make_float3(dir.x, dir.y, dir.z);
                 if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
                 else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * (light_light.intensity * pow(2.f, light_light.exposure));
-                disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
             }
 
+            disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
+            dotNWi = max(dot(lightDir, v_gz), 0.f);
             lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
             if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
                 RayPayload payload; payload.instanceID = -2;
@@ -816,7 +828,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
                     float3 lightEmission = missColor(ray) * optixLaunchParams.domeLightIntensity;
                     float3 Li = (lightEmission * w) / bsdfPDF;
-                    float dotNWi = max(dot(v_gz, ray.direction), 0.f);  // geometry term
+                    float dotNWi = max(dot(ray.direction, v_gz), 0.f);  // geometry term
                     if (dotNWi > 0.f) {
                         irradiance = irradiance + (bsdf * bsdfColor * Li);
                     }
@@ -836,7 +848,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
 
                         float dist = payload.tHit;
-                        float dotNWi = max(dot(v_gz, ray.direction), 0.f); // geometry term
+                        float dotNWi = max(dot(ray.direction, v_gz), 0.f); // geometry term
 
                         float3 lightEmission;
                         if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));

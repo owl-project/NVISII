@@ -4,8 +4,8 @@ import colorsys
 
 NB_OBJS = 10000
 SAMPLES_PER_PIXEL = 16
-WIDTH = 1000 
-HEIGHT = 500
+WIDTH = 1920 
+HEIGHT = 1080
 USE_DENOISER = True
 FILE_NAME = "tmp.png"
 
@@ -37,8 +37,8 @@ camera.get_transform().look_at(
 visii.set_camera_entity(camera)
 
 # Change the dome light intensity
-visii.set_dome_light_intensity(2.2)
-visii.set_dome_light_sky(sun_position=[1,2,3])
+visii.set_dome_light_intensity(5)
+visii.set_dome_light_sky(sun_position=(5,-5,5))
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -83,7 +83,7 @@ def add_random_obj(name = "name"):
     obj.get_transform().set_position((
         random.uniform(-5,5),
         random.uniform(-5,5),
-        random.uniform(-10,3)
+        random.uniform(-1,3)
     ))
 
     obj.get_transform().set_rotation((
@@ -93,10 +93,9 @@ def add_random_obj(name = "name"):
         random.uniform(0,1)
     ))
 
+    s = random.uniform(0.05,0.15)
     obj.get_transform().set_scale((
-        random.uniform(0.15,0.2),
-        random.uniform(0.15,0.2),
-        random.uniform(0.15,0.2)
+        s,s,s
     ))  
 
     rgb = colorsys.hsv_to_rgb(

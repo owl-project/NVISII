@@ -27,7 +27,7 @@ parser.add_argument('--out',
 opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize_headless()
+visii.initialize(headless=True, verbose=True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
@@ -43,9 +43,9 @@ camera = visii.entity.create(
 )
 
 camera.get_transform().look_at(
-    visii.vec3(0,0,0), # look at (world coordinate)
-    visii.vec3(0,0,1), # up vector
-    visii.vec3(-2,0,1), # camera_origin    
+    at = (0,0,0),
+    up = (0,0,1),
+    eye = (-2,0,1),
 )
 visii.set_camera_entity(camera)
 
@@ -65,18 +65,14 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light_1')
 )
-obj_entity.get_light().set_intensity(.001)
+obj_entity.get_light().set_intensity(2)
 obj_entity.get_light().set_temperature(8000)
 
 #lets set the size and placement of the light
-obj_entity.get_transform().set_scale(
-    visii.vec3(0.2)
-)
+obj_entity.get_transform().set_scale((0.2, 0.2, 0.2))
 
 #light above the scene
-obj_entity.get_transform().set_position(
-    visii.vec3(0,0,2)
-)
+obj_entity.get_transform().set_position((0,0,2))
 
 # Second light 
 obj_entity = visii.entity.create(
@@ -88,22 +84,15 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light_2')
 )
-obj_entity.get_light().set_intensity(.0001)
+obj_entity.get_light().set_intensity(1)
 
 # you can also set the light color manually
-obj_entity.get_light().set_color(
-    visii.vec3(1,0,0)
-)
+obj_entity.get_light().set_color((1,0,0))
+
 #lets set the size and placement of the light
-obj_entity.get_transform().set_scale(
-    visii.vec3(0.1)
-)
-obj_entity.get_transform().set_position(
-    visii.vec3(0,-0.6,0.4)
-)
-obj_entity.get_transform().set_rotation(
-    visii.angleAxis(90, visii.vec3(0,0,1))
-)
+obj_entity.get_transform().set_scale((0.1, 0.1, 0.1))
+obj_entity.get_transform().set_position((0,-0.6,0.4))
+obj_entity.get_transform().set_rotation(visii.angleAxis(90, (0,0,1)))
 
 # third light 
 obj_entity = visii.entity.create(
@@ -114,17 +103,11 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light_3')
 )
-obj_entity.get_light().set_intensity(.0004)
+obj_entity.get_light().set_intensity(4)
 
-obj_entity.get_light().set_color(
-    visii.vec3(0,1,1)
-)
-obj_entity.get_transform().set_scale(
-    visii.vec3(0.2)
-)
-obj_entity.get_transform().set_position(
-    visii.vec3(0.5,0.5,0.7)
-)
+obj_entity.get_light().set_color((0,1,1))
+obj_entity.get_transform().set_scale((0.2, 0.2, 0.2))
+obj_entity.get_transform().set_position((0.5,0.5,0.7))
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 

@@ -1698,6 +1698,9 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         else if (option == std::string("base_color")) {
             OptixData.LP.renderDataMode = RenderDataFlags::BASE_COLOR;
         }
+        else if (option == std::string("texture_coordinates")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::TEXTURE_COORDINATES;
+        }
         else if (option == std::string("denoise_normal")) {
             OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_NORMAL;
         }
@@ -2106,6 +2109,9 @@ void __test__(std::vector<std::string> args) {
     }
     else if (option == std::string("base_color")) {
         OptixData.LP.renderDataMode = RenderDataFlags::BASE_COLOR;
+    }
+    else if (option == std::string("texture_coordinates")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::TEXTURE_COORDINATES;
     }
     else if (option == std::string("denoise_normal")) {
         OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_NORMAL;

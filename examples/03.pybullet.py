@@ -77,7 +77,6 @@ seconds_per_step = 1.0 / 240.0
 frames_per_second = 30.0
 physicsClient = p.connect(p.GUI) # non-graphical version
 p.setGravity(0,0,-10)
-# p.setTimeStep(seconds_per_step)
 
 # Lets set the scene
 
@@ -104,14 +103,9 @@ floor = visii.entity.create(
     transform = visii.transform.create("floor"),
     material = visii.material.create("floor")
 )
-# floor.get_transform().set_position(0,0,-0.1)
 floor.get_transform().set_position((0,0,0))
 floor.get_transform().set_scale((10, 10, 10))
-
-floor.get_material().set_transmission(0)
-floor.get_material().set_metallic(0.0)
 floor.get_material().set_roughness(0.1)
-
 floor.get_material().set_base_color((0.5,0.5,0.5))
 
 # Set the collision with the floor mesh
@@ -173,9 +167,8 @@ for i in range(opt.nb_objects):
         random.uniform(-1,1),
         random.uniform(-1,1),
     ))
-    scale = visii.vec3(
-        random.uniform(0.2,0.5),
-    )
+    s = random.uniform(0.2,0.5)
+    scale = (s,s,s)
 
     obj.get_transform().set_position(pos)
     obj.get_transform().set_rotation(rot)
@@ -250,7 +243,6 @@ for i in range(opt.nb_objects):
 # Lets run the simulation for a few steps. 
 for i in range (int(opt.nb_frames)):
     steps_per_frame = math.ceil( 1.0 / (seconds_per_step * frames_per_second) )
-    print(steps_per_frame)
     for j in range(steps_per_frame):
         p.stepSimulation()
 
