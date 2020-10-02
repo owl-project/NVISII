@@ -77,6 +77,7 @@ option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" OFF)
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	# Enable c++11 and hide symbols which shouldn't be visible
+  message(WARN "ENABLING FPIC")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
 
