@@ -224,14 +224,6 @@ int getDeviceCount() {
     return owlGetDeviceCount(OptixData.context);
 }
 
-OWLContext contextCreate()
-{
-    OWLContext context = owlContextCreate(/*requested Device IDs*/ nullptr, /* Num Devices */  0);
-    owlEnableMotionBlur(context);
-    cudaSetDevice(0); // OWL leaves the device as num_devices - 1 after the context is created. set it back to 0.
-    return context;
-}
-
 OWLModule moduleCreate(OWLContext context, const char* ptxCode)
 {
     return owlModuleCreate(context, ptxCode);
@@ -495,7 +487,10 @@ void initializeOptix(bool headless)
 {
     using namespace glm;
     auto &OD = OptixData;
-    OD.context = contextCreate();   
+    OD.context = owlContextCreate(/*requested Device IDs*/ nullptr, /* Num Devices */  0);
+    owlEnableMotionBlur(OD.context);
+    owlContextSetRayTypeCount(OD.context, 2);
+    cudaSetDevice(0); // OWL leaves the device as num_devices - 1 after the context is created. set it back to 0.
     OD.module = moduleCreate(OD.context, ptxCode);
     
     /* Setup Optix Launch Params */
@@ -660,6 +655,7 @@ void initializeOptix(bool headless)
     const int NUM_INDICES = 1;
     ivec3 indices[NUM_INDICES] = {{ 0, 0, 0 }};
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
+    geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
     
     OWLBuffer vertexBuffer = deviceBufferCreate(OD.context,OWL_FLOAT4,NUM_VERTICES,vertices);
     OWLBuffer indexBuffer = deviceBufferCreate(OD.context,OWL_INT3,NUM_INDICES,indices);

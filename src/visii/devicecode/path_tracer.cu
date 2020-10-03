@@ -128,11 +128,8 @@ OPTIX_MISS_PROGRAM(miss)()
 OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 {
     RayPayload &prd = owl::getPRD<RayPayload>();
-    bool shadowray = prd.instanceID == -2;
     prd.instanceID = optixGetInstanceIndex();
     prd.tHit = optixGetRayTmax();
-    if (shadowray) return;
-
     prd.barycentrics = optixGetTriangleBarycentrics();
     prd.primitiveID = optixGetPrimitiveIndex();
     optixGetObjectToWorldTransformMatrix(prd.localToWorld);
@@ -140,6 +137,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
     float4 trf00, trf01, trf02;
     float4 trf10, trf11, trf12;
+    
     optix_impl::optixGetInterpolatedTransformationFromHandle( trf00, trf01, trf02, handle, /* time */ 0.f, true );
     optix_impl::optixGetInterpolatedTransformationFromHandle( trf10, trf11, trf12, handle, /* time */ 1.f, true );
     memcpy(&prd.localToWorldT0[0], &trf00, sizeof(trf00));
@@ -148,6 +146,13 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     memcpy(&prd.localToWorldT1[0], &trf10, sizeof(trf10));
     memcpy(&prd.localToWorldT1[4], &trf11, sizeof(trf11));
     memcpy(&prd.localToWorldT1[8], &trf12, sizeof(trf12));
+}
+
+OPTIX_CLOSEST_HIT_PROGRAM(ShadowRay)()
+{
+    RayPayload &prd = owl::getPRD<RayPayload>();
+    prd.instanceID = optixGetInstanceIndex();
+    prd.tHit = optixGetRayTmax();
 }
 
 inline __device__
@@ -175,7 +180,11 @@ float sampleTexture(int32_t textureId, float2 texCoord, int8_t channel) {
     if (textureId < 0 || textureId >= (MAX_TEXTURES + MAX_MATERIALS * NUM_MAT_PARAMS)) return 0.f;
     cudaTextureObject_t tex = optixLaunchParams.textureObjects[textureId];
     if (!tex) return 0.f;
-    return make_vec4(tex2D<float4>(tex, texCoord.x, texCoord.y))[channel];
+    if (channel == 0) return tex2D<float4>(tex, texCoord.x, texCoord.y).x;
+    if (channel == 1) return tex2D<float4>(tex, texCoord.x, texCoord.y).y;
+    if (channel == 2) return tex2D<float4>(tex, texCoord.x, texCoord.y).z;
+    if (channel == 3) return tex2D<float4>(tex, texCoord.x, texCoord.y).w;
+    return 0.f;
 }
 
 __device__
@@ -785,7 +794,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
             if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
                 RayPayload payload; payload.instanceID = -2;
-                owl::Ray ray;
+                owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
                 ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f; // Consider shrinking the length of this ray depending on triangle sampled pos.
                 ray.origin = hit_p; ray.direction = lightDir;
                 ray.time = time;
