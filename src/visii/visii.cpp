@@ -387,7 +387,7 @@ void launchParamsSetGroup(OWLLaunchParams params, const char *varName, OWLGroup 
 
 void paramsLaunch2D(OWLRayGen rayGen, int dims_x, int dims_y, OWLLaunchParams launchParams)
 {
-    owlLaunch2D(rayGen, dims_x, dims_y, launchParams);
+    owlLaunch2D(rayGen, dims_x * dims_y, 1, launchParams);
 }
 
 void synchronizeDevices()

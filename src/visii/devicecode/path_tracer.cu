@@ -486,10 +486,13 @@ bool debugging() {
 
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
-    auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
+    auto launchIndex = optixGetLaunchIndex().x;
+    auto launchDim = optixGetLaunchDimensions().x;
+    auto pixelID = ivec2(launchIndex % optixLaunchParams.frameSize.x, launchIndex / optixLaunchParams.frameSize.x);
+    auto dims = ivec2(optixLaunchParams.frameSize.x, optixLaunchParams.frameSize.x);
     uint64_t start_clock = clock();
     
-    LCGRand rng = get_rng(optixLaunchParams.frameID + optixLaunchParams.seed * 10007);
+    LCGRand rng = get_rng(optixLaunchParams.frameID + optixLaunchParams.seed * 10007, make_uint2(pixelID.x, pixelID.y), make_uint2(dims.x, dims.y));
     float time = sampleTime(lcg_randomf(rng));
 
     // If no camera is in use, just display some random noise...
@@ -928,7 +931,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     /* Write to AOVs, progressively refining results */
     auto fbOfs = pixelID.x+optixLaunchParams.frameSize.x * ((optixLaunchParams.frameSize.y - 1) -  pixelID.y);
-    float4 &prev_color = (float4&) optixLaunchParams.accumPtr[fbOfs];
+    float4* accumPtr = (float4*) optixLaunchParams.accumPtr;
+    float4* fbPtr = (float4*) optixLaunchParams.frameBuffer;
+
+    float4 prev_color = accumPtr[fbOfs];
     float4 accum_color;
 
     if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) 
@@ -943,20 +949,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     
     // uncoalesced writes here are expensive...
     // perhaps swap this out for a texture?
-    optixLaunchParams.accumPtr[fbOfs] = vec4(
-        accum_color.x, 
-        accum_color.y, 
-        accum_color.z, 
-        accum_color.w
-    );
-
-    float3 color = make_float3(accum_color);
-    optixLaunchParams.frameBuffer[fbOfs] = vec4(
-        color.x,
-        color.y,
-        color.z,
-        1.0f
-    );
+    accumPtr[fbOfs] = accum_color;
+    fbPtr[fbOfs] = accum_color;
     // vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
     // vec4 oldNormal = optixLaunchParams.normalBuffer[fbOfs];
     // if (any(isnan(oldAlbedo))) oldAlbedo = vec4(1.f);
