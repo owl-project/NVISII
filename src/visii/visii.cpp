@@ -874,35 +874,38 @@ void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float
         OptixData.proceduralSkyTexture = owlTexture2DCreate(OptixData.context, OWL_TEXEL_FORMAT_RGBA32F, width, height, texels.data());
         owlParamsSetTexture(OptixData.launchParams, "proceduralSkyTexture", OptixData.proceduralSkyTexture);
 
-        float invWidth = 1.f / float(width);
-        float invHeight = 1.f / float(height);
-        float invjacobian = width * height / float(4 * M_PI);
+        // float invWidth = 1.f / float(width);
+        // float invHeight = 1.f / float(height);
+        // float invjacobian = width * height / float(4 * M_PI);
 
-        auto rows = std::vector<float>(height);
-        auto cols = std::vector<float>(width * height);
-        for (int y = 0, i = 0; y < height; y++) {
-            for (int x = 0; x < width; x++, i++) {
-                cols[i] = std::max(texels[i].r, std::max(texels[i].g, texels[i].b)) + ((x > 0) ? cols[i - 1] : 0.f);
-            }
-            rows[y] = cols[i - 1] + ((y > 0) ? rows[y - 1] : 0.0f);
-            // normalize the pdf for this scanline (if it was non-zero)
-            if (cols[i - 1] > 0) {
-                for (int x = 0; x < width; x++) {
-                    cols[i - width + x] /= cols[i - 1];
-                }
-            }
-        }
+        // auto rows = std::vector<float>(height);
+        // auto cols = std::vector<float>(width * height);
+        // for (int y = 0, i = 0; y < height; y++) {
+        //     for (int x = 0; x < width; x++, i++) {
+        //         cols[i] = std::max(texels[i].r, std::max(texels[i].g, texels[i].b)) + ((x > 0) ? cols[i - 1] : 0.f);
+        //     }
+        //     rows[y] = cols[i - 1] + ((y > 0) ? rows[y - 1] : 0.0f);
+        //     // normalize the pdf for this scanline (if it was non-zero)
+        //     if (cols[i - 1] > 0) {
+        //         for (int x = 0; x < width; x++) {
+        //             cols[i - width + x] /= cols[i - 1];
+        //         }
+        //     }
+        // }
 
-        // normalize the pdf across all scanlines
-        for (int y = 0; y < height; y++)
-            rows[y] /= rows[height - 1];
+        // // normalize the pdf across all scanlines
+        // for (int y = 0; y < height; y++)
+        //     rows[y] /= rows[height - 1];
         
-        if (OptixData.environmentMapRowsBuffer) owlBufferRelease(OptixData.environmentMapRowsBuffer);
-        if (OptixData.environmentMapColsBuffer) owlBufferRelease(OptixData.environmentMapColsBuffer);
-        OptixData.environmentMapRowsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), height, rows.data());
-        OptixData.environmentMapColsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), width * height, cols.data());
-        OptixData.LP.environmentMapWidth = width;
-        OptixData.LP.environmentMapHeight = height;  
+        // if (OptixData.environmentMapRowsBuffer) owlBufferRelease(OptixData.environmentMapRowsBuffer);
+        // if (OptixData.environmentMapColsBuffer) owlBufferRelease(OptixData.environmentMapColsBuffer);
+        // OptixData.environmentMapRowsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), height, rows.data());
+        // OptixData.environmentMapColsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), width * height, cols.data());
+        // OptixData.LP.environmentMapWidth = width;
+        // OptixData.LP.environmentMapHeight = height;  
+
+        OptixData.LP.environmentMapWidth = 0;
+        OptixData.LP.environmentMapHeight = 0;  
         resetAccumulation();
     };
     auto future = enqueueCommand(func);
@@ -910,43 +913,53 @@ void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float
         future.wait();
 }
 
-void setDomeLightTexture(Texture* texture)
+void setDomeLightTexture(Texture* texture, bool enableCDF)
 {
-    auto func = [texture] () {
+    auto func = [texture, enableCDF] () {
         OptixData.LP.environmentMapID = texture->getId();
-        std::vector<glm::vec4> texels = texture->getTexels();
-        int width = texture->getWidth();
-        int height = texture->getHeight();
+        if (enableCDF) {
 
-        float invWidth = 1.f / float(width);
-        float invHeight = 1.f / float(height);
-        float invjacobian = width * height / float(4 * M_PI);
+            std::vector<glm::vec4> texels = texture->getTexels();
 
-        auto rows = std::vector<float>(height);
-        auto cols = std::vector<float>(width * height);
-        for (int y = 0, i = 0; y < height; y++) {
-            for (int x = 0; x < width; x++, i++) {
-                cols[i] = std::max(texels[i].r, std::max(texels[i].g, texels[i].b)) + ((x > 0) ? cols[i - 1] : 0.f);
-            }
-            rows[y] = cols[i - 1] + ((y > 0) ? rows[y - 1] : 0.0f);
-            // normalize the pdf for this scanline (if it was non-zero)
-            if (cols[i - 1] > 0) {
-                for (int x = 0; x < width; x++) {
-                    cols[i - width + x] /= cols[i - 1];
+            int width = texture->getWidth();
+            int height = texture->getHeight();
+            int cdfWidth = width;
+            int cdfHeight = height;
+
+            float invWidth = 1.f / float(cdfWidth);
+            float invHeight = 1.f / float(cdfHeight);
+            float invjacobian = cdfWidth * cdfHeight / float(4 * M_PI);
+
+            auto rows = std::vector<float>(cdfHeight);
+            auto cols = std::vector<float>(cdfWidth * cdfHeight);
+            for (int y = 0, i = 0; y < cdfHeight; y++) {
+                for (int x = 0; x < cdfWidth; x++, i++) {
+                    glm::vec4 texel = texels[i];
+                    cols[i] = std::max(texel.r, std::max(texel.g, texel.b)) + ((x > 0) ? cols[i - 1] : 0.f);
+                }
+                rows[y] = cols[i - 1] + ((y > 0) ? rows[y - 1] : 0.0f);
+                // normalize the pdf for this scanline (if it was non-zero)
+                if (cols[i - 1] > 0) {
+                    for (int x = 0; x < cdfWidth; x++) {
+                        cols[i - cdfWidth + x] /= cols[i - 1];
+                    }
                 }
             }
+
+            // normalize the pdf across all scanlines
+            for (int y = 0; y < cdfHeight; y++) rows[y] /= rows[cdfHeight - 1];
+
+            if (OptixData.environmentMapRowsBuffer) owlBufferRelease(OptixData.environmentMapRowsBuffer);
+            if (OptixData.environmentMapColsBuffer) owlBufferRelease(OptixData.environmentMapColsBuffer);
+            OptixData.environmentMapRowsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), cdfHeight, rows.data());
+            OptixData.environmentMapColsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), cdfWidth * cdfHeight, cols.data());
+            OptixData.LP.environmentMapWidth = cdfWidth;
+            OptixData.LP.environmentMapHeight = cdfHeight;  
         }
-
-        // normalize the pdf across all scanlines
-        for (int y = 0; y < height; y++)
-            rows[y] /= rows[height - 1];
-
-        if (OptixData.environmentMapRowsBuffer) owlBufferRelease(OptixData.environmentMapRowsBuffer);
-        if (OptixData.environmentMapColsBuffer) owlBufferRelease(OptixData.environmentMapColsBuffer);
-        OptixData.environmentMapRowsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), height, rows.data());
-        OptixData.environmentMapColsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), width * height, cols.data());
-        OptixData.LP.environmentMapWidth = width;
-        OptixData.LP.environmentMapHeight = height;  
+        else {
+            OptixData.LP.environmentMapWidth = 0;
+            OptixData.LP.environmentMapHeight = 0;  
+        }
         resetAccumulation();        
     };
     auto future = enqueueCommand(func);

@@ -709,11 +709,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 sampledLightIDs[lid] = -1;
                 if (
                     (optixLaunchParams.environmentMapWidth != 0) && (optixLaunchParams.environmentMapHeight != 0) &&
-                    (optixLaunchParams.environmentMapRows != nullptr) && (optixLaunchParams.environmentMapCols != nullptr)
+                    (optixLaunchParams.environmentMapRows != nullptr) && (optixLaunchParams.environmentMapCols != nullptr) 
                 ) 
                 {
-                    // Can be a significant bottleneck here if dome light textures are too large
-                    // Vec3fa color = m_background->sample(dg, wi, tMax, RandomSampler_get2D(sampler));
+                    // Reduces noise for strangely noisy dome light textures, but at the expense 
+                    // of a highly uncoalesced binary search through a 2D CDF.
+                    // Unused by default to avoid the hit to performance
                     float rx = lcg_randomf(rng);
                     float ry = lcg_randomf(rng);
                     float* rows = optixLaunchParams.environmentMapRows;
@@ -737,7 +738,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     tbn = glm::column(tbn, 2, make_vec3(v_z) );            
                     const float3 hemi_dir = normalize(cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
                     lightDir = make_float3(normalize(tbn * normalize(make_vec3(hemi_dir))) );
-                    lightPDFs[lid] = 1.f;
+                    lightPDFs[lid] = 1.f / float(2.0 * M_PI);
                 }
 
                 numTris = 1.f;
@@ -940,6 +941,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         accum_color = make_float4((accum_illum + float(optixLaunchParams.frameID) * make_float3(prev_color)) / float(optixLaunchParams.frameID + 1), 1.0f);
     }
     
+    // uncoalesced writes here are expensive...
+    // perhaps swap this out for a texture?
     optixLaunchParams.accumPtr[fbOfs] = vec4(
         accum_color.x, 
         accum_color.y, 

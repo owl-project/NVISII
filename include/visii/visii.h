@@ -88,8 +88,9 @@ void setDomeLightSky(
  * Textures are sampled using a 2D to 3D latitude/longitude strategy.
  * 
  * @param texture The texture to sample for the dome light.
+ * @param enable_cdf If True, reduces noise of sampling a dome light texture, but at the expense of frame rate.
  */ 
-void setDomeLightTexture(Texture* texture);
+void setDomeLightTexture(Texture* texture, bool enable_cdf = false);
 
 /** Disconnects the dome light texture, reverting back to any existing constant dome light color */
 void clearDomeLightTexture();
