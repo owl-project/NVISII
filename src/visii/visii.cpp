@@ -897,18 +897,6 @@ void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float
         for (int y = 0; y < height; y++)
             rows[y] /= rows[height - 1];
         
-        // both eval and sample below return a "weight" that is
-        // value[i] / row*col_pdf, so might as well bake it into the table
-        for (int y = 0, i = 0; y < height; y++) {
-            float row_pdf = rows[y] - (y > 0 ? rows[y - 1] : 0.0f);
-            for (int x = 0; x < width; x++, i++) {
-                float col_pdf = cols[i] - (x > 0 ? cols[i - 1] : 0.0f);
-                texels[i].r /= row_pdf * col_pdf * invjacobian;
-                texels[i].g /= row_pdf * col_pdf * invjacobian;
-                texels[i].b /= row_pdf * col_pdf * invjacobian;
-            }
-        }
-
         if (OptixData.environmentMapRowsBuffer) owlBufferRelease(OptixData.environmentMapRowsBuffer);
         if (OptixData.environmentMapColsBuffer) owlBufferRelease(OptixData.environmentMapColsBuffer);
         OptixData.environmentMapRowsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), height, rows.data());
