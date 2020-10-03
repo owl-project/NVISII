@@ -196,9 +196,9 @@ void Entity::setVisibility(bool camera)
 {
 	auto &entity = getStruct();
 	if (camera) {
-		entity.visibilityFlags |= ENTITY_VISIBILITY_CAMERA_RAYS;
+		entity.flags |= ENTITY_VISIBILITY_CAMERA_RAYS;
 	} else {
-		entity.visibilityFlags &= (~ENTITY_VISIBILITY_CAMERA_RAYS);
+		entity.flags &= (~ENTITY_VISIBILITY_CAMERA_RAYS);
 	}
 	markDirty();
 }

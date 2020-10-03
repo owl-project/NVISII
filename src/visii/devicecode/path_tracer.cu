@@ -133,6 +133,9 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     prd.barycentrics = optixGetTriangleBarycentrics();
     prd.primitiveID = optixGetPrimitiveIndex();
     optixGetObjectToWorldTransformMatrix(prd.localToWorld);
+    // If we don't need motion vectors, (or in the future if an object 
+    // doesn't have motion blur) then return.
+    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
     
     OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
     float4 trf00, trf01, trf02;
@@ -570,7 +573,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         EntityStruct entity = optixLaunchParams.entities[entityID];
 
         // Skip forward if the hit object is invisible for this ray type, skip it.
-        if (((entity.visibilityFlags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
+        if (((entity.flags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
             ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
             payload.tHit = -1.f;
             ray.time = time;
@@ -614,21 +617,26 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // Transform geometry data into world space
         {
             glm::mat4 xfm = to_mat4(payload.localToWorld);
-            glm::mat4 xfmt0 = to_mat4(payload.localToWorldT0);
-            glm::mat4 xfmt1 = to_mat4(payload.localToWorldT1);
-            glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
             p = make_float3(xfm * make_vec4(mp, 1.0f));
-            vec4 tmp1 = optixLaunchParams.proj * optixLaunchParams.viewT0 * xfmt0 * make_vec4(mp, 1.0f);
-            float3 pt0 = make_float3(tmp1 / tmp1.w) * .5f;
-            vec4 tmp2 = optixLaunchParams.proj * optixLaunchParams.viewT1 * xfmt1 * make_vec4(mp, 1.0f);
-            float3 pt1 = make_float3(tmp2 / tmp2.w) * .5f;
-            diffuseMotion = pt1 - pt0;
             hit_p = p;
+            glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
             v_gz = make_float3(normalize(nxfm * make_vec3(v_gz)));
             v_z = make_float3(normalize(nxfm * make_vec3(v_z)));
             v_x = make_float3(normalize(nxfm * make_vec3(v_x)));
             v_y = cross(v_z, v_x);
             v_x = cross(v_y, v_z);
+
+            if (optixLaunchParams.renderDataMode != RenderDataFlags::NONE) {
+                glm::mat4 xfmt0 = to_mat4(payload.localToWorldT0);
+                glm::mat4 xfmt1 = to_mat4(payload.localToWorldT1);
+                vec4 tmp1 = optixLaunchParams.proj * optixLaunchParams.viewT0 * xfmt0 * make_vec4(mp, 1.0f);
+                vec4 tmp2 = optixLaunchParams.proj * optixLaunchParams.viewT1 * xfmt1 * make_vec4(mp, 1.0f);
+                float3 pt0 = make_float3(tmp1 / tmp1.w) * .5f;
+                float3 pt1 = make_float3(tmp2 / tmp2.w) * .5f;
+                diffuseMotion = pt1 - pt0;
+            } else {
+                diffuseMotion = make_float3(0.f, 0.f, 0.f);
+            }
         }    
         
         // Fallback for tangent and bitangent if UVs result in degenerate vectors.
