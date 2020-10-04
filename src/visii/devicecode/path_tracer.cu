@@ -55,39 +55,39 @@ vec3 toPolar(vec2 uv)
     return n;
 }
 
+__device__
+cudaTextureObject_t getEnvironmentTexture()
+{
+    cudaTextureObject_t tex = 0;
+    if (optixLaunchParams.environmentMapID >= 0) {
+        return optixLaunchParams.textureObjects[optixLaunchParams.environmentMapID];
+    } else if ((optixLaunchParams.environmentMapID == -2) && (optixLaunchParams.proceduralSkyTexture != 0)) {
+        return optixLaunchParams.proceduralSkyTexture;
+    }
+    return tex;    
+}
+
 inline __device__
-float3 missColor(const float3 n_dir)
+float3 missColor(const float3 n_dir, cudaTextureObject_t &tex)
 {
     vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(n_dir);
-    if (optixLaunchParams.environmentMapID >= 0) 
+    if (tex)
     {
         vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
-        cudaTextureObject_t tex = optixLaunchParams.textureObjects[optixLaunchParams.environmentMapID];
-        if (!tex) return make_float3(1.f, 0.f, 1.f);
-
-        float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
-        return make_float3(texColor);
-    }
-    if ((optixLaunchParams.environmentMapID == -2) && (optixLaunchParams.proceduralSkyTexture != 0)) {
-        vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
-        cudaTextureObject_t tex = optixLaunchParams.proceduralSkyTexture;
-        if (!tex) return make_float3(1.f, 0.f, 1.f);
-
         float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
         return make_float3(texColor);
     }
     
     if (glm::any(glm::greaterThanEqual(optixLaunchParams.domeLightColor, glm::vec3(0.f)))) return make_float3(optixLaunchParams.domeLightColor);
-
     float t = 0.5f*(rayDir.z + 1.0f);
     float3 c = (1.0f - t) * make_float3(pow(vec3(1.0f), vec3(2.2f))) + t * make_float3( pow(vec3(0.5f, 0.7f, 1.0f), vec3(2.2f)) );
     return c;
 }
 
 inline __device__
-float3 missColor(const owl::Ray &ray)
+float3 missColor(const owl::Ray &ray, cudaTextureObject_t &tex)
 {
-    return missColor(ray.direction);
+    return missColor(ray.direction, tex);
 }
 
 
@@ -496,6 +496,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng, time);
     }
 
+    cudaTextureObject_t envTex = getEnvironmentTexture();
+
     float3 accum_illum = make_float3(0.f);
     float3 pathThroughput = make_float3(1.f);
     float3 renderData = make_float3(0.f);
@@ -523,7 +525,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // If ray misses, terminate the ray
         if (payload.tHit <= 0.f) {
             // Compute lighting from environment
-            illum = illum + pathThroughput * (missColor(ray) * optixLaunchParams.domeLightIntensity);
+            illum = illum + pathThroughput * (missColor(ray, envTex) * optixLaunchParams.domeLightIntensity);
             if (bounce == 0) directIllum = illum;
             
             const float envDist = 10000.0f; // large value
@@ -733,7 +735,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 }
 
                 numTris = 1.f;
-                lightEmission = (missColor(lightDir) * optixLaunchParams.domeLightIntensity);
+                lightEmission = (missColor(lightDir, envTex) * optixLaunchParams.domeLightIntensity);
             }
             // sample light sources
             else 
@@ -818,7 +820,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if ((payload.instanceID == -1) && (sampledLightIDs[lid] == -1)) {
                     // Case where we hit the background, and also previously sampled the background   
                     float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
-                    float3 lightEmission = missColor(ray) * optixLaunchParams.domeLightIntensity;
+                    float3 lightEmission = missColor(ray, envTex) * optixLaunchParams.domeLightIntensity;
                     float3 Li = (lightEmission * w) / bsdfPDF;
                     float dotNWi = max(dot(ray.direction, v_gz), 0.f);  // geometry term
                     if (dotNWi > 0.f) {
