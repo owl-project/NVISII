@@ -50,46 +50,15 @@ vec3 toPolar(vec2 uv)
     n.y = __sinf(theta) * __sinf(phi);
     n.z = __cosf(phi);
 
-    //n = normalize(n);
     n.z = -n.z;
     n.x = -n.x;
     return n;
 }
 
-// inline __device__
-// vec2 toSpherical(vec3 dir) {
-//     dir = normalize(dir);
-//     float u = atan(dir.z, dir.x) / (2.0f * 3.1415926535897932384626433832795f) + .5f;
-//     float v = asin(dir.y) / 3.1415926535897932384626433832795f + .5f;
-//     return vec2(u, (1.0f - v));
-// }
-
-// inline __device__
-// vec3 toDirectional(vec2 coords) {
-//     dir = normalize(dir);
-//     float u = atan(dir.z, dir.x) / (2.0f * 3.1415926535897932384626433832795f) + .5f;
-//     float v = asin(dir.y) / 3.1415926535897932384626433832795f + .5f;
-//     return vec2(u, (1.0f - v));
-// }
-
-// Dual2<Vec3> map(float x, float y) const {
-//     // pixel coordinates of entry (x,y)
-//     Dual2<float> u = Dual2<float>(x, 1, 0) * invres;
-//     Dual2<float> v = Dual2<float>(y, 0, 1) * invres;
-//     Dual2<float> theta   = u * float(2 * M_PI);
-//     Dual2<float> st, ct;
-//     fast_sincos(theta, &st, &ct);
-//     Dual2<float> cos_phi = 1.0f - 2.0f * v;
-//     Dual2<float> sin_phi = sqrt(1.0f - cos_phi * cos_phi);
-//     return make_Vec3(sin_phi * ct,
-//                      sin_phi * st,
-//                      cos_phi);
-// }
-
 inline __device__
-float3 missColor(const float3 dir)
+float3 missColor(const float3 n_dir)
 {
-    vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(normalize(dir));
+    vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(n_dir);
     if (optixLaunchParams.environmentMapID >= 0) 
     {
         vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
@@ -316,9 +285,8 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     owl::Ray ray;
     ray.tmin = .001f;
     ray.tmax = 1e20f;//10000.0f;
-    ray.origin = owl::vec3f(origin.x, origin.y, origin.z) ;
-    ray.direction = owl::vec3f(direction.x, direction.y, direction.z);
-    ray.direction = normalize(owl::vec3f(direction.x, direction.y, direction.z));
+    ray.origin = make_float3(origin) ;
+    ray.direction = make_float3(direction);
     
     return ray;
 }
@@ -369,13 +337,13 @@ void saveLightingColorRenderData (
     // Note, dillum and iillum are expected to change outside this function depending on the 
     // render data flags.
     if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_COLOR) {
-        renderData = disney_diffuse_color(mat, w_n, w_o, w_i); 
+        renderData = disney_diffuse_color(mat, w_n, w_o, w_i/*, normalize(w_o + w_i)*/); 
     }
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_COLOR) {
-        renderData = disney_microfacet_reflection_color(mat, w_n, w_o, w_i);
+        renderData = disney_microfacet_reflection_color(mat, w_n, w_o, w_i/*, normalize(w_o + w_i)*/);
     }
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_COLOR) {
-        renderData = disney_microfacet_transmission_color(mat, w_n, w_o, w_i);
+        renderData = disney_microfacet_transmission_color(mat, w_n, w_o, w_i/*, normalize(w_o + w_i)*/);
     }
 }
 
@@ -615,8 +583,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_x.x = f * (uv_e2.y * p_e1.x - uv_e1.y * p_e2.x);
             v_x.y = f * (uv_e2.y * p_e1.y - uv_e1.y * p_e2.y);
             v_x.z = f * (uv_e2.y * p_e1.z - uv_e1.y * p_e2.z);
-            v_x = normalize(v_x);
-            v_z = normalize(v_z);            
         }
             
         // Transform geometry data into world space
@@ -668,7 +634,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 dN = sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float3(0.5f, .5f, 1.f));
             }            
             dN = (dN * make_float3(2.0f)) - make_float3(1.f);   
-            v_z = make_float3(normalize(tbn * normalize(make_vec3(dN))) );
+            v_z = make_float3(tbn * make_vec3(dN));
         }
 
         // If we didn't it glass, flip the surface normal to face forward.
@@ -761,8 +727,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     tbn = glm::column(tbn, 0, make_vec3(v_x) );
                     tbn = glm::column(tbn, 1, make_vec3(v_y) );
                     tbn = glm::column(tbn, 2, make_vec3(v_z) );            
-                    const float3 hemi_dir = normalize(cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
-                    lightDir = make_float3(normalize(tbn * normalize(make_vec3(hemi_dir))) );
+                    const float3 hemi_dir = (cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
+                    lightDir = make_float3(tbn * make_vec3(hemi_dir));
                     lightPDFs[lid] = 1.f / float(2.0 * M_PI);
                 }
 
