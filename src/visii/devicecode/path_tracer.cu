@@ -337,13 +337,13 @@ void saveLightingColorRenderData (
     // Note, dillum and iillum are expected to change outside this function depending on the 
     // render data flags.
     if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_COLOR) {
-        renderData = disney_diffuse_color(mat, w_n, w_o, w_i/*, normalize(w_o + w_i)*/); 
+        renderData = disney_diffuse_color(mat, w_n, w_o, w_i, normalize(w_o + w_i)); 
     }
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_COLOR) {
-        renderData = disney_microfacet_reflection_color(mat, w_n, w_o, w_i/*, normalize(w_o + w_i)*/);
+        renderData = disney_microfacet_reflection_color(mat, w_n, w_o, w_i, normalize(w_o + w_i));
     }
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_COLOR) {
-        renderData = disney_microfacet_transmission_color(mat, w_n, w_o, w_i/*, normalize(w_o + w_i)*/);
+        renderData = disney_microfacet_transmission_color(mat, w_n, w_o, w_i, normalize(w_o + w_i));
     }
 }
 
@@ -768,7 +768,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv), make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
             }
 
-            disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
+            disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, bsdf, bsdfColor, forcedBsdf);
             dotNWi = max(dot(lightDir, v_gz), 0.f);
             lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
             if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
