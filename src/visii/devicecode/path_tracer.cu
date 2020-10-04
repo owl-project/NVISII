@@ -1,8 +1,9 @@
+#include "launch_params.h"
+#include "types.h"
 #include "path_tracer.h"
 #include "disney_bsdf.h"
 #include "lights.h"
-#include "launch_params.h"
-#include "types.h"
+#include "math.h"
 #include <optix_device.h>
 #include <owl/common/math/random.h>
 
@@ -29,10 +30,10 @@ vec2 toUV(vec3 n)
     n.x = -n.x;
     vec2 uv;
 
-    uv.x = atan(-n.x, n.y);
-    uv.x = (uv.x + M_PI / 2.0) / (M_PI * 2.0) + M_PI * (28.670 / 360.0);
+    uv.x = atan2f(float(-n.x), float(n.y));
+    uv.x = (uv.x + M_PI / 2.0f) / (M_PI * 2.0f) + M_PI * (28.670f / 360.0f);
 
-    uv.y = acos(n.z) / M_PI;
+    uv.y = ::clamp(float(approx_acosf(n.z) / M_PI), .001f, .999f);
 
     return uv;
 }
@@ -171,23 +172,23 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
 }
 
 inline __device__ 
-float3 sampleTexture(int32_t textureId, float2 texCoord) {
-    if (textureId < 0 || textureId >= (MAX_TEXTURES + MAX_MATERIALS * NUM_MAT_PARAMS)) return make_float3(0.f,0.f,0.f);
+float3 sampleTexture(int32_t textureId, float2 texCoord, float3 defaultVal) {
+    if (textureId < 0 || textureId >= (MAX_TEXTURES + MAX_MATERIALS * NUM_MAT_PARAMS)) return defaultVal;
     cudaTextureObject_t tex = optixLaunchParams.textureObjects[textureId];
-    if (!tex) return make_float3(0.f,0.f,0.f);
+    if (!tex) return defaultVal;
     return make_float3(tex2D<float4>(tex, texCoord.x, texCoord.y));
 }
 
 inline __device__ 
-float sampleTexture(int32_t textureId, float2 texCoord, int8_t channel) {
-    if (textureId < 0 || textureId >= (MAX_TEXTURES + MAX_MATERIALS * NUM_MAT_PARAMS)) return 0.f;
+float sampleTexture(int32_t textureId, float2 texCoord, int8_t channel, float defaultVal) {
+    if (textureId < 0 || textureId >= (MAX_TEXTURES + MAX_MATERIALS * NUM_MAT_PARAMS)) return defaultVal;
     cudaTextureObject_t tex = optixLaunchParams.textureObjects[textureId];
-    if (!tex) return 0.f;
+    if (!tex) return defaultVal;
     if (channel == 0) return tex2D<float4>(tex, texCoord.x, texCoord.y).x;
     if (channel == 1) return tex2D<float4>(tex, texCoord.x, texCoord.y).y;
     if (channel == 2) return tex2D<float4>(tex, texCoord.x, texCoord.y).z;
     if (channel == 3) return tex2D<float4>(tex, texCoord.x, texCoord.y).w;
-    return 0.f;
+    return defaultVal;
 }
 
 __device__
@@ -238,22 +239,26 @@ void loadMeshNormalData(int meshID, int3 indices, float2 barycentrics, float2 uv
 
 __device__ 
 void loadDisneyMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float roughnessMinimum) {
-    mat.base_color = sampleTexture(p.base_color_texture_id, uv);
-    mat.metallic = sampleTexture(p.metallic_texture_id, uv, p.metallic_texture_channel);
-    mat.specular = sampleTexture(p.specular_texture_id, uv, p.specular_texture_channel);
-    mat.roughness = max(max(sampleTexture(p.roughness_texture_id, uv, p.roughness_texture_channel), MIN_ROUGHNESS), roughnessMinimum);
-    mat.specular_tint = sampleTexture(p.specular_tint_texture_id, uv, p.specular_tint_texture_channel);
-    mat.anisotropy = sampleTexture(p.anisotropic_texture_id, uv, p.anisotropic_texture_channel);
-    mat.sheen = sampleTexture(p.sheen_texture_id, uv, p.sheen_texture_channel);
-    mat.sheen_tint = sampleTexture(p.sheen_tint_texture_id, uv, p.sheen_tint_texture_channel);
-    mat.clearcoat = sampleTexture(p.clearcoat_texture_id, uv, p.clearcoat_texture_channel);
-    float clearcoat_roughness = max(sampleTexture(p.clearcoat_roughness_texture_id, uv, p.clearcoat_roughness_texture_channel), roughnessMinimum);
+    mat.base_color = sampleTexture(p.base_color_texture_id, uv, make_float3(.8f, .8f, .8f));
+    mat.metallic = sampleTexture(p.metallic_texture_id, uv, p.metallic_texture_channel, .0f);
+    mat.specular = sampleTexture(p.specular_texture_id, uv, p.specular_texture_channel, .5f);
+    mat.roughness = sampleTexture(p.roughness_texture_id, uv, p.roughness_texture_channel, .5f);
+    mat.specular_tint = sampleTexture(p.specular_tint_texture_id, uv, p.specular_tint_texture_channel, 0.f);
+    mat.anisotropy = sampleTexture(p.anisotropic_texture_id, uv, p.anisotropic_texture_channel, 0.f);
+    mat.sheen = sampleTexture(p.sheen_texture_id, uv, p.sheen_texture_channel, 0.f);
+    mat.sheen_tint = sampleTexture(p.sheen_tint_texture_id, uv, p.sheen_tint_texture_channel, 0.5f);
+    mat.clearcoat = sampleTexture(p.clearcoat_texture_id, uv, p.clearcoat_texture_channel, 0.f);
+    float clearcoat_roughness = sampleTexture(p.clearcoat_roughness_texture_id, uv, p.clearcoat_roughness_texture_channel, 0.3f);
+    mat.ior = sampleTexture(p.ior_texture_id, uv, p.ior_texture_channel, 1.45f);
+    mat.specular_transmission = sampleTexture(p.transmission_texture_id, uv, p.transmission_texture_channel, 0.f);
+    mat.flatness = sampleTexture(p.subsurface_texture_id, uv, p.subsurface_texture_channel, 0.f);
+    mat.subsurface_color = sampleTexture(p.subsurface_color_texture_id, uv, make_float3(0.8f, 0.8f, 0.8f));
+    mat.transmission_roughness = sampleTexture(p.transmission_roughness_texture_id, uv, p.transmission_roughness_texture_channel, 0.f);
+    
+    mat.transmission_roughness = max(max(mat.transmission_roughness, MIN_ROUGHNESS), roughnessMinimum);
+    mat.roughness = max(max(mat.roughness, MIN_ROUGHNESS), roughnessMinimum);
+    clearcoat_roughness = max(clearcoat_roughness, roughnessMinimum);
     mat.clearcoat_gloss = 1.0 - clearcoat_roughness * clearcoat_roughness;
-    mat.ior = sampleTexture(p.ior_texture_id, uv, p.ior_texture_channel);
-    mat.specular_transmission = sampleTexture(p.transmission_texture_id, uv, p.transmission_texture_channel);
-    mat.flatness = sampleTexture(p.subsurface_texture_id, uv, p.subsurface_texture_channel);
-    mat.subsurface_color = sampleTexture(p.subsurface_color_texture_id, uv);
-    mat.transmission_roughness = max(max(sampleTexture(p.transmission_roughness_texture_id, uv, p.transmission_roughness_texture_channel), MIN_ROUGHNESS), roughnessMinimum);
 }
 
 __device__
@@ -660,7 +665,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
                 dN = make_float3(0.5f, .5f, 1.f);
             } else {
-                dN = sampleTexture(entityMaterial.normal_map_texture_id, uv);
+                dN = sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float3(0.5f, .5f, 1.f));
             }            
             dN = (dN * make_float3(2.0f)) - make_float3(1.f);   
             v_z = make_float3(normalize(tbn * normalize(make_vec3(dN))) );
@@ -683,7 +688,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             LightStruct entityLight = optixLaunchParams.lights[entity.light_id];
             float3 lightEmission;
             if (entityLight.color_texture_id == -1) lightEmission = make_float3(entityLight.r, entityLight.g, entityLight.b);
-            else lightEmission = sampleTexture(entityLight.color_texture_id, uv);
+            else lightEmission = sampleTexture(entityLight.color_texture_id, uv, make_float3(0.f, 0.f, 0.f));
             float dist = payload.tHit;
             lightEmission = (lightEmission * entityLight.intensity);
             if (bounce != 0) lightEmission = (lightEmission * pow(2.f, entityLight.exposure)) / (dist * dist);
@@ -794,7 +799,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 numTris = mesh.numTris;
                 lightDir = make_float3(dir.x, dir.y, dir.z);
                 if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
-                else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * (light_light.intensity * pow(2.f, light_light.exposure));
+                else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv), make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
             }
 
             disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
@@ -873,7 +878,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
                         float3 lightEmission;
                         if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
-                        else lightEmission = sampleTexture(light_light.color_texture_id, uv) * (light_light.intensity * pow(2.f, light_light.exposure));
+                        else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
                         lightEmission = lightEmission / (dist * dist);
 
                         if (dotNWi > 0.f) 
