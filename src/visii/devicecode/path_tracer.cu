@@ -204,6 +204,7 @@ void loadMeshNormalData(int meshID, int3 indices, float2 barycentrics, float2 uv
     const float3 &B = make_float3(normals[indices.y]);
     const float3 &C = make_float3(normals[indices.z]);
     normal = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
+    normal = normalize(normal);
 }
 
 __device__ 
@@ -337,7 +338,7 @@ void saveLightingColorRenderData (
     // Note, dillum and iillum are expected to change outside this function depending on the 
     // render data flags.
     if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_COLOR) {
-        renderData = disney_diffuse_color(mat, w_n, w_o, w_i, normalize(w_o + w_i)); 
+        renderData = disney_diffuse_color(mat, w_n, w_o, w_i, normalize(w_o + w_i));  
     }
     else if (optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_COLOR) {
         renderData = disney_microfacet_reflection_color(mat, w_n, w_o, w_i, normalize(w_o + w_i));
@@ -598,9 +599,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_x = make_float3(normalize(nxfm * make_vec3(v_x)));
             v_y = -cross(v_z, v_x);
             v_x = -cross(v_y, v_z);
-            // need to re-normalize, since the cross of two non-orthogonal unit length vectors isn't necessarily normalized...
-            v_y = normalize(v_y);
-            v_x = normalize(v_x);
 
             if (optixLaunchParams.renderDataMode != RenderDataFlags::NONE) {
                 glm::mat4 xfmt0 = to_mat4(payload.localToWorldT0);
