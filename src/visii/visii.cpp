@@ -98,6 +98,7 @@ static struct OptixData {
     OWLBuffer textureObjectsBuffer;
 
     OWLTexture textureObjects[MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS];
+    TextureStruct textureStructs[MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS];
 
     uint32_t numLightEntities;
 
@@ -1207,6 +1208,9 @@ void updateComponents()
                     OD.textureObjects[index] = owlTexture2DCreate(
                         OD.context, OWL_TEXEL_FORMAT_RGBA32F,
                         1,1, &c, OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
+                    OptixData.textureStructs[index] = TextureStruct();
+                    OptixData.textureStructs[index].width = 0;
+                    OptixData.textureStructs[index].height = 0;
                 };
 
                 int off = MAX_TEXTURES + mid * NUM_MAT_PARAMS;
@@ -1261,7 +1265,8 @@ void updateComponents()
         
         bufferUpload(OD.textureObjectsBuffer, OD.textureObjects);
         Texture::updateComponents();
-        bufferUpload(OptixData.textureBuffer, Texture::getFrontStruct());
+        memcpy(OptixData.textureStructs, Texture::getFrontStruct(), Texture::getCount() * sizeof(TextureStruct));
+        bufferUpload(OptixData.textureBuffer, OptixData.textureStructs);
     }
     
     // Manage transforms
