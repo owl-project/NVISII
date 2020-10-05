@@ -630,7 +630,6 @@ void initializeOptix(bool headless)
                             OWL_TEXTURE_CLAMP);
     launchParamsSetTexture(OD.launchParams, "GGX_E_AVG_LOOKUP", GGX_E_AVG_LOOKUP);
     launchParamsSetTexture(OD.launchParams, "GGX_E_LOOKUP",     GGX_E_LOOKUP);
-    launchParamsSetTexture(OD.launchParams, "proceduralSkyTexture",     0);
     
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
     launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
@@ -742,8 +741,8 @@ void initializeImgui()
 
 std::future<void> enqueueCommand(std::function<void()> function)
 {
-    if (ViSII.render_thread_id != std::this_thread::get_id()) 
-        std::lock_guard<std::mutex> lock(ViSII.qMutex);
+    // if (ViSII.render_thread_id != std::this_thread::get_id()) 
+    std::lock_guard<std::mutex> lock(ViSII.qMutex);
 
     ViSII::Command c;
     c.function = function;

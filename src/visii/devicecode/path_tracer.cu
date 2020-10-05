@@ -572,6 +572,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         loadMeshVertexData(entity.mesh_id, indices, payload.barycentrics, mp, v_gz, p_e1, p_e2);
         loadMeshUVData(entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
         loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_z);
+        v_z = normalize(v_z);
 
         // Load material data for the hit object
         DisneyMaterial mat; MaterialStruct entityMaterial;
