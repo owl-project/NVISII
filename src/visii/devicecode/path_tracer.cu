@@ -596,8 +596,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_gz = make_float3(normalize(nxfm * make_vec3(v_gz)));
             v_z = make_float3(normalize(nxfm * make_vec3(v_z)));
             v_x = make_float3(normalize(nxfm * make_vec3(v_x)));
-            v_y = cross(v_z, v_x);
-            v_x = cross(v_y, v_z);
+            v_y = -cross(v_z, v_x);
+            v_x = -cross(v_y, v_z);
 
             if (optixLaunchParams.renderDataMode != RenderDataFlags::NONE) {
                 glm::mat4 xfmt0 = to_mat4(payload.localToWorldT0);
