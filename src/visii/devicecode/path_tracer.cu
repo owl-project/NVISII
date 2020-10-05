@@ -204,7 +204,6 @@ void loadMeshNormalData(int meshID, int3 indices, float2 barycentrics, float2 uv
     const float3 &B = make_float3(normals[indices.y]);
     const float3 &C = make_float3(normals[indices.z]);
     normal = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
-    normal = normalize(normal);
 }
 
 __device__ 
@@ -572,7 +571,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         loadMeshVertexData(entity.mesh_id, indices, payload.barycentrics, mp, v_gz, p_e1, p_e2);
         loadMeshUVData(entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
         loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_z);
-        v_z = normalize(v_z);
 
         // Load material data for the hit object
         DisneyMaterial mat; MaterialStruct entityMaterial;
