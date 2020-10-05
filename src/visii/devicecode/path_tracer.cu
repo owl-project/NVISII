@@ -635,7 +635,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             } else {
                 dN = sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float3(0.5f, .5f, 1.f));
             }            
-            dN = (dN * make_float3(2.0f)) - make_float3(1.f);   
+            dN = normalize( (dN * make_float3(2.0f)) - make_float3(1.f) );   
             v_z = make_float3(tbn * make_vec3(dN));
         }
 
