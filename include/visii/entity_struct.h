@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <stdint.h>
-#define MAX_ENTITIES 1000000
+#define MAX_ENTITIES 10000
 
 #ifndef ENTITY_VISIBILITY_FLAGS
 #define ENTITY_VISIBILITY_FLAGS

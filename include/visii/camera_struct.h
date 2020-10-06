@@ -1,7 +1,7 @@
 /* File shared by both host and device */
 #pragma once
 
-#define MAX_CAMERAS 100
+#define MAX_CAMERAS 10
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_DEPTH_ZERO_TO_ONE

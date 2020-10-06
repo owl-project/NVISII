@@ -1,7 +1,7 @@
 /* File shared by both host and device */
 #pragma once
 
-#define MAX_TEXTURES 32768
+#define MAX_TEXTURES 4096
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_DEPTH_ZERO_TO_ONE
