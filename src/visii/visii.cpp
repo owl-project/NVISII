@@ -1044,26 +1044,29 @@ void updateComponents()
         auto mutex = Mesh::getEditMutex();
         std::lock_guard<std::mutex> lock(*mutex.get());
         for (auto &m : dirtyMeshes) {
-            if (OD.vertexLists[m->getId()]) { owlBufferRelease(OD.vertexLists[m->getId()]); OD.vertexLists[m->getId()] = nullptr; }
-            if (OD.normalLists[m->getId()]) { owlBufferRelease(OD.normalLists[m->getId()]); OD.normalLists[m->getId()] = nullptr; }
-            if (OD.texCoordLists[m->getId()]) { owlBufferRelease(OD.texCoordLists[m->getId()]); OD.texCoordLists[m->getId()] = nullptr; }
-            if (OD.indexLists[m->getId()]) { owlBufferRelease(OD.indexLists[m->getId()]); OD.indexLists[m->getId()] = nullptr; }
-            if (OD.geomList[m->getId()]) { owlGeomRelease(OD.geomList[m->getId()]); OD.geomList[m->getId()] = nullptr; }
-            if (OD.blasList[m->getId()]) { owlGroupRelease(OD.blasList[m->getId()]); OD.blasList[m->getId()] = nullptr; }
+            if (OD.vertexLists[m->getAddress()]) { 
+                owlBufferRelease(OD.vertexLists[m->getAddress()]); 
+                OD.vertexLists[m->getAddress()] = nullptr; 
+            }
+            if (OD.normalLists[m->getAddress()]) { owlBufferRelease(OD.normalLists[m->getAddress()]); OD.normalLists[m->getAddress()] = nullptr; }
+            if (OD.texCoordLists[m->getAddress()]) { owlBufferRelease(OD.texCoordLists[m->getAddress()]); OD.texCoordLists[m->getAddress()] = nullptr; }
+            if (OD.indexLists[m->getAddress()]) { owlBufferRelease(OD.indexLists[m->getAddress()]); OD.indexLists[m->getAddress()] = nullptr; }
+            if (OD.geomList[m->getAddress()]) { owlGeomRelease(OD.geomList[m->getAddress()]); OD.geomList[m->getAddress()] = nullptr; }
+            if (OD.blasList[m->getAddress()]) { owlGroupRelease(OD.blasList[m->getAddress()]); OD.blasList[m->getAddress()] = nullptr; }
             if (!m->isInitialized()) continue;
             if (m->getTriangleIndices().size() == 0) {
                 throw std::runtime_error("ERROR: indices is 0");
             }
 
-            OD.vertexLists[m->getId()]  = deviceBufferCreate(OD.context, OWL_FLOAT3, m->getVertices().size(), m->getVertices().data());
-            OD.normalLists[m->getId()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getNormals().size(), m->getNormals().data());
-            OD.texCoordLists[m->getId()] = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2), m->getTexCoords().size(), m->getTexCoords().data());
-            OD.indexLists[m->getId()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t), m->getTriangleIndices().size(), m->getTriangleIndices().data());
-            OD.geomList[m->getId()]      = geomCreate(OD.context, OD.trianglesGeomType);
-            trianglesSetVertices(OD.geomList[m->getId()], OD.vertexLists[m->getId()], m->getVertices().size(), sizeof(std::array<float, 3>), 0);
-            trianglesSetIndices(OD.geomList[m->getId()], OD.indexLists[m->getId()], m->getTriangleIndices().size() / 3, sizeof(ivec3), 0);
-            OD.blasList[m->getId()] = trianglesGeomGroupCreate(OD.context, 1, &OD.geomList[m->getId()]);
-            groupBuildAccel(OD.blasList[m->getId()]);          
+            OD.vertexLists[m->getAddress()]  = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec3), m->getVertices().size(), m->getVertices().data());
+            OD.normalLists[m->getAddress()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getNormals().size(), m->getNormals().data());
+            OD.texCoordLists[m->getAddress()] = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2), m->getTexCoords().size(), m->getTexCoords().data());
+            OD.indexLists[m->getAddress()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t), m->getTriangleIndices().size(), m->getTriangleIndices().data());
+            OD.geomList[m->getAddress()]      = geomCreate(OD.context, OD.trianglesGeomType);
+            trianglesSetVertices(OD.geomList[m->getAddress()], OD.vertexLists[m->getAddress()], m->getVertices().size(), sizeof(std::array<float, 3>), 0);
+            trianglesSetIndices(OD.geomList[m->getAddress()], OD.indexLists[m->getAddress()], m->getTriangleIndices().size() / 3, sizeof(ivec3), 0);
+            OD.blasList[m->getAddress()] = trianglesGeomGroupCreate(OD.context, 1, &OD.geomList[m->getAddress()]);
+            groupBuildAccel(OD.blasList[m->getAddress()]);          
         }
 
         bufferUpload(OD.vertexListsBuffer, OD.vertexLists);

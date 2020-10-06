@@ -2391,6 +2391,11 @@ int32_t Mesh::getId()
     return id;
 }
 
+int32_t Mesh::getAddress()
+{
+	return (this - meshes);
+}
+
 std::map<std::string, uint32_t> Mesh::getNameToIdMap()
 {
 	return lookupTable;

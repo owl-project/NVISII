@@ -670,7 +670,10 @@ class Mesh : public StaticFactory
         std::string getName();
 
         /** @returns the unique integer ID for this component */
-          int32_t getId();
+        int32_t getId();
+
+        // For internal use
+        int32_t getAddress();
         
         /** @returns A map whose key is a mesh name and whose value is the ID for that mesh */
         static std::map<std::string, uint32_t> getNameToIdMap();
