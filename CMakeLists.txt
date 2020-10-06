@@ -184,7 +184,6 @@ include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
 # geometry generator
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/externals/generator)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/generator/include)
-set_property(TARGET generator PROPERTY FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/externals/generator")
 
 # glad
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/glad/include)
