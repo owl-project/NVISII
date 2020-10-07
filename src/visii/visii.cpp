@@ -1080,8 +1080,10 @@ void updateComponents()
     // Manage Entities: Build / Rebuild TLAS
     auto dirtyEntities = Entity::getDirtyEntities();
     if (dirtyEntities.size() > 0) {
-        auto mutex = Entity::getEditMutex();
-        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+        auto entityMutex = Entity::getEditMutex();
+        auto meshMutex = Mesh::getEditMutex();
+        std::lock_guard<std::recursive_mutex> entityLock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> meshLock(*mutex.get());
 
         std::vector<OWLGroup> instances;
         std::vector<glm::mat4> t0InstanceTransforms;
@@ -1095,7 +1097,8 @@ void updateComponents()
             if (!entities[eid].getMesh()) continue;
             if (!entities[eid].getMaterial() && !entities[eid].getLight()) continue;
 
-            OWLGroup blas = OD.blasList[entities[eid].getMesh()->getAddress()];
+            uint32_t address = entities[eid].getMesh()->getAddress();
+            OWLGroup blas = OD.blasList[address];
             if (!blas) {
                 // Not sure why, but the mesh this entity references hasn't been constructed yet.
                 // Mark it as dirty. It should be available in a subsequent frame
