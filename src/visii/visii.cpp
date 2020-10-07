@@ -521,6 +521,7 @@ void initializeOptix(bool headless)
         { "numLightEntities",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
         { "instanceToEntityMap",     OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
         { "domeLightIntensity",      OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
+        { "domeLightExposure",       OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightExposure)},
         { "domeLightColor",          OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, domeLightColor)},
         { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
         { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
@@ -635,6 +636,7 @@ void initializeOptix(bool headless)
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
     launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
     launchParamsSetRaw(OD.launchParams, "domeLightIntensity", &OD.LP.domeLightIntensity);
+    launchParamsSetRaw(OD.launchParams, "domeLightExposure", &OD.LP.domeLightExposure);
     launchParamsSetRaw(OD.launchParams, "domeLightColor", &OD.LP.domeLightColor);
     launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
     launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
@@ -791,6 +793,12 @@ void setDomeLightIntensity(float intensity)
 {
     intensity = std::max(float(intensity), float(0.f));
     OptixData.LP.domeLightIntensity = intensity;
+    resetAccumulation();
+}
+
+void setDomeLightExposure(float exposure)
+{
+    OptixData.LP.domeLightExposure = exposure;
     resetAccumulation();
 }
 
@@ -1332,6 +1340,7 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
     launchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
     launchParamsSetRaw(OptixData.launchParams, "domeLightIntensity", &OptixData.LP.domeLightIntensity);
+    launchParamsSetRaw(OptixData.launchParams, "domeLightExposure", &OptixData.LP.domeLightExposure);
     launchParamsSetRaw(OptixData.launchParams, "domeLightColor", &OptixData.LP.domeLightColor);
     launchParamsSetRaw(OptixData.launchParams, "renderDataMode", &OptixData.LP.renderDataMode);
     launchParamsSetRaw(OptixData.launchParams, "renderDataBounce", &OptixData.LP.renderDataBounce);

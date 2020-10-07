@@ -525,8 +525,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // If ray misses, terminate the ray
         if (payload.tHit <= 0.f) {
             // Compute lighting from environment
-            illum = illum + pathThroughput * (missColor(ray, envTex) * optixLaunchParams.domeLightIntensity);
-            if (bounce == 0) directIllum = illum;
+            if (bounce == 0) {
+                illum = illum + pathThroughput * (missColor(ray, envTex) * optixLaunchParams.domeLightIntensity);
+                directIllum = illum;
+            }
+            else 
+                illum = illum + pathThroughput * (missColor(ray, envTex) * optixLaunchParams.domeLightIntensity * pow(2.f, optixLaunchParams.domeLightExposure));
             
             const float envDist = 10000.0f; // large value
             /* Compute miss motion vector */
@@ -735,7 +739,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 }
 
                 numTris = 1.f;
-                lightEmission = (missColor(lightDir, envTex) * optixLaunchParams.domeLightIntensity);
+                lightEmission = (missColor(lightDir, envTex) * optixLaunchParams.domeLightIntensity * pow(2.f, optixLaunchParams.domeLightExposure));
             }
             // sample light sources
             else 
@@ -820,7 +824,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if ((payload.instanceID == -1) && (sampledLightIDs[lid] == -1)) {
                     // Case where we hit the background, and also previously sampled the background   
                     float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
-                    float3 lightEmission = missColor(ray, envTex) * optixLaunchParams.domeLightIntensity;
+                    float3 lightEmission = missColor(ray, envTex) * optixLaunchParams.domeLightIntensity * pow(2.f, optixLaunchParams.domeLightExposure);
                     float3 Li = (lightEmission * w) / bsdfPDF;
                     float dotNWi = max(dot(ray.direction, v_gz), 0.f);  // geometry term
                     if (dotNWi > 0.f) {
