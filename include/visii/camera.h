@@ -19,7 +19,7 @@ class Camera : public StaticFactory
     friend class Entity;
 private:
   	/** Prevents multiple components from simultaneously being added and/or removed from the component list */
-	static std::shared_ptr<std::mutex> editMutex;
+	static std::shared_ptr<std::recursive_mutex> editMutex;
 
 	/** Marks that the StaticFactory has allocated the table of components */
 	static bool factoryInitialized;
@@ -200,5 +200,5 @@ private:
 	glm::mat3 getIntrinsicMatrix(uint32_t width, uint32_t height);
 
 	/** For internal use. Returns the mutex used to lock cameras for processing by the renderer. */
-	static std::shared_ptr<std::mutex> getEditMutex();
+	static std::shared_ptr<std::recursive_mutex> getEditMutex();
 };

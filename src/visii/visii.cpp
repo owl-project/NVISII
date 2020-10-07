@@ -144,7 +144,7 @@ static struct ViSII {
 
     std::thread::id render_thread_id;
     std::condition_variable cv;
-    std::mutex qMutex;
+    std::recursive_mutex qMutex;
     std::queue<Command> commandQueue = {};
     bool headlessMode;
 } ViSII;
@@ -743,7 +743,7 @@ void initializeImgui()
 std::future<void> enqueueCommand(std::function<void()> function)
 {
     // if (ViSII.render_thread_id != std::this_thread::get_id()) 
-    std::lock_guard<std::mutex> lock(ViSII.qMutex);
+    std::lock_guard<std::recursive_mutex> lock(ViSII.qMutex);
 
     ViSII::Command c;
     c.function = function;
@@ -756,7 +756,7 @@ std::future<void> enqueueCommand(std::function<void()> function)
 
 void processCommandQueue()
 {
-    std::lock_guard<std::mutex> lock(ViSII.qMutex);
+    std::lock_guard<std::recursive_mutex> lock(ViSII.qMutex);
     while (!ViSII.commandQueue.empty()) {
         auto item = ViSII.commandQueue.front();
         item.function();
@@ -1042,7 +1042,7 @@ void updateComponents()
     auto dirtyMeshes = Mesh::getDirtyMeshes();
     if (dirtyMeshes.size() > 0) {
         auto mutex = Mesh::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
         for (auto &m : dirtyMeshes) {
             if (OD.vertexLists[m->getAddress()]) { 
                 owlBufferRelease(OD.vertexLists[m->getAddress()]); 
@@ -1081,7 +1081,7 @@ void updateComponents()
     auto dirtyEntities = Entity::getDirtyEntities();
     if (dirtyEntities.size() > 0) {
         auto mutex = Entity::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
 
         std::vector<OWLGroup> instances;
         std::vector<glm::mat4> t0InstanceTransforms;
@@ -1095,7 +1095,7 @@ void updateComponents()
             if (!entities[eid].getMesh()) continue;
             if (!entities[eid].getMaterial() && !entities[eid].getLight()) continue;
 
-            OWLGroup blas = OD.blasList[entities[eid].getMesh()->getId()];
+            OWLGroup blas = OD.blasList[entities[eid].getMesh()->getAddress()];
             if (!blas) {
                 // Not sure why, but the mesh this entity references hasn't been constructed yet.
                 // Mark it as dirty. It should be available in a subsequent frame
@@ -1169,7 +1169,7 @@ void updateComponents()
     // Manage textures and materials
     if (Texture::areAnyDirty() || Material::areAnyDirty()) {
         auto mutex = Texture::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
 
         // Allocate cuda textures for all texture components
         Texture* textures = Texture::getFront();
@@ -1188,7 +1188,7 @@ void updateComponents()
         // Manage materials
         {
             auto mutex = Material::getEditMutex();
-            std::lock_guard<std::mutex> lock(*mutex.get());
+            std::lock_guard<std::recursive_mutex> lock(*mutex.get());
             Material* materials = Material::getFront();
             MaterialStruct* matStructs = Material::getFrontStruct();
             
@@ -1276,7 +1276,7 @@ void updateComponents()
     auto dirtyTransforms = Transform::getDirtyTransforms();
     if (dirtyTransforms.size() > 0) {
         auto mutex = Transform::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
 
         Transform::updateComponents();
         
@@ -1289,7 +1289,7 @@ void updateComponents()
             TransformStruct* transformStructs = Transform::getFrontStruct();
             for (auto &t : dirtyTransforms) {
                 if (!t->isInitialized()) continue;
-                CUDA_CHECK(cudaMemcpy(&devTransforms[t->getId()], &transformStructs[t->getId()], sizeof(TransformStruct), cudaMemcpyHostToDevice));
+                CUDA_CHECK(cudaMemcpy(&devTransforms[t->getAddress()], &transformStructs[t->getAddress()], sizeof(TransformStruct), cudaMemcpyHostToDevice));
             }
         }
 
@@ -1300,7 +1300,7 @@ void updateComponents()
     // Manage Cameras
     if (Camera::areAnyDirty()) {
         auto mutex = Camera::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
 
         Camera::updateComponents();
         bufferUpload(OptixData.cameraBuffer,    Camera::getFrontStruct());
@@ -1309,7 +1309,7 @@ void updateComponents()
     // Manage lights
     if (Light::areAnyDirty()) {
         auto mutex = Light::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
 
         Light::updateComponents();
         bufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());

@@ -836,7 +836,7 @@ class Mesh : public StaticFactory
         // bool should_show_bounding_box();
 
         /** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
-        static std::shared_ptr<std::mutex> getEditMutex();
+        static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
     private:
         /** Creates an uninitialized mesh. Useful for preallocation. */
@@ -848,7 +848,7 @@ class Mesh : public StaticFactory
         static std::set<Mesh*> dirtyMeshes;
 
         /* TODO */
-        static std::shared_ptr<std::mutex> editMutex;
+        static std::shared_ptr<std::recursive_mutex> editMutex;
         
         /* TODO */
         static bool factoryInitialized;

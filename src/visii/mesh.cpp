@@ -40,7 +40,7 @@
 Mesh Mesh::meshes[MAX_MESHES];
 MeshStruct Mesh::meshStructs[MAX_MESHES];
 std::map<std::string, uint32_t> Mesh::lookupTable;
-std::shared_ptr<std::mutex> Mesh::editMutex;
+std::shared_ptr<std::recursive_mutex> Mesh::editMutex;
 bool Mesh::factoryInitialized = false;
 std::set<Mesh*> Mesh::dirtyMeshes;
 
@@ -406,7 +406,7 @@ void Mesh::clearAll()
 
 void Mesh::initializeFactory() {
 	if (isFactoryInitialized()) return;
-	editMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
 
@@ -1561,7 +1561,7 @@ void Mesh::generateSmoothNormals()
 // 	return geometry;
 // }
 
-std::shared_ptr<std::mutex> Mesh::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Mesh::getEditMutex()
 {
 	return editMutex;
 }

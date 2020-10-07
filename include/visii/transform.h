@@ -71,7 +71,7 @@ class Transform : public StaticFactory
     glm::mat4 prevLocalToWorldMatrix = glm::mat4(1);
     glm::mat4 prevWorldToLocalMatrix = glm::mat4(1);
 
-  	static std::shared_ptr<std::mutex> editMutex;
+  	static std::shared_ptr<std::recursive_mutex> editMutex;
     static bool factoryInitialized;
 
     static Transform transforms[MAX_TRANSFORMS];
@@ -157,6 +157,9 @@ class Transform : public StaticFactory
     /** @returns the unique integer ID for this component */
 	  int32_t getId();
 
+    // For internal use
+    int32_t getAddress();
+
     /** @returns A map whose key is a transform name and whose value is the ID for that transform */
 	  static std::map<std::string, uint32_t> getNameToIdMap();
 
@@ -188,7 +191,7 @@ class Transform : public StaticFactory
 	  void markDirty();
 
     /** For internal use. Returns the mutex used to lock transforms for processing by the renderer. */
-    static std::shared_ptr<std::mutex> getEditMutex();
+    static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
     /** @returns a json string representation of the current component */
     std::string toString();

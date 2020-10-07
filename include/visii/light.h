@@ -100,7 +100,7 @@ public:
     void markClean() { dirty = false; }
 
     /** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
-    static std::shared_ptr<std::mutex> getEditMutex();
+    static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
     /** 
      * Sets the color which this light component will emit. 
@@ -167,7 +167,7 @@ private:
     Light(std::string name, uint32_t id);
 
     /* A mutex used to make component access and modification thread safe */
-    static std::shared_ptr<std::mutex> editMutex;
+    static std::shared_ptr<std::recursive_mutex> editMutex;
 
     /* Flag indicating that static resources were created */
     static bool factoryInitialized;

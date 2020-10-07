@@ -5,14 +5,14 @@
 Transform Transform::transforms[MAX_TRANSFORMS];
 TransformStruct Transform::transformStructs[MAX_TRANSFORMS];
 std::map<std::string, uint32_t> Transform::lookupTable;
-std::shared_ptr<std::mutex> Transform::editMutex;
+std::shared_ptr<std::recursive_mutex> Transform::editMutex;
 bool Transform::factoryInitialized = false;
 std::set<Transform*> Transform::dirtyTransforms;
 
 void Transform::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
-	editMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
 
@@ -93,7 +93,7 @@ Transform* Transform::createFromMatrix(std::string name, mat4 xfm)
 	}
 }
 
-std::shared_ptr<std::mutex> Transform::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Transform::getEditMutex()
 {
 	return editMutex;
 }
@@ -131,6 +131,11 @@ std::string Transform::getName()
 int32_t Transform::getId()
 {
     return id;
+}
+
+int32_t Transform::getAddress()
+{
+	return (this - transforms);
 }
 
 std::map<std::string, uint32_t> Transform::getNameToIdMap()
