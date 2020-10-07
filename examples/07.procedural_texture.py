@@ -53,7 +53,7 @@ img = np.zeros(img_shape)
 for i in range(img_shape[0]):
     for j in range(img_shape[1]):
         for c in range(4):
-            img[i][j][c] = noise.snoise_inv(  
+            img[i][j][c] = noise.snoise2(  
                 i, j, 
                 octaves=10, 
                 persistence=.25, 

@@ -30,10 +30,10 @@ vec2 toUV(vec3 n)
     n.x = -n.x;
     vec2 uv;
 
-    uv.x = atan2f(float(-n.x), float(n.y));
+    uv.x = approx_atan2f(float(-n.x), float(n.y));
     uv.x = (uv.x + M_PI / 2.0f) / (M_PI * 2.0f) + M_PI * (28.670f / 360.0f);
 
-    uv.y = ::clamp(float(approx_acosf(n.z) / M_PI), .001f, .999f);
+    uv.y = ::clamp(float(acosf(n.z) / M_PI), .001f, .999f);
 
     return uv;
 }

@@ -103,7 +103,19 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light_3')
 )
-obj_entity.get_light().set_intensity(4)
+# Intensity effects the appearance of the light in 
+# addition to what intensity that light emits.
+obj_entity.get_light().set_intensity(1)
+
+# Exposure does not effect direct appearance of the light,
+# but does effect the relative power of the light in illuminating
+# other objects.
+obj_entity.get_light().set_exposure(4)
+
+# Light power can also be controlled by surface area (with larger lights emitting more) 
+# This has more impact for larger area lights, but is off by default to make lights easier
+# to control.
+# obj_entity.get_light().use_surface_area(True)
 
 obj_entity.get_light().set_color((0,1,1))
 obj_entity.get_transform().set_scale((0.2, 0.2, 0.2))

@@ -914,7 +914,6 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
     auto func = [texture, enableCDF] () {
         OptixData.LP.environmentMapID = texture->getId();
         if (enableCDF) {
-
             std::vector<glm::vec4> texels = texture->getTexels();
 
             int width = texture->getWidth();
