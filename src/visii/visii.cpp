@@ -1082,8 +1082,8 @@ void updateComponents()
     if (dirtyEntities.size() > 0) {
         auto entityMutex = Entity::getEditMutex();
         auto meshMutex = Mesh::getEditMutex();
-        std::lock_guard<std::recursive_mutex> entityLock(*mutex.get());
-        std::lock_guard<std::recursive_mutex> meshLock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> entityLock(*entityMutex.get());
+        std::lock_guard<std::recursive_mutex> meshLock(*meshMutex.get());
 
         std::vector<OWLGroup> instances;
         std::vector<glm::mat4> t0InstanceTransforms;
