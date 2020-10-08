@@ -40,6 +40,26 @@ set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "" FORCE)
 set(CMAKE_RELWITHDEBINFO_POSTFIX "" CACHE STRING "" FORCE)
 set(CMAKE_MINSIZEREL_POSTFIX "" CACHE STRING "" FORCE)
 
+
+if ((NOT WIN32) AND (NOT SET_UP_CONFIGURATIONS_DONE))
+  set(SET_UP_CONFIGURATIONS_DONE 1)
+  
+  # No reason to set CMAKE_CONFIGURATION_TYPES if it's not a multiconfig generator
+  # Also no reason mess with CMAKE_BUILD_TYPE if it's a multiconfig generator.
+  if(CMAKE_CONFIGURATION_TYPES) # multiconfig generator?
+    set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE) 
+  else()
+    if(NOT CMAKE_BUILD_TYPE)
+      #            message("Defaulting to release build.")
+      set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
+    endif()
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY HELPSTRING "Choose the type of build")
+    # set the valid options for cmake-gui drop-down list
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug;Release")
+  endif()
+endif()
+
+
 # Force binaries to go to build folder, not subfolders
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
@@ -89,6 +109,7 @@ add_definitions(-DGENERATOR_USE_GLM)
 if(WIN32)
   add_definitions(-DNOMINMAX)
 endif()
+add_definitions(${OWL_CXX_FLAGS})
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  External Dependencies                                           │
@@ -254,6 +275,7 @@ find_program(BIN2C bin2c
 set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
 find_package(OptiX REQUIRED VERSION 7.0)
 #include_directories(${OptiX_INCLUDE})
+
 
 # owl
 #set(SET_UP_CONFIGURATIONS_DONE 1)
