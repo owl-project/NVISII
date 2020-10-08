@@ -104,6 +104,7 @@ Mesh::Mesh(std::string name, uint32_t id)
 	this->id = id;
 	this->meshStructs[id].show_bounding_box = 0;
 	this->meshStructs[id].numTris = 0;
+	this->meshStructs[id].numVerts = 0;
 }
 
 std::string Mesh::toString() {
@@ -261,6 +262,7 @@ void Mesh::computeMetadata()
 	}
 
 	this->meshStructs[id].numTris = uint32_t(triangleIndices.size()) / 3;
+	this->meshStructs[id].numVerts = uint32_t(positions.size());
 }
 
 // void Mesh::save_tetrahedralization(float quality_bound, float maximum_volume)

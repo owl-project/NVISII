@@ -51,6 +51,7 @@ struct LaunchParams {
     TextureStruct   *textures = nullptr;
     uint32_t        *lightEntities = nullptr;
     uint32_t        *instanceToEntityMap = nullptr;
+    uint32_t         numInstances = 0;
     uint32_t         numLightEntities = 0;
 
     owl::device::Buffer vertexLists;

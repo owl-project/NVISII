@@ -1,3 +1,5 @@
+// #undef NDEBUG
+
 #include <visii/visii.h>
 
 #include <algorithm>
@@ -520,6 +522,7 @@ void initializeOptix(bool headless)
         { "indexLists",              OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, indexLists)},
         { "numLightEntities",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
         { "instanceToEntityMap",     OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
+        { "numInstances",            OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numInstances)},
         { "domeLightIntensity",      OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
         { "domeLightExposure",       OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightExposure)},
         { "domeLightColor",          OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, domeLightColor)},
@@ -609,6 +612,8 @@ void initializeOptix(bool headless)
 
     OD.LP.environmentMapID = -1;
     OD.LP.environmentMapRotation = glm::quat(1,0,0,0);
+    OD.LP.numInstances = 1;
+    launchParamsSetRaw(OD.launchParams, "numInstances",  &OD.LP.numInstances);
     launchParamsSetRaw(OD.launchParams, "environmentMapID", &OD.LP.environmentMapID);
     launchParamsSetRaw(OD.launchParams, "environmentMapRotation", &OD.LP.environmentMapRotation);
 
@@ -1153,6 +1158,7 @@ void updateComponents()
 
         bufferResize(OD.instanceToEntityMapBuffer, instanceToEntityMap.size());
         bufferUpload(OD.instanceToEntityMapBuffer, instanceToEntityMap.data());
+        OD.LP.numInstances = instanceToEntityMap.size();
         groupBuildAccel(OD.tlas);
         launchParamsSetGroup(OD.launchParams, "world", OD.tlas);
         buildSBT(OD.context);
@@ -1357,6 +1363,7 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "environmentMapHeight", &OptixData.LP.environmentMapHeight);
     launchParamsSetRaw(OptixData.launchParams, "sceneBBMin", &OptixData.LP.sceneBBMin);
     launchParamsSetRaw(OptixData.launchParams, "sceneBBMax", &OptixData.LP.sceneBBMax);
+    launchParamsSetRaw(OptixData.launchParams, "numInstances",  &OptixData.LP.numInstances);
 
     OptixData.LP.frameID ++;
 }
