@@ -253,27 +253,29 @@ find_program(BIN2C bin2c
 # optix 7
 set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
 find_package(OptiX REQUIRED VERSION 7.0)
-include_directories(${OptiX_INCLUDE})
+#include_directories(${OptiX_INCLUDE})
 
 # owl
-set(SET_UP_CONFIGURATIONS_DONE 1)
-set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
-set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
-add_subdirectory(externals/owl)
-include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/)
-include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
+#set(SET_UP_CONFIGURATIONS_DONE 1)
+#set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
+#set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
+add_subdirectory(externals/owl EXCLUDE_FROM_ALL)
+#include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/)
+#include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/cmake)
+include_directories(${OWL_INCLUDES})
 include(configure_cuda)
 
 # add libraries to a list for linking
-set (
+set(
   LIBRARIES
   generator
   ${GLFW_LIBRARIES}
   glfw
   ${OPENGL_gl_LIBRARY}
   # ${TBB_LIBRARIES}
-  owl
+  #owl
+  ${OWL_LIBRARIES}
   )
 
 set (
