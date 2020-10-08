@@ -40,6 +40,26 @@ set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "" FORCE)
 set(CMAKE_RELWITHDEBINFO_POSTFIX "" CACHE STRING "" FORCE)
 set(CMAKE_MINSIZEREL_POSTFIX "" CACHE STRING "" FORCE)
 
+
+if ((NOT WIN32) AND (NOT SET_UP_CONFIGURATIONS_DONE))
+  set(SET_UP_CONFIGURATIONS_DONE 1)
+  
+  # No reason to set CMAKE_CONFIGURATION_TYPES if it's not a multiconfig generator
+  # Also no reason mess with CMAKE_BUILD_TYPE if it's a multiconfig generator.
+  if(CMAKE_CONFIGURATION_TYPES) # multiconfig generator?
+    set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE) 
+  else()
+    if(NOT CMAKE_BUILD_TYPE)
+      #            message("Defaulting to release build.")
+      set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
+    endif()
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY HELPSTRING "Choose the type of build")
+    # set the valid options for cmake-gui drop-down list
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug;Release")
+  endif()
+endif()
+
+
 # Force binaries to go to build folder, not subfolders
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
@@ -90,6 +110,7 @@ add_definitions(-DGENERATOR_USE_GLM)
 if(WIN32)
   add_definitions(-DNOMINMAX)
 endif()
+add_definitions(${OWL_CXX_FLAGS})
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  External Dependencies                                           │
@@ -263,27 +284,30 @@ find_program(BIN2C bin2c
 # optix 7
 set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
 find_package(OptiX REQUIRED VERSION 7.0)
-include_directories(${OptiX_INCLUDE})
+#include_directories(${OptiX_INCLUDE})
+
 
 # owl
-set(SET_UP_CONFIGURATIONS_DONE 1)
-set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
-set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
-add_subdirectory(externals/owl)
-include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/)
-include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
+#set(SET_UP_CONFIGURATIONS_DONE 1)
+#set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
+#set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
+add_subdirectory(externals/owl EXCLUDE_FROM_ALL)
+#include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/)
+#include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/cmake)
+include_directories(${OWL_INCLUDES})
 include(configure_cuda)
 
 # add libraries to a list for linking
-set (
+set(
   LIBRARIES
   generator
   ${GLFW_LIBRARIES}
   glfw
   ${OPENGL_gl_LIBRARY}
   # ${TBB_LIBRARIES}
-  owl
+  #owl
+  ${OWL_LIBRARIES}
   )
 
 set (
@@ -436,4 +460,14 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/python/importers DESTINATION $
 # install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
 # install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb_debug.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
 # endif(WIN32)
- 
+
+# If we want apps using visii to be able to also use OWL, we have to export these:
+get_directory_property(hasParent PARENT_DIRECTORY)
+if(hasParent)
+  set(OWL_INCLUDES ${OWL_INCLUDES} PARENT_SCOPE)
+  set(OWL_VIEWER_INCLUDES ${OWL_VIEWER_INCLUDES} PARENT_SCOPE)
+  set(OWL_LIBRARIES ${OWL_LIBRARIES} PARENT_SCOPE)
+  set(OWL_VIEWER_LIBRARIES ${OWL_VIEWER_LIBRARIES} PARENT_SCOPE)
+  set(OWL_HAVE_TBB ${OWL_HAVE_TBB} PARENT_SCOPE)
+  set(OWL_CXX_FLAGS ${OWL_CXX_FLAGS} PARENT_SCOPE)
+endif()
