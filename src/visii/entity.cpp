@@ -9,7 +9,7 @@
 Entity Entity::entities[MAX_ENTITIES];
 EntityStruct Entity::entityStructs[MAX_ENTITIES];
 std::map<std::string, uint32_t> Entity::lookupTable;
-std::shared_ptr<std::mutex> Entity::editMutex;
+std::shared_ptr<std::recursive_mutex> Entity::editMutex;
 bool Entity::factoryInitialized = false;
 std::set<Entity*> Entity::dirtyEntities;
 std::set<Entity*> Entity::renderableEntities;
@@ -54,6 +54,9 @@ EntityStruct &Entity::getStruct() {
 
 void Entity::setTransform(Transform* transform) 
 {
+	auto mutex = Entity::getEditMutex();
+	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+
 	auto &entity = getStruct();
 	if (!transform) throw std::runtime_error( std::string("Invalid transform handle."));
 	if (!transform->isFactoryInitialized()) throw std::runtime_error("Error, transform not initialized");
@@ -64,6 +67,9 @@ void Entity::setTransform(Transform* transform)
 
 void Entity::clearTransform()
 {
+	auto mutex = Entity::getEditMutex();
+	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	
 	auto &entity = getStruct();
 	auto transforms = Transform::getFront();
 	if (entity.transform_id != -1) transforms[entity.transform_id].entities.erase(id);
@@ -82,6 +88,9 @@ Transform* Entity::getTransform()
 
 void Entity::setCamera(Camera *camera) 
 {
+	auto mutex = Entity::getEditMutex();
+	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+
 	auto &entity = getStruct();
 	if (!camera) throw std::runtime_error( std::string("Invalid camera handle."));
 	if (!camera->isFactoryInitialized()) throw std::runtime_error("Error, camera not initialized");
@@ -92,6 +101,9 @@ void Entity::setCamera(Camera *camera)
 
 void Entity::clearCamera()
 {
+	auto mutex = Entity::getEditMutex();
+	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+
 	auto &entity = getStruct();
 	auto cameras = Camera::getFront();
 	if (entity.camera_id != -1) cameras[entity.camera_id].entities.erase(id);
@@ -110,6 +122,9 @@ Camera* Entity::getCamera()
 
 void Entity::setMaterial(Material *material) 
 {
+	auto mutex = Entity::getEditMutex();
+	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+
 	auto &entity = getStruct();
 	if (!material) throw std::runtime_error( std::string("Invalid material handle."));
 	if (!material->isFactoryInitialized()) throw std::runtime_error("Error, material not initialized");
@@ -120,6 +135,9 @@ void Entity::setMaterial(Material *material)
 
 void Entity::clearMaterial()
 {
+	auto mutex = Entity::getEditMutex();
+	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+
 	auto &entity = getStruct();
 	auto materials = Material::getFront();
 	if (entity.material_id != -1) materials[entity.material_id].entities.erase(id);
@@ -138,6 +156,9 @@ Material* Entity::getMaterial()
 
 void Entity::setLight(Light* light) 
 {
+	auto mutex = Entity::getEditMutex();
+	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+
 	auto &entity = getStruct();
 	if (!light) throw std::runtime_error( std::string("Invalid light handle."));
 	if (!light->isFactoryInitialized()) throw std::runtime_error("Error, light not initialized");
@@ -148,6 +169,9 @@ void Entity::setLight(Light* light)
 
 void Entity::clearLight()
 {
+	auto mutex = Entity::getEditMutex();
+	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+
 	auto &entity = getStruct();
 	auto lights = Light::getFront();
 	if (entity.light_id != -1) lights[entity.light_id].entities.erase(id);
@@ -166,6 +190,9 @@ Light* Entity::getLight()
 
 void Entity::setMesh(Mesh* mesh) 
 {
+	auto mutex = Entity::getEditMutex();
+	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+
 	auto &entity = getStruct();
 	if (!mesh) throw std::runtime_error( std::string("Invalid mesh handle."));
 	if (!mesh->isInitialized()) throw std::runtime_error("Error, mesh not initialized");
@@ -176,6 +203,9 @@ void Entity::setMesh(Mesh* mesh)
 
 void Entity::clearMesh()
 {
+	auto mutex = Entity::getEditMutex();
+	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	
 	auto &entity = getStruct();
 	auto meshes = Mesh::getFront();
 	if (entity.mesh_id != -1) meshes[entity.mesh_id].entities.erase(id);
@@ -194,6 +224,9 @@ Mesh* Entity::getMesh()
 
 void Entity::setVisibility(bool camera)
 {
+	auto mutex = Entity::getEditMutex();
+	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	
 	auto &entity = getStruct();
 	if (camera) {
 		entity.flags |= ENTITY_VISIBILITY_CAMERA_RAYS;
@@ -221,7 +254,7 @@ glm::vec3 Entity::getAabbCenter()
 void Entity::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
-	editMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
 
@@ -346,7 +379,7 @@ Entity* Entity::create(
 	}
 }
 
-std::shared_ptr<std::mutex> Entity::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Entity::getEditMutex()
 {
 	return editMutex;
 }

@@ -61,6 +61,17 @@ void setCameraEntity(Entity* camera_entity);
 void setDomeLightIntensity(float intensity);
 
 /** 
+ * Modifies the intensity, or brightness, that the dome light (aka environment light) will emit it's color.
+ * Increasing the exposure by 1 will double the energy emitted by the light. 
+ * An exposure of 0 produces an unmodified intensity.
+ * An exposure of -1 cuts the intensity of the light in half.
+ * light_intensity = intensity * pow(2, exposureExposure)
+ * 
+ * @param exposure How powerful the light source is in emitting light.
+ */ 
+void setDomeLightExposure(float exposure);
+
+/** 
  * Sets the color which this dome light will emit.
  * 
  * @param The RGB color emitted that this dome light should emit.
@@ -88,7 +99,9 @@ void setDomeLightSky(
  * Textures are sampled using a 2D to 3D latitude/longitude strategy.
  * 
  * @param texture The texture to sample for the dome light.
- * @param enable_cdf If True, reduces noise of sampling a dome light texture, but at the expense of frame rate.
+ * @param enable_cdf If True, reduces noise of sampling a dome light texture, 
+ * but at the expense of frame rate. Useful for dome lights with bright lights 
+ * that should cast shadows.
  */ 
 void setDomeLightTexture(Texture* texture, bool enable_cdf = false);
 

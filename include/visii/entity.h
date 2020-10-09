@@ -31,7 +31,7 @@ private:
 	bool active = true;
 
 	/** Prevents multiple components from simultaneously being added and/or removed from the component list */
-	static std::shared_ptr<std::mutex> editMutex;
+	static std::shared_ptr<std::recursive_mutex> editMutex;
 	
     /** Marks that the StaticFactory has allocated the table of components */
 	static bool factoryInitialized;
@@ -200,7 +200,7 @@ public:
 	glm::vec3 getAabbCenter();
 
 	/** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
-	static std::shared_ptr<std::mutex> getEditMutex();
+	static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
 	/** For internal use. */
 	void computeAabb();

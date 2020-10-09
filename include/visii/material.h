@@ -139,7 +139,7 @@ class Material : public StaticFactory
     void markClean() { dirty = false; }
 
     /** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
-    static std::shared_ptr<std::mutex> getEditMutex();
+    static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
     /** Returns a json string representation of the current component */
     std::string toString();
@@ -634,7 +634,7 @@ class Material : public StaticFactory
     Material(std::string name, uint32_t id);
 
     /* TODO */
-    static std::shared_ptr<std::mutex> editMutex;
+    static std::shared_ptr<std::recursive_mutex> editMutex;
 
     /* TODO */
     static bool factoryInitialized;

@@ -81,7 +81,7 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light')
 )
-obj_entity.get_light().set_intensity(10)
+obj_entity.get_light().set_intensity(3)
 
 obj_entity.get_light().set_temperature(5000)
 
@@ -121,9 +121,9 @@ mat.set_roughness_texture(rough_tex)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-for i in range(100):
-    obj_entity.get_transform().look_at(at = (0,0,0), up = (0,0,1), eye = (math.sin(math.pi * 2.0 * (i / 100.0)), math.cos(math.pi * 2.0 * (i / 100.0)),1))
-    entity.get_transform().set_rotation(visii.angleAxis(math.pi * 2.0 * (i / 100.0), (0,0,1)))
+for i in range(20):
+    obj_entity.get_transform().look_at(at = (0,0,0), up = (0,0,1), eye = (math.sin(math.pi * 2.0 * (i / 20.0)), math.cos(math.pi * 2.0 * (i / 20.0)),1))
+    entity.get_transform().set_rotation(visii.angleAxis(math.pi * 2.0 * (i / 20.0), (0,0,1)))
     # time.sleep(.1)
     visii.render_to_png(
         width=int(opt.width), 

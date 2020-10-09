@@ -1,3 +1,5 @@
+// #undef NDEBUG
+
 #include <visii/visii.h>
 
 #include <algorithm>
@@ -144,7 +146,7 @@ static struct ViSII {
 
     std::thread::id render_thread_id;
     std::condition_variable cv;
-    std::mutex qMutex;
+    std::recursive_mutex qMutex;
     std::queue<Command> commandQueue = {};
     bool headlessMode;
 } ViSII;
@@ -520,7 +522,9 @@ void initializeOptix(bool headless)
         { "indexLists",              OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, indexLists)},
         { "numLightEntities",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
         { "instanceToEntityMap",     OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
+        { "numInstances",            OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numInstances)},
         { "domeLightIntensity",      OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
+        { "domeLightExposure",       OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightExposure)},
         { "domeLightColor",          OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, domeLightColor)},
         { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
         { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
@@ -608,6 +612,8 @@ void initializeOptix(bool headless)
 
     OD.LP.environmentMapID = -1;
     OD.LP.environmentMapRotation = glm::quat(1,0,0,0);
+    OD.LP.numInstances = 1;
+    launchParamsSetRaw(OD.launchParams, "numInstances",  &OD.LP.numInstances);
     launchParamsSetRaw(OD.launchParams, "environmentMapID", &OD.LP.environmentMapID);
     launchParamsSetRaw(OD.launchParams, "environmentMapRotation", &OD.LP.environmentMapRotation);
 
@@ -635,6 +641,7 @@ void initializeOptix(bool headless)
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
     launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
     launchParamsSetRaw(OD.launchParams, "domeLightIntensity", &OD.LP.domeLightIntensity);
+    launchParamsSetRaw(OD.launchParams, "domeLightExposure", &OD.LP.domeLightExposure);
     launchParamsSetRaw(OD.launchParams, "domeLightColor", &OD.LP.domeLightColor);
     launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
     launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
@@ -743,7 +750,7 @@ void initializeImgui()
 std::future<void> enqueueCommand(std::function<void()> function)
 {
     // if (ViSII.render_thread_id != std::this_thread::get_id()) 
-    std::lock_guard<std::mutex> lock(ViSII.qMutex);
+    std::lock_guard<std::recursive_mutex> lock(ViSII.qMutex);
 
     ViSII::Command c;
     c.function = function;
@@ -756,7 +763,7 @@ std::future<void> enqueueCommand(std::function<void()> function)
 
 void processCommandQueue()
 {
-    std::lock_guard<std::mutex> lock(ViSII.qMutex);
+    std::lock_guard<std::recursive_mutex> lock(ViSII.qMutex);
     while (!ViSII.commandQueue.empty()) {
         auto item = ViSII.commandQueue.front();
         item.function();
@@ -791,6 +798,12 @@ void setDomeLightIntensity(float intensity)
 {
     intensity = std::max(float(intensity), float(0.f));
     OptixData.LP.domeLightIntensity = intensity;
+    resetAccumulation();
+}
+
+void setDomeLightExposure(float exposure)
+{
+    OptixData.LP.domeLightExposure = exposure;
     resetAccumulation();
 }
 
@@ -914,7 +927,6 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
     auto func = [texture, enableCDF] () {
         OptixData.LP.environmentMapID = texture->getId();
         if (enableCDF) {
-
             std::vector<glm::vec4> texels = texture->getTexels();
 
             int width = texture->getWidth();
@@ -1042,7 +1054,7 @@ void updateComponents()
     auto dirtyMeshes = Mesh::getDirtyMeshes();
     if (dirtyMeshes.size() > 0) {
         auto mutex = Mesh::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
         for (auto &m : dirtyMeshes) {
             if (OD.vertexLists[m->getAddress()]) { 
                 owlBufferRelease(OD.vertexLists[m->getAddress()]); 
@@ -1080,8 +1092,10 @@ void updateComponents()
     // Manage Entities: Build / Rebuild TLAS
     auto dirtyEntities = Entity::getDirtyEntities();
     if (dirtyEntities.size() > 0) {
-        auto mutex = Entity::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        auto entityMutex = Entity::getEditMutex();
+        auto meshMutex = Mesh::getEditMutex();
+        std::lock_guard<std::recursive_mutex> entityLock(*entityMutex.get());
+        std::lock_guard<std::recursive_mutex> meshLock(*meshMutex.get());
 
         std::vector<OWLGroup> instances;
         std::vector<glm::mat4> t0InstanceTransforms;
@@ -1095,7 +1109,8 @@ void updateComponents()
             if (!entities[eid].getMesh()) continue;
             if (!entities[eid].getMaterial() && !entities[eid].getLight()) continue;
 
-            OWLGroup blas = OD.blasList[entities[eid].getMesh()->getId()];
+            uint32_t address = entities[eid].getMesh()->getAddress();
+            OWLGroup blas = OD.blasList[address];
             if (!blas) {
                 // Not sure why, but the mesh this entity references hasn't been constructed yet.
                 // Mark it as dirty. It should be available in a subsequent frame
@@ -1143,6 +1158,7 @@ void updateComponents()
 
         bufferResize(OD.instanceToEntityMapBuffer, instanceToEntityMap.size());
         bufferUpload(OD.instanceToEntityMapBuffer, instanceToEntityMap.data());
+        OD.LP.numInstances = instanceToEntityMap.size();
         groupBuildAccel(OD.tlas);
         launchParamsSetGroup(OD.launchParams, "world", OD.tlas);
         buildSBT(OD.context);
@@ -1169,7 +1185,7 @@ void updateComponents()
     // Manage textures and materials
     if (Texture::areAnyDirty() || Material::areAnyDirty()) {
         auto mutex = Texture::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
 
         // Allocate cuda textures for all texture components
         Texture* textures = Texture::getFront();
@@ -1188,7 +1204,7 @@ void updateComponents()
         // Manage materials
         {
             auto mutex = Material::getEditMutex();
-            std::lock_guard<std::mutex> lock(*mutex.get());
+            std::lock_guard<std::recursive_mutex> lock(*mutex.get());
             Material* materials = Material::getFront();
             MaterialStruct* matStructs = Material::getFrontStruct();
             
@@ -1276,7 +1292,7 @@ void updateComponents()
     auto dirtyTransforms = Transform::getDirtyTransforms();
     if (dirtyTransforms.size() > 0) {
         auto mutex = Transform::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
 
         Transform::updateComponents();
         
@@ -1289,7 +1305,7 @@ void updateComponents()
             TransformStruct* transformStructs = Transform::getFrontStruct();
             for (auto &t : dirtyTransforms) {
                 if (!t->isInitialized()) continue;
-                CUDA_CHECK(cudaMemcpy(&devTransforms[t->getId()], &transformStructs[t->getId()], sizeof(TransformStruct), cudaMemcpyHostToDevice));
+                CUDA_CHECK(cudaMemcpy(&devTransforms[t->getAddress()], &transformStructs[t->getAddress()], sizeof(TransformStruct), cudaMemcpyHostToDevice));
             }
         }
 
@@ -1300,7 +1316,7 @@ void updateComponents()
     // Manage Cameras
     if (Camera::areAnyDirty()) {
         auto mutex = Camera::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
 
         Camera::updateComponents();
         bufferUpload(OptixData.cameraBuffer,    Camera::getFrontStruct());
@@ -1309,7 +1325,7 @@ void updateComponents()
     // Manage lights
     if (Light::areAnyDirty()) {
         auto mutex = Light::getEditMutex();
-        std::lock_guard<std::mutex> lock(*mutex.get());
+        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
 
         Light::updateComponents();
         bufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());
@@ -1330,6 +1346,7 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
     launchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
     launchParamsSetRaw(OptixData.launchParams, "domeLightIntensity", &OptixData.LP.domeLightIntensity);
+    launchParamsSetRaw(OptixData.launchParams, "domeLightExposure", &OptixData.LP.domeLightExposure);
     launchParamsSetRaw(OptixData.launchParams, "domeLightColor", &OptixData.LP.domeLightColor);
     launchParamsSetRaw(OptixData.launchParams, "renderDataMode", &OptixData.LP.renderDataMode);
     launchParamsSetRaw(OptixData.launchParams, "renderDataBounce", &OptixData.LP.renderDataBounce);
@@ -1346,6 +1363,7 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "environmentMapHeight", &OptixData.LP.environmentMapHeight);
     launchParamsSetRaw(OptixData.launchParams, "sceneBBMin", &OptixData.LP.sceneBBMin);
     launchParamsSetRaw(OptixData.launchParams, "sceneBBMax", &OptixData.LP.sceneBBMax);
+    launchParamsSetRaw(OptixData.launchParams, "numInstances",  &OptixData.LP.numInstances);
 
     OptixData.LP.frameID ++;
 }

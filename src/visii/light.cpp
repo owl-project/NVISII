@@ -4,7 +4,7 @@
 Light Light::lights[MAX_LIGHTS];
 LightStruct Light::lightStructs[MAX_LIGHTS];
 std::map<std::string, uint32_t> Light::lookupTable;
-std::shared_ptr<std::mutex> Light::editMutex;
+std::shared_ptr<std::recursive_mutex> Light::editMutex;
 bool Light::factoryInitialized = false;
 bool Light::anyDirty = true;
 
@@ -127,7 +127,7 @@ void Light::useSurfaceArea(bool use)
 void Light::initializeFactory()
 {
     if (isFactoryInitialized()) return;
-    editMutex = std::make_shared<std::mutex>();
+    editMutex = std::make_shared<std::recursive_mutex>();
     factoryInitialized = true;
 }
 
@@ -195,7 +195,7 @@ Light* Light::createFromRGB(std::string name, glm::vec3 color, float intensity) 
     return light;
 }
 
-std::shared_ptr<std::mutex> Light::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Light::getEditMutex()
 {
 	return editMutex;
 }

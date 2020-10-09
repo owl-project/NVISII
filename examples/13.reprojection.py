@@ -96,9 +96,9 @@ mesh1.get_transform().set_scale((0.1, 0.1, 0.1), previous = False)
 mesh1.get_transform().set_scale((0.1, 0.1, 0.1), previous = True)
 mesh1.get_transform().set_position((0.05, 0.0, 0), previous=False)
 
-tex = visii.texture.create_from_image("dome", "./content/kiara_4_mid-morning_4k.hdr")
-visii.set_dome_light_texture(tex)
-visii.set_dome_light_intensity(.3)
+tex = visii.texture.create_from_image("dome", "./content/teatro_massimo_2k.hdr")
+visii.set_dome_light_texture(tex, enable_cdf=True)
+visii.set_dome_light_intensity(0.8)
 
 visii.set_direct_lighting_clamp(10.0)
 visii.set_indirect_lighting_clamp(10.0)

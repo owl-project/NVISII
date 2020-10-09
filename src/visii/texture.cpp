@@ -7,7 +7,7 @@
 Texture Texture::textures[MAX_TEXTURES];
 TextureStruct Texture::textureStructs[MAX_TEXTURES];
 std::map<std::string, uint32_t> Texture::lookupTable;
-std::shared_ptr<std::mutex> Texture::editMutex;
+std::shared_ptr<std::recursive_mutex> Texture::editMutex;
 bool Texture::factoryInitialized = false;
 bool Texture::anyDirty = true;
 
@@ -73,7 +73,7 @@ uint32_t Texture::getHeight() {
 void Texture::initializeFactory()
 {
     if (isFactoryInitialized()) return;
-    editMutex = std::make_shared<std::mutex>();
+    editMutex = std::make_shared<std::recursive_mutex>();
     factoryInitialized = true;
 }
 
@@ -341,7 +341,7 @@ vec4 Texture::sample(vec2 uv) {
     //     remainder);
 }
 
-std::shared_ptr<std::mutex> Texture::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Texture::getEditMutex()
 {
 	return editMutex;
 }

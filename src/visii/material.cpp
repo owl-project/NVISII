@@ -4,7 +4,7 @@
 Material Material::materials[MAX_MATERIALS];
 MaterialStruct Material::materialStructs[MAX_MATERIALS];
 std::map<std::string, uint32_t> Material::lookupTable;
-std::shared_ptr<std::mutex> Material::editMutex;
+std::shared_ptr<std::recursive_mutex> Material::editMutex;
 bool Material::factoryInitialized = false;
 bool Material::anyDirty = true;
 
@@ -68,7 +68,7 @@ std::string Material::toString() {
 void Material::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
-	editMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
 
@@ -159,7 +159,7 @@ Material* Material::create(std::string name,
 	return mat;
 }
 
-std::shared_ptr<std::mutex> Material::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Material::getEditMutex()
 {
 	return editMutex;
 }

@@ -26,6 +26,7 @@ struct LaunchParams {
     glm::vec4 *accumPtr;
     OptixTraversableHandle world;
     float domeLightIntensity = 1.f;
+    float domeLightExposure = 0.f;
     glm::vec3 domeLightColor = glm::vec3(-1.f);
     float directClamp = 100.f; 
     float indirectClamp = 100.f; 
@@ -50,6 +51,7 @@ struct LaunchParams {
     TextureStruct   *textures = nullptr;
     uint32_t        *lightEntities = nullptr;
     uint32_t        *instanceToEntityMap = nullptr;
+    uint32_t         numInstances = 0;
     uint32_t         numLightEntities = 0;
 
     owl::device::Buffer vertexLists;

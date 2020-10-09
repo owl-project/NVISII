@@ -40,7 +40,7 @@
 Mesh Mesh::meshes[MAX_MESHES];
 MeshStruct Mesh::meshStructs[MAX_MESHES];
 std::map<std::string, uint32_t> Mesh::lookupTable;
-std::shared_ptr<std::mutex> Mesh::editMutex;
+std::shared_ptr<std::recursive_mutex> Mesh::editMutex;
 bool Mesh::factoryInitialized = false;
 std::set<Mesh*> Mesh::dirtyMeshes;
 
@@ -104,6 +104,7 @@ Mesh::Mesh(std::string name, uint32_t id)
 	this->id = id;
 	this->meshStructs[id].show_bounding_box = 0;
 	this->meshStructs[id].numTris = 0;
+	this->meshStructs[id].numVerts = 0;
 }
 
 std::string Mesh::toString() {
@@ -261,6 +262,7 @@ void Mesh::computeMetadata()
 	}
 
 	this->meshStructs[id].numTris = uint32_t(triangleIndices.size()) / 3;
+	this->meshStructs[id].numVerts = uint32_t(positions.size());
 }
 
 // void Mesh::save_tetrahedralization(float quality_bound, float maximum_volume)
@@ -406,7 +408,7 @@ void Mesh::clearAll()
 
 void Mesh::initializeFactory() {
 	if (isFactoryInitialized()) return;
-	editMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
 
@@ -1561,7 +1563,7 @@ void Mesh::generateSmoothNormals()
 // 	return geometry;
 // }
 
-std::shared_ptr<std::mutex> Mesh::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Mesh::getEditMutex()
 {
 	return editMutex;
 }

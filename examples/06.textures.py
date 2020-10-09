@@ -62,8 +62,13 @@ tex = visii.texture.create_from_image("tex",'content/photos_2020_5_11_fst_gray-w
 floor_tex = visii.texture.create_hsv("floor", tex, 
     hue = 0, saturation = .5, value = 1.0, mix = 1.0)
 
-# we can add HDR images to act as dome
-visii.set_dome_light_texture(dome)
+# we can add HDR images to act as a dome that lights up our scene
+
+# use "enable_cdf" for dome light textures that contain 
+# bright objects that cast shadows (like the sun). Note
+# that this has a significant impact on rendering performance,
+# and is disabled by default.
+visii.set_dome_light_texture(dome, enable_cdf = True)
 
 # Lets set some objects in the scene
 entity = visii.entity.create(

@@ -65,7 +65,14 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light')
 )
+
+# Intensity effects the appearance of the light in 
+# addition to what intensity that light emits.
 obj_entity.get_light().set_intensity(4)
+
+# Exposure does not effect direct appearance of the light,
+# but does effect the relative power of the light in illuminating
+# other objects.
 obj_entity.get_light().set_exposure(-1)
 
 # lets set the color texture as the color of the light
