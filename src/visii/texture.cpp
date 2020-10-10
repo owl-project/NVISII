@@ -19,7 +19,7 @@ Texture::Texture()
 
 Texture::~Texture()
 {
-    this->texels.clear();
+    std::vector<glm::vec4>().swap(this->texels);
 }
 
 Texture::Texture(std::string name, uint32_t id)
@@ -351,6 +351,9 @@ Texture* Texture::get(std::string name) {
 }
 
 void Texture::remove(std::string name) {
+    auto t = get(name);
+	if (!t) return;
+    std::vector<glm::vec4>().swap(t->texels);
     StaticFactory::remove(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
     anyDirty = true;
 }

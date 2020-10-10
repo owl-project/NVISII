@@ -1,4 +1,4 @@
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <visii/visii.h>
 
@@ -1191,7 +1191,10 @@ void updateComponents()
         Texture* textures = Texture::getFront();
         for (uint32_t tid = 0; tid < MAX_TEXTURES; ++tid) {
             if (!textures[tid].isDirty()) continue;
-            if (OD.textureObjects[tid]) { owlTexture2DDestroy(OD.textureObjects[tid]); OD.textureObjects[tid] = nullptr; }
+            if (OD.textureObjects[tid]) { 
+                owlTexture2DDestroy(OD.textureObjects[tid]); 
+                OD.textureObjects[tid] = 0; 
+            }
             if (!textures[tid].isInitialized()) continue;
             OD.textureObjects[tid] = owlTexture2DCreate(
                 OD.context, OWL_TEXEL_FORMAT_RGBA32F,
@@ -1214,22 +1217,18 @@ void updateComponents()
 
                 OptixData.materialStructs[mid] = matStructs[mid];
 
-                auto genSTex = [&OD](int index, float s) {
-                    if (OD.textureObjects[index]) { owlTexture2DDestroy(OD.textureObjects[index]); OD.textureObjects[index] = nullptr; }
-                    OD.textureObjects[index] = owlTexture2DCreate(
-                        OD.context, OWL_TEXEL_FORMAT_R32F,
-                        1,1, &s, OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
-                };
-
                 auto genRGBATex = [&OD](int index, vec4 c, vec4 defaultVal) {
-                    if (OD.textureObjects[index]) { owlTexture2DDestroy(OD.textureObjects[index]); OD.textureObjects[index] = nullptr; }
+                    if (OD.textureObjects[index]) { 
+                        owlTexture2DDestroy(OD.textureObjects[index]); 
+                        OD.textureObjects[index] = 0; 
+                    }
                     if (glm::all(glm::equal(c, defaultVal))) return;
                     OD.textureObjects[index] = owlTexture2DCreate(
                         OD.context, OWL_TEXEL_FORMAT_RGBA32F,
                         1,1, &c, OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
                     OptixData.textureStructs[index] = TextureStruct();
-                    OptixData.textureStructs[index].width = 0;
-                    OptixData.textureStructs[index].height = 0;
+                    OptixData.textureStructs[index].width = 1;
+                    OptixData.textureStructs[index].height = 1;
                 };
 
                 int off = MAX_TEXTURES + mid * NUM_MAT_PARAMS;
@@ -1276,7 +1275,6 @@ void updateComponents()
                 if (ms.ior_texture_id == -1)                    { odms.ior_texture_id = off + 17; }
                 if (ms.transmission_texture_id == -1)           { odms.transmission_texture_id = off + 18; }
             }
-
 
             Material::updateComponents();
             bufferUpload(OptixData.materialBuffer, OptixData.materialStructs);

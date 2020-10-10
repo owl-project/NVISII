@@ -2,6 +2,10 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #endif
 
+#ifndef TINYOBJ_LOADER_OPT_IMPLEMENTATION
+#define TINYOBJ_LOADER_OPT_IMPLEMENTATION
+#endif
+
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_FS
 #define TINYGLTF_NO_STB_IMAGE_WRITE
@@ -26,6 +30,7 @@
 // #include "Foton/Tools/Options.hxx"
 #include <visii/utilities/hash_combiner.h>
 #include <tiny_obj_loader.h>
+#include <tiny_obj_loader_opt.h>
 #include <tiny_stl.h>
 #include <tiny_gltf.h>
 
@@ -572,6 +577,244 @@ void Mesh::updateComponents()
 // 	return ssbo_sizes;
 // }
 
+const char *mmap_file(size_t *len, const char* filename)
+{
+  (*len) = 0;
+#ifdef _WIN32
+  HANDLE file = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+  assert(file != INVALID_HANDLE_VALUE);
+
+  HANDLE fileMapping = CreateFileMapping(file, NULL, PAGE_READONLY, 0, 0, NULL);
+  assert(fileMapping != INVALID_HANDLE_VALUE);
+
+  LPVOID fileMapView = MapViewOfFile(fileMapping, FILE_MAP_READ, 0, 0, 0);
+  auto fileMapViewChar = (const char*)fileMapView;
+  assert(fileMapView != NULL);
+
+  LARGE_INTEGER fileSize;
+  fileSize.QuadPart = 0;
+  GetFileSizeEx(file, &fileSize);
+
+  (*len) = static_cast<size_t>(fileSize.QuadPart);
+  return fileMapViewChar;
+
+#else
+
+  FILE* f = fopen(filename, "rb" );
+  if (!f) {
+    fprintf(stderr, "Failed to open file : %s\n", filename);
+    return nullptr;
+  }
+  fseek(f, 0, SEEK_END);
+  long fileSize = ftell(f);
+  fclose(f);
+
+  if (fileSize < 16) {
+    fprintf(stderr, "Empty or invalid .obj : %s\n", filename);
+    return nullptr;
+  }
+
+  struct stat sb;
+  char *p;
+  int fd;
+
+  fd = open (filename, O_RDONLY);
+  if (fd == -1) {
+    perror ("open");
+    return nullptr;
+  }
+
+  if (fstat (fd, &sb) == -1) {
+    perror ("fstat");
+    return nullptr;
+  }
+
+  if (!S_ISREG (sb.st_mode)) {
+    fprintf (stderr, "%s is not a file\n", filename);
+    return nullptr;
+  }
+
+  p = (char*)mmap (0, fileSize, PROT_READ, MAP_SHARED, fd, 0);
+
+  if (p == MAP_FAILED) {
+    perror ("mmap");
+    return nullptr;
+  }
+
+  if (close (fd) == -1) {
+    perror ("close");
+    return nullptr;
+  }
+
+  (*len) = fileSize;
+
+  return p;
+
+#endif
+}
+
+const char* get_file_data(size_t *len, const char* filename)
+{
+    const char *ext = strrchr(filename, '.');
+    size_t data_len = 0;
+    const char* data = nullptr;
+	data = mmap_file(&data_len, filename);
+    (*len) = data_len;
+    return data;
+}
+
+void CalcNormal(float N[3], float v0[3], float v1[3], float v2[3]) {
+  float v10[3];
+  v10[0] = v1[0] - v0[0];
+  v10[1] = v1[1] - v0[1];
+  v10[2] = v1[2] - v0[2];
+
+  float v20[3];
+  v20[0] = v2[0] - v0[0];
+  v20[1] = v2[1] - v0[1];
+  v20[2] = v2[2] - v0[2];
+
+  N[0] = v20[1] * v10[2] - v20[2] * v10[1];
+  N[1] = v20[2] * v10[0] - v20[0] * v10[2];
+  N[2] = v20[0] * v10[1] - v20[1] * v10[0];
+
+  float len2 = N[0] * N[0] + N[1] * N[1] + N[2] * N[2];
+  if (len2 > 0.0f) {
+    float len = sqrtf(len2);
+
+    N[0] /= len;
+    N[1] /= len;
+  }
+}
+
+// void Mesh::loadObj(std::string objPath)
+// {
+// 	tinyobj_opt::attrib_t attrib;
+// 	std::vector<tinyobj_opt::shape_t> shapes;
+// 	std::vector<tinyobj_opt::material_t> materials;
+// 	int num_threads = -1;
+
+// 	struct stat st;
+// 	if (stat(objPath.c_str(), &st) != 0)
+// 		throw std::runtime_error(std::string(objPath + " does not exist!"));
+
+// 	size_t data_len = 0;
+//   	const char* data = get_file_data(&data_len, objPath.c_str());
+
+// 	tinyobj_opt::LoadOption option;
+// 	option.req_num_threads = num_threads;
+// 	option.verbose = false;//verbose;
+// 	option.triangulate = true;
+// 	bool ret = parseObj(&attrib, &shapes, &materials, data, data_len, option);
+
+// 	if (!ret) {
+// 		throw std::runtime_error( std::string("Error: Failed to parse " + objPath));
+// 	}
+
+// 	std::vector<Vertex> vertices;
+
+// 	bool has_normals = false;
+
+// 	{
+// 		size_t face_offset = 0;
+// 		for (size_t v = 0; v < attrib.face_num_verts.size(); ++v) {
+// 			if (attrib.face_num_verts[v] % 3 != 0) {
+// 				throw std::runtime_error( std::string("Error: Found non-triangular face in " + objPath));
+// 			}
+// 			for (size_t f = 0; f < attrib.face_num_verts[v] / 3; f++) {
+// 				tinyobj_opt::index_t idx0 = attrib.indices[face_offset+3*f+0];
+// 				tinyobj_opt::index_t idx1 = attrib.indices[face_offset+3*f+1];
+// 				tinyobj_opt::index_t idx2 = attrib.indices[face_offset+3*f+2];
+
+// 				Vertex v[3] = {Vertex(), Vertex(), Vertex()};
+// 				for (int k = 0; k < 3; k++) {
+// 					int f0 = idx0.vertex_index;
+// 					int f1 = idx1.vertex_index;
+// 					int f2 = idx2.vertex_index;
+// 					assert(f0 >= 0);
+// 					assert(f1 >= 0);
+// 					assert(f2 >= 0);
+
+// 					v[0].point[k] = attrib.vertices[3*f0+k];
+// 					v[1].point[k] = attrib.vertices[3*f1+k];
+// 					v[2].point[k] = attrib.vertices[3*f2+k];
+// 				}
+
+// 				if (attrib.normals.size() > 0) {
+// 					int nf0 = idx0.normal_index;
+// 					int nf1 = idx1.normal_index;
+// 					int nf2 = idx2.normal_index;
+
+// 					if (nf0 >= 0 && nf1 >= 0 && nf2 >= 0) {
+// 						assert(3*nf0+2 < attrib.normals.size());
+// 						assert(3*nf1+2 < attrib.normals.size());
+// 						assert(3*nf2+2 < attrib.normals.size());
+// 						for (int k = 0; k < 3; k++) {
+// 							v[0].normal[k] = attrib.normals[3*nf0+k];
+// 							v[1].normal[k] = attrib.normals[3*nf1+k];
+// 							v[2].normal[k] = attrib.normals[3*nf2+k];
+// 						}
+// 					} else {
+// 						// compute geometric normal
+// 						CalcNormal(&v[0].normal.x, &v[0].point.x, &v[1].point.x, &v[2].point.x);
+// 						v[1].normal[0] = v[0].normal[0]; v[1].normal[1] = v[0].normal[1]; v[1].normal[2] = v[0].normal[2];
+// 						v[2].normal[0] = v[0].normal[0]; v[2].normal[1] = v[0].normal[1]; v[2].normal[2] = v[0].normal[2];
+// 					}
+// 				} else {
+// 					// compute geometric normal
+// 					CalcNormal(&v[0].normal.x, &v[0].point.x, &v[1].point.x, &v[2].point.x);
+// 					v[1].normal[0] = v[0].normal[0]; v[1].normal[1] = v[0].normal[1]; v[1].normal[2] = v[0].normal[2];
+// 					v[2].normal[0] = v[0].normal[0]; v[2].normal[1] = v[0].normal[1]; v[2].normal[2] = v[0].normal[2];
+// 				}
+
+// 				if (attrib.texcoords.size() > 0) {
+// 					int tcf0 = idx0.texcoord_index;
+// 					int tcf1 = idx1.texcoord_index;
+// 					int tcf2 = idx2.texcoord_index;
+
+// 					if (tcf0 >= 0 && tcf1 >= 0 && tcf2 >= 0) {
+// 						assert(2*tcf0+2 < attrib.texcoords.size());
+// 						assert(2*tcf1+2 < attrib.texcoords.size());
+// 						assert(2*tcf2+2 < attrib.texcoords.size());
+// 						for (int k = 0; k < 2; k++) {
+// 							v[0].texcoord[k] = attrib.texcoords[2*tcf0+k];
+// 							v[1].texcoord[k] = attrib.texcoords[2*tcf1+k];
+// 							v[2].texcoord[k] = attrib.texcoords[2*tcf2+k];
+// 						}
+// 					}
+// 				}
+// 				vertices.push_back(v[0]);
+// 				vertices.push_back(v[1]);
+// 				vertices.push_back(v[2]);
+// 			}
+// 			face_offset += attrib.face_num_verts[v];
+// 		}
+// 	}
+
+// 	/* Map vertices to buffers */
+// 	triangleIndices.resize(vertices.size());
+// 	positions.resize(vertices.size());
+// 	normals.resize(vertices.size());
+// 	colors.resize(vertices.size());
+// 	texCoords.resize(vertices.size());
+// 	for (int i = 0; i < vertices.size(); ++i)
+// 	{
+// 		Vertex v = vertices[i];
+// 		triangleIndices[i] = i;
+// 		positions[i] = {v.point.x, v.point.y, v.point.z};
+// 		colors[i] = v.color;
+// 		normals[i] = v.normal;
+// 		texCoords[i] = v.texcoord;
+// 	}
+
+// 	if (triangleIndices.size() < 3)
+// 		throw std::runtime_error(std::string("Error, OBJ ") + std::string(objPath) + std::string(" has no triangles!"));
+
+// 	computeMetadata();
+// }
+
+
+
 void Mesh::loadObj(std::string objPath)
 {
 	struct stat st;
@@ -695,6 +938,8 @@ void Mesh::loadObj(std::string objPath)
 
 	computeMetadata();
 }
+
+
 
 
 // void Mesh::load_stl(std::string stlPath) {
@@ -2365,6 +2610,11 @@ Mesh* Mesh::createFromData(
 void Mesh::remove(std::string name) {
 	auto m = get(name);
 	if (!m) return;
+	std::vector<std::array<float, 3>>().swap(m->positions);
+	std::vector<glm::vec4>().swap(m->normals);
+	std::vector<glm::vec4>().swap(m->colors);
+	std::vector<glm::vec2>().swap(m->texCoords);
+	std::vector<uint32_t>().swap(m->triangleIndices);
 	int32_t oldID = m->getId();
 	StaticFactory::remove(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 	dirtyMeshes.insert(&meshes[oldID]);
