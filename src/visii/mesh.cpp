@@ -34,6 +34,8 @@
 #include <tiny_stl.h>
 #include <tiny_gltf.h>
 
+#include <assimp/Importer.hpp>
+
 #include <generator/generator.hpp>
 
 // // For some reason, windows is defining MemoryBarrier as something else, preventing me 
