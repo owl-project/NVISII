@@ -612,6 +612,20 @@ class Mesh : public StaticFactory
         */
         static Mesh* createFromObj(std::string name, std::string path);
 
+        /** 
+         * Creates a mesh component from a file (ignoring any associated materials) 
+         *
+         * Supported file formats include: AMF 3DS AC ASE ASSBIN B3D BVH COLLADA DXF 
+         * CSM HMP IRRMESH IRR LWO LWS M3D MD2 MD3 MD5 MDC MDL NFF NDO OFF OBJ OGRE 
+         * OPENGEX PLY MS3D COB BLEND IFC XGL FBX Q3D Q3BSP RAW SIB SMD STL 
+         * TERRAGEN 3D X X3D GLTF 3MF MMD
+         * 
+         * @param name The name (used as a primary key) for this mesh component
+         * @param path A path to the file.
+        */
+        static Mesh* createFromFile(std::string name, std::string path);
+
+
         // /* Creates a mesh component from an ASCII STL file */
         // static Mesh* createFromStl(std::string name, std::string stlPath);
 

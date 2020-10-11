@@ -30,11 +30,13 @@
 // #include "Foton/Tools/Options.hxx"
 #include <visii/utilities/hash_combiner.h>
 #include <tiny_obj_loader.h>
-#include <tiny_obj_loader_opt.h>
+// #include <tiny_obj_loader_opt.h>
 #include <tiny_stl.h>
 #include <tiny_gltf.h>
 
-#include <assimp/Importer.hpp>
+#include <assimp/cimport.h>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #include <generator/generator.hpp>
 
@@ -2533,6 +2535,80 @@ Mesh* Mesh::createFromObj(std::string name, std::string path)
 {
 	auto create = [path] (Mesh* mesh) {
 		mesh->loadObj(path);
+		dirtyMeshes.insert(mesh);
+	};
+	
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		throw;
+	}
+}
+
+Mesh* Mesh::createFromFile(std::string name, std::string path)
+{
+	auto create = [path] (Mesh* mesh) {
+		auto scene = aiImportFile(path.c_str(), 
+			aiProcessPreset_TargetRealtime_MaxQuality | 
+			aiProcess_Triangulate |
+			aiProcess_PreTransformVertices );
+		
+		if (scene->mNumMeshes <= 0) 
+			throw std::runtime_error("Error: positions must be greater than 1!");
+		
+		mesh->positions.clear();
+		mesh->colors.clear();
+		mesh->texCoords.clear();
+		mesh->normals.clear();
+		mesh->triangleIndices.clear();
+
+		uint32_t off = 0;
+		for (uint32_t meshIdx = 0; meshIdx < scene->mNumMeshes; ++meshIdx) {
+			auto &aiMesh = scene->mMeshes[meshIdx];
+			auto &aiVertices = aiMesh->mVertices;
+			auto &aiNormals = aiMesh->mNormals;
+			auto &aiFaces = aiMesh->mFaces;
+			auto &aiTextureCoords = aiMesh->mTextureCoords;
+
+			// note that we triangulated the meshes above
+			for (uint32_t vid = 0; vid < aiMesh->mNumVertices; ++vid) {
+				Vertex v;
+				if (aiMesh->HasPositions()) {
+					auto vert = aiVertices[vid];
+					v.point.x = vert.x;
+					v.point.y = vert.y;
+					v.point.z = vert.z;
+				}
+				if (aiMesh->HasNormals()) {
+					auto normal = aiNormals[vid];
+					v.normal.x = normal.x;
+					v.normal.y = normal.y;
+					v.normal.z = normal.z;
+				}
+				if (aiMesh->HasTextureCoords(0)) {
+					// just try to take the first texcoord
+					auto texCoord = aiTextureCoords[0][vid];						
+					v.texcoord.x = texCoord.x;
+					v.texcoord.y = texCoord.y;
+				}
+				mesh->positions.push_back({v.point.x, v.point.y, v.point.z});
+				mesh->normals.push_back({v.normal.x, v.normal.y, v.normal.z, 0.f});
+				mesh->texCoords.push_back({v.texcoord.x, v.texcoord.y});
+			}
+
+			for (uint32_t faceIdx = 0; faceIdx < aiMesh->mNumFaces; ++faceIdx) {
+				auto &aiFace = aiFaces[faceIdx];			
+				mesh->triangleIndices.push_back(aiFace.mIndices[0] + off);
+				mesh->triangleIndices.push_back(aiFace.mIndices[1] + off);
+				mesh->triangleIndices.push_back(aiFace.mIndices[2] + off);
+			}
+			off += aiMesh->mNumVertices;
+		}
+
+		mesh->computeMetadata();
+
+		aiReleaseImport(scene);
 		dirtyMeshes.insert(mesh);
 	};
 	
