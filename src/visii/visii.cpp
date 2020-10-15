@@ -27,6 +27,7 @@
 #include <queue>
 #include <algorithm>
 #include <cctype>
+#include <functional>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -149,6 +150,7 @@ static struct ViSII {
     std::recursive_mutex qMutex;
     std::queue<Command> commandQueue = {};
     bool headlessMode;
+    std::function<void()> preRenderCallback;
 } ViSII;
 
 void applyStyle()
@@ -1132,6 +1134,7 @@ void updateComponents()
         // not sure why, but if I release this TLAS, I get the following error
         // python3d: /home/runner/work/ViSII/ViSII/externals/owl/owl/ObjectRegistry.cpp:83: 
         //   owl::RegisteredObject* owl::ObjectRegistry::getPtr(int): Assertion `objects[ID]' failed.
+        //TODO: This should be fixed with Ingo's change.
         OD.tlas = instanceGroupCreate(OD.context, instances.size());
         for (uint32_t iid = 0; iid < instances.size(); ++iid) {
             instanceGroupSetChild(OD.tlas, iid, instances[iid]); 
@@ -1914,6 +1917,7 @@ void initializeInteractive(bool windowOnTop, bool _verbose)
     initialized = true;
     stopped = false;
     verbose = _verbose;
+    ViSII.preRenderCallback = nullptr;
     initializeComponentFactories();
 
     auto loop = [windowOnTop]() {
@@ -1937,6 +1941,10 @@ void initializeInteractive(bool windowOnTop, bool _verbose)
             glfw->swap_buffers("ViSII");
             glClearColor(1,1,1,1);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            if(ViSII.preRenderCallback){
+                ViSII.preRenderCallback();
+            }
 
             updateFrameBuffer();
             updateComponents();
@@ -1995,6 +2003,7 @@ void initializeHeadless(bool _verbose)
     initialized = true;
     stopped = false;
     verbose = _verbose;
+    ViSII.preRenderCallback = nullptr;
 
     initializeComponentFactories();
 
@@ -2022,6 +2031,10 @@ void initializeHeadless(bool _verbose)
 void initialize(bool headless, bool windowOnTop, bool verbose) {
     if (headless) initializeHeadless(verbose);
     else initializeInteractive(windowOnTop, verbose);
+}
+
+void registerPreRenderCallback(std::function<void()> callback){
+    ViSII.preRenderCallback = callback;
 }
 
 void clearAll()

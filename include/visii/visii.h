@@ -42,6 +42,14 @@ void clearAll();
 */
 void deinitialize();
 
+/**
+ * Registers a callback which is called on the render thread before each frame
+ * of rendering. This is a workaround for the memory corruption bugs in ViSII which
+ * are sometimes triggered when changing the scene while rendering is occurring.
+ * To disable the callback, pass nullptr here.
+ */
+void registerPreRenderCallback(std::function<void()> callback);
+
 /** 
  * Tells the renderer which camera entity to use for rendering. The transform 
  * component of this camera entity places the camera into the world, and the
