@@ -2580,6 +2580,9 @@ Mesh* Mesh::createFromFile(std::string name, std::string path)
 			auto &aiFaces = aiMesh->mFaces;
 			auto &aiTextureCoords = aiMesh->mTextureCoords;
 
+			// mesh at the very least needs positions...
+			if (!aiMesh->HasPositions()) continue;
+
 			// note that we triangulated the meshes above
 			for (uint32_t vid = 0; vid < aiMesh->mNumVertices; ++vid) {
 				Vertex v;
@@ -2607,10 +2610,18 @@ Mesh* Mesh::createFromFile(std::string name, std::string path)
 			}
 
 			for (uint32_t faceIdx = 0; faceIdx < aiMesh->mNumFaces; ++faceIdx) {
+				// faces must have only 3 indices
 				auto &aiFace = aiFaces[faceIdx];			
+				if (aiFace.mNumIndices != 3) continue;
+				 
 				mesh->triangleIndices.push_back(aiFace.mIndices[0] + off);
 				mesh->triangleIndices.push_back(aiFace.mIndices[1] + off);
 				mesh->triangleIndices.push_back(aiFace.mIndices[2] + off);
+
+				if (((aiFace.mIndices[0] + off) >= mesh->positions.size()) || 
+					((aiFace.mIndices[1] + off) >= mesh->positions.size()) || 
+					((aiFace.mIndices[2] + off) >= mesh->positions.size()))
+					throw std::runtime_error("Error: invalid mesh index detected!");
 			}
 			off += aiMesh->mNumVertices;
 		}
