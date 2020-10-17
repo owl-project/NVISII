@@ -14,6 +14,8 @@
 #include <sys/stat.h>
 #include <functional>
 #include <limits>
+#include <fcntl.h>
+#include <unistd.h>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -581,115 +583,115 @@ void Mesh::updateComponents()
 // 	return ssbo_sizes;
 // }
 
-const char *mmap_file(size_t *len, const char* filename)
-{
-  (*len) = 0;
-#ifdef _WIN32
-  HANDLE file = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-  assert(file != INVALID_HANDLE_VALUE);
+// const char *mmap_file(size_t *len, const char* filename)
+// {
+//   (*len) = 0;
+// #ifdef _WIN32
+//   HANDLE file = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+//   assert(file != INVALID_HANDLE_VALUE);
 
-  HANDLE fileMapping = CreateFileMapping(file, NULL, PAGE_READONLY, 0, 0, NULL);
-  assert(fileMapping != INVALID_HANDLE_VALUE);
+//   HANDLE fileMapping = CreateFileMapping(file, NULL, PAGE_READONLY, 0, 0, NULL);
+//   assert(fileMapping != INVALID_HANDLE_VALUE);
 
-  LPVOID fileMapView = MapViewOfFile(fileMapping, FILE_MAP_READ, 0, 0, 0);
-  auto fileMapViewChar = (const char*)fileMapView;
-  assert(fileMapView != NULL);
+//   LPVOID fileMapView = MapViewOfFile(fileMapping, FILE_MAP_READ, 0, 0, 0);
+//   auto fileMapViewChar = (const char*)fileMapView;
+//   assert(fileMapView != NULL);
 
-  LARGE_INTEGER fileSize;
-  fileSize.QuadPart = 0;
-  GetFileSizeEx(file, &fileSize);
+//   LARGE_INTEGER fileSize;
+//   fileSize.QuadPart = 0;
+//   GetFileSizeEx(file, &fileSize);
 
-  (*len) = static_cast<size_t>(fileSize.QuadPart);
-  return fileMapViewChar;
+//   (*len) = static_cast<size_t>(fileSize.QuadPart);
+//   return fileMapViewChar;
 
-#else
+// #else
 
-  FILE* f = fopen(filename, "rb" );
-  if (!f) {
-    fprintf(stderr, "Failed to open file : %s\n", filename);
-    return nullptr;
-  }
-  fseek(f, 0, SEEK_END);
-  long fileSize = ftell(f);
-  fclose(f);
+//   FILE* f = fopen(filename, "rb" );
+//   if (!f) {
+//     fprintf(stderr, "Failed to open file : %s\n", filename);
+//     return nullptr;
+//   }
+//   fseek(f, 0, SEEK_END);
+//   long fileSize = ftell(f);
+//   fclose(f);
 
-  if (fileSize < 16) {
-    fprintf(stderr, "Empty or invalid .obj : %s\n", filename);
-    return nullptr;
-  }
+//   if (fileSize < 16) {
+//     fprintf(stderr, "Empty or invalid .obj : %s\n", filename);
+//     return nullptr;
+//   }
 
-  struct stat sb;
-  char *p;
-  int fd;
+//   struct stat sb;
+//   char *p;
+//   int fd;
 
-  fd = open (filename, O_RDONLY);
-  if (fd == -1) {
-    perror ("open");
-    return nullptr;
-  }
+//   fd = open (filename, O_RDONLY);
+//   if (fd == -1) {
+//     perror ("open");
+//     return nullptr;
+//   }
 
-  if (fstat (fd, &sb) == -1) {
-    perror ("fstat");
-    return nullptr;
-  }
+//   if (fstat (fd, &sb) == -1) {
+//     perror ("fstat");
+//     return nullptr;
+//   }
 
-  if (!S_ISREG (sb.st_mode)) {
-    fprintf (stderr, "%s is not a file\n", filename);
-    return nullptr;
-  }
+//   if (!S_ISREG (sb.st_mode)) {
+//     fprintf (stderr, "%s is not a file\n", filename);
+//     return nullptr;
+//   }
 
-  p = (char*)mmap (0, fileSize, PROT_READ, MAP_SHARED, fd, 0);
+//   p = (char*)mmap (0, fileSize, PROT_READ, MAP_SHARED, fd, 0);
 
-  if (p == MAP_FAILED) {
-    perror ("mmap");
-    return nullptr;
-  }
+//   if (p == MAP_FAILED) {
+//     perror ("mmap");
+//     return nullptr;
+//   }
 
-  if (close (fd) == -1) {
-    perror ("close");
-    return nullptr;
-  }
+//   if (close (fd) == -1) {
+//     perror ("close");
+//     return nullptr;
+//   }
 
-  (*len) = fileSize;
+//   (*len) = fileSize;
 
-  return p;
+//   return p;
 
-#endif
-}
+// #endif
+// }
 
-const char* get_file_data(size_t *len, const char* filename)
-{
-    const char *ext = strrchr(filename, '.');
-    size_t data_len = 0;
-    const char* data = nullptr;
-	data = mmap_file(&data_len, filename);
-    (*len) = data_len;
-    return data;
-}
+// const char* get_file_data(size_t *len, const char* filename)
+// {
+//     const char *ext = strrchr(filename, '.');
+//     size_t data_len = 0;
+//     const char* data = nullptr;
+// 	data = mmap_file(&data_len, filename);
+//     (*len) = data_len;
+//     return data;
+// }
 
-void CalcNormal(float N[3], float v0[3], float v1[3], float v2[3]) {
-  float v10[3];
-  v10[0] = v1[0] - v0[0];
-  v10[1] = v1[1] - v0[1];
-  v10[2] = v1[2] - v0[2];
+// void CalcNormal(float N[3], float v0[3], float v1[3], float v2[3]) {
+//   float v10[3];
+//   v10[0] = v1[0] - v0[0];
+//   v10[1] = v1[1] - v0[1];
+//   v10[2] = v1[2] - v0[2];
 
-  float v20[3];
-  v20[0] = v2[0] - v0[0];
-  v20[1] = v2[1] - v0[1];
-  v20[2] = v2[2] - v0[2];
+//   float v20[3];
+//   v20[0] = v2[0] - v0[0];
+//   v20[1] = v2[1] - v0[1];
+//   v20[2] = v2[2] - v0[2];
 
-  N[0] = v20[1] * v10[2] - v20[2] * v10[1];
-  N[1] = v20[2] * v10[0] - v20[0] * v10[2];
-  N[2] = v20[0] * v10[1] - v20[1] * v10[0];
+//   N[0] = v20[1] * v10[2] - v20[2] * v10[1];
+//   N[1] = v20[2] * v10[0] - v20[0] * v10[2];
+//   N[2] = v20[0] * v10[1] - v20[1] * v10[0];
 
-  float len2 = N[0] * N[0] + N[1] * N[1] + N[2] * N[2];
-  if (len2 > 0.0f) {
-    float len = sqrtf(len2);
+//   float len2 = N[0] * N[0] + N[1] * N[1] + N[2] * N[2];
+//   if (len2 > 0.0f) {
+//     float len = sqrtf(len2);
 
-    N[0] /= len;
-    N[1] /= len;
-  }
-}
+//     N[0] /= len;
+//     N[1] /= len;
+//   }
+// }
 
 // void Mesh::loadObj(std::string objPath)
 // {
