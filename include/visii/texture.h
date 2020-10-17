@@ -22,14 +22,19 @@ class Texture : public StaticFactory
 	static Texture *create(std::string name);
 
 	/** 
-	 * Constructs a Texture with the given name from a image located on the filesystem. 
+	 * Deprecated. Please use createFromFile. 
+	*/
+	static Texture *createFromImage(std::string name, std::string path, bool linear = false);
+
+	/** 
+	 * Constructs a Texture with the given name from a file. 
 	 * @param name The name of the texture to create.
 	 * Supported formats include JPEG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, and PNM
 	 * @param path The path to the image.
 	 * @param linear Indicates the image to load should not be gamma corrected.
      * @returns a Texture allocated by the renderer. 
 	*/
-	static Texture *createFromImage(std::string name, std::string path, bool linear = false);
+	static Texture *createFromFile(std::string name, std::string path, bool linear = false);
 
 	/** 
 	 * Constructs a Texture with the given name from custom user data.

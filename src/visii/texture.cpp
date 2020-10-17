@@ -128,6 +128,15 @@ Texture* Texture::create(std::string name) {
 }
 
 Texture* Texture::createFromImage(std::string name, std::string path, bool linear) {
+    static bool createFromImageDeprecatedShown = false;
+    if (createFromImageDeprecatedShown == false) {
+        std::cout<<"Warning, create_from_image is deprecated and will be removed in a subsequent release. Please switch to create_from_file." << std::endl;
+        createFromImageDeprecatedShown = true;
+    }
+    return createFromFile(name, path, linear);
+}
+
+Texture* Texture::createFromFile(std::string name, std::string path, bool linear) {
     auto create = [path, linear] (Texture* l) {
         int x, y, num_channels;
         stbi_set_flip_vertically_on_load(true);
