@@ -2086,9 +2086,9 @@ void deinitialize()
             OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
         clearAll();
     }
-    else {
-        throw std::runtime_error("Error: already deinitialized!");
-    }
+    // else {
+    //     throw std::runtime_error("Error: already deinitialized!");
+    // }
     initialized = false;
     // sleeping here. 
     // Some strange bug with python where deinitialize immediately before interpreter exit
