@@ -199,10 +199,6 @@ namespace std {
 
 
 // Cleanup on exit
-// %init %{
-//     atexit(cleanup);
-// %}
-
-// %init %{
-//   atexit(deinitialize);
-// %}
+%init %{
+  atexit(deinitialize);
+%}
