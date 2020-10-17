@@ -2533,17 +2533,12 @@ Mesh* Mesh::createWireframeBoundingBox(
 
 Mesh* Mesh::createFromObj(std::string name, std::string path)
 {
-	auto create = [path] (Mesh* mesh) {
-		mesh->loadObj(path);
-		dirtyMeshes.insert(mesh);
-	};
-	
-	try {
-		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
-	} catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-		throw;
-	}
+	static bool createFromImageDeprecatedShown = false;
+    if (createFromImageDeprecatedShown == false) {
+        std::cout<<"Warning, create_from_obj is deprecated and will be removed in a subsequent release. Please switch to create_from_file." << std::endl;
+        createFromImageDeprecatedShown = true;
+    }
+	return createFromFile(name, path);
 }
 
 Mesh* Mesh::createFromFile(std::string name, std::string path)
@@ -2554,8 +2549,22 @@ Mesh* Mesh::createFromFile(std::string name, std::string path)
 			aiProcess_Triangulate |
 			aiProcess_PreTransformVertices );
 		
+		if (!scene) {
+			std::string err = std::string(aiGetErrorString());
+			throw std::runtime_error(std::string("Error: ") + err);
+		}
+
 		if (scene->mNumMeshes <= 0) 
 			throw std::runtime_error("Error: positions must be greater than 1!");
+
+		// Check and validate the specified model file extension.
+		const char* extension = strrchr(path.c_str(), '.');
+		if (!extension)
+			throw std::runtime_error("Error: provide a file with a valid extension.");
+
+		if (AI_FALSE == aiIsExtensionSupported(extension))
+			throw std::runtime_error(std::string("Error: The specified model file extension \"") 
+				+ std::string(extension) + std::string("\" is currently unsupported."));
 		
 		mesh->positions.clear();
 		mesh->colors.clear();

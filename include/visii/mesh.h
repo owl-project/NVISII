@@ -605,10 +605,7 @@ class Mesh : public StaticFactory
             float thickness = .01f);
 
         /** 
-         * Creates a mesh component from an OBJ file (ignoring any .mtl files) 
-         * 
-         * @param name The name (used as a primary key) for this mesh component
-         * @param path A path to the OBJ file.
+         * Deprecated. Please use create_from_file instead.
         */
         static Mesh* createFromObj(std::string name, std::string path);
 
