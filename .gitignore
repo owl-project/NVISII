@@ -1,5 +1,6 @@
 build
 *.ptx
+tests
 *.c
 *.cmake
 install
@@ -14,3 +15,7 @@ data
 *.hdr
 *.jpg
 *.mtl
+*.zip
+*__pycache__
+examples/content
+examples\content
