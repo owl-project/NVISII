@@ -50,6 +50,7 @@ std::promise<void> exitSignal;
 std::thread renderThread;
 static bool initialized = false;
 static bool stopped = true;
+static bool lazyUpdatesEnabled = false;
 static bool verbose = true;
 
 static struct WindowData {
@@ -1040,15 +1041,27 @@ void sampleTimeInterval(vec2 sampleTimeInterval)
 void updateComponents()
 {
     auto &OD = OptixData;
+    
+    if (OptixData.LP.cameraEntity.initialized) {
+        auto transform = Transform::getFront()[OptixData.LP.cameraEntity.transform_id];
+        auto camera = Camera::getFront()[OptixData.LP.cameraEntity.camera_id];
+        OptixData.LP.proj = camera.getProjection();
+        OptixData.LP.viewT0 = transform.getWorldToLocalMatrix(/*previous = */ true);
+        OptixData.LP.viewT1 = transform.getWorldToLocalMatrix(/*previous = */ false);
+    }
 
     // If any of the components are dirty, reset accumulation
-    if (Mesh::areAnyDirty()) resetAccumulation();
-    if (Material::areAnyDirty()) resetAccumulation();
-    if (Camera::areAnyDirty()) resetAccumulation();
-    if (Transform::areAnyDirty()) resetAccumulation();
-    if (Entity::areAnyDirty()) resetAccumulation();
-    if (Light::areAnyDirty()) resetAccumulation();
-    if (Texture::areAnyDirty()) resetAccumulation();
+    bool anyUpdated = false;
+    anyUpdated |= Mesh::areAnyDirty();
+    anyUpdated |= Material::areAnyDirty();
+    anyUpdated |= Camera::areAnyDirty();
+    anyUpdated |= Transform::areAnyDirty();
+    anyUpdated |= Light::areAnyDirty();
+    anyUpdated |= Texture::areAnyDirty();
+    anyUpdated |= Entity::areAnyDirty();
+
+    if (!anyUpdated) return;
+    resetAccumulation();
     
     std::lock_guard<std::recursive_mutex> mesh_lock(*Mesh::getEditMutex().get());
     std::lock_guard<std::recursive_mutex> material_lock(*Material::getEditMutex().get());
@@ -1315,14 +1328,6 @@ void updateComponents()
         Light::updateComponents();
         bufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());
     }
-
-    if (OptixData.LP.cameraEntity.initialized) {
-        auto transform = Transform::getFront()[OptixData.LP.cameraEntity.transform_id];
-        auto camera = Camera::getFront()[OptixData.LP.cameraEntity.camera_id];
-        OptixData.LP.proj = camera.getProjection();
-        OptixData.LP.viewT0 = transform.getWorldToLocalMatrix(/*previous = */ true);
-        OptixData.LP.viewT1 = transform.getWorldToLocalMatrix(/*previous = */ false);
-    }   
 }
 
 void updateLaunchParams()
@@ -1532,25 +1537,16 @@ void resizeWindow(uint32_t width, uint32_t height)
 
 void enableDenoiser() 
 {
-
-    auto enableDenoiser = [] () {
-        // int num_devices = getDeviceCount();
-        // if (num_devices > 1) {
-        //     throw std::runtime_error("ERROR: OptiX denoiser currently only supported for single GPU OptiX contexts");
-        // }
-        OptixData.enableDenoiser = true;
-        // resetAccumulation(); // reset not required, just effects final framebuffer
-    };
-    enqueueCommand(enableDenoiser).wait();
+    auto enableDenoiser = [] () { OptixData.enableDenoiser = true; };
+    auto f = enqueueCommand(enableDenoiser);
+    if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
 }
 
 void disableDenoiser()
 {
-    auto disableDenoiser = [] () {
-        OptixData.enableDenoiser = false;
-        // resetAccumulation(); // reset not required, just effects final framebuffer
-    };
-    enqueueCommand(disableDenoiser).wait();
+    auto disableDenoiser = [] () { OptixData.enableDenoiser = false; };
+    auto f = enqueueCommand(disableDenoiser);
+    if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
 }
 
 std::vector<float> readFrameBuffer() {
@@ -1889,8 +1885,16 @@ void initializeComponentFactories()
 
 void reproject(glm::vec4 *samplesBuffer, glm::vec4 *t0AlbedoBuffer, glm::vec4 *t1AlbedoBuffer, glm::vec4 *mvecBuffer, glm::vec4 *scratchBuffer, glm::vec4 *imageBuffer, int width, int height);
 
+
+static bool initializeInteractiveDeprecatedShown = false;
+static bool initializeHeadlessDeprecatedShown = false;
 void initializeInteractive(bool windowOnTop, bool _verbose)
 {
+    if (initializeInteractiveDeprecatedShown == false) {
+        std::cout<<"Warning, initialize_interactive is deprecated and will be removed in a subsequent release. Please switch to initialize." << std::endl;
+        initializeInteractiveDeprecatedShown = true;
+    }
+
     // don't initialize more than once
     if (initialized == true) {
         throw std::runtime_error("Error: already initialized!");
@@ -1923,20 +1927,20 @@ void initializeInteractive(bool windowOnTop, bool _verbose)
             glClearColor(1,1,1,1);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            updateFrameBuffer();
-            updateComponents();
-            updateLaunchParams();
-
             static double start=0;
             static double stop=0;
             start = glfwGetTime();
-            traceRays();   
 
-            if (OptixData.enableDenoiser)
-            {
-                denoiseImage();
-            }        
-
+            if (!lazyUpdatesEnabled) {
+                updateFrameBuffer();
+                updateComponents();
+                updateLaunchParams();
+                traceRays();   
+                if (OptixData.enableDenoiser)
+                {
+                    denoiseImage();
+                }        
+            }
             // glm::vec4* samplePtr = (glm::vec4*) bufferGetPointer(OptixData.accumBuffer,0);
             // glm::vec4* mvecPtr = (glm::vec4*) bufferGetPointer(OptixData.mvecBuffer,0);
             // glm::vec4* t0AlbPtr = (glm::vec4*) bufferGetPointer(OptixData.scratchBuffer,0);
@@ -1946,8 +1950,6 @@ void initializeInteractive(bool windowOnTop, bool _verbose)
             // int width = OptixData.LP.frameSize.x;
             // int height = OptixData.LP.frameSize.y;
             // reproject(samplePtr, t0AlbPtr, t1AlbPtr, mvecPtr, sPtr, fbPtr, width, height);
-
-            
 
             drawFrameBufferToWindow();
             stop = glfwGetTime();
@@ -1972,6 +1974,11 @@ void initializeInteractive(bool windowOnTop, bool _verbose)
 
 void initializeHeadless(bool _verbose)
 {
+    if (initializeHeadlessDeprecatedShown == false) {
+        std::cout<<"Warning, initialize_headless is deprecated and will be removed in a subsequent release. Please switch to initialize(headless = True)." << std::endl;
+        initializeHeadlessDeprecatedShown = true;
+    }
+
     // don't initialize more than once
     if (initialized == true) {
         throw std::runtime_error("Error: already initialized!");
@@ -2004,7 +2011,13 @@ void initializeHeadless(bool _verbose)
     future.wait();
 }
 
-void initialize(bool headless, bool windowOnTop, bool verbose) {
+void initialize(bool headless, bool windowOnTop, bool _lazyUpdatesEnabled, bool verbose) {
+    lazyUpdatesEnabled = _lazyUpdatesEnabled;
+    // prevents deprecated warning from showing
+    initializeInteractiveDeprecatedShown = true;
+    initializeHeadlessDeprecatedShown = true;
+
+    lazyUpdatesEnabled = _lazyUpdatesEnabled;
     if (headless) initializeHeadless(verbose);
     else initializeInteractive(windowOnTop, verbose);
 }
@@ -2052,6 +2065,20 @@ void updateSceneAabb(Entity* entity)
           glm::max(OptixData.LP.sceneBBMax, e->getMaxAabbCorner());
         first = false;
     }
+}
+
+void enableUpdates()
+{
+    auto enableUpdates = [] () { lazyUpdatesEnabled = true; };
+    auto f = enqueueCommand(enableUpdates);
+    if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
+}
+
+void disableUpdates()
+{
+    auto disableUpdates = [] () { lazyUpdatesEnabled = false; };
+    auto f = enqueueCommand(disableUpdates);
+    if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
 }
 
 #ifdef __unix__
