@@ -15,7 +15,9 @@
 #include <functional>
 #include <limits>
 #include <fcntl.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
