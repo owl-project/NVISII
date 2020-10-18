@@ -111,6 +111,10 @@ __device__ float dot(const float3 a, const float3 b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+__device__ float4 operator*(const float4 &l, const float4 &r) {
+	return make_float4(l.x * r.x, l.y * r.y, l.z * r.z, l.w * r.w);
+}
+
 __device__ float4 operator*(const uint32_t s, const float4 &v) {
 	return make_float4(s * v.x, s * v.y, s * v.z, s * v.w);
 }

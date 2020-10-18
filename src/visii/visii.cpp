@@ -1063,13 +1063,14 @@ void updateComponents()
     if (!anyUpdated) return;
     resetAccumulation();
     
-    std::lock_guard<std::recursive_mutex> mesh_lock(*Mesh::getEditMutex().get());
-    std::lock_guard<std::recursive_mutex> material_lock(*Material::getEditMutex().get());
-    std::lock_guard<std::recursive_mutex> camera_lock(*Camera::getEditMutex().get());
-    std::lock_guard<std::recursive_mutex> transform_lock(*Transform::getEditMutex().get());
-    std::lock_guard<std::recursive_mutex> entity_lock(*Entity::getEditMutex().get());
-    std::lock_guard<std::recursive_mutex> light_lock(*Light::getEditMutex().get());
-    std::lock_guard<std::recursive_mutex> texture_lock(*Texture::getEditMutex().get());
+    std::recursive_mutex dummyMutex;
+    std::lock_guard<std::recursive_mutex> mesh_lock(Mesh::areAnyDirty()           ? *Mesh::getEditMutex().get() : dummyMutex);
+    std::lock_guard<std::recursive_mutex> material_lock(Material::areAnyDirty()   ? *Material::getEditMutex().get() : dummyMutex);
+    std::lock_guard<std::recursive_mutex> camera_lock(Camera::areAnyDirty()       ? *Camera::getEditMutex().get() : dummyMutex);
+    std::lock_guard<std::recursive_mutex> transform_lock(Transform::areAnyDirty() ? *Transform::getEditMutex().get() : dummyMutex);
+    std::lock_guard<std::recursive_mutex> entity_lock(Entity::areAnyDirty()       ? *Entity::getEditMutex().get() : dummyMutex);
+    std::lock_guard<std::recursive_mutex> light_lock(Light::areAnyDirty()         ? *Light::getEditMutex().get() : dummyMutex);
+    std::lock_guard<std::recursive_mutex> texture_lock(Texture::areAnyDirty()     ? *Texture::getEditMutex().get() : dummyMutex);
 
     // Manage Meshes: Build / Rebuild BLAS
     auto dirtyMeshes = Mesh::getDirtyMeshes();

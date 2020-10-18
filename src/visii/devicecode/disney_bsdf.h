@@ -35,6 +35,7 @@ struct DisneyMaterial {
 	float specular_transmission;
 	float transmission_roughness;
 	float flatness;
+	float alpha;
 };
 
 __device__ bool same_hemisphere(const float3 &w_o, const float3 &w_i, const float3 &n) {
