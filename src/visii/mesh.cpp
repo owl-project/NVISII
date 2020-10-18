@@ -2545,7 +2545,20 @@ Mesh* Mesh::createFromObj(std::string name, std::string path)
 
 Mesh* Mesh::createFromFile(std::string name, std::string path)
 {
-	auto create = [path] (Mesh* mesh) {
+	auto create = [path, name] (Mesh* mesh) {
+		// Check and validate the specified model file extension.
+		const char* extension = strrchr(path.c_str(), '.');
+		if (!extension)
+			throw std::runtime_error(
+				std::string("Error: \"") + name + 
+				std::string(" \" provide a file with a valid extension."));
+
+		if (AI_FALSE == aiIsExtensionSupported(extension))
+			throw std::runtime_error(
+				std::string("Error: \"") + name + 
+				std::string(" \"The specified model file extension \"") 
+				+ std::string(extension) + std::string("\" is currently unsupported."));
+
 		auto scene = aiImportFile(path.c_str(), 
 			aiProcessPreset_TargetRealtime_MaxQuality | 
 			aiProcess_Triangulate |
@@ -2553,20 +2566,14 @@ Mesh* Mesh::createFromFile(std::string name, std::string path)
 		
 		if (!scene) {
 			std::string err = std::string(aiGetErrorString());
-			throw std::runtime_error(std::string("Error: ") + err);
+			throw std::runtime_error(
+				std::string("Error: \"") + name + std::string("\"") + err);
 		}
 
 		if (scene->mNumMeshes <= 0) 
-			throw std::runtime_error("Error: positions must be greater than 1!");
-
-		// Check and validate the specified model file extension.
-		const char* extension = strrchr(path.c_str(), '.');
-		if (!extension)
-			throw std::runtime_error("Error: provide a file with a valid extension.");
-
-		if (AI_FALSE == aiIsExtensionSupported(extension))
-			throw std::runtime_error(std::string("Error: The specified model file extension \"") 
-				+ std::string(extension) + std::string("\" is currently unsupported."));
+			throw std::runtime_error(
+				std::string("Error: \"") + name + 
+				std::string("\" positions must be greater than 1!"));
 		
 		mesh->positions.clear();
 		mesh->colors.clear();
@@ -2623,7 +2630,9 @@ Mesh* Mesh::createFromFile(std::string name, std::string path)
 				if (((aiFace.mIndices[0] + off) >= mesh->positions.size()) || 
 					((aiFace.mIndices[1] + off) >= mesh->positions.size()) || 
 					((aiFace.mIndices[2] + off) >= mesh->positions.size()))
-					throw std::runtime_error("Error: invalid mesh index detected!");
+					throw std::runtime_error(
+						std::string("Error: \"") + name +
+						std::string("\" invalid mesh index detected!"));
 			}
 			off += aiMesh->mNumVertices;
 		}

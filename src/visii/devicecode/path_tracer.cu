@@ -6,7 +6,7 @@ template<class T>
 __device__
 T read(T* buf, size_t addr, size_t size, uint32_t line) {
     if (buf == nullptr) {::printf("Device Side Error on Line %d: buffer was nullptr.\n", line); asm("trap;");}
-    if (addr >= size) {::printf("Device Side Error on Line %d: out of bounds access (addr: %zu, size %zu).\n", __LINE__, addr, size); asm("trap;");}
+    if (addr >= size) {::printf("Device Side Error on Line %d: out of bounds access (addr: %d, size %d).\n", line, uint32_t(addr), uint32_t(size)); asm("trap;");}
     return buf[addr];
 }
 

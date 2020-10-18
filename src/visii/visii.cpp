@@ -1049,12 +1049,18 @@ void updateComponents()
     if (Entity::areAnyDirty()) resetAccumulation();
     if (Light::areAnyDirty()) resetAccumulation();
     if (Texture::areAnyDirty()) resetAccumulation();
+    
+    std::lock_guard<std::recursive_mutex> mesh_lock(*Mesh::getEditMutex().get());
+    std::lock_guard<std::recursive_mutex> material_lock(*Material::getEditMutex().get());
+    std::lock_guard<std::recursive_mutex> camera_lock(*Camera::getEditMutex().get());
+    std::lock_guard<std::recursive_mutex> transform_lock(*Transform::getEditMutex().get());
+    std::lock_guard<std::recursive_mutex> entity_lock(*Entity::getEditMutex().get());
+    std::lock_guard<std::recursive_mutex> light_lock(*Light::getEditMutex().get());
+    std::lock_guard<std::recursive_mutex> texture_lock(*Texture::getEditMutex().get());
 
     // Manage Meshes: Build / Rebuild BLAS
     auto dirtyMeshes = Mesh::getDirtyMeshes();
     if (dirtyMeshes.size() > 0) {
-        auto mutex = Mesh::getEditMutex();
-        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
         for (auto &m : dirtyMeshes) {
             if (OD.vertexLists[m->getAddress()]) { 
                 owlBufferRelease(OD.vertexLists[m->getAddress()]); 
@@ -1092,11 +1098,6 @@ void updateComponents()
     // Manage Entities: Build / Rebuild TLAS
     auto dirtyEntities = Entity::getDirtyEntities();
     if (dirtyEntities.size() > 0) {
-        auto entityMutex = Entity::getEditMutex();
-        auto meshMutex = Mesh::getEditMutex();
-        std::lock_guard<std::recursive_mutex> entityLock(*entityMutex.get());
-        std::lock_guard<std::recursive_mutex> meshLock(*meshMutex.get());
-
         std::vector<OWLGroup> instances;
         std::vector<glm::mat4> t0InstanceTransforms;
         std::vector<glm::mat4> t1InstanceTransforms;
@@ -1184,9 +1185,6 @@ void updateComponents()
 
     // Manage textures and materials
     if (Texture::areAnyDirty() || Material::areAnyDirty()) {
-        auto mutex = Texture::getEditMutex();
-        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
-
         // Allocate cuda textures for all texture components
         Texture* textures = Texture::getFront();
         for (uint32_t tid = 0; tid < MAX_TEXTURES; ++tid) {
@@ -1206,8 +1204,6 @@ void updateComponents()
 
         // Manage materials
         {
-            auto mutex = Material::getEditMutex();
-            std::lock_guard<std::recursive_mutex> lock(*mutex.get());
             Material* materials = Material::getFront();
             MaterialStruct* matStructs = Material::getFrontStruct();
             
@@ -1289,9 +1285,6 @@ void updateComponents()
     // Manage transforms
     auto dirtyTransforms = Transform::getDirtyTransforms();
     if (dirtyTransforms.size() > 0) {
-        auto mutex = Transform::getEditMutex();
-        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
-
         Transform::updateComponents();
         
         // for each device
@@ -1313,18 +1306,12 @@ void updateComponents()
 
     // Manage Cameras
     if (Camera::areAnyDirty()) {
-        auto mutex = Camera::getEditMutex();
-        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
-
         Camera::updateComponents();
         bufferUpload(OptixData.cameraBuffer,    Camera::getFrontStruct());
     }    
 
     // Manage lights
     if (Light::areAnyDirty()) {
-        auto mutex = Light::getEditMutex();
-        std::lock_guard<std::recursive_mutex> lock(*mutex.get());
-
         Light::updateComponents();
         bufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());
     }
