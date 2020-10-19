@@ -136,27 +136,37 @@ Material* Material::create(std::string name,
 	float clearcoat,
 	float clearcoat_roughness)
 {
-	auto mat = StaticFactory::create(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
-	mat->setBaseColor(base_color);
-	mat->setRoughness(roughness);
-	mat->setMetallic(metallic);
-	mat->setSpecular(specular);
-	mat->setSpecularTint(specular_tint);
-	mat->setTransmission(transmission);
-	mat->setTransmissionRoughness(transmission_roughness);
-	mat->setIor(ior);
-	mat->setAlpha(alpha);
-	mat->setSubsurfaceRadius(subsurface_radius);
-	mat->setSubsurfaceColor(subsurface_color);
-	mat->setSubsurface(subsurface);
-	mat->setAnisotropic(anisotropic);
-	mat->setAnisotropicRotation(anisotropic_rotation);
-	mat->setSheen(sheen);
-	mat->setSheenTint(sheen_tint);
-	mat->setClearcoat(clearcoat);
-	mat->setClearcoatRoughness(clearcoat_roughness);
-	anyDirty = true;
-	return mat;
+	auto createMaterial = [base_color,roughness,metallic,specular,specular_tint,transmission,
+		transmission_roughness,ior,alpha,subsurface_radius,subsurface_color,subsurface,anisotropic,
+		anisotropic_rotation,sheen,sheen_tint,clearcoat,clearcoat_roughness] (Material* mat)
+	{
+		mat->setBaseColor(base_color);
+		mat->setRoughness(roughness);
+		mat->setMetallic(metallic);
+		mat->setSpecular(specular);
+		mat->setSpecularTint(specular_tint);
+		mat->setTransmission(transmission);
+		mat->setTransmissionRoughness(transmission_roughness);
+		mat->setIor(ior);
+		mat->setAlpha(alpha);
+		mat->setSubsurfaceRadius(subsurface_radius);
+		mat->setSubsurfaceColor(subsurface_color);
+		mat->setSubsurface(subsurface);
+		mat->setAnisotropic(anisotropic);
+		mat->setAnisotropicRotation(anisotropic_rotation);
+		mat->setSheen(sheen);
+		mat->setSheenTint(sheen_tint);
+		mat->setClearcoat(clearcoat);
+		mat->setClearcoatRoughness(clearcoat_roughness);
+		anyDirty = true;
+	};
+
+	try {
+		return StaticFactory::create<Material>(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS, createMaterial);
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
+		throw;
+	}
 }
 
 std::shared_ptr<std::recursive_mutex> Material::getEditMutex()
