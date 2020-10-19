@@ -54,8 +54,7 @@ EntityStruct &Entity::getStruct() {
 
 void Entity::setTransform(Transform* transform) 
 {
-	auto mutex = Entity::getEditMutex();
-	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 
 	auto &entity = getStruct();
 	if (!transform) throw std::runtime_error( std::string("Invalid transform handle."));
@@ -67,8 +66,7 @@ void Entity::setTransform(Transform* transform)
 
 void Entity::clearTransform()
 {
-	auto mutex = Entity::getEditMutex();
-	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 	
 	auto &entity = getStruct();
 	auto transforms = Transform::getFront();
@@ -88,8 +86,7 @@ Transform* Entity::getTransform()
 
 void Entity::setCamera(Camera *camera) 
 {
-	auto mutex = Entity::getEditMutex();
-	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 
 	auto &entity = getStruct();
 	if (!camera) throw std::runtime_error( std::string("Invalid camera handle."));
@@ -101,8 +98,7 @@ void Entity::setCamera(Camera *camera)
 
 void Entity::clearCamera()
 {
-	auto mutex = Entity::getEditMutex();
-	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 
 	auto &entity = getStruct();
 	auto cameras = Camera::getFront();
@@ -122,8 +118,7 @@ Camera* Entity::getCamera()
 
 void Entity::setMaterial(Material *material) 
 {
-	auto mutex = Entity::getEditMutex();
-	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 
 	auto &entity = getStruct();
 	if (!material) throw std::runtime_error( std::string("Invalid material handle."));
@@ -135,8 +130,7 @@ void Entity::setMaterial(Material *material)
 
 void Entity::clearMaterial()
 {
-	auto mutex = Entity::getEditMutex();
-	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 
 	auto &entity = getStruct();
 	auto materials = Material::getFront();
@@ -156,8 +150,7 @@ Material* Entity::getMaterial()
 
 void Entity::setLight(Light* light) 
 {
-	auto mutex = Entity::getEditMutex();
-	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 
 	auto &entity = getStruct();
 	if (!light) throw std::runtime_error( std::string("Invalid light handle."));
@@ -169,8 +162,7 @@ void Entity::setLight(Light* light)
 
 void Entity::clearLight()
 {
-	auto mutex = Entity::getEditMutex();
-	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 
 	auto &entity = getStruct();
 	auto lights = Light::getFront();
@@ -190,8 +182,7 @@ Light* Entity::getLight()
 
 void Entity::setMesh(Mesh* mesh) 
 {
-	auto mutex = Entity::getEditMutex();
-	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 
 	auto &entity = getStruct();
 	if (!mesh) throw std::runtime_error( std::string("Invalid mesh handle."));
@@ -203,8 +194,7 @@ void Entity::setMesh(Mesh* mesh)
 
 void Entity::clearMesh()
 {
-	auto mutex = Entity::getEditMutex();
-	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 	
 	auto &entity = getStruct();
 	auto meshes = Mesh::getFront();
@@ -224,8 +214,7 @@ Mesh* Entity::getMesh()
 
 void Entity::setVisibility(bool camera)
 {
-	auto mutex = Entity::getEditMutex();
-	std::lock_guard<std::recursive_mutex> lock(*mutex.get());
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 	
 	auto &entity = getStruct();
 	if (camera) {
@@ -390,6 +379,7 @@ Entity* Entity::get(std::string name) {
 
 void Entity::remove(std::string name) {
 	auto entity = Entity::get(name);
+	if (!entity) return;
 	entity->clearCamera();
 	entity->clearLight();
 	entity->clearMaterial();
