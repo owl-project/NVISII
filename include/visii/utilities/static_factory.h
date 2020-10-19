@@ -179,7 +179,9 @@ class StaticFactory {
     std::string name = "";
     int32_t id = -1;
 
-    /* All items keep track of the entities which use them. */
-    std::set<uint32_t> entities;
+    /* All items keep track of the components which use them. */
+    std::set<uint32_t> entities; // most components are foreign keys to an entity
+    std::set<uint32_t> materials; // textures are foreign keys to materials
+    std::set<uint32_t> lights; // textures also foreign keys to lights (for textured lights)
 };
 #undef SF_VERBOSE
