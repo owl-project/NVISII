@@ -555,6 +555,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     // Shade each hit point on a path using NEE with MIS
     do {     
+        float alpha = 0.f;
+
         // If ray misses, terminate the ray
         if (payload.tHit <= 0.f) {
             // Compute lighting from environment
@@ -616,7 +618,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             entityMaterial = read(LP.materials, entity.material_id, MAX_MATERIALS, __LINE__);
             loadDisneyMaterial(entityMaterial, uv, mat, MIN_ROUGHNESS);
         }
-        
+       
         // Compute tangent and bitangent based on UVs
         {
             float f = 1.0f / (uv_e1.x * uv_e2.y - uv_e2.x * uv_e1.y);
@@ -677,7 +679,22 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_z = make_float3(tbn * make_vec3(dN));
         }
 
-        // If we didn't it glass, flip the surface normal to face forward.
+        // Potentially skip forward if the hit object is transparent 
+        if (mat.alpha < 1.f) {
+            float alpha_rnd = lcg_randomf(rng);
+
+            if (alpha_rnd > mat.alpha) {
+                ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
+                payload.tHit = -1.f;
+                ray.time = time;
+                owl::traceRay( LP.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+                ++bounce;     
+                specularBounce++; // counting transparency as a specular bounce for now
+                continue;
+            }
+        }
+
+        // If we didn't hit glass, flip the surface normal to face forward.
         if ((mat.specular_transmission == 0.f) && (entity.light_id == -1)) {
             v_z = faceNormalForward(w_o, v_gz, v_z);
         }
