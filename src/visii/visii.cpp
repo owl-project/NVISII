@@ -1065,7 +1065,6 @@ void updateComponents()
     
     std::recursive_mutex dummyMutex;
     std::lock_guard<std::recursive_mutex> mesh_lock(Mesh::areAnyDirty()           ? *Mesh::getEditMutex().get() : dummyMutex);
-    std::lock_guard<std::recursive_mutex> material_lock(Material::areAnyDirty()   ? *Material::getEditMutex().get() : dummyMutex);
     std::lock_guard<std::recursive_mutex> camera_lock(Camera::areAnyDirty()       ? *Camera::getEditMutex().get() : dummyMutex);
     std::lock_guard<std::recursive_mutex> transform_lock(Transform::areAnyDirty() ? *Transform::getEditMutex().get() : dummyMutex);
     std::lock_guard<std::recursive_mutex> entity_lock(Entity::areAnyDirty()       ? *Entity::getEditMutex().get() : dummyMutex);
@@ -1199,6 +1198,9 @@ void updateComponents()
 
     // Manage textures and materials
     if (Texture::areAnyDirty() || Material::areAnyDirty()) {
+        std::lock_guard<std::recursive_mutex> material_lock(Material::areAnyDirty()   ? *Material::getEditMutex().get() : dummyMutex);
+
+
         // Allocate cuda textures for all texture components
         Texture* textures = Texture::getFront();
         for (uint32_t tid = 0; tid < MAX_TEXTURES; ++tid) {
@@ -2070,14 +2072,14 @@ void updateSceneAabb(Entity* entity)
 
 void enableUpdates()
 {
-    auto enableUpdates = [] () { lazyUpdatesEnabled = true; };
+    auto enableUpdates = [] () { lazyUpdatesEnabled = false; };
     auto f = enqueueCommand(enableUpdates);
     if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
 }
 
 void disableUpdates()
 {
-    auto disableUpdates = [] () { lazyUpdatesEnabled = false; };
+    auto disableUpdates = [] () { lazyUpdatesEnabled = true; };
     auto f = enqueueCommand(disableUpdates);
     if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
 }
