@@ -25,14 +25,21 @@ private:
 	static bool factoryInitialized;
 
 	/** The table of Camera components */
-	static Camera cameras[MAX_CAMERAS];
+	static std::vector<Camera> cameras;
 
 	/** The table of Camera structs */
-	static CameraStruct cameraStructs[MAX_CAMERAS];
+	static std::vector<CameraStruct> cameraStructs;
 
 	/* A lookup table of name to camera id */
 	static std::map<std::string, uint32_t> lookupTable;
 
+    /* Indicates that one of the components has been edited */
+    static bool anyDirty;
+
+    /* Indicates this component has been edited */
+    bool dirty = true;
+	
+  public:
   	/**
 	 * Instantiates a null Camera. Used to mark a row in the table as null. 
      * Note: for internal use only. 
@@ -45,13 +52,6 @@ private:
 	 */
 	Camera(std::string name, uint32_t id);
 
-    /* Indicates that one of the components has been edited */
-    static bool anyDirty;
-
-    /* Indicates this component has been edited */
-    bool dirty = true;
-	
-  public:
 	/* Creates a camera, which can be used to capture the scene. */
 	
 	/** 

@@ -175,6 +175,9 @@ namespace std {
 %ignore Material::markDirty();
 %ignore Material::markClean();
 
+%ignore Camera::Camera();
+%ignore Camera::Camera(std::string name, uint32_t id);
+
 /* -------- Renames --------------*/
 %rename("%(undercase)s",%$isfunction) "";
 %rename("%(undercase)s",%$isclass) "";

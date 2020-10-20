@@ -1,8 +1,8 @@
 #include <visii/camera.h>
 #include <glm/gtx/matrix_transform_2d.hpp>
 
-Camera Camera::cameras[MAX_CAMERAS];
-CameraStruct Camera::cameraStructs[MAX_CAMERAS];
+std::vector<Camera> Camera::cameras;
+std::vector<CameraStruct> Camera::cameraStructs;
 std::map<std::string, uint32_t> Camera::lookupTable;
 std::shared_ptr<std::recursive_mutex> Camera::editMutex;
 bool Camera::factoryInitialized = false;
@@ -48,6 +48,8 @@ CameraStruct Camera::getStruct() {
 void Camera::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
+    cameras.resize(10);
+    cameraStructs.resize(10);
 	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
@@ -73,7 +75,7 @@ void Camera::markDirty() {
 
 void Camera::updateComponents()
 {
-    for (int i = 0; i < MAX_CAMERAS; ++i) {
+    for (int i = 0; i < cameras.size(); ++i) {
 		if (cameras[i].isDirty()) {
             cameras[i].markClean();
         }
@@ -89,14 +91,14 @@ void Camera::updateComponents()
     //     if (SSBOMemory == vk::DeviceMemory()) return;
     //     if (stagingSSBOMemory == vk::DeviceMemory()) return;
         
-    //     auto bufferSize = MAX_CAMERAS * sizeof(CameraStruct);
+    //     auto bufferSize = cameras.size() * sizeof(CameraStruct);
 
     // 	/* Pin the buffer */
     // 	pinnedMemory = (CameraStruct*) device.mapMemory(stagingSSBOMemory, 0, bufferSize);
     // 	if (pinnedMemory == nullptr) return;
         
     // 	/* TODO: remove this for loop */
-    // 	for (uint32_t i = 0; i < MAX_CAMERAS; ++i) {
+    // 	for (uint32_t i = 0; i < cameras.size(); ++i) {
     // 		if (!cameras[i].is_initialized()) continue;
     // 		pinnedMemory[i] = cameras[i].camera_struct;
 
@@ -175,24 +177,24 @@ void Camera::clearAll()
 /* Static Factory Implementations */
 Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, float aspect)
 {
-	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 	try {
         camera->usePerspectiveFromFOV(fieldOfView, aspect);
         return camera;
 	} catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 		throw;
 	}
 }
 
 Camera* Camera::createPerspectiveFromFocalLength(std::string name, float focalLength, float sensorWidth, float sensorHeight)
 {
-	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 	try {
         camera->usePerspectiveFromFocalLength(focalLength, sensorWidth, sensorHeight);
         return camera;
 	} catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 		throw;
 	}
 }
@@ -203,24 +205,24 @@ std::shared_ptr<std::recursive_mutex> Camera::getEditMutex()
 }
 
 Camera* Camera::get(std::string name) {
-	return StaticFactory::get(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	return StaticFactory::get(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 }
 
 void Camera::remove(std::string name) {
-	StaticFactory::remove(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	StaticFactory::remove(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 	anyDirty = true;
 }
 
 CameraStruct* Camera::getFrontStruct() {
-	return cameraStructs;
+	return cameraStructs.data();
 }
 
 Camera* Camera::getFront() {
-	return cameras;
+	return cameras.data();
 }
 
 uint32_t Camera::getCount() {
-	return MAX_CAMERAS;
+	return cameras.size();
 }
 
 std::string Camera::getName()
@@ -445,14 +447,14 @@ glm::mat4 Camera::getProjection() {
 
 // uint32_t Camera::GetSSBOSize()
 // {
-// 	return MAX_CAMERAS * sizeof(CameraStruct);
+// 	return cameras.size() * sizeof(CameraStruct);
 // }
 
 // std::vector<Camera *> Camera::GetCamerasByOrder(uint32_t order)
 // {
 // 	/* Todo: improve the performance of this. */
 // 	std::vector<Camera *> selected_cameras;
-// 	for (uint32_t i = 0; i < MAX_CAMERAS; ++i) {
+// 	for (uint32_t i = 0; i < cameras.size(); ++i) {
 // 		if (!cameras[i].is_initialized()) continue;
 
 // 		if (cameras[i].renderOrder == order) {

@@ -47,6 +47,7 @@ struct LaunchParams {
     uint32_t transformCount = 0;    
     MaterialStruct  *materials = nullptr;
     CameraStruct    *cameras = nullptr;
+    uint32_t cameraCount = 0;    
     MeshStruct      *meshes = nullptr;
     LightStruct     *lights = nullptr;
     TextureStruct   *textures = nullptr;

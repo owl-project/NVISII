@@ -513,6 +513,7 @@ void initializeOptix(bool headless)
         { "transforms",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, transforms)},
         { "transformCount",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, transformCount)},
         { "cameras",                 OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, cameras)},
+        { "cameraCount",             OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, cameraCount)},
         { "materials",               OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
         { "meshes",                  OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
         { "lights",                  OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lights)},
@@ -582,7 +583,7 @@ void initializeOptix(bool headless)
     // note, extra textures reserved for internal use
     OD.entityBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(EntityStruct),        MAX_ENTITIES,   nullptr);
     OD.transformBuffer           = deviceBufferCreate(OD.context, OWL_BUFFER,                         Transform::getCount(), nullptr);
-    OD.cameraBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),        MAX_CAMERAS,    nullptr);
+    OD.cameraBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),        Camera::getCount(),    nullptr);
     OD.materialBuffer            = deviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),      MAX_MATERIALS,  nullptr);
     OD.meshBuffer                = deviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),          MAX_MESHES,     nullptr);
     OD.lightBuffer               = deviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),         MAX_LIGHTS,     nullptr);
@@ -597,10 +598,12 @@ void initializeOptix(bool headless)
 
     
     uint32_t transformCount = Transform::getCount();
+    uint32_t cameraCount = Camera::getCount();
     launchParamsSetBuffer(OD.launchParams, "entities",             OD.entityBuffer);
     launchParamsSetBuffer(OD.launchParams, "transforms",           OD.transformBuffer);
     launchParamsSetRaw(OD.launchParams, "transformCount",              &transformCount);
     launchParamsSetBuffer(OD.launchParams, "cameras",              OD.cameraBuffer);
+    launchParamsSetRaw(OD.launchParams, "cameraCount",              &cameraCount);
     launchParamsSetBuffer(OD.launchParams, "materials",            OD.materialBuffer);
     launchParamsSetBuffer(OD.launchParams, "meshes",               OD.meshBuffer);
     launchParamsSetBuffer(OD.launchParams, "lights",               OD.lightBuffer);

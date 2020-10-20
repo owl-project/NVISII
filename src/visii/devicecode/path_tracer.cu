@@ -150,7 +150,7 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
     cameraEntity = LP.cameraEntity;
     if (!cameraEntity.initialized) return false;
     if ((cameraEntity.transform_id < 0) || (cameraEntity.transform_id >= LP.transformCount)) return false;
-    if ((cameraEntity.camera_id < 0) || (cameraEntity.camera_id >= MAX_CAMERAS)) return false;
+    if ((cameraEntity.camera_id < 0) || (cameraEntity.camera_id >= LP.cameraCount)) return false;
     camera = LP.cameras[cameraEntity.camera_id];
     transform = LP.transforms[cameraEntity.transform_id];
     return true;

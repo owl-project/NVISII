@@ -110,7 +110,7 @@ void Entity::clearCamera()
 Camera* Entity::getCamera()
 {
 	auto &entity = getStruct();
-	if ((entity.camera_id < 0) || (entity.camera_id >= MAX_CAMERAS)) return nullptr;
+	if ((entity.camera_id < 0) || (entity.camera_id >= Camera::getCount())) return nullptr;
 	auto cameras = Camera::getFront(); 
 	if (!cameras[entity.camera_id].isInitialized()) return nullptr;
 	return &cameras[entity.camera_id];

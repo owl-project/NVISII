@@ -108,12 +108,18 @@ class Transform : public StaticFactory
     static std::set<Transform*> dirtyTransforms;
 
   public:
-    /** For internal use only. Do not call. */
+    /**
+      * Instantiates a null Transform. Used to mark a row in the table as null. 
+      * Note: for internal use only. 
+     */
     Transform();
-    
-    /** For internal use only. Do not call. */
-    Transform(std::string name, uint32_t id);
 
+    /**
+      * Instantiates a Transform with the given name and ID. Used to mark a row in the table as null. 
+      * Note: for internal use only.
+     */
+    Transform(std::string name, uint32_t id);
+    
     /**
      * Constructs a transform with the given name.
      * 
