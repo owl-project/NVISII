@@ -1,3 +1,7 @@
+#ifndef TINYOBJLOADER_IMPLEMENTATION
+#define TINYOBJLOADER_IMPLEMENTATION
+#endif
+
 #include  <visii/visii.h>
 
 #include <thread>

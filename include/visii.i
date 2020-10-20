@@ -178,6 +178,9 @@ namespace std {
 %ignore Camera::Camera();
 %ignore Camera::Camera(std::string name, uint32_t id);
 
+%ignore Mesh::Mesh();
+%ignore Mesh::Mesh(std::string name, uint32_t id);
+
 /* -------- Renames --------------*/
 %rename("%(undercase)s",%$isfunction) "";
 %rename("%(undercase)s",%$isclass) "";

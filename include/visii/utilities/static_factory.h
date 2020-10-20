@@ -63,9 +63,9 @@ class StaticFactory {
 
     /* Returns the first index where an item of type T is uninitialized. */
     template<class T>
-    static int32_t findAvailableID(T *items, uint32_t max_items) 
+    static int32_t findAvailableID(T *items, size_t maxItems) 
     {
-        for (uint32_t i = 0; i < max_items; ++i)
+        for (size_t i = 0; i < maxItems; ++i)
             if (items[i].initialized == false)
                 return (int32_t)i;
         return -1;
@@ -73,7 +73,7 @@ class StaticFactory {
     
     /* Reserves a location in items and adds an entry in the lookup table */
     template<class T>
-    static T* create(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems, std::function<void(T*)> function = nullptr) 
+    static T* create(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, size_t maxItems, std::function<void(T*)> function = nullptr) 
     {
         auto mutex = factory_mutex.get();
         std::lock_guard<std::recursive_mutex> lock(*mutex);
@@ -100,7 +100,7 @@ class StaticFactory {
 
     /* Retrieves an element with a lookup table indirection */
     template<class T>
-    static T* get(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems) 
+    static T* get(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, size_t maxItems) 
     {
         auto mutex = factory_mutex.get();
         std::lock_guard<std::recursive_mutex> lock(*mutex);
@@ -117,7 +117,7 @@ class StaticFactory {
 
     /* Retrieves an element by ID directly */
     template<class T>
-    static T* get(std::shared_ptr<std::recursive_mutex> factory_mutex, uint32_t id, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems) 
+    static T* get(std::shared_ptr<std::recursive_mutex> factory_mutex, uint32_t id, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, size_t maxItems) 
     {
         auto mutex = factory_mutex.get();
         std::lock_guard<std::recursive_mutex> lock(*mutex);
@@ -132,7 +132,7 @@ class StaticFactory {
 
     /* Removes an element with a lookup table indirection, removing from both items and the lookup table */
     template<class T>
-    static void remove(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems)
+    static void remove(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, size_t maxItems)
     {
         auto mutex = factory_mutex.get();
         std::lock_guard<std::recursive_mutex> lock(*mutex);
@@ -145,7 +145,7 @@ class StaticFactory {
 
     /* If it exists, removes an element with a lookup table indirection, removing from both items and the lookup table */
     template<class T>
-    static void removeIfExists(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems)
+    static void removeIfExists(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, size_t maxItems)
     {
         auto mutex = factory_mutex.get();
         std::lock_guard<std::recursive_mutex> lock(*mutex);
@@ -156,7 +156,7 @@ class StaticFactory {
 
     /* Removes an element by ID directly, removing from both items and the lookup table */
     template<class T>
-    static void remove(std::shared_ptr<std::recursive_mutex> factory_mutex, uint32_t id, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems)
+    static void remove(std::shared_ptr<std::recursive_mutex> factory_mutex, uint32_t id, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, size_t maxItems)
     {
         auto mutex = factory_mutex.get();
         std::lock_guard<std::recursive_mutex> lock(*mutex);

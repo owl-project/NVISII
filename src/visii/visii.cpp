@@ -109,12 +109,12 @@ static struct OptixData {
     OWLMissProg missProg;
     OWLGeomType trianglesGeomType;
 
-    OWLBuffer vertexLists[MAX_MESHES];
-    OWLBuffer normalLists[MAX_MESHES];
-    OWLBuffer texCoordLists[MAX_MESHES];
-    OWLBuffer indexLists[MAX_MESHES];
-    OWLGeom geomList[MAX_MESHES];
-    OWLGroup blasList[MAX_MESHES];
+    std::vector<OWLBuffer> vertexLists;
+    std::vector<OWLBuffer> normalLists;
+    std::vector<OWLBuffer> texCoordLists;
+    std::vector<OWLBuffer> indexLists;
+    std::vector<OWLGeom> geomList;
+    std::vector<OWLGroup> blasList;
 
     OWLGroup tlas = nullptr;
 
@@ -516,6 +516,7 @@ void initializeOptix(bool headless)
         { "cameraCount",             OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, cameraCount)},
         { "materials",               OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
         { "meshes",                  OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
+        { "meshCount",               OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, meshCount)},
         { "lights",                  OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lights)},
         { "textures",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
         { "lightEntities",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
@@ -585,27 +586,29 @@ void initializeOptix(bool headless)
     OD.transformBuffer           = deviceBufferCreate(OD.context, OWL_BUFFER,                         Transform::getCount(), nullptr);
     OD.cameraBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),        Camera::getCount(),    nullptr);
     OD.materialBuffer            = deviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),      MAX_MATERIALS,  nullptr);
-    OD.meshBuffer                = deviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),          MAX_MESHES,     nullptr);
+    OD.meshBuffer                = deviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),          Mesh::getCount(),     nullptr);
     OD.lightBuffer               = deviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),         MAX_LIGHTS,     nullptr);
     OD.textureBuffer             = deviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS,   nullptr);
     OD.lightEntitiesBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
-    OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
-    OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
-    OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
-    OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_BUFFER,                         MAX_MESHES,     nullptr);
+    OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
+    OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
+    OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
+    OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS,   nullptr);
 
     
-    uint32_t transformCount = Transform::getCount();
-    uint32_t cameraCount = Camera::getCount();
+    OD.LP.transformCount = Transform::getCount();
+    OD.LP.cameraCount = Camera::getCount();
+    OD.LP.meshCount = Mesh::getCount();
     launchParamsSetBuffer(OD.launchParams, "entities",             OD.entityBuffer);
     launchParamsSetBuffer(OD.launchParams, "transforms",           OD.transformBuffer);
-    launchParamsSetRaw(OD.launchParams, "transformCount",              &transformCount);
+    launchParamsSetRaw(OD.launchParams, "transformCount",          &OD.LP.transformCount);
     launchParamsSetBuffer(OD.launchParams, "cameras",              OD.cameraBuffer);
-    launchParamsSetRaw(OD.launchParams, "cameraCount",              &cameraCount);
+    launchParamsSetRaw(OD.launchParams, "cameraCount",             &OD.LP.cameraCount);
     launchParamsSetBuffer(OD.launchParams, "materials",            OD.materialBuffer);
     launchParamsSetBuffer(OD.launchParams, "meshes",               OD.meshBuffer);
+    launchParamsSetRaw(OD.launchParams, "meshCount",               &OD.LP.meshCount);
     launchParamsSetBuffer(OD.launchParams, "lights",               OD.lightBuffer);
     launchParamsSetBuffer(OD.launchParams, "textures",             OD.textureBuffer);
     launchParamsSetBuffer(OD.launchParams, "lightEntities",        OD.lightEntitiesBuffer);
@@ -615,6 +618,13 @@ void initializeOptix(bool headless)
     launchParamsSetBuffer(OD.launchParams, "texCoordLists",        OD.texCoordListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "indexLists",           OD.indexListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "textureObjects",       OD.textureObjectsBuffer);
+
+    OD.vertexLists.resize(OD.LP.meshCount);
+    OD.normalLists.resize(OD.LP.meshCount);
+    OD.texCoordLists.resize(OD.LP.meshCount);
+    OD.indexLists.resize(OD.LP.meshCount);
+    OD.geomList.resize(OD.LP.meshCount);
+    OD.blasList.resize(OD.LP.meshCount);
 
     OD.LP.environmentMapID = -1;
     OD.LP.environmentMapRotation = glm::quat(1,0,0,0);
@@ -1105,10 +1115,10 @@ void updateComponents()
             groupBuildAccel(OD.blasList[m->getAddress()]);          
         }
 
-        bufferUpload(OD.vertexListsBuffer, OD.vertexLists);
-        bufferUpload(OD.texCoordListsBuffer, OD.texCoordLists);
-        bufferUpload(OD.indexListsBuffer, OD.indexLists);
-        bufferUpload(OD.normalListsBuffer, OD.normalLists);
+        bufferUpload(OD.vertexListsBuffer, OD.vertexLists.data());
+        bufferUpload(OD.texCoordListsBuffer, OD.texCoordLists.data());
+        bufferUpload(OD.indexListsBuffer, OD.indexLists.data());
+        bufferUpload(OD.normalListsBuffer, OD.normalLists.data());
         Mesh::updateComponents();
         bufferUpload(OptixData.meshBuffer, Mesh::getFrontStruct());
     }    

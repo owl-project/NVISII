@@ -29,6 +29,18 @@ class Mesh : public StaticFactory
     friend class StaticFactory;
     friend class Entity;
     public:
+        /**
+         * Instantiates a null Mesh. Used to mark a row in the table as null. 
+         * Note: for internal use only. 
+         */
+        Mesh();
+
+        /**
+         * Instantiates a Mesh with the given name and ID. Used to mark a row in the table as null. 
+         * Note: for internal use only.
+         */
+        Mesh(std::string name, uint32_t id);
+
         /** 
          * Creates a rectangular box centered at the origin aligned along the x, y, and z axis. 
          *
@@ -850,11 +862,6 @@ class Mesh : public StaticFactory
         static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
     private:
-        /** Creates an uninitialized mesh. Useful for preallocation. */
-        Mesh();
-
-        /** Creates a mesh with the given name and id. */
-        Mesh(std::string name, uint32_t id);
 
         static std::set<Mesh*> dirtyMeshes;
 
@@ -865,8 +872,8 @@ class Mesh : public StaticFactory
         static bool factoryInitialized;
         
         /** A list of the mesh components, allocated statically */
-        static Mesh meshes[MAX_MESHES];
-        static MeshStruct meshStructs[MAX_MESHES];
+        static std::vector<Mesh> meshes;
+        static std::vector<MeshStruct> meshStructs;
 
         /** A lookup table of name to mesh id */
         static std::map<std::string, uint32_t> lookupTable;
@@ -939,9 +946,6 @@ class Mesh : public StaticFactory
 
         // /** Creates an index buffer, and uploads index data stored in the indices list */
         // void createTriangleIndexBuffer(bool allow_edits, bool submit_immediately);
-
-        // /* Loads in an OBJ mesh and copies per vertex data to the GPU */
-        void loadObj(std::string objPath);
 
         // /* Loads in an STL mesh and copies per vertex data to the GPU */
         // void load_stl(std::string stlPath);
