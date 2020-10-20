@@ -96,6 +96,9 @@ public:
     /** Tags the current component as being modified since the previous frame. */
     void markDirty();
 
+    /** Returns the simplified struct used to represent the current component */
+    LightStruct &getStruct();
+
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
 

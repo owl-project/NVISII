@@ -36,11 +36,17 @@ std::string Light::toString() {
     return output;
 }
 
+LightStruct &Light::getStruct() {
+	if (!isInitialized()) throw std::runtime_error("Error: light is uninitialized.");
+	return lightStructs[id];
+}
+
 void Light::setColor(glm::vec3 color)
 {
-    lightStructs[id].r = max(0.f, min(color.r, 1.f));
-    lightStructs[id].g = max(0.f, min(color.g, 1.f));
-    lightStructs[id].b = max(0.f, min(color.b, 1.f));
+    auto &light = getStruct();
+    light.r = max(0.f, min(color.r, 1.f));
+    light.g = max(0.f, min(color.g, 1.f));
+    light.b = max(0.f, min(color.b, 1.f));
     markDirty();
 }
 
@@ -52,12 +58,18 @@ glm::vec3 Light::getColor()
 void Light::setColorTexture(Texture *texture) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	lightStructs[id].color_texture_id = texture->getId();
+    auto &light = getStruct();
+	light.color_texture_id = texture->getId();
+    texture->lights.insert(id);
 	markDirty();
 }
 
 void Light::clearColorTexture() {
-	lightStructs[id].color_texture_id = -1;
+    auto &light = getStruct();
+    auto textures = Texture::getFront();
+    if (light.color_texture_id != -1) 
+        textures[light.color_texture_id].lights.erase(id);
+	light.color_texture_id = -1;
 	markDirty();
 }
 
@@ -90,37 +102,43 @@ void Light::setTemperature(float kelvin)
         blue = 255;
     }
 
-    lightStructs[id].r = red / 255.f;
-    lightStructs[id].g = green / 255.f;
-    lightStructs[id].b = blue / 255.f;
+    auto &light = getStruct();
+    light.r = red / 255.f;
+    light.g = green / 255.f;
+    light.b = blue / 255.f;
     markDirty();
 }
 
 void Light::setIntensity(float intensity)
 {
-    lightStructs[id].intensity = intensity;
+    auto &light = getStruct();
+    light.intensity = intensity;
     markDirty();
 }
 
 float Light::getIntensity()
 {
-    return lightStructs[id].intensity;
+    auto &light = getStruct();
+    return light.intensity;
 }
 
 void Light::setExposure(float exposure)
 {
-    lightStructs[id].exposure = exposure;
+    auto &light = getStruct();
+    light.exposure = exposure;
     markDirty();
 }
 
 float Light::getExposure()
 {
-    return lightStructs[id].exposure;
+    auto &light = getStruct();
+    return light.exposure;
 }
 
 void Light::useSurfaceArea(bool use) 
 {
-    lightStructs[id].use_surface_area = use;
+    auto &light = getStruct();
+    light.use_surface_area = use;
 }
 
 /* SSBO logic */
