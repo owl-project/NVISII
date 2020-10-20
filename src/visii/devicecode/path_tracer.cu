@@ -680,7 +680,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
 
         // Potentially skip forward if the hit object is transparent 
-        if (mat.alpha < 1.f) {
+        if ((entity.light_id == -1) && (mat.alpha < 1.f)) {
             float alpha_rnd = lcg_randomf(rng);
 
             if (alpha_rnd > mat.alpha) {
