@@ -750,6 +750,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 bsdf, bsdfColor;
             float3 lightEmission;
             float3 lightDir;
+            float lightDistance = 1e20f;
             int numTris;
 
             // sample background
@@ -824,7 +825,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 vec2 uv2 = read(texCoords, triIndex.y, mesh.numVerts, __LINE__);
                 vec2 uv3 = read(texCoords, triIndex.z, mesh.numVerts, __LINE__);
                 sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
-                    lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, 
+                    lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDFs[lid], uv, 
                     /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
                 
                 numTris = mesh.numTris;
@@ -834,18 +835,18 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
 
             disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, bsdf, bsdfColor, forcedBsdf);
-            dotNWi = max(dot(lightDir, v_gz), 0.f);
+            dotNWi = max(dot(lightDir, v_z), 0.f);
             lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
             if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
                 RayPayload payload; payload.instanceID = -2;
                 owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
-                ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f; // Consider shrinking the length of this ray depending on triangle sampled pos.
+                ray.tmin = EPSILON * 10.f; ray.tmax = lightDistance + EPSILON; // needs to be distance to light, else anyhit logic breaks.
                 ray.origin = hit_p; ray.direction = lightDir;
                 ray.time = time;
                 owl::traceRay( LP.world, ray, payload, occlusion_flags);
                 bool visible = (randomID == numLights) ?
                     (payload.instanceID == -2) : 
-                    (payload.instanceID >= 0 && read(i2e, payload.instanceID, LP.numInstances, __LINE__) == sampledLightIDs[lid]);
+                    ((payload.instanceID == -2) || (read(i2e, payload.instanceID, LP.numInstances, __LINE__) == sampledLightIDs[lid]));
                 if (visible) {
                     if (randomID != numLights) lightEmission = lightEmission / (payload.tHit * payload.tHit);
                     float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);

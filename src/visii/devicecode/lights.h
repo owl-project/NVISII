@@ -29,7 +29,8 @@ void sampleTriangle(const vec3 &pos,
 					const vec3 &n1, const vec3 &n2, const vec3 &n3, 
 					const vec3 &v1, const vec3 &v2, const vec3 &v3, 
 					const vec2 &uv1, const vec2 &uv2, const vec2 &uv3, 
-					float rand1, float rand2, vec3 &dir, float &pdf, vec2 &uv,
+					const float rand1, const float rand2, 
+          vec3 &dir, float &distance, float &pdf, vec2 &uv,
 					bool double_sided, bool use_surface_area)
 {
 	vec3 p = uniformPointWithinTriangle( v1, v2, v3, rand1, rand2 );
@@ -45,6 +46,7 @@ void sampleTriangle(const vec3 &pos,
 	dir = p - pos;
 	float d2 = dot(dir, dir); 
 	float d = sqrt(d2); // linear
+  distance = d;
 	dir /= d;
 	float aCosThere = max(0.0, (double_sided) ? fabs(dot(-dir,n)) : dot(-dir,n));
 	pdf = PdfAtoW( pdfA, d2, aCosThere );
