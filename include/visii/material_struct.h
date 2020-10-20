@@ -1,7 +1,7 @@
 /* File shared by both host and device */
 #pragma once
 
-#define MAX_MATERIALS 1000000
+#define MAX_MATERIALS 100000
 #define NUM_MAT_PARAMS 19
 
 #include <stdint.h>
