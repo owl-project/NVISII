@@ -44,6 +44,7 @@ struct LaunchParams {
     EntityStruct    cameraEntity;
     EntityStruct    *entities = nullptr;
     TransformStruct *transforms = nullptr;
+    uint32_t transformCount = 0;    
     MaterialStruct  *materials = nullptr;
     CameraStruct    *cameras = nullptr;
     MeshStruct      *meshes = nullptr;

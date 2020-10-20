@@ -78,7 +78,7 @@ void Entity::clearTransform()
 Transform* Entity::getTransform()
 {
 	auto &entity = getStruct();
-	if ((entity.transform_id < 0) || (entity.transform_id >= MAX_TRANSFORMS)) return nullptr;
+	if ((entity.transform_id < 0) || (entity.transform_id >= Transform::getCount())) return nullptr;
 	auto transforms = Transform::getFront(); 
 	if (!transforms[entity.transform_id].isInitialized()) return nullptr;
 	return &transforms[entity.transform_id];

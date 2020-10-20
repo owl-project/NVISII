@@ -149,7 +149,7 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
     auto &LP = optixLaunchParams;
     cameraEntity = LP.cameraEntity;
     if (!cameraEntity.initialized) return false;
-    if ((cameraEntity.transform_id < 0) || (cameraEntity.transform_id >= MAX_TRANSFORMS)) return false;
+    if ((cameraEntity.transform_id < 0) || (cameraEntity.transform_id >= LP.transformCount)) return false;
     if ((cameraEntity.camera_id < 0) || (cameraEntity.camera_id >= MAX_CAMERAS)) return false;
     camera = LP.cameras[cameraEntity.camera_id];
     transform = LP.transforms[cameraEntity.transform_id];
@@ -800,7 +800,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 sampledLightIDs[lid] = read(LP.lightEntities, randomID, LP.numLightEntities, __LINE__);
                 EntityStruct light_entity = read(LP.entities, sampledLightIDs[lid], MAX_ENTITIES, __LINE__);
                 LightStruct light_light = read(LP.lights, light_entity.light_id, MAX_LIGHTS, __LINE__);
-                TransformStruct transform = read(LP.transforms, light_entity.transform_id, MAX_TRANSFORMS, __LINE__);
+                TransformStruct transform = read(LP.transforms, light_entity.transform_id, LP.transformCount, __LINE__);
                 MeshStruct mesh = read(LP.meshes, light_entity.mesh_id, MAX_MESHES, __LINE__);
                 uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
                 owl::device::Buffer *indexLists = (owl::device::Buffer *)LP.indexLists.data;

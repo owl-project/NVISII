@@ -149,6 +149,8 @@ namespace std {
 %ignore Entity::markDirty();
 %ignore Entity::markClean();
 
+%ignore Transform::Transform();
+%ignore Transform::Transform(std::string name, uint32_t id);
 %ignore Transform::initializeFactory();
 %ignore Transform::getFront();
 %ignore Transform::getFrontStruct();

@@ -74,8 +74,8 @@ class Transform : public StaticFactory
   	static std::shared_ptr<std::recursive_mutex> editMutex;
     static bool factoryInitialized;
 
-    static Transform transforms[MAX_TRANSFORMS];
-    static TransformStruct transformStructs[MAX_TRANSFORMS];
+    static std::vector<Transform> transforms;
+    static std::vector<TransformStruct> transformStructs;
     static std::map<std::string, uint32_t> lookupTable;
     
     /* Updates cached rotation values */
@@ -104,12 +104,16 @@ class Transform : public StaticFactory
     glm::mat4 computeWorldToLocalMatrix(bool previous);
     // glm::mat4 computePrevWorldToLocalMatrix(bool previous);
 
-    Transform();
-    Transform(std::string name, uint32_t id);
 
     static std::set<Transform*> dirtyTransforms;
 
   public:
+    /** For internal use only. Do not call. */
+    Transform();
+    
+    /** For internal use only. Do not call. */
+    Transform(std::string name, uint32_t id);
+
     /**
      * Constructs a transform with the given name.
      * 
