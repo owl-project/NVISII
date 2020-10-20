@@ -135,6 +135,9 @@ class Material : public StaticFactory
     /** Tags the current component as being modified since the previous frame. */
     void markDirty();
 
+    /** Returns the simplified struct used to represent the current component */
+	  MaterialStruct &getStruct();
+
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
 

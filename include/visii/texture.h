@@ -12,6 +12,7 @@
 class Texture : public StaticFactory
 {
 	friend class StaticFactory;
+	friend class Material;
   public:
 	
 	/** 
