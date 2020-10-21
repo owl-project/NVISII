@@ -734,9 +734,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
 
         // Next, sample the light source by importance sampling the light
-        owl::device::Buffer *vertexLists = (owl::device::Buffer *)LP.vertexLists.data;
-        owl::device::Buffer *normalLists = (owl::device::Buffer *)LP.normalLists.data;
-        owl::device::Buffer *texCoordLists = (owl::device::Buffer *)LP.texCoordLists.data;
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
         for (uint32_t lid = 0; lid < LP.numLightSamples; ++lid) 
         {
@@ -798,28 +795,27 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 TransformStruct transform = LP.transforms.get(light_entity.transform_id, __LINE__);
                 MeshStruct mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
                 uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
-                owl::device::Buffer *indexLists = (owl::device::Buffer *)LP.indexLists.data;
-                ivec3 *indices = (ivec3*) read(indexLists, light_entity.mesh_id, LP.indexLists.count, __LINE__).data;
-                float3 *vertices = (float3*) read(vertexLists, light_entity.mesh_id, LP.vertexLists.count, __LINE__).data;
-                vec4 *normals = (vec4*) read(normalLists, light_entity.mesh_id, LP.normalLists.count, __LINE__).data;
-                vec2 *texCoords = (vec2*) read(texCoordLists, light_entity.mesh_id, LP.texCoordLists.count, __LINE__).data;
-                ivec3 triIndex = read(indices, random_tri_id, mesh.numTris, __LINE__);   
+                auto indices = LP.indexLists.get(light_entity.mesh_id, __LINE__);
+                auto vertices = LP.vertexLists.get(light_entity.mesh_id, __LINE__);
+                auto normals = LP.normalLists.get(light_entity.mesh_id, __LINE__);
+                auto texCoords = LP.texCoordLists.get(light_entity.mesh_id, __LINE__);
+                int3 triIndex = indices.get(random_tri_id, __LINE__);
                 
                 // Sample the light to compute an incident light ray to this point
                 auto &ltw = transform.localToWorld;
                 vec3 dir; vec2 uv;
                 vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
                  // Might be a bug here with normal transform...
-                vec4 n1 = ltw * read(normals, triIndex.x, mesh.numVerts, __LINE__);
-                vec4 n2 = ltw * read(normals, triIndex.y, mesh.numVerts, __LINE__);
-                vec4 n3 = ltw * read(normals, triIndex.z, mesh.numVerts, __LINE__);
-                vec4 v1 = ltw * vec4(make_vec3(read(vertices, triIndex.x, mesh.numVerts, __LINE__)), 1.0f);
-                vec4 v2 = ltw * vec4(make_vec3(read(vertices, triIndex.y, mesh.numVerts, __LINE__)), 1.0f);
-                vec4 v3 = ltw * vec4(make_vec3(read(vertices, triIndex.z, mesh.numVerts, __LINE__)), 1.0f);
-                vec2 uv1 = read(texCoords, triIndex.x, mesh.numVerts, __LINE__);
-                vec2 uv2 = read(texCoords, triIndex.y, mesh.numVerts, __LINE__);
-                vec2 uv3 = read(texCoords, triIndex.z, mesh.numVerts, __LINE__);
-                sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
+                float4 n1 = ltw * normals.get(triIndex.x, __LINE__);
+                float4 n2 = ltw * normals.get(triIndex.y, __LINE__);
+                float4 n3 = ltw * normals.get(triIndex.z, __LINE__);
+                float4 v1 = ltw * make_float4(vertices.get(triIndex.x, __LINE__), 1.0f);
+                float4 v2 = ltw * make_float4(vertices.get(triIndex.y, __LINE__), 1.0f);
+                float4 v3 = ltw * make_float4(vertices.get(triIndex.z, __LINE__), 1.0f);
+                float2 uv1 = texCoords.get(triIndex.x, __LINE__);
+                float2 uv2 = texCoords.get(triIndex.y, __LINE__);
+                float2 uv3 = texCoords.get(triIndex.z, __LINE__);
+                sampleTriangle(pos, make_vec3(n1), make_vec3(n2), make_vec3(n3), make_vec3(v1), make_vec3(v2), make_vec3(v3), make_vec2(uv1), make_vec2(uv2), make_vec2(uv3), 
                     lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDFs[lid], uv, 
                     /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
                 
