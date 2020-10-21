@@ -1885,15 +1885,22 @@ void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std:
 //     stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
 // }
 
-void initializeComponentFactories()
+void initializeComponentFactories(
+    uint32_t maxEntities, 
+    uint32_t maxCameras, 
+    uint32_t maxTransforms, 
+    uint32_t maxMeshes, 
+    uint32_t maxMaterials, 
+    uint32_t maxLights,
+    uint32_t maxTextures)
 {
-    Camera::initializeFactory();
-    Entity::initializeFactory();
-    Transform::initializeFactory();
-    Texture::initializeFactory();
-    Material::initializeFactory();
-    Mesh::initializeFactory();
-    Light::initializeFactory();
+    Entity::initializeFactory(maxEntities);
+    Camera::initializeFactory(maxCameras);
+    Transform::initializeFactory(maxTransforms);
+    Mesh::initializeFactory(maxMeshes);
+    Material::initializeFactory(maxMaterials);
+    Light::initializeFactory(maxLights);
+    Texture::initializeFactory(maxTextures);
 }
 
 void reproject(glm::vec4 *samplesBuffer, glm::vec4 *t0AlbedoBuffer, glm::vec4 *t1AlbedoBuffer, glm::vec4 *mvecBuffer, glm::vec4 *scratchBuffer, glm::vec4 *imageBuffer, int width, int height);
@@ -1901,7 +1908,16 @@ void reproject(glm::vec4 *samplesBuffer, glm::vec4 *t0AlbedoBuffer, glm::vec4 *t
 
 static bool initializeInteractiveDeprecatedShown = false;
 static bool initializeHeadlessDeprecatedShown = false;
-void initializeInteractive(bool windowOnTop, bool _verbose)
+void initializeInteractive(
+    bool windowOnTop, 
+    bool _verbose,
+    uint32_t maxEntities,
+    uint32_t maxCameras,
+    uint32_t maxTransforms,
+    uint32_t maxMeshes,
+    uint32_t maxMaterials,
+    uint32_t maxLights,
+    uint32_t maxTextures)
 {
     if (initializeInteractiveDeprecatedShown == false) {
         std::cout<<"Warning, initialize_interactive is deprecated and will be removed in a subsequent release. Please switch to initialize." << std::endl;
@@ -1916,7 +1932,7 @@ void initializeInteractive(bool windowOnTop, bool _verbose)
     initialized = true;
     stopped = false;
     verbose = _verbose;
-    initializeComponentFactories();
+    initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures);
 
     auto loop = [windowOnTop]() {
         ViSII.render_thread_id = std::this_thread::get_id();
@@ -1985,7 +2001,15 @@ void initializeInteractive(bool windowOnTop, bool _verbose)
     future.wait();
 }
 
-void initializeHeadless(bool _verbose)
+void initializeHeadless(
+    bool _verbose, 
+    uint32_t maxEntities,
+    uint32_t maxCameras,
+    uint32_t maxTransforms,
+    uint32_t maxMeshes,
+    uint32_t maxMaterials,
+    uint32_t maxLights,
+    uint32_t maxTextures)
 {
     if (initializeHeadlessDeprecatedShown == false) {
         std::cout<<"Warning, initialize_headless is deprecated and will be removed in a subsequent release. Please switch to initialize(headless = True)." << std::endl;
@@ -2001,7 +2025,7 @@ void initializeHeadless(bool _verbose)
     stopped = false;
     verbose = _verbose;
 
-    initializeComponentFactories();
+    initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures);
 
     auto loop = []() {
         ViSII.render_thread_id = std::this_thread::get_id();
@@ -2024,15 +2048,27 @@ void initializeHeadless(bool _verbose)
     future.wait();
 }
 
-void initialize(bool headless, bool windowOnTop, bool _lazyUpdatesEnabled, bool verbose) {
+void initialize(
+    bool headless, 
+    bool windowOnTop, 
+    bool _lazyUpdatesEnabled, 
+    bool verbose,
+    uint32_t maxEntities,
+    uint32_t maxCameras,
+    uint32_t maxTransforms,
+    uint32_t maxMeshes,
+    uint32_t maxMaterials,
+    uint32_t maxLights,
+    uint32_t maxTextures) 
+{
     lazyUpdatesEnabled = _lazyUpdatesEnabled;
     // prevents deprecated warning from showing
     initializeInteractiveDeprecatedShown = true;
     initializeHeadlessDeprecatedShown = true;
 
     lazyUpdatesEnabled = _lazyUpdatesEnabled;
-    if (headless) initializeHeadless(verbose);
-    else initializeInteractive(windowOnTop, verbose);
+    if (headless) initializeHeadless(verbose, maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures);
+    else initializeInteractive(windowOnTop, verbose, maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures);
 }
 
 void clearAll()

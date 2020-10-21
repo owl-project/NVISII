@@ -70,11 +70,11 @@ MaterialStruct &Material::getStruct() {
 	return materialStructs[id];
 }
 
-void Material::initializeFactory()
+void Material::initializeFactory(uint32_t max_components)
 {
 	if (isFactoryInitialized()) return;
-	materials.resize(100000);
-	materialStructs.resize(100000);
+	materials.resize(max_components);
+	materialStructs.resize(max_components);
 	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }

@@ -142,11 +142,11 @@ void Light::useSurfaceArea(bool use)
 }
 
 /* SSBO logic */
-void Light::initializeFactory()
+void Light::initializeFactory(uint32_t max_components)
 {
     if (isFactoryInitialized()) return;
-    lights.resize(100);
-    lightStructs.resize(100);
+    lights.resize(max_components);
+    lightStructs.resize(max_components);
     editMutex = std::make_shared<std::recursive_mutex>();
     factoryInitialized = true;
 }

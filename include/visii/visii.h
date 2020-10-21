@@ -10,12 +10,29 @@
 /**
   * Deprecated. Please use initialize() instead.
 */
-void initializeInteractive(bool window_on_top = false, bool verbose = false);
+void initializeInteractive(
+  bool window_on_top = false, 
+  bool verbose = false,
+  uint32_t max_entities = 10000,
+  uint32_t max_cameras = 10,
+  uint32_t max_transforms = 10000,
+  uint32_t max_meshes = 10000,
+  uint32_t max_materials = 10000,
+  uint32_t max_lights = 100,
+  uint32_t max_textures = 1000);
 
 /**
   * Deprecated. Please use initialize(headless = True) instead.
 */
-void initializeHeadless(bool verbose = false);
+void initializeHeadless(
+  bool verbose = false,
+  uint32_t max_entities = 10000,
+  uint32_t max_cameras = 10,
+  uint32_t max_transforms = 10000,
+  uint32_t max_meshes = 10000,
+  uint32_t max_materials = 10000,
+  uint32_t max_lights = 100,
+  uint32_t max_textures = 1000);
 
 /**
   * Initializes various backend systems required to render scene data.
@@ -25,8 +42,26 @@ void initializeHeadless(bool verbose = false);
   * @param lazy_updates If True, visii will only upload components to the GPU on call to 
   * render/render_to_png/render_data for better scene editing performance. (assuming headless is False. Always on when headless is True)
   * @param verbose If false, visii will avoid outputing any unneccessary text
+  * @param max_entities The max number of creatable Entity components.
+  * @param max_cameras The max number of creatable Camera components.
+  * @param max_transforms The max number of creatable Transform components.
+  * @param max_meshes The max number of creatable Mesh components.
+  * @param max_materials The max number of creatable Material components.
+  * @param max_lights The max number of creatable Light components.
+  * @param max_textures The max number of creatable Texture components.
 */
-void initialize(bool headless = false, bool window_on_top = false, bool lazy_updates = false, bool verbose = false);
+void initialize(
+  bool headless = false, 
+  bool window_on_top = false, 
+  bool lazy_updates = false, 
+  bool verbose = false,
+  uint32_t max_entities = 10000,
+  uint32_t max_cameras = 10,
+  uint32_t max_transforms = 10000,
+  uint32_t max_meshes = 10000,
+  uint32_t max_materials = 10000,
+  uint32_t max_lights = 100,
+  uint32_t max_textures = 1000);
 
 /**
   * Cleans up any allocated resources

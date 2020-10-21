@@ -9,11 +9,11 @@ std::shared_ptr<std::recursive_mutex> Transform::editMutex;
 bool Transform::factoryInitialized = false;
 std::set<Transform*> Transform::dirtyTransforms;
 
-void Transform::initializeFactory()
+void Transform::initializeFactory(uint32_t max_components)
 {
 	if (isFactoryInitialized()) return;
-	transforms.resize(1000000);
-	transformStructs.resize(1000000);
+	transforms.resize(max_components);
+	transformStructs.resize(max_components);
 	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }

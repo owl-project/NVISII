@@ -70,11 +70,11 @@ uint32_t Texture::getHeight() {
 }
 
 /* SSBO logic */
-void Texture::initializeFactory()
+void Texture::initializeFactory(uint32_t max_components)
 {
     if (isFactoryInitialized()) return;
-    textures.resize(32768);
-    textureStructs.resize(32768);
+    textures.resize(max_components);
+    textureStructs.resize(max_components);
     editMutex = std::make_shared<std::recursive_mutex>();
     factoryInitialized = true;
 }

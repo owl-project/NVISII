@@ -240,11 +240,11 @@ glm::vec3 Entity::getAabbCenter()
 	return entityStructs[id].bbmin + (entityStructs[id].bbmax - entityStructs[id].bbmin) * .5f;
 }
 
-void Entity::initializeFactory()
+void Entity::initializeFactory(uint32_t max_components)
 {
 	if (isFactoryInitialized()) return;
-	entities.resize(1000000);
-	entityStructs.resize(1000000);
+	entities.resize(max_components);
+	entityStructs.resize(max_components);
 	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }

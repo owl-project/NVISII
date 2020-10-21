@@ -45,11 +45,11 @@ CameraStruct Camera::getStruct() {
 	return cameraStructs[id];
 }
 
-void Camera::initializeFactory()
+void Camera::initializeFactory(uint32_t max_components)
 {
 	if (isFactoryInitialized()) return;
-    cameras.resize(10);
-    cameraStructs.resize(10);
+    cameras.resize(max_components);
+    cameraStructs.resize(max_components);
 	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }

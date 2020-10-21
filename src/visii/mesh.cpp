@@ -208,10 +208,10 @@ void Mesh::clearAll()
 	}
 }
 
-void Mesh::initializeFactory() {
+void Mesh::initializeFactory(uint32_t max_components) {
 	if (isFactoryInitialized()) return;
-	meshes.resize(100000);
-	meshStructs.resize(100000);
+	meshes.resize(max_components);
+	meshStructs.resize(max_components);
 	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }

@@ -177,7 +177,7 @@ class Transform : public StaticFactory
     static void remove(std::string name);
 
     /** Allocates the tables used to store all transform components */
-    static void initializeFactory();
+    static void initializeFactory(uint32_t max_components);
 
     /** @returns True if the tables used to store all transform components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
