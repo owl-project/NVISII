@@ -1,8 +1,8 @@
 #include <visii/light.h>
 #include <visii/texture.h>
 
-Light Light::lights[MAX_LIGHTS];
-LightStruct Light::lightStructs[MAX_LIGHTS];
+std::vector<Light> Light::lights;
+std::vector<LightStruct> Light::lightStructs;
 std::map<std::string, uint32_t> Light::lookupTable;
 std::shared_ptr<std::recursive_mutex> Light::editMutex;
 bool Light::factoryInitialized = false;
@@ -145,6 +145,8 @@ void Light::useSurfaceArea(bool use)
 void Light::initializeFactory()
 {
     if (isFactoryInitialized()) return;
+    lights.resize(100);
+    lightStructs.resize(100);
     editMutex = std::make_shared<std::recursive_mutex>();
     factoryInitialized = true;
 }
@@ -173,7 +175,7 @@ void Light::updateComponents()
 {
 	if (!anyDirty) return;
 
-	for (int i = 0; i < MAX_LIGHTS; ++i) {
+	for (int i = 0; i < lights.size(); ++i) {
 		if (lights[i].isDirty()) {
             lights[i].markClean();
         }
@@ -194,20 +196,20 @@ void Light::clearAll()
 
 /* Static Factory Implementations */
 Light* Light::create(std::string name) {
-    auto l = StaticFactory::create(editMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
+    auto l = StaticFactory::create(editMutex, name, "Light", lookupTable, lights.data(), lights.size());
     anyDirty = true;
     return l;
 }
 
 Light* Light::createFromTemperature(std::string name, float kelvin, float intensity) {
-    auto light = StaticFactory::create(editMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
+    auto light = StaticFactory::create(editMutex, name, "Light", lookupTable, lights.data(), lights.size());
     light->setTemperature(kelvin);
     light->setIntensity(intensity);
     return light;
 }
 
 Light* Light::createFromRGB(std::string name, glm::vec3 color, float intensity) {
-    auto light = StaticFactory::create(editMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
+    auto light = StaticFactory::create(editMutex, name, "Light", lookupTable, lights.data(), lights.size());
     light->setColor(color);
     light->setIntensity(intensity);
     return light;
@@ -219,24 +221,24 @@ std::shared_ptr<std::recursive_mutex> Light::getEditMutex()
 }
 
 Light* Light::get(std::string name) {
-    return StaticFactory::get(editMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
+    return StaticFactory::get(editMutex, name, "Light", lookupTable, lights.data(), lights.size());
 }
 
 void Light::remove(std::string name) {
-    StaticFactory::remove(editMutex, name, "Light", lookupTable, lights, MAX_LIGHTS);
+    StaticFactory::remove(editMutex, name, "Light", lookupTable, lights.data(), lights.size());
     anyDirty = true;
 }
 
 Light* Light::getFront() {
-    return lights;
+    return lights.data();
 }
 
 LightStruct* Light::getFrontStruct() {
-    return lightStructs;
+    return lightStructs.data();
 }
 
 uint32_t Light::getCount() {
-    return MAX_LIGHTS;
+    return lights.size();
 }
 
 std::string Light::getName()

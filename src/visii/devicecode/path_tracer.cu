@@ -670,7 +670,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             tbn = glm::column(tbn, 1, make_vec3(v_y) );
             tbn = glm::column(tbn, 2, make_vec3(v_z) );   
             float3 dN;
-            if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
+            if (entity.light_id >= 0 && entity.light_id < LP.lightCount) {
                 dN = make_float3(0.5f, .5f, 1.f);
             } else {
                 dN = sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float3(0.5f, .5f, 1.f));
@@ -704,7 +704,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // If the entity we hit is a light, terminate the path.
         // Note that NEE/MIS will also potentially terminate the path, preventing double-counting.
-        if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
+        if (entity.light_id >= 0 && entity.light_id < LP.lightCount) {
             float dotNWi = max(dot(ray.direction, v_z), 0.f);
             if ((dotNWi > EPSILON) && (bounce != 0)) break;
 
@@ -799,7 +799,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if (numLights == 0) continue;
                 sampledLightIDs[lid] = read(LP.lightEntities, randomID, LP.numLightEntities, __LINE__);
                 EntityStruct light_entity = read(LP.entities, sampledLightIDs[lid], MAX_ENTITIES, __LINE__);
-                LightStruct light_light = read(LP.lights, light_entity.light_id, MAX_LIGHTS, __LINE__);
+                LightStruct light_light = read(LP.lights, light_entity.light_id, LP.lightCount, __LINE__);
                 TransformStruct transform = read(LP.transforms, light_entity.transform_id, LP.transformCount, __LINE__);
                 MeshStruct mesh = read(LP.meshes, light_entity.mesh_id, LP.meshCount, __LINE__);
                 uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
@@ -903,7 +903,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         float2 uv, uv_e1, uv_e2;
                         EntityStruct light_entity = read(LP.entities, sampledLightIDs[lid], MAX_ENTITIES, __LINE__);
                         MeshStruct light_mesh = read(LP.meshes, light_entity.mesh_id, LP.meshCount, __LINE__);
-                        LightStruct light_light = read(LP.lights, light_entity.light_id, MAX_LIGHTS, __LINE__);
+                        LightStruct light_light = read(LP.lights, light_entity.light_id, LP.lightCount, __LINE__);
                         loadMeshTriIndices(light_entity.mesh_id, light_mesh.numTris, payload.primitiveID, indices);
                         loadMeshUVData(light_entity.mesh_id, light_mesh.numVerts, indices, payload.barycentrics, uv, uv_e1, uv_e2);
 

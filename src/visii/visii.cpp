@@ -518,6 +518,7 @@ void initializeOptix(bool headless)
         { "meshes",                  OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
         { "meshCount",               OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, meshCount)},
         { "lights",                  OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lights)},
+        { "lightCount",              OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, lightCount)},
         { "textures",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
         { "lightEntities",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
         { "vertexLists",             OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
@@ -587,7 +588,7 @@ void initializeOptix(bool headless)
     OD.cameraBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),        Camera::getCount(),    nullptr);
     OD.materialBuffer            = deviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),      MAX_MATERIALS,  nullptr);
     OD.meshBuffer                = deviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),          Mesh::getCount(),     nullptr);
-    OD.lightBuffer               = deviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),         MAX_LIGHTS,     nullptr);
+    OD.lightBuffer               = deviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),         Light::getCount(),     nullptr);
     OD.textureBuffer             = deviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS,   nullptr);
     OD.lightEntitiesBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
@@ -601,6 +602,7 @@ void initializeOptix(bool headless)
     OD.LP.transformCount = Transform::getCount();
     OD.LP.cameraCount = Camera::getCount();
     OD.LP.meshCount = Mesh::getCount();
+    OD.LP.lightCount = Light::getCount();
     launchParamsSetBuffer(OD.launchParams, "entities",             OD.entityBuffer);
     launchParamsSetBuffer(OD.launchParams, "transforms",           OD.transformBuffer);
     launchParamsSetRaw(OD.launchParams, "transformCount",          &OD.LP.transformCount);
@@ -610,6 +612,7 @@ void initializeOptix(bool headless)
     launchParamsSetBuffer(OD.launchParams, "meshes",               OD.meshBuffer);
     launchParamsSetRaw(OD.launchParams, "meshCount",               &OD.LP.meshCount);
     launchParamsSetBuffer(OD.launchParams, "lights",               OD.lightBuffer);
+    launchParamsSetRaw(OD.launchParams, "lightCount",              &OD.LP.lightCount);
     launchParamsSetBuffer(OD.launchParams, "textures",             OD.textureBuffer);
     launchParamsSetBuffer(OD.launchParams, "lightEntities",        OD.lightEntitiesBuffer);
     launchParamsSetBuffer(OD.launchParams, "instanceToEntityMap",  OD.instanceToEntityMapBuffer);

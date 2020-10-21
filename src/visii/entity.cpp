@@ -174,7 +174,7 @@ void Entity::clearLight()
 Light* Entity::getLight()
 {
 	auto &entity = getStruct();
-	if ((entity.light_id < 0) || (entity.light_id >= MAX_LIGHTS)) return nullptr;
+	if ((entity.light_id < 0) || (entity.light_id >= Light::getCount())) return nullptr;
 	auto &light = Light::getFront()[entity.light_id];
 	if (!light.isInitialized()) return nullptr;
 	return &light;

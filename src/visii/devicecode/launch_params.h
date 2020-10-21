@@ -51,6 +51,7 @@ struct LaunchParams {
     MeshStruct      *meshes = nullptr;
     uint32_t meshCount = 0;    
     LightStruct     *lights = nullptr;
+    uint32_t lightCount = 0;    
     TextureStruct   *textures = nullptr;
     uint32_t        *lightEntities = nullptr;
     uint32_t        *instanceToEntityMap = nullptr;
