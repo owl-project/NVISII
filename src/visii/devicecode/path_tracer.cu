@@ -583,7 +583,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
 
         // Otherwise, load the object we hit.
-        const int entityID = read(LP.instanceToEntityMap, payload.instanceID, LP.numInstances, __LINE__);
+        const int entityID = read((uint32_t*)LP.instanceToEntityMap.data, payload.instanceID, LP.instanceToEntityMap.count, __LINE__);
         EntityStruct entity = read(LP.entities, entityID, MAX_ENTITIES, __LINE__);
         MeshStruct mesh = read((MeshStruct*)LP.meshes.data, entity.mesh_id, LP.meshes.count, __LINE__);
 
@@ -741,7 +741,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         owl::device::Buffer *vertexLists = (owl::device::Buffer *)LP.vertexLists.data;
         owl::device::Buffer *normalLists = (owl::device::Buffer *)LP.normalLists.data;
         owl::device::Buffer *texCoordLists = (owl::device::Buffer *)LP.texCoordLists.data;
-        auto &i2e = LP.instanceToEntityMap;
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
         for (uint32_t lid = 0; lid < LP.numLightSamples; ++lid) 
         {
@@ -797,7 +796,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             else 
             {
                 if (numLights == 0) continue;
-                sampledLightIDs[lid] = read(LP.lightEntities, randomID, LP.numLightEntities, __LINE__);
+                sampledLightIDs[lid] = read((uint32_t*)LP.lightEntities.data, randomID, LP.lightEntities.count, __LINE__);
                 EntityStruct light_entity = read(LP.entities, sampledLightIDs[lid], MAX_ENTITIES, __LINE__);
                 LightStruct light_light = read((LightStruct*)LP.lights.data, light_entity.light_id, LP.lights.count, __LINE__);
                 TransformStruct transform = read((TransformStruct*)LP.transforms.data, light_entity.transform_id, LP.transforms.count, __LINE__);
@@ -846,7 +845,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 owl::traceRay( LP.world, ray, payload, occlusion_flags);
                 bool visible = (randomID == numLights) ?
                     (payload.instanceID == -2) : 
-                    ((payload.instanceID == -2) || (read(i2e, payload.instanceID, LP.numInstances, __LINE__) == sampledLightIDs[lid]));
+                    ((payload.instanceID == -2) || (read((uint32_t*)LP.instanceToEntityMap.data, payload.instanceID, LP.instanceToEntityMap.count, __LINE__) == sampledLightIDs[lid]));
                 if (visible) {
                     if (randomID != numLights) lightEmission = lightEmission / (payload.tHit * payload.tHit);
                     float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
@@ -895,7 +894,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 }
                 else if (payload.instanceID != -1) {
                     // Case where we hit the light, and also previously sampled the same light
-                    int entityID = read(LP.instanceToEntityMap, payload.instanceID, LP.numInstances, __LINE__);
+                    int entityID = read((uint32_t*) LP.instanceToEntityMap.data, payload.instanceID, LP.instanceToEntityMap.count, __LINE__);
                     bool visible = (entityID == sampledLightIDs[lid]);
                     // We hit the light we sampled previously
                     if (visible) {

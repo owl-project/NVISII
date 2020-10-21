@@ -49,8 +49,8 @@ struct LaunchParams {
     owl::device::Buffer meshes;
     owl::device::Buffer lights;
     owl::device::Buffer textures;
-    uint32_t        *lightEntities = nullptr;
-    uint32_t        *instanceToEntityMap = nullptr;
+    owl::device::Buffer lightEntities;
+    owl::device::Buffer instanceToEntityMap;
     uint32_t         numInstances = 0;
     uint32_t         numLightEntities = 0;
 
