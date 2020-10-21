@@ -73,10 +73,10 @@ class StaticFactory {
     
     /* Reserves a location in items and adds an entry in the lookup table */
     template<class T>
-    static T* create(std::shared_ptr<std::mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems, std::function<void(T*)> function = nullptr) 
+    static T* create(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems, std::function<void(T*)> function = nullptr) 
     {
         auto mutex = factory_mutex.get();
-        std::lock_guard<std::mutex> lock(*mutex);
+        std::lock_guard<std::recursive_mutex> lock(*mutex);
         if (doesItemExist(lookupTable, name))
             throw std::runtime_error(std::string("Error: " + type + " \"" + name + "\" already exists."));
 
@@ -100,10 +100,10 @@ class StaticFactory {
 
     /* Retrieves an element with a lookup table indirection */
     template<class T>
-    static T* get(std::shared_ptr<std::mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems) 
+    static T* get(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems) 
     {
         auto mutex = factory_mutex.get();
-        std::lock_guard<std::mutex> lock(*mutex);
+        std::lock_guard<std::recursive_mutex> lock(*mutex);
         if (doesItemExist(lookupTable, name)) {
             uint32_t id = lookupTable[name];
             if (!items[id].initialized) return nullptr;
@@ -117,10 +117,10 @@ class StaticFactory {
 
     /* Retrieves an element by ID directly */
     template<class T>
-    static T* get(std::shared_ptr<std::mutex> factory_mutex, uint32_t id, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems) 
+    static T* get(std::shared_ptr<std::recursive_mutex> factory_mutex, uint32_t id, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems) 
     {
         auto mutex = factory_mutex.get();
-        std::lock_guard<std::mutex> lock(*mutex);
+        std::lock_guard<std::recursive_mutex> lock(*mutex);
         if (id >= maxItems) 
             throw std::runtime_error(std::string("Error: id greater than max " + type));
 
@@ -132,10 +132,10 @@ class StaticFactory {
 
     /* Removes an element with a lookup table indirection, removing from both items and the lookup table */
     template<class T>
-    static void remove(std::shared_ptr<std::mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems)
+    static void remove(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems)
     {
         auto mutex = factory_mutex.get();
-        std::lock_guard<std::mutex> lock(*mutex);
+        std::lock_guard<std::recursive_mutex> lock(*mutex);
         if (!doesItemExist(lookupTable, name))
             throw std::runtime_error(std::string("Error: " + type + " \"" + name + "\" does not exist."));
 
@@ -145,10 +145,10 @@ class StaticFactory {
 
     /* If it exists, removes an element with a lookup table indirection, removing from both items and the lookup table */
     template<class T>
-    static void removeIfExists(std::shared_ptr<std::mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems)
+    static void removeIfExists(std::shared_ptr<std::recursive_mutex> factory_mutex, std::string name, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems)
     {
         auto mutex = factory_mutex.get();
-        std::lock_guard<std::mutex> lock(*mutex);
+        std::lock_guard<std::recursive_mutex> lock(*mutex);
         if (!doesItemExist(lookupTable, name)) return;
         items[lookupTable[name]] = T();
         lookupTable.erase(name);
@@ -156,10 +156,10 @@ class StaticFactory {
 
     /* Removes an element by ID directly, removing from both items and the lookup table */
     template<class T>
-    static void remove(std::shared_ptr<std::mutex> factory_mutex, uint32_t id, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems)
+    static void remove(std::shared_ptr<std::recursive_mutex> factory_mutex, uint32_t id, std::string type, std::map<std::string, uint32_t> &lookupTable, T* items, uint32_t maxItems)
     {
         auto mutex = factory_mutex.get();
-        std::lock_guard<std::mutex> lock(*mutex);
+        std::lock_guard<std::recursive_mutex> lock(*mutex);
         if (id >= maxItems)
             throw std::runtime_error(std::string("Error: id greater than max " + type));
 
@@ -179,7 +179,9 @@ class StaticFactory {
     std::string name = "";
     int32_t id = -1;
 
-    /* All items keep track of the entities which use them. */
-    std::set<uint32_t> entities;
+    /* All items keep track of the components which use them. */
+    std::set<uint32_t> entities; // most components are foreign keys to an entity
+    std::set<uint32_t> materials; // textures are foreign keys to materials
+    std::set<uint32_t> lights; // textures also foreign keys to lights (for textured lights)
 };
 #undef SF_VERBOSE

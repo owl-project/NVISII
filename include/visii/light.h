@@ -57,6 +57,12 @@ public:
     /** @returns the number of allocated lights */
     static uint32_t getCount();
 
+    /** @returns the name of this component */
+	std::string getName();
+
+    /** @returns A map whose key is a light name and whose value is the ID for that light */
+	static std::map<std::string, uint32_t> getNameToIdMap();
+
     /** @param name The name of the Light to remove */
     static void remove(std::string name);
 
@@ -90,11 +96,14 @@ public:
     /** Tags the current component as being modified since the previous frame. */
     void markDirty();
 
+    /** Returns the simplified struct used to represent the current component */
+    LightStruct &getStruct();
+
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
 
     /** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
-    static std::shared_ptr<std::mutex> getEditMutex();
+    static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
     /** 
      * Sets the color which this light component will emit. 
@@ -112,6 +121,9 @@ public:
 
     /** Disconnects the color texture, reverting back to any existing constant light color*/
     void clearColorTexture();
+
+    /** @returns the constant vec3 color used by this light. If a color texture is set, this function should not be used. */
+    glm::vec3 getColor();
     
     /** 
      * Sets a realistic emission color via a temperature.
@@ -126,6 +138,29 @@ public:
      * @param intensity How powerful the light source is in emitting light 
     */
     void setIntensity(float intensity);
+
+    /** @returns the constant intensity used by this light. */
+    float getIntensity();
+
+    /** 
+     * Modifies the intensity, or brightness, that this light component will emit it's color by a power of 2.
+     * Increasing the exposure by 1 will double the energy emitted by the light. 
+     * An exposure of 0 produces an unmodified intensity.
+     * An exposure of -1 cuts the intensity of the light in half.
+     * light_intensity = intensity * pow(2, exposureExposure)
+     * 
+     * @param exposure How powerful the light source is in emitting light.
+    */
+    void setExposure(float exposure);
+
+    /** @returns the constant exposure used by this light. */
+    float getExposure();
+
+    /**
+     * Controls whether or not the surface area of the light should effect overall light intensity.
+     * @param use if True, allows the area of the light to affect intensity.
+    */
+    void useSurfaceArea(bool use);
     
 private:
     /* Creates an uninitialized light. Useful for preallocation. */
@@ -135,7 +170,7 @@ private:
     Light(std::string name, uint32_t id);
 
     /* A mutex used to make component access and modification thread safe */
-    static std::shared_ptr<std::mutex> editMutex;
+    static std::shared_ptr<std::recursive_mutex> editMutex;
 
     /* Flag indicating that static resources were created */
     static bool factoryInitialized;

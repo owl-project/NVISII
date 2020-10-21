@@ -41,6 +41,11 @@ if hasattr(sys, 'gettotalrefcount'):
 %pythonbegin %{
 
 import os, sys, platform, math
+try:
+    from . import version
+    __version__ = version.__version__
+except ImportError:
+    pass
 
 __this_dir__= os.path.dirname(os.path.abspath(__file__))
 
@@ -59,6 +64,10 @@ else:
 
 %}
 
+%begin %{
+#define SWIG_PYTHON_CAST_MODE
+%}
+
 /* -------- Features --------------*/
 %include "exception.i"
 %exception {
@@ -69,9 +78,28 @@ else:
   }
 }
 
+// numpy stuff
 %{
-#include "visii/visii.h"
+#define SWIG_FILE_WITH_INIT
+%}
+%include "numpy.i"
+%init %{
+import_array();
+%}
 
+
+%apply (float* INPLACE_ARRAY_FLAT, int DIM_FLAT) {(const float* data, uint32_t length)};
+
+
+/* -------- GLM Vector Math Library --------------*/
+%feature("autodoc","2");
+%include "glm.i"
+%feature("autodoc", "");
+
+%{
+#include <vector>
+#include <array>
+#include "visii/visii.h"
 #include "visii/camera.h"
 #include "visii/entity.h"
 #include "visii/light.h"
@@ -81,17 +109,18 @@ else:
 #include "visii/mesh.h"
 %}
 
-/* -------- GLM Vector Math Library --------------*/
-%feature("autodoc","2");
-%include "glm.i"
-%feature("autodoc", "");
-
-
 /* STD Vectors */
+%include "std_array.i"
 %include "std_vector.i"
 namespace std {
+  %template(Float3) array<float, 3>;
+  %template(Float4) std::array<float, 4>;
+
   %template(FloatVector) vector<float>;
-  %template(uInt32Vector) vector<uint32_t>;
+  %template(Float3Vector) vector<array<float, 3>>;
+  %template(Float4Vector) vector<array<float, 4>>;
+  %template(UINT32Vector) vector<uint32_t>;
+  %template(StringVector) vector<string>;
   %template(EntityVector) vector<Entity*>;
   %template(TransformVector) vector<Transform*>;
   %template(MeshVector) vector<Mesh*>;
@@ -99,6 +128,12 @@ namespace std {
   %template(TextureVector) vector<Texture*>;
   %template(LightVector) vector<Light*>;
   %template(MaterialVector) vector<Material*>;
+}
+
+/* STD Maps */
+%include "std_map.i"
+namespace std {
+  %template(StringToUINT32Map) map<string, uint32_t>;
 }
 
 /* -------- Ignores --------------*/
@@ -164,10 +199,6 @@ namespace std {
 
 
 // Cleanup on exit
-// %init %{
-//     atexit(cleanup);
-// %}
-
 %init %{
-  atexit(cleanup);
+  atexit(deinitialize);
 %}

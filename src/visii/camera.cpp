@@ -4,7 +4,7 @@
 Camera Camera::cameras[MAX_CAMERAS];
 CameraStruct Camera::cameraStructs[MAX_CAMERAS];
 std::map<std::string, uint32_t> Camera::lookupTable;
-std::shared_ptr<std::mutex> Camera::editMutex;
+std::shared_ptr<std::recursive_mutex> Camera::editMutex;
 bool Camera::factoryInitialized = false;
 bool Camera::anyDirty = true;
 // int32_t Camera::minRenderOrder = 0;
@@ -27,7 +27,7 @@ Camera::Camera(std::string name, uint32_t id) {
 
     cameraStructs[id].apertureDiameter = 0.0;
     cameraStructs[id].focalDistance = 1.0;
-	// this->render_complete_mutex = std::make_shared<std::mutex>();
+	// this->render_complete_mutex = std::make_shared<std::recursive_mutex>();
 	// this->cv = std::make_shared<std::condition_variable>();
 }
 
@@ -48,7 +48,7 @@ CameraStruct Camera::getStruct() {
 void Camera::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
-	editMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
 
@@ -197,7 +197,7 @@ Camera* Camera::createPerspectiveFromFocalLength(std::string name, float focalLe
 	}
 }
 
-std::shared_ptr<std::mutex> Camera::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Camera::getEditMutex()
 {
 	return editMutex;
 }
@@ -221,6 +221,16 @@ Camera* Camera::getFront() {
 
 uint32_t Camera::getCount() {
 	return MAX_CAMERAS;
+}
+
+std::string Camera::getName()
+{
+    return name;
+}
+
+std::map<std::string, uint32_t> Camera::getNameToIdMap()
+{
+	return lookupTable;
 }
 
 
@@ -375,10 +385,12 @@ glm::mat3 Camera::getIntrinsicMatrix(uint32_t width, uint32_t height) {
     // from 0 to 1 to now 0 to width/height
     glm::mat3 scale2 = glm::scale(glm::mat3(1.f), glm::vec2(width, height));
     
+	intrinsics = scale2 * scale1 * translation * intrinsics; 
+    
     // finding we need these multiplies to match opencv...
-    intrinsics[0][2] *= 2;
-    intrinsics[1][2] *= 2;
-	return scale2 * scale1 * translation * intrinsics; 
+    intrinsics[2][0] *= 2;
+    intrinsics[2][1] *= 2;
+    return intrinsics;
 };
 
 glm::mat4 Camera::getProjection() {
@@ -483,7 +495,7 @@ glm::mat4 Camera::getProjection() {
 // {
 // 	{
 // 		auto m = render_complete_mutex.get();
-// 		std::lock_guard<std::mutex> lk(*m);
+// 		std::lock_guard<std::recursive_mutex> lk(*m);
 // 		render_ready = true;
 // 	}
 // 	cv->notify_one();
@@ -493,7 +505,7 @@ glm::mat4 Camera::getProjection() {
 // {
 // 	// Wait until main() sends data
 // 	auto m = render_complete_mutex.get();
-//     std::unique_lock<std::mutex> lk(*m);
+//     std::unique_lock<std::recursive_mutex> lk(*m);
 // 	render_ready = false;
 //     cv->wait(lk, [this]{return render_ready;});
 // 	render_ready = false;

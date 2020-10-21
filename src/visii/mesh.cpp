@@ -2,6 +2,10 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #endif
 
+#ifndef TINYOBJ_LOADER_OPT_IMPLEMENTATION
+#define TINYOBJ_LOADER_OPT_IMPLEMENTATION
+#endif
+
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_FS
 #define TINYGLTF_NO_STB_IMAGE_WRITE
@@ -10,6 +14,10 @@
 #include <sys/stat.h>
 #include <functional>
 #include <limits>
+#include <fcntl.h>
+#ifndef WIN32
+#include <unistd.h>
+#endif
 
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -21,12 +29,18 @@
 // #include "tetgen.h"
 
 #include <visii/mesh.h>
+#include <visii/entity.h>
 
 // #include "Foton/Tools/Options.hxx"
 #include <visii/utilities/hash_combiner.h>
 #include <tiny_obj_loader.h>
+// #include <tiny_obj_loader_opt.h>
 #include <tiny_stl.h>
 #include <tiny_gltf.h>
+
+#include <assimp/cimport.h>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #include <generator/generator.hpp>
 
@@ -39,9 +53,9 @@
 Mesh Mesh::meshes[MAX_MESHES];
 MeshStruct Mesh::meshStructs[MAX_MESHES];
 std::map<std::string, uint32_t> Mesh::lookupTable;
-std::shared_ptr<std::mutex> Mesh::editMutex;
+std::shared_ptr<std::recursive_mutex> Mesh::editMutex;
 bool Mesh::factoryInitialized = false;
-bool Mesh::anyDirty = true;
+std::set<Mesh*> Mesh::dirtyMeshes;
 
 class Vertex
 {
@@ -102,8 +116,8 @@ Mesh::Mesh(std::string name, uint32_t id)
 	this->name = name;
 	this->id = id;
 	this->meshStructs[id].show_bounding_box = 0;
-	this->meshStructs[id].bb_local_to_parent = glm::mat4(1.0);
 	this->meshStructs[id].numTris = 0;
+	this->meshStructs[id].numVerts = 0;
 }
 
 std::string Mesh::toString() {
@@ -120,15 +134,48 @@ std::string Mesh::toString() {
 }
 
 bool Mesh::areAnyDirty() { 
-	return anyDirty; 
+	return dirtyMeshes.size() > 0; 
+}
+
+std::set<Mesh*> Mesh::getDirtyMeshes()
+{
+	return dirtyMeshes;
 }
 
 void Mesh::markDirty() {
-	dirty = true;
-	anyDirty = true;
+	dirtyMeshes.insert(this);
+	auto entityPointers = Entity::getFront();
+	for (auto &eid : entities) {
+		entityPointers[eid].markDirty();
+	}
 };
 
-std::vector<glm::vec4> Mesh::getVertices() {
+// std::vector<float> Mesh::getVertices(uint32_t vertex_dimensions) {
+
+// 	std::array<float, 4> test;
+// 	std::cout<<sizeof(test)<<std::endl;
+// 	if ((vertex_dimensions != 3) && (vertex_dimensions != 4)) {
+// 		throw std::runtime_error("Error, vertex dimensions must be either 3 or 4");
+// 	}
+
+// 	if (vertex_dimensions == 4) {
+// 		std::vector<float> verts(positions.size() * 4);
+// 		memcpy(verts.data(), positions.data(), positions.size() * 4 * sizeof(float));
+// 		return verts;
+// 	}
+
+// 	if (vertex_dimensions == 3) {
+// 		std::vector<float> verts(positions.size() * 3);
+// 		for (size_t i = 0; i < positions.size(); ++i) {
+// 			verts[i * 3 + 0] = positions[i][0];
+// 			verts[i * 3 + 1] = positions[i][1];
+// 			verts[i * 3 + 2] = positions[i][2];
+// 		}
+// 		return verts;
+// 	}
+// }
+
+std::vector<std::array<float, 3>> Mesh::getVertices() {
 	return positions;
 }
 
@@ -203,36 +250,32 @@ std::vector<uint32_t> Mesh::getTriangleIndices() {
 
 void Mesh::computeMetadata()
 {
+	// Compute AABB and center
 	glm::vec4 s(0.0);
 	meshStructs[id].bbmin = glm::vec4(std::numeric_limits<float>::max());
 	meshStructs[id].bbmax = glm::vec4( std::numeric_limits<float>::lowest());
 	meshStructs[id].bbmax.w = 0.f;
 	meshStructs[id].bbmin.w = 0.f;
 	for (int i = 0; i < positions.size(); i += 1)
-	{
-		s += glm::vec4(positions[i].x, positions[i].y, positions[i].z, 0.0f);
-		meshStructs[id].bbmin = glm::vec4(glm::min(glm::vec3(positions[i]), glm::vec3(meshStructs[id].bbmin)), 0.0);
-		meshStructs[id].bbmax = glm::vec4(glm::max(glm::vec3(positions[i]), glm::vec3(meshStructs[id].bbmax)), 0.0);
+	{	
+		auto p = glm::vec3(positions[i][0], positions[i][1], positions[i][2]);
+		s += glm::vec4(p[0], p[1], p[2], 0.0f);
+		meshStructs[id].bbmin = glm::vec4(glm::min(p, glm::vec3(meshStructs[id].bbmin)), 0.0);
+		meshStructs[id].bbmax = glm::vec4(glm::max(p, glm::vec3(meshStructs[id].bbmax)), 0.0);
 	}
 	s /= (float)positions.size();
 	meshStructs[id].center = s;
 
-	meshStructs[id].bb_local_to_parent = glm::mat4(1.0);
-	meshStructs[id].bb_local_to_parent = glm::translate(meshStructs[id].bb_local_to_parent, glm::vec3(meshStructs[id].bbmax + meshStructs[id].bbmin) * .5f);
-	meshStructs[id].bb_local_to_parent = glm::scale(meshStructs[id].bb_local_to_parent, glm::vec3(meshStructs[id].bbmax - meshStructs[id].bbmin) * .5f);
-
+	// Bounding Sphere
 	meshStructs[id].bounding_sphere_radius = 0.0;
 	for (int i = 0; i < positions.size(); i += 1) {
+		glm::vec3 p = glm::vec3(positions[i][0], positions[i][1], positions[i][2]);
 		meshStructs[id].bounding_sphere_radius = std::max(meshStructs[id].bounding_sphere_radius, 
-			glm::distance(glm::vec4(positions[i].x, positions[i].y, positions[i].z, 0.0f), meshStructs[id].center));
+			glm::distance(glm::vec4(p.x, p.y, p.z, 0.0f), meshStructs[id].center));
 	}
-	
-	// auto vulkan = Libraries::Vulkan::Get();
-	// if (vulkan->is_ray_tracing_enabled()) {
-	// 	build_low_level_bvh(submit_immediately);
-	// }
-	this->meshStructs[id].numTris = triangleIndices.size() / 3;
-	markDirty();
+
+	this->meshStructs[id].numTris = uint32_t(triangleIndices.size()) / 3;
+	this->meshStructs[id].numVerts = uint32_t(positions.size());
 }
 
 // void Mesh::save_tetrahedralization(float quality_bound, float maximum_volume)
@@ -364,23 +407,21 @@ glm::vec3 Mesh::getAabbCenter()
 // 	// device.freeMemory(texCoordBufferMemory);
 // }
 
-void Mesh::cleanUp()
+void Mesh::clearAll()
 {
 	if (!isFactoryInitialized()) return;
 
 	for (auto &mesh : meshes) {
 		if (mesh.initialized) {
 			// mesh.cleanup();
-			Mesh::remove(mesh.id);
+			Mesh::remove(mesh.name);
 		}
 	}
-
-	factoryInitialized = false;
 }
 
 void Mesh::initializeFactory() {
 	if (isFactoryInitialized()) return;
-	editMutex = std::make_shared<std::mutex>();
+	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
 
@@ -396,17 +437,12 @@ bool Mesh::isInitialized()
 
 void Mesh::updateComponents()
 {
-	if (!areAnyDirty()) return;
-	
-	for (uint32_t mid = 0; mid < Mesh::getCount(); ++mid) {
-		if (meshes[mid].isDirty()) {
-			if (meshes[mid].isInitialized()) {
-				meshes[mid].computeMetadata();
-			}
-			meshes[mid].markClean();
-		}
+	if (dirtyMeshes.size() == 0) return;
+	for (auto &m : dirtyMeshes) {
+		if (!m->isInitialized()) continue;
+		// m->computeMetadata();
 	}
-	anyDirty = false;
+	dirtyMeshes.clear();
 } 
 
 // void Mesh::UploadSSBO(vk::CommandBuffer command_buffer)
@@ -549,6 +585,244 @@ void Mesh::updateComponents()
 // 	return ssbo_sizes;
 // }
 
+// const char *mmap_file(size_t *len, const char* filename)
+// {
+//   (*len) = 0;
+// #ifdef _WIN32
+//   HANDLE file = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+//   assert(file != INVALID_HANDLE_VALUE);
+
+//   HANDLE fileMapping = CreateFileMapping(file, NULL, PAGE_READONLY, 0, 0, NULL);
+//   assert(fileMapping != INVALID_HANDLE_VALUE);
+
+//   LPVOID fileMapView = MapViewOfFile(fileMapping, FILE_MAP_READ, 0, 0, 0);
+//   auto fileMapViewChar = (const char*)fileMapView;
+//   assert(fileMapView != NULL);
+
+//   LARGE_INTEGER fileSize;
+//   fileSize.QuadPart = 0;
+//   GetFileSizeEx(file, &fileSize);
+
+//   (*len) = static_cast<size_t>(fileSize.QuadPart);
+//   return fileMapViewChar;
+
+// #else
+
+//   FILE* f = fopen(filename, "rb" );
+//   if (!f) {
+//     fprintf(stderr, "Failed to open file : %s\n", filename);
+//     return nullptr;
+//   }
+//   fseek(f, 0, SEEK_END);
+//   long fileSize = ftell(f);
+//   fclose(f);
+
+//   if (fileSize < 16) {
+//     fprintf(stderr, "Empty or invalid .obj : %s\n", filename);
+//     return nullptr;
+//   }
+
+//   struct stat sb;
+//   char *p;
+//   int fd;
+
+//   fd = open (filename, O_RDONLY);
+//   if (fd == -1) {
+//     perror ("open");
+//     return nullptr;
+//   }
+
+//   if (fstat (fd, &sb) == -1) {
+//     perror ("fstat");
+//     return nullptr;
+//   }
+
+//   if (!S_ISREG (sb.st_mode)) {
+//     fprintf (stderr, "%s is not a file\n", filename);
+//     return nullptr;
+//   }
+
+//   p = (char*)mmap (0, fileSize, PROT_READ, MAP_SHARED, fd, 0);
+
+//   if (p == MAP_FAILED) {
+//     perror ("mmap");
+//     return nullptr;
+//   }
+
+//   if (close (fd) == -1) {
+//     perror ("close");
+//     return nullptr;
+//   }
+
+//   (*len) = fileSize;
+
+//   return p;
+
+// #endif
+// }
+
+// const char* get_file_data(size_t *len, const char* filename)
+// {
+//     const char *ext = strrchr(filename, '.');
+//     size_t data_len = 0;
+//     const char* data = nullptr;
+// 	data = mmap_file(&data_len, filename);
+//     (*len) = data_len;
+//     return data;
+// }
+
+// void CalcNormal(float N[3], float v0[3], float v1[3], float v2[3]) {
+//   float v10[3];
+//   v10[0] = v1[0] - v0[0];
+//   v10[1] = v1[1] - v0[1];
+//   v10[2] = v1[2] - v0[2];
+
+//   float v20[3];
+//   v20[0] = v2[0] - v0[0];
+//   v20[1] = v2[1] - v0[1];
+//   v20[2] = v2[2] - v0[2];
+
+//   N[0] = v20[1] * v10[2] - v20[2] * v10[1];
+//   N[1] = v20[2] * v10[0] - v20[0] * v10[2];
+//   N[2] = v20[0] * v10[1] - v20[1] * v10[0];
+
+//   float len2 = N[0] * N[0] + N[1] * N[1] + N[2] * N[2];
+//   if (len2 > 0.0f) {
+//     float len = sqrtf(len2);
+
+//     N[0] /= len;
+//     N[1] /= len;
+//   }
+// }
+
+// void Mesh::loadObj(std::string objPath)
+// {
+// 	tinyobj_opt::attrib_t attrib;
+// 	std::vector<tinyobj_opt::shape_t> shapes;
+// 	std::vector<tinyobj_opt::material_t> materials;
+// 	int num_threads = -1;
+
+// 	struct stat st;
+// 	if (stat(objPath.c_str(), &st) != 0)
+// 		throw std::runtime_error(std::string(objPath + " does not exist!"));
+
+// 	size_t data_len = 0;
+//   	const char* data = get_file_data(&data_len, objPath.c_str());
+
+// 	tinyobj_opt::LoadOption option;
+// 	option.req_num_threads = num_threads;
+// 	option.verbose = false;//verbose;
+// 	option.triangulate = true;
+// 	bool ret = parseObj(&attrib, &shapes, &materials, data, data_len, option);
+
+// 	if (!ret) {
+// 		throw std::runtime_error( std::string("Error: Failed to parse " + objPath));
+// 	}
+
+// 	std::vector<Vertex> vertices;
+
+// 	bool has_normals = false;
+
+// 	{
+// 		size_t face_offset = 0;
+// 		for (size_t v = 0; v < attrib.face_num_verts.size(); ++v) {
+// 			if (attrib.face_num_verts[v] % 3 != 0) {
+// 				throw std::runtime_error( std::string("Error: Found non-triangular face in " + objPath));
+// 			}
+// 			for (size_t f = 0; f < attrib.face_num_verts[v] / 3; f++) {
+// 				tinyobj_opt::index_t idx0 = attrib.indices[face_offset+3*f+0];
+// 				tinyobj_opt::index_t idx1 = attrib.indices[face_offset+3*f+1];
+// 				tinyobj_opt::index_t idx2 = attrib.indices[face_offset+3*f+2];
+
+// 				Vertex v[3] = {Vertex(), Vertex(), Vertex()};
+// 				for (int k = 0; k < 3; k++) {
+// 					int f0 = idx0.vertex_index;
+// 					int f1 = idx1.vertex_index;
+// 					int f2 = idx2.vertex_index;
+// 					assert(f0 >= 0);
+// 					assert(f1 >= 0);
+// 					assert(f2 >= 0);
+
+// 					v[0].point[k] = attrib.vertices[3*f0+k];
+// 					v[1].point[k] = attrib.vertices[3*f1+k];
+// 					v[2].point[k] = attrib.vertices[3*f2+k];
+// 				}
+
+// 				if (attrib.normals.size() > 0) {
+// 					int nf0 = idx0.normal_index;
+// 					int nf1 = idx1.normal_index;
+// 					int nf2 = idx2.normal_index;
+
+// 					if (nf0 >= 0 && nf1 >= 0 && nf2 >= 0) {
+// 						assert(3*nf0+2 < attrib.normals.size());
+// 						assert(3*nf1+2 < attrib.normals.size());
+// 						assert(3*nf2+2 < attrib.normals.size());
+// 						for (int k = 0; k < 3; k++) {
+// 							v[0].normal[k] = attrib.normals[3*nf0+k];
+// 							v[1].normal[k] = attrib.normals[3*nf1+k];
+// 							v[2].normal[k] = attrib.normals[3*nf2+k];
+// 						}
+// 					} else {
+// 						// compute geometric normal
+// 						CalcNormal(&v[0].normal.x, &v[0].point.x, &v[1].point.x, &v[2].point.x);
+// 						v[1].normal[0] = v[0].normal[0]; v[1].normal[1] = v[0].normal[1]; v[1].normal[2] = v[0].normal[2];
+// 						v[2].normal[0] = v[0].normal[0]; v[2].normal[1] = v[0].normal[1]; v[2].normal[2] = v[0].normal[2];
+// 					}
+// 				} else {
+// 					// compute geometric normal
+// 					CalcNormal(&v[0].normal.x, &v[0].point.x, &v[1].point.x, &v[2].point.x);
+// 					v[1].normal[0] = v[0].normal[0]; v[1].normal[1] = v[0].normal[1]; v[1].normal[2] = v[0].normal[2];
+// 					v[2].normal[0] = v[0].normal[0]; v[2].normal[1] = v[0].normal[1]; v[2].normal[2] = v[0].normal[2];
+// 				}
+
+// 				if (attrib.texcoords.size() > 0) {
+// 					int tcf0 = idx0.texcoord_index;
+// 					int tcf1 = idx1.texcoord_index;
+// 					int tcf2 = idx2.texcoord_index;
+
+// 					if (tcf0 >= 0 && tcf1 >= 0 && tcf2 >= 0) {
+// 						assert(2*tcf0+2 < attrib.texcoords.size());
+// 						assert(2*tcf1+2 < attrib.texcoords.size());
+// 						assert(2*tcf2+2 < attrib.texcoords.size());
+// 						for (int k = 0; k < 2; k++) {
+// 							v[0].texcoord[k] = attrib.texcoords[2*tcf0+k];
+// 							v[1].texcoord[k] = attrib.texcoords[2*tcf1+k];
+// 							v[2].texcoord[k] = attrib.texcoords[2*tcf2+k];
+// 						}
+// 					}
+// 				}
+// 				vertices.push_back(v[0]);
+// 				vertices.push_back(v[1]);
+// 				vertices.push_back(v[2]);
+// 			}
+// 			face_offset += attrib.face_num_verts[v];
+// 		}
+// 	}
+
+// 	/* Map vertices to buffers */
+// 	triangleIndices.resize(vertices.size());
+// 	positions.resize(vertices.size());
+// 	normals.resize(vertices.size());
+// 	colors.resize(vertices.size());
+// 	texCoords.resize(vertices.size());
+// 	for (int i = 0; i < vertices.size(); ++i)
+// 	{
+// 		Vertex v = vertices[i];
+// 		triangleIndices[i] = i;
+// 		positions[i] = {v.point.x, v.point.y, v.point.z};
+// 		colors[i] = v.color;
+// 		normals[i] = v.normal;
+// 		texCoords[i] = v.texcoord;
+// 	}
+
+// 	if (triangleIndices.size() < 3)
+// 		throw std::runtime_error(std::string("Error, OBJ ") + std::string(objPath) + std::string(" has no triangles!"));
+
+// 	computeMetadata();
+// }
+
+
+
 void Mesh::loadObj(std::string objPath)
 {
 	struct stat st;
@@ -590,18 +864,28 @@ void Mesh::loadObj(std::string objPath)
 				}
 				if (attrib.normals.size() != 0)
 				{
-					vertex.normal = {
-						attrib.normals[3 * index.normal_index + 0],
-						attrib.normals[3 * index.normal_index + 1],
-						attrib.normals[3 * index.normal_index + 2],
-						0.0f};
-					has_normals = true;
+					if (index.normal_index == -1) {
+						vertex.normal = {0.f, 0.f, 0.f, 0.f};
+					}
+					else {
+						vertex.normal = {
+							attrib.normals[3 * index.normal_index + 0],
+							attrib.normals[3 * index.normal_index + 1],
+							attrib.normals[3 * index.normal_index + 2],
+							0.0f};
+						has_normals = true;
+					}
 				}
 				if (attrib.texcoords.size() != 0)
 				{
-					vertex.texcoord = {
-						attrib.texcoords[2 * index.texcoord_index + 0],
-						attrib.texcoords[2 * index.texcoord_index + 1]};
+					if (index.texcoord_index == -1) {
+						vertex.texcoord = {0.f, 0.f};
+					}
+					else {
+						vertex.texcoord = {
+							attrib.texcoords[2 * index.texcoord_index + 0],
+							attrib.texcoords[2 * index.texcoord_index + 1]};
+					}
 				}
 				vertices.push_back(vertex);
 			}
@@ -646,23 +930,24 @@ void Mesh::loadObj(std::string objPath)
 		triangleIndices.push_back(uniqueVertexMap[vertex]);
 	}
 
-	if (!has_normals) {
-		generateSmoothNormals();
-	}
-
 	/* Map vertices to buffers */
 	for (int i = 0; i < uniqueVertices.size(); ++i)
 	{
 		Vertex v = uniqueVertices[i];
-		positions.push_back(v.point);
+		positions.push_back({v.point.x, v.point.y, v.point.z});
 		colors.push_back(v.color);
 		normals.push_back(v.normal);
 		texCoords.push_back(v.texcoord);
 	}
 
+	if (!has_normals) {
+		generateSmoothNormals();
+	}
+
 	computeMetadata();
-	markDirty();
 }
+
+
 
 
 // void Mesh::load_stl(std::string stlPath) {
@@ -1008,10 +1293,14 @@ void Mesh::loadObj(std::string objPath)
 // }
 
 void Mesh::loadData(
-	std::vector<glm::vec4> &positions_, 
-	std::vector<glm::vec4> &normals_, 
-	std::vector<glm::vec4> &colors_, 
-	std::vector<glm::vec2> &texcoords_, 
+	std::vector<float> &positions_, 
+	uint32_t position_dimensions,
+	std::vector<float> &normals_,
+	uint32_t normal_dimensions, 
+	std::vector<float> &colors_, 
+	uint32_t color_dimensions,
+	std::vector<float> &texcoords_, 
+	uint32_t texcoord_dimensions,
 	std::vector<uint32_t> indices_
 )
 {
@@ -1020,40 +1309,68 @@ void Mesh::loadData(
 	bool readingTexCoords = texcoords_.size() > 0;
 	bool readingIndices = indices_.size() > 0;
 
+	if ((position_dimensions != 3) && (position_dimensions != 4)) 
+		throw std::runtime_error( std::string("Error, invalid position dimensions. Possible position dimensions are 3 or 4."));
+	
+	if ((normal_dimensions != 3) && (normal_dimensions != 4)) 
+		throw std::runtime_error( std::string("Error, invalid normal dimensions. Possible normal dimensions are 3 or 4."));
+
+	if ((color_dimensions != 3) && (color_dimensions != 4)) 
+		throw std::runtime_error( std::string("Error, invalid color dimensions. Possible color dimensions are 3 or 4."));
+
+	if (texcoord_dimensions != 2) 
+		throw std::runtime_error( std::string("Error, invalid texcoord dimensions. Possible position dimensions are 2."));
+
 	if (positions_.size() == 0)
 		throw std::runtime_error( std::string("Error, no positions supplied. "));
 
-	if ((!readingIndices) && ((positions_.size() % 3) != 0))
+	if ((!readingIndices) && (((positions_.size() / position_dimensions) % 3) != 0))
 		throw std::runtime_error( std::string("Error: No indices provided, and length of positions (") + std::to_string(positions_.size()) + std::string(") is not a multiple of 3."));
 
 	if ((readingIndices) && ((indices_.size() % 3) != 0))
-		throw std::runtime_error( std::string("Error: Length of indices (") + std::to_string(triangleIndices.size()) + std::string(") is not a multiple of 3."));
+		throw std::runtime_error( std::string("Error: Length of indices (") + std::to_string(indices_.size()) + std::string(") is not a multiple of 3."));
 	
-	if (readingNormals && (normals_.size() != positions_.size()))
-		throw std::runtime_error( std::string("Error, length mismatch. Total normals: " + std::to_string(normals_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingNormals && ((normals_.size() / normal_dimensions) != (positions_.size() / position_dimensions)))
+		throw std::runtime_error( std::string("Error, length mismatch. Total normals: " + std::to_string(normals_.size() / normal_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
 
-	if (readingColors && (colors_.size() != positions_.size()))
-		throw std::runtime_error( std::string("Error, length mismatch. Total colors: " + std::to_string(colors_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingColors && ((colors_.size() / color_dimensions) != (positions_.size() / position_dimensions)))
+		throw std::runtime_error( std::string("Error, length mismatch. Total colors: " + std::to_string(colors_.size() / color_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
 		
-	if (readingTexCoords && (texcoords_.size() != positions_.size()))
-		throw std::runtime_error( std::string("Error, length mismatch. Total texcoords: " + std::to_string(texcoords_.size()) + " does not equal total positions: " + std::to_string(positions_.size())));
+	if (readingTexCoords && ((texcoords_.size() / texcoord_dimensions) != (positions_.size() / position_dimensions)))
+		throw std::runtime_error( std::string("Error, length mismatch. Total texcoords: " + std::to_string(texcoords_.size() / texcoord_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
 	
 	if (readingIndices) {
 		for (uint32_t i = 0; i < indices_.size(); ++i) {
 			if (indices_[i] >= positions_.size())
-				throw std::runtime_error( std::string("Error, index out of bounds. Index " + std::to_string(i) + " is greater than total positions: " + std::to_string(positions_.size())));
+				throw std::runtime_error( std::string("Error, index out of bounds. Index " + std::to_string(i) + " is greater than total positions: " + std::to_string(positions_.size() / position_dimensions)));
 		}
 	}
 		
 	std::vector<Vertex> vertices;
 
 	/* For each vertex */
-	for (int i = 0; i < positions_.size(); ++ i) {
+	for (int i = 0; i < positions_.size() / position_dimensions; ++ i) {
 		Vertex vertex = Vertex();
-		vertex.point = positions_[i];
-		if (readingNormals) vertex.normal = normals_[i];
-		if (readingColors) vertex.color = colors_[i];
-		if (readingTexCoords) vertex.texcoord = texcoords_[i];        
+		vertex.point.x = positions_[i * position_dimensions + 0];
+		vertex.point.y = positions_[i * position_dimensions + 1];
+		vertex.point.z = positions_[i * position_dimensions + 2];
+		vertex.point.w = (position_dimensions == 4) ? positions_[i * position_dimensions + 3] : 1.f;
+		if (readingNormals) {
+			vertex.normal.x = normals_[i * normal_dimensions + 0];
+			vertex.normal.y = normals_[i * normal_dimensions + 1];
+			vertex.normal.z = normals_[i * normal_dimensions + 2];
+			vertex.normal.w = (normal_dimensions == 4) ? normals_[i * normal_dimensions + 3] : 0.f;
+		}
+		if (readingColors) {
+			vertex.color.x = colors_[i * color_dimensions + 0];
+			vertex.color.y = colors_[i * color_dimensions + 1];
+			vertex.color.z = colors_[i * color_dimensions + 2];
+			vertex.color.w = (color_dimensions == 4) ? colors_[i * color_dimensions + 3] : 1.f;
+		}
+		if (readingTexCoords) {
+			vertex.texcoord.x = texcoords_[i * texcoord_dimensions + 0];      
+			vertex.texcoord.y = texcoords_[i * texcoord_dimensions + 1];      
+		}  
 		vertices.push_back(vertex);
 	}
 
@@ -1063,14 +1380,8 @@ void Mesh::loadData(
 
 	/* Don't bin positions as unique when editing, since it's unexpected for a user to lose positions */
 	bool allow_edits = false; // temporary...
-	if ((allow_edits && !readingIndices) || (!readingNormals)) {
-		uniqueVertices = vertices;
-		for (int i = 0; i < vertices.size(); ++i) {
-			triangleIndices.push_back(i);
-		}
-	}
-	else if (readingIndices) {
-		triangleIndices = indices_;
+	if (readingIndices) {
+		this->triangleIndices = indices_;
 		uniqueVertices = vertices;
 	}
 	/* If indices werent supplied and editing isn't allowed, optimize by binning unique verts */
@@ -1083,18 +1394,22 @@ void Mesh::loadData(
 				uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
 				uniqueVertices.push_back(vertex);
 			}
-			triangleIndices.push_back(uniqueVertexMap[vertex]);
+			this->triangleIndices.push_back(uniqueVertexMap[vertex]);
 		}
 	}
 
 	/* Map vertices to buffers */
+	this->positions.resize(uniqueVertices.size());
+	this->colors.resize(uniqueVertices.size());
+	this->normals.resize(uniqueVertices.size());
+	this->texCoords.resize(uniqueVertices.size());
 	for (int i = 0; i < uniqueVertices.size(); ++i)
 	{
 		Vertex v = uniqueVertices[i];
-		positions.push_back(v.point);
-		colors.push_back(v.color);
-		normals.push_back(v.normal);
-		texCoords.push_back(v.texcoord);
+		this->positions[i] = {v.point.x, v.point.y, v.point.z};
+		this->colors[i] = v.color;
+		this->normals[i] = v.normal;
+		this->texCoords[i] = v.texcoord;
 	}
 
 	if (!readingNormals) {
@@ -1102,7 +1417,6 @@ void Mesh::loadData(
 	}
 
 	computeMetadata();
-	markDirty();
 }
 
 // void Mesh::edit_position(uint32_t index, glm::vec4 new_position)
@@ -1204,9 +1518,9 @@ void Mesh::generateSmoothNormals()
 		uint32_t i3 = triangleIndices[f + 2];
 
 		// p1, p2 and p3 are the positions in the face (f)
-		auto p1 = glm::vec3(positions[i1]);
-		auto p2 = glm::vec3(positions[i2]);
-		auto p3 = glm::vec3(positions[i3]);
+		auto p1 = glm::vec3(positions[i1][0], positions[i1][1], positions[i1][2]);
+		auto p2 = glm::vec3(positions[i2][0], positions[i2][1], positions[i2][2]);
+		auto p3 = glm::vec3(positions[i3][0], positions[i3][1], positions[i3][2]);
 
 		// calculate facet normal of the triangle  using cross product;
 		// both components are "normalized" against a common point chosen as the base
@@ -1502,7 +1816,7 @@ void Mesh::generateSmoothNormals()
 // 	return geometry;
 // }
 
-std::shared_ptr<std::mutex> Mesh::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Mesh::getEditMutex()
 {
 	return editMutex;
 }
@@ -1512,18 +1826,16 @@ Mesh* Mesh::get(std::string name) {
 	return StaticFactory::get(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 }
 
-Mesh* Mesh::get(uint32_t id) {
-	return StaticFactory::get(editMutex, id, "Mesh", lookupTable, meshes, MAX_MESHES);
-}
-
 Mesh* Mesh::createBox(std::string name, glm::vec3 size, glm::ivec3 segments)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
+		dirtyMeshes.insert(mesh);
 		generator::BoxMesh gen_mesh{size, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+	};
+
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1532,12 +1844,13 @@ Mesh* Mesh::createBox(std::string name, glm::vec3 size, glm::ivec3 segments)
 
 Mesh* Mesh::createCappedCone(std::string name, float radius, float size, int slices, int segments, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::CappedConeMesh gen_mesh{radius, size, slices, segments, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1546,12 +1859,13 @@ Mesh* Mesh::createCappedCone(std::string name, float radius, float size, int sli
 
 Mesh* Mesh::createCappedCylinder(std::string name, float radius, float size, int slices, int segments, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {		
+	auto create = [&] (Mesh* mesh) {
 		generator::CappedCylinderMesh gen_mesh{radius, size, slices, segments, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {		
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1560,12 +1874,13 @@ Mesh* Mesh::createCappedCylinder(std::string name, float radius, float size, int
 
 Mesh* Mesh::createCappedTube(std::string name, float radius, float innerRadius, float size, int slices, int segments, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::CappedTubeMesh gen_mesh{radius, innerRadius, size, slices, segments, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1574,12 +1889,13 @@ Mesh* Mesh::createCappedTube(std::string name, float radius, float innerRadius, 
 
 Mesh* Mesh::createCapsule(std::string name, float radius, float size, int slices, int segments, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::CapsuleMesh gen_mesh{radius, size, slices, segments, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1588,12 +1904,13 @@ Mesh* Mesh::createCapsule(std::string name, float radius, float size, int slices
 
 Mesh* Mesh::createCone(std::string name, float radius, float size, int slices, int segments, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::ConeMesh gen_mesh{radius, size, slices, segments, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1602,12 +1919,13 @@ Mesh* Mesh::createCone(std::string name, float radius, float size, int slices, i
  
 Mesh* Mesh::createConvexPolygonFromCircle(std::string name, float radius, int sides, int segments, int rings)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::ConvexPolygonMesh gen_mesh{radius, sides, segments, rings};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1616,14 +1934,15 @@ Mesh* Mesh::createConvexPolygonFromCircle(std::string name, float radius, int si
 
 Mesh* Mesh::createConvexPolygon(std::string name, std::vector<glm::vec2> vertices, int segments, int rings)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		std::vector<dvec2> verts;
 		for (uint32_t i = 0; i < vertices.size(); ++i) verts.push_back(dvec2(vertices[i]));
 		generator::ConvexPolygonMesh gen_mesh{verts, segments, rings};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1632,12 +1951,13 @@ Mesh* Mesh::createConvexPolygon(std::string name, std::vector<glm::vec2> vertice
 
 Mesh* Mesh::createCylinder(std::string name, float radius, float size, int slices, int segments, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::CylinderMesh gen_mesh{radius, size, slices, segments, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1646,12 +1966,13 @@ Mesh* Mesh::createCylinder(std::string name, float radius, float size, int slice
 
 Mesh* Mesh::createDisk(std::string name, float radius, float innerRadius, int slices, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::DiskMesh gen_mesh{radius, innerRadius, slices, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1660,26 +1981,28 @@ Mesh* Mesh::createDisk(std::string name, float radius, float innerRadius, int sl
 
 Mesh* Mesh::createDodecahedron(std::string name, float radius, int segments, int rings)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::DodecahedronMesh gen_mesh{radius, segments, rings};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
 	}
 }
 
-Mesh* Mesh::createPlane(std::string name, vec2 size, ivec2 segments)
+Mesh* Mesh::createPlane(std::string name, vec2 size, ivec2 segments, bool flipZ)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::PlaneMesh gen_mesh{size, segments};
-		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		mesh->generateProcedural(gen_mesh, flipZ);
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1688,12 +2011,13 @@ Mesh* Mesh::createPlane(std::string name, vec2 size, ivec2 segments)
 
 Mesh* Mesh::createIcosahedron(std::string name, float radius, int segments)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::IcosahedronMesh gen_mesh{radius, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1702,12 +2026,13 @@ Mesh* Mesh::createIcosahedron(std::string name, float radius, int segments)
 
 Mesh* Mesh::createIcosphere(std::string name, float radius, int segments)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::IcoSphereMesh gen_mesh{radius, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1717,23 +2042,23 @@ Mesh* Mesh::createIcosphere(std::string name, float radius, int segments)
 /* Might add this later. Requires a callback which defines a function mapping R2->R */
 // Mesh* Mesh::createParametricMesh(std::string name, uint32_t x_segments = 16, uint32_t y_segments = 16)
 // {
-//     auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 //     if (!mesh) return nullptr;
 //     auto gen_mesh = generator::ParametricMesh( , glm::ivec2(x_segments, y_segments));
 //     mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-//     return mesh;
+		// return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 // }
 
 Mesh* Mesh::createRoundedBox(std::string name, float radius, vec3 size, int slices, ivec3 segments)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::RoundedBoxMesh gen_mesh{
 			radius, size, slices, segments
 		};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1742,12 +2067,13 @@ Mesh* Mesh::createRoundedBox(std::string name, float radius, vec3 size, int slic
 
 Mesh* Mesh::createSphere(std::string name, float radius, int slices, int segments, float sliceStart, float sliceSweep, float segmentStart, float segmentSweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::SphereMesh gen_mesh{radius, slices, segments, sliceStart, sliceSweep, segmentStart, segmentSweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1756,12 +2082,13 @@ Mesh* Mesh::createSphere(std::string name, float radius, int slices, int segment
 
 Mesh* Mesh::createSphericalCone(std::string name, float radius, float size, int slices, int segments, int rings, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::SphericalConeMesh gen_mesh{radius, size, slices, segments, rings, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1770,12 +2097,13 @@ Mesh* Mesh::createSphericalCone(std::string name, float radius, float size, int 
 
 Mesh* Mesh::createSphericalTriangleFromSphere(std::string name, float radius, int segments)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::SphericalTriangleMesh gen_mesh{radius, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1784,12 +2112,13 @@ Mesh* Mesh::createSphericalTriangleFromSphere(std::string name, float radius, in
 
 Mesh* Mesh::createSphericalTriangleFromTriangle(std::string name, vec3 v0, vec3 v1, vec3 v2, int segments)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::SphericalTriangleMesh gen_mesh{v0, v1, v2, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1798,12 +2127,13 @@ Mesh* Mesh::createSphericalTriangleFromTriangle(std::string name, vec3 v0, vec3 
 
 Mesh* Mesh::createSpring(std::string name, float minor, float major, float size, int slices, int segments, float minorStart, float minorSweep, float majorStart, float majorSweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::SpringMesh gen_mesh{minor, major, size, slices, segments, minorStart, minorSweep, majorStart, majorSweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1812,12 +2142,13 @@ Mesh* Mesh::createSpring(std::string name, float minor, float major, float size,
 
 Mesh* Mesh::createTeapotahedron(std::string name, int segments)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::TeapotMesh gen_mesh(segments);
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1826,12 +2157,13 @@ Mesh* Mesh::createTeapotahedron(std::string name, int segments)
 
 Mesh* Mesh::createTorus(std::string name, float minor, float major, int slices, int segments, float minorStart, float minorSweep, float majorStart, float majorSweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::TorusMesh gen_mesh{minor, major, slices, segments, minorStart, minorSweep, majorStart, majorSweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1840,12 +2172,13 @@ Mesh* Mesh::createTorus(std::string name, float minor, float major, int slices, 
 
 Mesh* Mesh::createTorusKnot(std::string name, int p, int q, int slices, int segments)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::TorusKnotMesh gen_mesh{p, q, slices, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1854,12 +2187,13 @@ Mesh* Mesh::createTorusKnot(std::string name, int p, int q, int slices, int segm
 
 Mesh* Mesh::createTriangleFromCircumscribedCircle(std::string name, float radius, int segments)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::TriangleMesh gen_mesh{radius, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1868,12 +2202,13 @@ Mesh* Mesh::createTriangleFromCircumscribedCircle(std::string name, float radius
 
 Mesh* Mesh::createTriangle(std::string name, vec3 v0, vec3 v1, vec3 v2, int segments)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::TriangleMesh gen_mesh{v0, v1, v2, segments};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1882,12 +2217,46 @@ Mesh* Mesh::createTriangle(std::string name, vec3 v0, vec3 v1, vec3 v2, int segm
 
 Mesh* Mesh::createTube(std::string name, float radius, float innerRadius, float size, int slices, int segments, float start, float sweep)
 {
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
 		generator::TubeMesh gen_mesh{radius, innerRadius, size, slices, segments, start, sweep};
 		mesh->generateProcedural(gen_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		throw;
+	}
+}
+
+Mesh* Mesh::createLine(std::string name, glm::vec3 start, glm::vec3 stop, float radius, int segments)
+{
+	auto create = [&] (Mesh* mesh) {
+		using namespace generator;
+		ParametricPath parametricPath {
+			[start, stop](double t) {
+				std::cout<<t<<std::endl;
+				PathVertex vertex;				
+				vertex.position = (stop * float(t)) + (start * (1.0f - float(t)));
+				glm::vec3 tangent = glm::normalize(stop - start);
+				glm::vec3 B1;
+				glm::vec3 B2;
+				buildOrthonormalBasis(tangent, B1, B2);
+				vertex.tangent = tangent;
+				vertex.normal = B1;
+				vertex.texCoord = t;
+				return vertex;
+			},
+			((int32_t) 1) // number of segments
+		} ;
+		CircleShape circle_shape(radius, segments);
+		ExtrudeMesh<generator::CircleShape, generator::ParametricPath> extrude_mesh(circle_shape, parametricPath);
+		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
+		dirtyMeshes.insert(mesh);
+	};
+	try {		
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1898,16 +2267,17 @@ Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> posi
 {
 	if (positions.size() <= 1)
 		throw std::runtime_error("Error: positions must be greater than 1!");
-	
-	using namespace generator;
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {		
+
+	auto create = [&] (Mesh* mesh) {
+		using namespace generator;
 		ParametricPath parametricPath {
 			[positions](double t) {
+				t = t * .999f;
+				
 				// t is 1.0 / positions.size() - 1 and goes from 0 to 1.0
-				float t_scaled = (float)t * (((float)positions.size()) - 1.0f);
+				float t_scaled = ((float)t * (((float)positions.size()) - 1.0f));
 				uint32_t p1_idx = (uint32_t) floor(t_scaled);
-				uint32_t p2_idx = p1_idx + 1;
+				uint32_t p2_idx = min(p1_idx + 1, uint32_t(positions.size() - 1));
 
 				float t_segment = t_scaled - floor(t_scaled);
 
@@ -1918,8 +2288,8 @@ Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> posi
 				
 				vertex.position = (p2 * t_segment) + (p1 * (1.0f - t_segment));
 
-				glm::vec3 next = (p2 * (t_segment + .01f)) + (p1 * (1.0f - (t_segment + .01f)));
-				glm::vec3 prev = (p2 * (t_segment - .01f)) + (p1 * (1.0f - (t_segment - .01f)));
+				glm::vec3 next = (p2 * glm::clamp((t_segment + .01f), 0.f, 1.0f)) + (p1 * glm::clamp((1.0f - (t_segment + .01f)), 0.f, 1.f));
+				glm::vec3 prev = (p2 * glm::clamp((t_segment - .01f), 0.f, 1.0f)) + (p1 * glm::clamp((1.0f - (t_segment - .01f)), 0.f, 1.f));
 
 				glm::vec3 tangent = glm::normalize(next - prev);
 				glm::vec3 B1;
@@ -1936,8 +2306,11 @@ Mesh* Mesh::createTubeFromPolyline(std::string name, std::vector<glm::vec3> posi
 		CircleShape circle_shape(radius, segments);
 		ExtrudeMesh<generator::CircleShape, generator::ParametricPath> extrude_mesh(circle_shape, parametricPath);
 		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	
+	try {		
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -1948,17 +2321,16 @@ Mesh* Mesh::createRoundedRectangleTubeFromPolyline(std::string name, std::vector
 {
 	if (positions.size() <= 1)
 		throw std::runtime_error("Error: positions must be greater than 1!");
-	
-	using namespace generator;
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
-		
+
+	auto create = [&] (Mesh* mesh) {
+		using namespace generator;
 		ParametricPath parametricPath {
 			[positions](double t) {
+				t = t * .999f;
 				// t is 1.0 / positions.size() - 1 and goes from 0 to 1.0
 				float t_scaled = (float)t * ((float)(positions.size()) - 1.0f);
 				uint32_t p1_idx = (uint32_t) floor(t_scaled);
-				uint32_t p2_idx = p1_idx + 1;
+				uint32_t p2_idx = min(p1_idx + 1, uint32_t(positions.size() - 1));
 
 				float t_segment = t_scaled - floor(t_scaled);
 
@@ -1987,8 +2359,11 @@ Mesh* Mesh::createRoundedRectangleTubeFromPolyline(std::string name, std::vector
 		RoundedRectangleShape rounded_rectangle_shape(radius, size, slices, segments);
 		ExtrudeMesh<generator::RoundedRectangleShape, generator::ParametricPath> extrude_mesh(rounded_rectangle_shape, parametricPath);
 		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -2000,15 +2375,15 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 	if (positions.size() <= 1)
 		throw std::runtime_error("Error: positions must be greater than 1!");
 	
-	using namespace generator;
-	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	try {
+	auto create = [&] (Mesh* mesh) {
+		using namespace generator;
 		ParametricPath parametricPath {
 			[positions](double t) {
+				t = t * .999f;
 				// t is 1.0 / positions.size() - 1 and goes from 0 to 1.0
 				float t_scaled = (float)t * ((float)(positions.size()) - 1.0f);
 				uint32_t p1_idx = (uint32_t) floor(t_scaled);
-				uint32_t p2_idx = p1_idx + 1;
+				uint32_t p2_idx = min(p1_idx + 1, uint32_t(positions.size() - 1));
 
 				float t_segment = t_scaled - floor(t_scaled);
 
@@ -2037,8 +2412,122 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 		RectangleShape rectangle_shape(size, segments);
 		ExtrudeMesh<generator::RectangleShape, generator::ParametricPath> extrude_mesh(rectangle_shape, parametricPath);
 		mesh->generateProcedural(extrude_mesh, /* flip z = */ false);
-		anyDirty = true;
-		return mesh;
+		dirtyMeshes.insert(mesh);
+	};
+	
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
+		throw;
+	}
+}
+
+Mesh* Mesh::createWireframeBoundingBox(
+			std::string name, vec3 mn, vec3 mx, float width)
+{
+	auto create = [mn, mx, width] (Mesh* mesh) {
+		dirtyMeshes.insert(mesh);
+		
+		// First, start off with a normal box
+		std::vector<glm::vec2> uvs = {
+			{.666f, 0.f}, {1.00f, 0.f}, {.666f, .333f}, {1.00f, .333f}, // X
+			{0.f, .333f}, {.333f, .333f}, {0.f, .666f}, {.333f, .666f}, // Y
+			{.000f, 0.f}, {.333f, 0.f}, {000.f, .333f}, {.333f, .333f},  // Z
+			{.333f, 0.f}, {.666f, 0.f}, {.333f, .333f}, {.666f, .333f},  // -X
+			{0.f, .666f}, {.333f, .666f}, {0.f, 1.f}, {.333f, 1.f},  // -Y
+			{.333f, .333f}, {.666f, .333f}, {.333f, .666f}, {.666f, .666f}, // - Z
+		};
+		
+		// std::vector<glm::vec3> verts = {
+		// 	{mx[0], mn[1], mx[2]}, {mx[0], mn[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mn[0], mn[1], mx[2]}, // X
+		// 	{mx[0], mx[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mx[0], mx[1], mx[2]}, {mn[0], mx[1], mx[2]}, // Y
+		// 	{mx[0], mx[1], mx[2]}, {mn[0], mx[1], mn[2]}, {mx[0], mn[1], mx[2]}, {mn[0], mn[1], mx[2]}, // Z
+		// 	{mn[0], mx[1], mx[2]}, {mx[0], mn[1], mx[2]}, {mn[0], mn[1], mx[2]}, {mx[0], mx[1], mn[2]}, // -X
+		// 	{mn[0], mn[1], mx[2]}, {mn[0], mn[1], mn[2]}, {mx[0], mn[1], mx[2]}, {mx[0], mn[1], mn[2]}, // -Y
+		// 	{mn[0], mx[1], mn[2]}, {mx[0], mx[1], mx[2]}, {mn[0], mn[1], mn[2]}, {mx[0], mn[1], mn[2]}, // -Z
+		// };
+
+		std::vector<glm::vec3> verts = {
+			{mx[0], mn[1], mn[2]}, {mx[0], mx[1], mn[2]}, {mx[0], mn[1], mx[2]}, {mx[0], mx[1], mx[2]}, // X
+			{mn[0], mx[1], mn[2]}, {mx[0], mx[1], mn[2]}, {mn[0], mx[1], mx[2]}, {mx[0], mx[1], mx[2]}, // Y
+			{mn[0], mn[1], mx[2]}, {mx[0], mn[1], mx[2]}, {mn[0], mx[1], mx[2]}, {mx[0], mx[1], mx[2]}, // Z
+			{mn[0], mn[1], mn[2]}, {mn[0], mx[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mn[0], mx[1], mx[2]}, // -X
+			{mn[0], mn[1], mn[2]}, {mx[0], mn[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mx[0], mn[1], mx[2]}, // -Y
+			{mn[0], mn[1], mn[2]}, {mx[0], mn[1], mn[2]}, {mn[0], mx[1], mn[2]}, {mx[0], mx[1], mn[2]}, // -Z
+		};
+
+		std::vector<glm::vec3> normals = {
+			{1.f, 0.f, 0.f}, {1.f, 0.f, 0.f}, {1.f, 0.f, 0.f}, {1.f, 0.f, 0.f}, // X
+			{0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, // Y
+			{0.f, 0.f, 1.f}, {0.f, 0.f, 1.f}, {0.f, 0.f, 1.f}, {0.f, 0.f, 1.f}, // Z
+			{-1.f, 0.f, 0.f}, {-1.f, 0.f, 0.f}, {-1.f, 0.f, 0.f}, {-1.f, 0.f, 0.f}, // -X
+			{0.f, -1.f, 0.f}, {0.f, -1.f, 0.f}, {0.f, -1.f, 0.f}, {0.f, -1.f, 0.f}, // -Y
+			{0.f, 0.f, -1.f}, {0.f, 0.f, -1.f}, {0.f, 0.f, -1.f}, {0.f, 0.f, -1.f}, // -Z
+		};
+
+		std::vector<glm::ivec2> edges = { 
+			{0 + (0 * 4), 1 + (0 * 4)}, {1 + (0 * 4), 3 + (0 * 4)}, {2 + (0 * 4), 3 + (0 * 4)}, {0 + (0 * 4), 2 + (0 * 4)}, // X
+			{0 + (1 * 4), 1 + (1 * 4)}, {1 + (1 * 4), 3 + (1 * 4)}, {2 + (1 * 4), 3 + (1 * 4)}, {0 + (1 * 4), 2 + (1 * 4)}, // Y
+			{0 + (2 * 4), 1 + (2 * 4)}, {1 + (2 * 4), 3 + (2 * 4)}, {2 + (2 * 4), 3 + (2 * 4)}, {0 + (2 * 4), 2 + (2 * 4)}, // Z
+			{0 + (3 * 4), 1 + (3 * 4)}, {1 + (3 * 4), 3 + (3 * 4)}, {2 + (3 * 4), 3 + (3 * 4)}, {0 + (3 * 4), 2 + (3 * 4)}, // -X
+			{0 + (4 * 4), 1 + (4 * 4)}, {1 + (4 * 4), 3 + (4 * 4)}, {2 + (4 * 4), 3 + (4 * 4)}, {0 + (4 * 4), 2 + (4 * 4)}, // -Y
+			{0 + (5 * 4), 1 + (5 * 4)}, {1 + (5 * 4), 3 + (5 * 4)}, {2 + (5 * 4), 3 + (5 * 4)}, {0 + (5 * 4), 2 + (5 * 4)}, // -Z			
+		};
+
+
+		// Now, for each edge of that box, create a sub-box which will act as an edge for our wireframe box
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
+		uint32_t ioff = 0;
+		for (uint32_t eid = 0; eid < edges.size(); ++eid) {
+			glm::vec3 p0 = verts[edges[eid].x];//glm::all(glm::lessThanEqual(verts[edges[eid].x], verts[edges[eid].y])) ? verts[edges[eid].x] : verts[edges[eid].y];
+			glm::vec3 p1 = verts[edges[eid].y];//glm::all(glm::greaterThan(verts[edges[eid].x], verts[edges[eid].y])) ? verts[edges[eid].x] : verts[edges[eid].y];
+			glm::vec3 mn = glm::vec3(p0) - glm::vec3(width * .5f);
+			glm::vec3 mx = glm::vec3(p1) + glm::vec3(width * .5f);
+
+			std::vector<glm::vec3> edgeVerts = {
+				{mx[0], mn[1], mn[2]}, {mx[0], mx[1], mn[2]}, {mx[0], mn[1], mx[2]}, {mx[0], mx[1], mx[2]}, // X
+				{mn[0], mx[1], mn[2]}, {mx[0], mx[1], mn[2]}, {mn[0], mx[1], mx[2]}, {mx[0], mx[1], mx[2]}, // Y
+				{mn[0], mn[1], mx[2]}, {mx[0], mn[1], mx[2]}, {mn[0], mx[1], mx[2]}, {mx[0], mx[1], mx[2]}, // Z
+				{mn[0], mn[1], mn[2]}, {mn[0], mx[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mn[0], mx[1], mx[2]}, // -X
+				{mn[0], mn[1], mn[2]}, {mx[0], mn[1], mn[2]}, {mn[0], mn[1], mx[2]}, {mx[0], mn[1], mx[2]}, // -Y
+				{mn[0], mn[1], mn[2]}, {mx[0], mn[1], mn[2]}, {mn[0], mx[1], mn[2]}, {mx[0], mx[1], mn[2]}, // -Z
+			};
+
+			// For all faces
+			for (uint32_t i = 0; i < 6; ++i) {
+				bool even = ((i % 2) == 0);
+				int face = -1;
+				if (i < 2) face = (even) ? 0 : 3; 
+				else if (i < 4) face = (even) ? 1 : 4; 
+				else if (i < 6) face = (even) ? 2 : 5; 
+				Vertex v1, v2, v3, v4;
+				v1.point = vec4(edgeVerts[face * 4 + 0], 1.f); v2.point = vec4(edgeVerts[face * 4 + 1], 1.f); 
+				v3.point = vec4(edgeVerts[face * 4 + 2], 1.f); v4.point = vec4(edgeVerts[face * 4 + 3], 1.f);
+				v1.texcoord = uvs[face * 4 + 0]; v2.texcoord = uvs[face * 4 + 1]; 
+				v3.texcoord = uvs[face * 4 + 2]; v4.texcoord = uvs[face * 4 + 3];
+				v1.normal = vec4(normals[face * 4 + 0], 0.f); v2.normal = vec4(normals[face * 4 + 1], 0.f);
+				v3.normal = vec4(normals[face * 4 + 2], 0.f); v4.normal = vec4(normals[face * 4 + 3], 0.f);
+				vertices.push_back(v1); vertices.push_back(v2); vertices.push_back(v3); vertices.push_back(v4);
+				indices.push_back(ioff + 0); indices.push_back(ioff + 1); indices.push_back(ioff + 2); // T0
+				indices.push_back(ioff + 1); indices.push_back(ioff + 3); indices.push_back(ioff + 2); // T1
+				ioff += 4; // add 4, since we added 4 new vertices.
+			}
+		}
+
+		for (auto &v : vertices) {
+			mesh->positions.push_back({v.point.x, v.point.y, v.point.z});
+			mesh->colors.push_back(v.color);
+			mesh->normals.push_back(v.normal);
+			mesh->texCoords.push_back(v.texcoord);
+		}
+		mesh->triangleIndices = indices;
+		mesh->computeMetadata();
+	};
+	
+	try {
+		return StaticFactory::create<Mesh>(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES, create);
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 		throw;
@@ -2048,8 +2537,112 @@ Mesh* Mesh::createRectangleTubeFromPolyline(std::string name, std::vector<glm::v
 
 Mesh* Mesh::createFromObj(std::string name, std::string path)
 {
-	auto create = [path] (Mesh* mesh) {
-		mesh->loadObj(path);
+	static bool createFromImageDeprecatedShown = false;
+    if (createFromImageDeprecatedShown == false) {
+        std::cout<<"Warning, create_from_obj is deprecated and will be removed in a subsequent release. Please switch to create_from_file." << std::endl;
+        createFromImageDeprecatedShown = true;
+    }
+	return createFromFile(name, path);
+}
+
+Mesh* Mesh::createFromFile(std::string name, std::string path)
+{
+	auto create = [path, name] (Mesh* mesh) {
+		// Check and validate the specified model file extension.
+		const char* extension = strrchr(path.c_str(), '.');
+		if (!extension)
+			throw std::runtime_error(
+				std::string("Error: \"") + name + 
+				std::string(" \" provide a file with a valid extension."));
+
+		if (AI_FALSE == aiIsExtensionSupported(extension))
+			throw std::runtime_error(
+				std::string("Error: \"") + name + 
+				std::string(" \"The specified model file extension \"") 
+				+ std::string(extension) + std::string("\" is currently unsupported."));
+
+		auto scene = aiImportFile(path.c_str(), 
+			aiProcessPreset_TargetRealtime_MaxQuality | 
+			aiProcess_Triangulate |
+			aiProcess_PreTransformVertices );
+		
+		if (!scene) {
+			std::string err = std::string(aiGetErrorString());
+			throw std::runtime_error(
+				std::string("Error: \"") + name + std::string("\"") + err);
+		}
+
+		if (scene->mNumMeshes <= 0) 
+			throw std::runtime_error(
+				std::string("Error: \"") + name + 
+				std::string("\" positions must be greater than 1!"));
+		
+		mesh->positions.clear();
+		mesh->colors.clear();
+		mesh->texCoords.clear();
+		mesh->normals.clear();
+		mesh->triangleIndices.clear();
+
+		uint32_t off = 0;
+		for (uint32_t meshIdx = 0; meshIdx < scene->mNumMeshes; ++meshIdx) {
+			auto &aiMesh = scene->mMeshes[meshIdx];
+			auto &aiVertices = aiMesh->mVertices;
+			auto &aiNormals = aiMesh->mNormals;
+			auto &aiFaces = aiMesh->mFaces;
+			auto &aiTextureCoords = aiMesh->mTextureCoords;
+
+			// mesh at the very least needs positions...
+			if (!aiMesh->HasPositions()) continue;
+
+			// note that we triangulated the meshes above
+			for (uint32_t vid = 0; vid < aiMesh->mNumVertices; ++vid) {
+				Vertex v;
+				if (aiMesh->HasPositions()) {
+					auto vert = aiVertices[vid];
+					v.point.x = vert.x;
+					v.point.y = vert.y;
+					v.point.z = vert.z;
+				}
+				if (aiMesh->HasNormals()) {
+					auto normal = aiNormals[vid];
+					v.normal.x = normal.x;
+					v.normal.y = normal.y;
+					v.normal.z = normal.z;
+				}
+				if (aiMesh->HasTextureCoords(0)) {
+					// just try to take the first texcoord
+					auto texCoord = aiTextureCoords[0][vid];						
+					v.texcoord.x = texCoord.x;
+					v.texcoord.y = texCoord.y;
+				}
+				mesh->positions.push_back({v.point.x, v.point.y, v.point.z});
+				mesh->normals.push_back({v.normal.x, v.normal.y, v.normal.z, 0.f});
+				mesh->texCoords.push_back({v.texcoord.x, v.texcoord.y});
+			}
+
+			for (uint32_t faceIdx = 0; faceIdx < aiMesh->mNumFaces; ++faceIdx) {
+				// faces must have only 3 indices
+				auto &aiFace = aiFaces[faceIdx];			
+				if (aiFace.mNumIndices != 3) continue;
+				 
+				mesh->triangleIndices.push_back(aiFace.mIndices[0] + off);
+				mesh->triangleIndices.push_back(aiFace.mIndices[1] + off);
+				mesh->triangleIndices.push_back(aiFace.mIndices[2] + off);
+
+				if (((aiFace.mIndices[0] + off) >= mesh->positions.size()) || 
+					((aiFace.mIndices[1] + off) >= mesh->positions.size()) || 
+					((aiFace.mIndices[2] + off) >= mesh->positions.size()))
+					throw std::runtime_error(
+						std::string("Error: \"") + name +
+						std::string("\" invalid mesh index detected!"));
+			}
+			off += aiMesh->mNumVertices;
+		}
+
+		mesh->computeMetadata();
+
+		aiReleaseImport(scene);
+		dirtyMeshes.insert(mesh);
 	};
 	
 	try {
@@ -2062,10 +2655,9 @@ Mesh* Mesh::createFromObj(std::string name, std::string path)
 
 // Mesh* Mesh::createFromStl(std::string name, std::string stlPath)
 // {
-// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 	try {
 // 		mesh->load_stl(stlPath, allow_edits, submit_immediately);
-// 		anyDirty = true;
+// 		dirtyMeshes.insert(mesh);
 // 		return mesh;
 // 	} catch (...) {
 // 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
@@ -2075,10 +2667,9 @@ Mesh* Mesh::createFromObj(std::string name, std::string path)
 
 // Mesh* Mesh::createFromGlb(std::string name, std::string glbPath)
 // {
-// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 	try {
 // 		mesh->load_glb(glbPath, allow_edits, submit_immediately);
-// 		anyDirty = true;
+// 		dirtyMeshes.insert(mesh);
 // 		return mesh;
 // 	} catch (...) {
 // 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
@@ -2088,10 +2679,9 @@ Mesh* Mesh::createFromObj(std::string name, std::string path)
 
 // Mesh* Mesh::createFromTetgen(std::string name, std::string path)
 // {
-// 	auto mesh = StaticFactory::create(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
 // 	try {
 // 		mesh->load_tetgen(path, allow_edits, submit_immediately);
-// 		anyDirty = true;
+// 		dirtyMeshes.insert(mesh);
 // 		return mesh;
 // 	} catch (...) {
 // 		StaticFactory::removeIfExists(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
@@ -2099,16 +2689,25 @@ Mesh* Mesh::createFromObj(std::string name, std::string path)
 // 	}
 // }
 
-Mesh* Mesh::createFromData (
+Mesh* Mesh::createFromData(
 	std::string name,
-	std::vector<glm::vec4> positions, 
-	std::vector<glm::vec4> normals, 
-	std::vector<glm::vec4> colors, 
-	std::vector<glm::vec2> texcoords, 
-	std::vector<uint32_t> indices
+	std::vector<float> positions_, 
+	uint32_t position_dimensions,
+	std::vector<float> normals_, 
+	uint32_t normal_dimensions, 
+	std::vector<float> colors_, 
+	uint32_t color_dimensions, 
+	std::vector<float> texcoords_, 
+	uint32_t texcoord_dimensions, 
+	std::vector<uint32_t> indices_
 ) {
-	auto create = [&positions, &normals, &colors, &texcoords, &indices] (Mesh* mesh) {
-		mesh->loadData(positions, normals, colors, texcoords, indices);
+	auto create = [&positions_, position_dimensions, &normals_, normal_dimensions, 
+				   &colors_, color_dimensions, &texcoords_, texcoord_dimensions, &indices_] 
+				   (Mesh* mesh) 
+	{
+		mesh->loadData(positions_, position_dimensions, normals_, normal_dimensions, 
+			colors_, color_dimensions, texcoords_, texcoord_dimensions, indices_);
+		dirtyMeshes.insert(mesh);
 	};
 	
 	try {
@@ -2120,13 +2719,16 @@ Mesh* Mesh::createFromData (
 }
 
 void Mesh::remove(std::string name) {
+	auto m = get(name);
+	if (!m) return;
+	std::vector<std::array<float, 3>>().swap(m->positions);
+	std::vector<glm::vec4>().swap(m->normals);
+	std::vector<glm::vec4>().swap(m->colors);
+	std::vector<glm::vec2>().swap(m->texCoords);
+	std::vector<uint32_t>().swap(m->triangleIndices);
+	int32_t oldID = m->getId();
 	StaticFactory::remove(editMutex, name, "Mesh", lookupTable, meshes, MAX_MESHES);
-	anyDirty = true;
-}
-
-void Mesh::remove(uint32_t id) {
-	StaticFactory::remove(editMutex, id, "Mesh", lookupTable, meshes, MAX_MESHES);
-	anyDirty = true;
+	dirtyMeshes.insert(&meshes[oldID]);
 }
 
 MeshStruct* Mesh::getFrontStruct()
@@ -2140,6 +2742,26 @@ Mesh* Mesh::getFront() {
 
 uint32_t Mesh::getCount() {
 	return MAX_MESHES;
+}
+
+std::string Mesh::getName()
+{
+    return name;
+}
+
+int32_t Mesh::getId()
+{
+    return id;
+}
+
+int32_t Mesh::getAddress()
+{
+	return (this - meshes);
+}
+
+std::map<std::string, uint32_t> Mesh::getNameToIdMap()
+{
+	return lookupTable;
 }
 
 // uint64_t Mesh::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, vk::DeviceMemory &bufferMemory)

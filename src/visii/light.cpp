@@ -4,7 +4,7 @@
 Light Light::lights[MAX_LIGHTS];
 LightStruct Light::lightStructs[MAX_LIGHTS];
 std::map<std::string, uint32_t> Light::lookupTable;
-std::shared_ptr<std::mutex> Light::editMutex;
+std::shared_ptr<std::recursive_mutex> Light::editMutex;
 bool Light::factoryInitialized = false;
 bool Light::anyDirty = true;
 
@@ -23,7 +23,7 @@ Light::Light(std::string name, uint32_t id)
     this->lightStructs[id].g = 1.f;
     this->lightStructs[id].b = 1.f;
     this->lightStructs[id].intensity = 1.0;
-    this->lightStructs[id].flags = 0;
+    this->lightStructs[id].exposure = 0.0;
     this->lightStructs[id].color_texture_id = -1;
 }
 
@@ -36,23 +36,40 @@ std::string Light::toString() {
     return output;
 }
 
+LightStruct &Light::getStruct() {
+	if (!isInitialized()) throw std::runtime_error("Error: light is uninitialized.");
+	return lightStructs[id];
+}
+
 void Light::setColor(glm::vec3 color)
 {
-    lightStructs[id].r = max(0.f, min(color.r, 1.f));
-    lightStructs[id].g = max(0.f, min(color.g, 1.f));
-    lightStructs[id].b = max(0.f, min(color.b, 1.f));
+    auto &light = getStruct();
+    light.r = max(0.f, min(color.r, 1.f));
+    light.g = max(0.f, min(color.g, 1.f));
+    light.b = max(0.f, min(color.b, 1.f));
     markDirty();
+}
+
+glm::vec3 Light::getColor()
+{
+    return glm::vec3(lightStructs[id].r, lightStructs[id].g, lightStructs[id].b);
 }
 
 void Light::setColorTexture(Texture *texture) 
 {
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	lightStructs[id].color_texture_id = texture->getId();
+    auto &light = getStruct();
+	light.color_texture_id = texture->getId();
+    texture->lights.insert(id);
 	markDirty();
 }
 
 void Light::clearColorTexture() {
-	lightStructs[id].color_texture_id = -1;
+    auto &light = getStruct();
+    auto textures = Texture::getFront();
+    if (light.color_texture_id != -1) 
+        textures[light.color_texture_id].lights.erase(id);
+	light.color_texture_id = -1;
 	markDirty();
 }
 
@@ -85,23 +102,50 @@ void Light::setTemperature(float kelvin)
         blue = 255;
     }
 
-    lightStructs[id].r = red / 255.f;
-    lightStructs[id].g = green / 255.f;
-    lightStructs[id].b = blue / 255.f;
+    auto &light = getStruct();
+    light.r = red / 255.f;
+    light.g = green / 255.f;
+    light.b = blue / 255.f;
     markDirty();
 }
 
 void Light::setIntensity(float intensity)
 {
-    lightStructs[id].intensity = intensity;
+    auto &light = getStruct();
+    light.intensity = intensity;
     markDirty();
+}
+
+float Light::getIntensity()
+{
+    auto &light = getStruct();
+    return light.intensity;
+}
+
+void Light::setExposure(float exposure)
+{
+    auto &light = getStruct();
+    light.exposure = exposure;
+    markDirty();
+}
+
+float Light::getExposure()
+{
+    auto &light = getStruct();
+    return light.exposure;
+}
+
+void Light::useSurfaceArea(bool use) 
+{
+    auto &light = getStruct();
+    light.use_surface_area = use;
 }
 
 /* SSBO logic */
 void Light::initializeFactory()
 {
     if (isFactoryInitialized()) return;
-    editMutex = std::make_shared<std::mutex>();
+    editMutex = std::make_shared<std::recursive_mutex>();
     factoryInitialized = true;
 }
 
@@ -169,7 +213,7 @@ Light* Light::createFromRGB(std::string name, glm::vec3 color, float intensity) 
     return light;
 }
 
-std::shared_ptr<std::mutex> Light::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Light::getEditMutex()
 {
 	return editMutex;
 }
@@ -193,4 +237,14 @@ LightStruct* Light::getFrontStruct() {
 
 uint32_t Light::getCount() {
     return MAX_LIGHTS;
+}
+
+std::string Light::getName()
+{
+    return name;
+}
+
+std::map<std::string, uint32_t> Light::getNameToIdMap()
+{
+	return lookupTable;
 }

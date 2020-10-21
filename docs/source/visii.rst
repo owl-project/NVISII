@@ -1,0 +1,22 @@
+Visii
+=================================
+.. automodule:: visii
+    :members: 
+        initialize_interactive, 
+        initialize_headless,
+        cleanup,
+        set_camera_entity,
+        set_dome_light_intensity,
+        set_dome_light_texture,
+        set_dome_light_rotation,
+        set_indirect_lighting_clamp,
+        set_direct_lighting_clamp,
+        set_max_bounce_depth,
+        resize_window,
+        enable_denoiser,
+        disable_denoiser,
+        render,
+        render_to_hdr,
+        render_to_png,
+        render_data,
+        import_obj

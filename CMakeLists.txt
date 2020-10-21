@@ -9,11 +9,6 @@ project(ViSII CXX C)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
-# Use c++17
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)
-
 # Force 64 bit builds
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
   MESSAGE(FATAL_ERROR "32 bit build detected. Please switch to a 64 bit build")
@@ -24,11 +19,16 @@ if(APPLE)
   MESSAGE(FATAL_ERROR "Apple platform detected, but not currently supported.")
 endif(APPLE)
 
+# If on windows, use c++14 (oldest available by modern msvc)
 if(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14" CACHE STRING "" FORCE)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif(MSVC)
+
+if(UNIX)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14" CACHE STRING "" FORCE)
+endif(UNIX)
 
 # Set the default install prefix path
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -39,6 +39,26 @@ endif()
 set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "" FORCE)
 set(CMAKE_RELWITHDEBINFO_POSTFIX "" CACHE STRING "" FORCE)
 set(CMAKE_MINSIZEREL_POSTFIX "" CACHE STRING "" FORCE)
+
+
+if ((NOT WIN32) AND (NOT SET_UP_CONFIGURATIONS_DONE))
+  set(SET_UP_CONFIGURATIONS_DONE 1)
+  
+  # No reason to set CMAKE_CONFIGURATION_TYPES if it's not a multiconfig generator
+  # Also no reason mess with CMAKE_BUILD_TYPE if it's a multiconfig generator.
+  if(CMAKE_CONFIGURATION_TYPES) # multiconfig generator?
+    set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE) 
+  else()
+    if(NOT CMAKE_BUILD_TYPE)
+      #            message("Defaulting to release build.")
+      set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
+    endif()
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY HELPSTRING "Choose the type of build")
+    # set the valid options for cmake-gui drop-down list
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug;Release")
+  endif()
+endif()
+
 
 # Force binaries to go to build folder, not subfolders
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
@@ -52,11 +72,12 @@ foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
 endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
 
 # Default RPATH settings for *NIX distros
-set(RPATHS "./")
-set(CMAKE_INSTALL_RPATH "${RPATHS}")
+# set(RPATHS "./;${CMAKE_INSTALL_PREFIX};${CMAKE_INSTALL_PREFIX}/visii;${CMAKE_INSTALL_PREFIX}/visii/lib;")
+# set(CMAKE_INSTALL_RPATH "${RPATHS}")
+set(CMAKE_INSTALL_RPATH $ORIGIN)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 set(CMAKE_INSTALL_NAME_DIR "${RPATHS}")
-# set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
 SET(CMAKE_INSTALL_NAME_DIR @executable_path)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
@@ -76,7 +97,8 @@ option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" OFF)
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	# Enable c++11 and hide symbols which shouldn't be visible
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+  message(WARN "ENABLING FPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" CACHE STRING "" FORCE)
 endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
@@ -84,9 +106,11 @@ endif()
 # └──────────────────────────────────────────────────────────────────┘
 
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-add_definitions(-DNOMINMAX)
 add_definitions(-DGENERATOR_USE_GLM)
-add_definitions(-D_WIN64)
+if(WIN32)
+  add_definitions(-DNOMINMAX)
+endif()
+add_definitions(${OWL_CXX_FLAGS})
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  External Dependencies                                           │
@@ -118,8 +142,12 @@ if(MSVC)
   # include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/win64/Lib/python)
 endif()
 if(UNIX)
-  set(SWIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/share/swig/4.0.1/")
-  set(SWIG_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/bin/swig")
+  if (NOT SWIG_DIR)
+    set(SWIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/share/swig/4.0.1/")
+  endif()
+  if (NOT SWIG_EXECUTABLE)
+    set(SWIG_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/externals/swig-4.0.1/linux64/bin/swig")
+  endif()
 endif()
 find_package(SWIG 4.0.1)
 include(${SWIG_USE_FILE})
@@ -127,36 +155,56 @@ include(${SWIG_USE_FILE})
 # python
 if (EXISTS ${Python_ROOT_DIR})
   set(Python_FIND_STRATEGY "LOCATION")
-  message(WARN "${Python_ROOT_DIR}") 
 endif()
 
+# On windows, require finding python always.
+# On unix, since we only require the include dir, it's useful to be able to specify this include
+# dir on commandline when building artifacts on the CI machines. Don't find python if a custom include
+# dir is specified.
+if(WIN32 OR NOT Python_INCLUDE_DIRS)
 set(PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
 if(PYTHON_VERSION)
-  find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development REQUIRED)
+  find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development NumPy)
 else()
-  find_package(Python  COMPONENTS Development REQUIRED)
+  find_package(Python  COMPONENTS Development NumPy)
+endif()
 endif()
 
-if (UNIX AND NOT Python_FOUND)
-  message(FATAL_ERROR "Python development libraries missing!"
-    "You probably dont have python 2.7 or later development libraries installed on your system. It is possible to recover "
+if (UNIX AND NOT Python_INCLUDE_DIRS)
+  message(FATAL_ERROR "Python development headers missing!"
+    "You probably dont have python 2.7 or later development headers installed on your system. It is possible to recover "
     "by running \"sudo apt install python3-dev\" (or equivalent on your unix distro)")
 endif()
-if (MSVC AND NOT Python_FOUND)
+if (MSVC AND NOT Python_INCLUDE_DIRS)
+  message(FATAL_ERROR "Python development headers missing!"
+    "You probably dont have python 2.7 or later development headers installed on your system. It is possible to recover "
+    "by downloading python from https://www.python.org/downloads/. NOTE: for debug builds, make sure to check \"Download debug binaries\" "
+    "in the \"Advanced Options\" tab of the Python installation wizard, and to run with python_d.exe")
+endif()
+if (MSVC AND NOT Python_LIBRARIES)
   message(FATAL_ERROR "Python development libraries missing!"
     "You probably dont have python 2.7 or later development libraries installed on your system. It is possible to recover "
     "by downloading python from https://www.python.org/downloads/. NOTE: for debug builds, make sure to check \"Download debug binaries\" "
     "in the \"Advanced Options\" tab of the Python installation wizard, and to run with python_d.exe")
 endif()
 include_directories(SYSTEM ${Python_INCLUDE_DIRS})
+include_directories(SYSTEM ${Python_NumPy_INCLUDE_DIRS})
+message(WARN "Numpy Include Dir is: ")
+message(WARN ${Python_NumPy_INCLUDE_DIRS})
+if (NOT EXISTS ${Python_NumPy_INCLUDE_DIRS})
+message(ERROR "ERROR, numpy include dir does not exist!")
+endif()
 
-# # glm
+if (NOT EXISTS ${Python_NumPy_INCLUDE_DIRS}/numpy/arrayObject.h)
+message(ERROR "ERROR, arrayObject does not exist!")
+endif()
+
+# glm
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
 
 # geometry generator
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/externals/generator)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/generator/include)
-set_property(TARGET generator PROPERTY FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/externals/generator")
 
 # glad
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/glad/include)
@@ -193,6 +241,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/stb/)
 
 # tiny things
 include_directories(SYSTEM externals/tiny/)
+
+# assimp
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE STRING "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE STRING "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE STRING "" FORCE)
+add_subdirectory (externals/assimp EXCLUDE_FROM_ALL)
+set(assimp_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/assimp/include/" "${CMAKE_CURRENT_BINARY_DIR}/externals/assimp/include/")
 
 # ImGUI
 add_definitions(-D IMGUI_IMPL_OPENGL_LOADER_GLAD)
@@ -235,31 +290,41 @@ find_program(BIN2C bin2c
 
 # optix 7
 set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
-find_package(OptiX REQUIRED VERSION 7)
-include_directories(${OptiX_INCLUDE})
+find_package(OptiX REQUIRED VERSION 7.0)
+#include_directories(${OptiX_INCLUDE})
+
 
 # owl
-set(SET_UP_CONFIGURATIONS_DONE 1)
-set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
-set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
-set(OWL_USE_TBB OFF CACHE STRING "" FORCE)
-add_subdirectory(externals/owl)
-include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/)
-include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/common/cmake)
+#set(SET_UP_CONFIGURATIONS_DONE 1)
+#set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
+#set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
+add_subdirectory(externals/owl EXCLUDE_FROM_ALL)
+#include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/)
+#include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/cmake)
+include_directories(${OWL_INCLUDES})
 include(configure_cuda)
 
 # add libraries to a list for linking
-set (
+set(
   LIBRARIES
-  ${Python_LIBRARIES}
   generator
   ${GLFW_LIBRARIES}
   glfw
   ${OPENGL_gl_LIBRARY}
   # ${TBB_LIBRARIES}
-  owl
+  #owl
+  ${OWL_LIBRARIES}
+  assimp
   )
+
+set (
+  PY_LIBRARY
+  
+)
+
+if (WIN32)
+set(LIBRARIES ${LIBRARIES} ${Python_LIBRARIES})
 
 # If debug lib for python exists, add it to the list.
 if (${Python_LIBRARY_DEBUG})
@@ -286,6 +351,8 @@ if(NOT WIN32)
   )
 endif()
 
+endif()
+
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Definitions                                                     │
 # └──────────────────────────────────────────────────────────────────┘
@@ -306,7 +373,7 @@ endif()
 
 macro(cuda_compile_and_embed output_var cuda_file)
   set(var_name ${output_var})
-  cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --keep ${NVCC_VERBOSE_FLAG})
+  cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS --generate-line-info -use_fast_math -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --keep ${NVCC_VERBOSE_FLAG})
   list(GET ptx_files 0 ptx_file)
   set(embedded_file ${ptx_file}_embedded.c)
   add_custom_command(
@@ -345,7 +412,8 @@ cuda_compile_and_embed(ptxCode ${SRC_CU})
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  ViSII Library                                                   │
 # └──────────────────────────────────────────────────────────────────┘
-cuda_add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
+cuda_add_library(visii_lib STATIC ${SRC} ${HDR} ${ptxCode} OPTIONS --expt-relaxed-constexpr -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
+set_target_properties(visii_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(visii_lib ${LIBRARIES})
 set_target_properties(visii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 install(TARGETS visii_lib 
@@ -365,13 +433,22 @@ if (WIN32)
 set_property(TARGET visii PROPERTY SWIG_GENERATED_COMPILE_OPTIONS -bigobj)
 endif()
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
-target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
 set(SWIG_DEFS 
-  Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
-  Python_VERSION_MINOR=${Python_VERSION_MINOR})
+Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
+Python_VERSION_MINOR=${Python_VERSION_MINOR})
 set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python_DEBUG>)
 set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
 
+if(WIN32)
+target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
+endif()
+
+if(UNIX)
+# On linux, in order to be complient with PEP 513, we cannot link against libpython.so. However, that results 
+# in undefined symbols. These symbols will be defined by the python interpreter before this module is imported,
+# so we're ignoring undefined symbols, making the assumption they'll be defined by the interpreter beforehand.
+target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib INTERFACE "-undefined dynamic_lookup")
+endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Install                                                         │
@@ -383,11 +460,22 @@ install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PRE
 install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL)
 install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL RENAME _visii_d.pyd)
 install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL RENAME _visii_d.pdb)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/setup.py DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/python/setup.py DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/python/importers DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/)
 
 # # TBB DLL for windows
 # if (WIN32) 
 # install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
 # install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb_debug.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
 # endif(WIN32)
- 
+
+# If we want apps using visii to be able to also use OWL, we have to export these:
+get_directory_property(hasParent PARENT_DIRECTORY)
+if(hasParent)
+  set(OWL_INCLUDES ${OWL_INCLUDES} PARENT_SCOPE)
+  set(OWL_VIEWER_INCLUDES ${OWL_VIEWER_INCLUDES} PARENT_SCOPE)
+  set(OWL_LIBRARIES ${OWL_LIBRARIES} PARENT_SCOPE)
+  set(OWL_VIEWER_LIBRARIES ${OWL_VIEWER_LIBRARIES} PARENT_SCOPE)
+  set(OWL_HAVE_TBB ${OWL_HAVE_TBB} PARENT_SCOPE)
+  set(OWL_CXX_FLAGS ${OWL_CXX_FLAGS} PARENT_SCOPE)
+endif()

@@ -1,5 +1,6 @@
 build
 *.ptx
+tests
 *.c
 *.cmake
 install
@@ -9,3 +10,12 @@ include\visii\utilities\version.h
 include/visii/utilities/version.h
 *.png
 data
+*.obj
+*.mp4
+*.hdr
+*.jpg
+*.mtl
+*.zip
+*__pycache__
+examples/content
+examples\content
