@@ -73,7 +73,7 @@ cudaTextureObject_t getEnvironmentTexture()
     auto &LP = optixLaunchParams;
     cudaTextureObject_t tex = 0;
     if (LP.environmentMapID >= 0) {
-        return LP.textureObjects[LP.environmentMapID];
+        return read((cudaTextureObject_t*)LP.textureObjects.data, LP.environmentMapID, LP.textureObjects.count, __LINE__);
     } else if ((LP.environmentMapID == -2) && (LP.proceduralSkyTexture != 0)) {
         return LP.proceduralSkyTexture;
     }
@@ -160,7 +160,7 @@ inline __device__
 float3 sampleTexture(int32_t textureId, float2 texCoord, float3 defaultVal) {
     auto &LP = optixLaunchParams;
     if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
-    cudaTextureObject_t tex = LP.textureObjects[textureId];
+    cudaTextureObject_t tex = read((cudaTextureObject_t*)LP.textureObjects.data, textureId, LP.textureObjects.count, __LINE__);
     if (!tex) return defaultVal;
     return make_float3(tex2D<float4>(tex, texCoord.x, texCoord.y));
 }
@@ -169,7 +169,7 @@ inline __device__
 float sampleTexture(int32_t textureId, float2 texCoord, int8_t channel, float defaultVal) {
     auto &LP = optixLaunchParams;
     if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
-    cudaTextureObject_t tex = LP.textureObjects[textureId];
+    cudaTextureObject_t tex = read((cudaTextureObject_t*)LP.textureObjects.data, textureId, LP.textureObjects.count, __LINE__);
     if (!tex) return defaultVal;
     if (channel == 0) return tex2D<float4>(tex, texCoord.x, texCoord.y).x;
     if (channel == 1) return tex2D<float4>(tex, texCoord.x, texCoord.y).y;

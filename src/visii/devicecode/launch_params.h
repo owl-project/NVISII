@@ -66,7 +66,7 @@ struct LaunchParams {
     int environmentMapWidth = 0;
     int environmentMapHeight = 0;
     cudaTextureObject_t proceduralSkyTexture = 0;
-    cudaTextureObject_t *textureObjects = nullptr;
+    owl::device::Buffer textureObjects; //cudaTextureObject_t
 
     cudaTextureObject_t GGX_E_AVG_LOOKUP;
     cudaTextureObject_t GGX_E_LOOKUP;
