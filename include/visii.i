@@ -163,6 +163,8 @@ namespace std {
 %ignore Transform::markDirty();
 %ignore Transform::markClean();
 
+%ignore Material::Material();
+%ignore Material::Material(std::string name, uint32_t id);
 %ignore Material::initializeFactory();
 %ignore Material::getFront();
 %ignore Material::getFrontStruct();

@@ -44,7 +44,7 @@ struct LaunchParams {
     EntityStruct    cameraEntity;
     EntityStruct    *entities = nullptr;
     owl::device::Buffer transforms;
-    MaterialStruct  *materials = nullptr;
+    owl::device::Buffer  materials;
     owl::device::Buffer cameras;
     owl::device::Buffer meshes;
     owl::device::Buffer lights;

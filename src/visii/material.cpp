@@ -1,8 +1,8 @@
 #include <visii/material.h>
 #include <visii/texture.h>
 
-Material Material::materials[MAX_MATERIALS];
-MaterialStruct Material::materialStructs[MAX_MATERIALS];
+std::vector<Material> Material::materials;
+std::vector<MaterialStruct> Material::materialStructs;
 std::map<std::string, uint32_t> Material::lookupTable;
 std::shared_ptr<std::recursive_mutex> Material::editMutex;
 bool Material::factoryInitialized = false;
@@ -73,6 +73,8 @@ MaterialStruct &Material::getStruct() {
 void Material::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
+	materials.resize(100000);
+	materialStructs.resize(100000);
 	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
@@ -101,7 +103,7 @@ void Material::updateComponents()
 {
 	if (!anyDirty) return;
 
-	for (int i = 0; i < MAX_MATERIALS; ++i) {
+	for (int i = 0; i < materials.size(); ++i) {
 		if (materials[i].isDirty()) {
             materials[i].markClean();
         }
@@ -167,9 +169,9 @@ Material* Material::create(std::string name,
 	};
 
 	try {
-		return StaticFactory::create<Material>(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS, createMaterial);
+		return StaticFactory::create<Material>(editMutex, name, "Material", lookupTable, materials.data(), materials.size(), createMaterial);
 	} catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
+		StaticFactory::removeIfExists(editMutex, name, "Material", lookupTable, materials.data(), materials.size());
 		throw;
 	}
 }
@@ -180,25 +182,25 @@ std::shared_ptr<std::recursive_mutex> Material::getEditMutex()
 }
 
 Material* Material::get(std::string name) {
-	return StaticFactory::get(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
+	return StaticFactory::get(editMutex, name, "Material", lookupTable, materials.data(), materials.size());
 }
 
 void Material::remove(std::string name) {
-	StaticFactory::remove(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
+	StaticFactory::remove(editMutex, name, "Material", lookupTable, materials.data(), materials.size());
 	anyDirty = true;
 }
 
 MaterialStruct* Material::getFrontStruct()
 {
-	return materialStructs;
+	return materialStructs.data();
 }
 
 Material* Material::getFront() {
-	return materials;
+	return materials.data();
 }
 
 uint32_t Material::getCount() {
-	return MAX_MATERIALS;
+	return materials.size();
 }
 
 std::string Material::getName()

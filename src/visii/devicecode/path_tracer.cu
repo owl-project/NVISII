@@ -159,7 +159,7 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
 inline __device__ 
 float3 sampleTexture(int32_t textureId, float2 texCoord, float3 defaultVal) {
     auto &LP = optixLaunchParams;
-    if (textureId < 0 || textureId >= (MAX_TEXTURES + MAX_MATERIALS * NUM_MAT_PARAMS)) return defaultVal;
+    if (textureId < 0 || textureId >= (MAX_TEXTURES + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
     cudaTextureObject_t tex = LP.textureObjects[textureId];
     if (!tex) return defaultVal;
     return make_float3(tex2D<float4>(tex, texCoord.x, texCoord.y));
@@ -168,7 +168,7 @@ float3 sampleTexture(int32_t textureId, float2 texCoord, float3 defaultVal) {
 inline __device__ 
 float sampleTexture(int32_t textureId, float2 texCoord, int8_t channel, float defaultVal) {
     auto &LP = optixLaunchParams;
-    if (textureId < 0 || textureId >= (MAX_TEXTURES + MAX_MATERIALS * NUM_MAT_PARAMS)) return defaultVal;
+    if (textureId < 0 || textureId >= (MAX_TEXTURES + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
     cudaTextureObject_t tex = LP.textureObjects[textureId];
     if (!tex) return defaultVal;
     if (channel == 0) return tex2D<float4>(tex, texCoord.x, texCoord.y).x;
@@ -614,8 +614,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Load material data for the hit object
         DisneyMaterial mat; MaterialStruct entityMaterial;
-        if (entity.material_id >= 0 && entity.material_id < MAX_MATERIALS) {
-            entityMaterial = read(LP.materials, entity.material_id, MAX_MATERIALS, __LINE__);
+        if (entity.material_id >= 0 && entity.material_id < LP.materials.count) {
+            entityMaterial = read((MaterialStruct*)LP.materials.data, entity.material_id, LP.materials.count, __LINE__);
             loadDisneyMaterial(entityMaterial, uv, mat, MIN_ROUGHNESS);
         }
        

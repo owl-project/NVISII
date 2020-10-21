@@ -142,7 +142,7 @@ void Entity::clearMaterial()
 Material* Entity::getMaterial()
 {
 	auto &entity = getStruct();
-	if ((entity.material_id < 0) || (entity.material_id >= MAX_MATERIALS)) return nullptr;
+	if ((entity.material_id < 0) || (entity.material_id >= Material::getCount())) return nullptr;
 	auto &material = Material::getFront()[entity.material_id];
 	if (!material.isInitialized()) return nullptr;
 	return &material;

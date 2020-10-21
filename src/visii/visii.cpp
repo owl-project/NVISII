@@ -100,8 +100,8 @@ static struct OptixData {
     OWLBuffer indexListsBuffer;
     OWLBuffer textureObjectsBuffer;
 
-    OWLTexture textureObjects[MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS];
-    TextureStruct textureStructs[MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS];
+    std::vector<OWLTexture> textureObjects;
+    std::vector<TextureStruct> textureStructs;
 
     uint32_t numLightEntities;
 
@@ -133,7 +133,7 @@ static struct OptixData {
     OWLBuffer environmentMapColsBuffer;
     OWLTexture proceduralSkyTexture;
 
-    MaterialStruct materialStructs[MAX_MATERIALS];
+    std::vector<MaterialStruct> materialStructs;
 
     OWLBuffer placeholder;
 
@@ -512,7 +512,7 @@ void initializeOptix(bool headless)
         { "entities",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, entities)},
         { "transforms",              OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, transforms)},
         { "cameras",                 OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, cameras)},
-        { "materials",               OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
+        { "materials",               OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, materials)},
         { "meshes",                  OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, meshes)},
         { "lights",                  OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, lights)},
         { "textures",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
@@ -582,17 +582,17 @@ void initializeOptix(bool headless)
     OD.entityBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(EntityStruct),        MAX_ENTITIES,   nullptr);
     OD.transformBuffer           = deviceBufferCreate(OD.context, OWL_USER_TYPE(TransformStruct),     Transform::getCount(), nullptr);
     OD.cameraBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),        Camera::getCount(),    nullptr);
-    OD.materialBuffer            = deviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),      MAX_MATERIALS,  nullptr);
+    OD.materialBuffer            = deviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),      Material::getCount(),  nullptr);
     OD.meshBuffer                = deviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),          Mesh::getCount(),     nullptr);
     OD.lightBuffer               = deviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),         Light::getCount(),     nullptr);
-    OD.textureBuffer             = deviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS,   nullptr);
+    OD.textureBuffer             = deviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       MAX_TEXTURES + NUM_MAT_PARAMS * Material::getCount(),   nullptr);
     OD.lightEntitiesBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
-    OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS,   nullptr);
+    OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        MAX_TEXTURES + NUM_MAT_PARAMS * Material::getCount(),   nullptr);
 
     launchParamsSetBuffer(OD.launchParams, "entities",             OD.entityBuffer);
     launchParamsSetBuffer(OD.launchParams, "transforms",           OD.transformBuffer);
@@ -616,6 +616,11 @@ void initializeOptix(bool headless)
     OD.indexLists.resize(meshCount);
     OD.geomList.resize(meshCount);
     OD.blasList.resize(meshCount);
+
+    uint32_t materialCount = Material::getCount();
+    OD.textureObjects.resize(MAX_TEXTURES + NUM_MAT_PARAMS * materialCount);
+    OD.textureStructs.resize(MAX_TEXTURES + NUM_MAT_PARAMS * materialCount);
+    OD.materialStructs.resize(materialCount);
 
     OD.LP.environmentMapID = -1;
     OD.LP.environmentMapRotation = glm::quat(1,0,0,0);
@@ -1229,7 +1234,7 @@ void updateComponents()
             Material* materials = Material::getFront();
             MaterialStruct* matStructs = Material::getFrontStruct();
             
-            for (uint32_t mid = 0; mid < MAX_MATERIALS; ++mid) {
+            for (uint32_t mid = 0; mid < Material::getCount(); ++mid) {
                 if (!materials[mid].isInitialized()) continue;
                 if (!materials[mid].isDirty()) continue;
 
@@ -1295,13 +1300,13 @@ void updateComponents()
             }
 
             Material::updateComponents();
-            bufferUpload(OptixData.materialBuffer, OptixData.materialStructs);
+            bufferUpload(OptixData.materialBuffer, OptixData.materialStructs.data());
         }
         
-        bufferUpload(OD.textureObjectsBuffer, OD.textureObjects);
+        bufferUpload(OD.textureObjectsBuffer, OD.textureObjects.data());
         Texture::updateComponents();
-        memcpy(OptixData.textureStructs, Texture::getFrontStruct(), Texture::getCount() * sizeof(TextureStruct));
-        bufferUpload(OptixData.textureBuffer, OptixData.textureStructs);
+        memcpy(OptixData.textureStructs.data(), Texture::getFrontStruct(), Texture::getCount() * sizeof(TextureStruct));
+        bufferUpload(OptixData.textureBuffer, OptixData.textureStructs.data());
     }
     
     // Manage transforms
