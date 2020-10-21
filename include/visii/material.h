@@ -38,6 +38,19 @@ class Material : public StaticFactory
   friend class StaticFactory;
   friend class Entity;
   public:
+
+    /**
+      * Instantiates a null Material. Used to mark a row in the table as null. 
+      * Note: for internal use only. 
+     */
+    Material();
+    
+    /**
+    * Instantiates a Material with the given name and ID. Used to mark a row in the table as null. 
+    * Note: for internal use only.
+    */
+    Material(std::string name, uint32_t id);
+
     /**
      * Constructs a material with the given name.
      * 
@@ -109,7 +122,7 @@ class Material : public StaticFactory
     static void remove(std::string name);
 
     /** Allocates the tables used to store all material components */
-    static void initializeFactory();
+    static void initializeFactory(uint32_t max_components);
 
     /** @returns True if the tables used to store all material components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
@@ -134,6 +147,9 @@ class Material : public StaticFactory
 
     /** Tags the current component as being modified since the previous frame. */
     void markDirty();
+
+    /** Returns the simplified struct used to represent the current component */
+	  MaterialStruct &getStruct();
 
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
@@ -627,11 +643,6 @@ class Material : public StaticFactory
     // bool is_hidden();
 
   private:
-    /* Creates an uninitialized material. Useful for preallocation. */
-    Material();
-
-    /* Creates a material with the given name and id. */
-    Material(std::string name, uint32_t id);
 
     /* TODO */
     static std::shared_ptr<std::recursive_mutex> editMutex;
@@ -640,8 +651,8 @@ class Material : public StaticFactory
     static bool factoryInitialized;
 
     /*  A list of the material components, allocated statically */
-    static Material materials[MAX_MATERIALS];
-    static MaterialStruct materialStructs[MAX_MATERIALS];
+    static std::vector<Material> materials;
+    static std::vector<MaterialStruct> materialStructs;
 
     /* A lookup table of name to material id */
     static std::map<std::string, uint32_t> lookupTable;

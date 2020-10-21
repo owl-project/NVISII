@@ -15,6 +15,18 @@ class Light : public StaticFactory {
     friend class StaticFactory;
     friend class Entity;
 public:
+    /**
+      * Instantiates a null TrLightansform. Used to mark a row in the table as null. 
+      * Note: for internal use only. 
+     */
+    Light();
+    
+    /**
+      * Instantiates a Light with the given name and ID. Used to mark a row in the table as null. 
+      * Note: for internal use only.
+    */
+    Light(std::string name, uint32_t id);
+
     /** 
      * Constructs a light with the given name.
      * 
@@ -67,7 +79,7 @@ public:
     static void remove(std::string name);
 
     /** Allocates the tables used to store all light components */
-    static void initializeFactory();
+    static void initializeFactory(uint32_t max_components);
 
     /** @return True if the tables used to store all light components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
@@ -95,6 +107,9 @@ public:
 
     /** Tags the current component as being modified since the previous frame. */
     void markDirty();
+
+    /** Returns the simplified struct used to represent the current component */
+    LightStruct &getStruct();
 
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
@@ -160,11 +175,6 @@ public:
     void useSurfaceArea(bool use);
     
 private:
-    /* Creates an uninitialized light. Useful for preallocation. */
-    Light();
-    
-    /* Creates a light with the given name and id */
-    Light(std::string name, uint32_t id);
 
     /* A mutex used to make component access and modification thread safe */
     static std::shared_ptr<std::recursive_mutex> editMutex;
@@ -173,8 +183,8 @@ private:
     static bool factoryInitialized;
 
     /* A list of light components, allocated statically */
-    static Light lights[MAX_LIGHTS];
-    static LightStruct lightStructs[MAX_LIGHTS];
+    static std::vector<Light> lights;
+    static std::vector<LightStruct> lightStructs;
 
     /* A lookup table of name to light id */
     static std::map<std::string, uint32_t> lookupTable;

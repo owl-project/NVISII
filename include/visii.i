@@ -137,6 +137,8 @@ namespace std {
 }
 
 /* -------- Ignores --------------*/
+%ignore Entity::Entity();
+%ignore Entity::Entity(std::string name, uint32_t id);
 %ignore Entity::initializeFactory();
 %ignore Entity::getFront();
 %ignore Entity::getFrontStruct();
@@ -149,6 +151,8 @@ namespace std {
 %ignore Entity::markDirty();
 %ignore Entity::markClean();
 
+%ignore Transform::Transform();
+%ignore Transform::Transform(std::string name, uint32_t id);
 %ignore Transform::initializeFactory();
 %ignore Transform::getFront();
 %ignore Transform::getFrontStruct();
@@ -161,6 +165,8 @@ namespace std {
 %ignore Transform::markDirty();
 %ignore Transform::markClean();
 
+%ignore Material::Material();
+%ignore Material::Material(std::string name, uint32_t id);
 %ignore Material::initializeFactory();
 %ignore Material::getFront();
 %ignore Material::getFrontStruct();
@@ -172,6 +178,19 @@ namespace std {
 %ignore Material::isClean();
 %ignore Material::markDirty();
 %ignore Material::markClean();
+
+%ignore Camera::Camera();
+%ignore Camera::Camera(std::string name, uint32_t id);
+
+%ignore Mesh::Mesh();
+%ignore Mesh::Mesh(std::string name, uint32_t id);
+
+%ignore Light::Light();
+%ignore Light::Light(std::string name, uint32_t id);
+
+%ignore Texture::Texture();
+%ignore Texture::Texture(std::string name, uint32_t id);
+%ignore Texture::~Texture();
 
 /* -------- Renames --------------*/
 %rename("%(undercase)s",%$isfunction) "";
@@ -199,10 +218,6 @@ namespace std {
 
 
 // Cleanup on exit
-// %init %{
-//     atexit(cleanup);
-// %}
-
-// %init %{
-//   atexit(deinitialize);
-// %}
+%init %{
+  atexit(deinitialize);
+%}

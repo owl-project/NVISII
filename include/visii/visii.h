@@ -8,29 +8,60 @@
 #include <visii/texture.h>
 
 /**
-  * Initializes various backend systems required to render scene data.
-  * 
-  * @param window_on_top Keeps the window opened during an interactive session on top of any other windows.
-  * @param verbose If false, visii will avoid outputing any unneccessary text
+  * Deprecated. Please use initialize() instead.
 */
-void initializeInteractive(bool window_on_top = false, bool verbose = false);
+void initializeInteractive(
+  bool window_on_top = false, 
+  bool verbose = false,
+  uint32_t max_entities = 10000,
+  uint32_t max_cameras = 10,
+  uint32_t max_transforms = 10000,
+  uint32_t max_meshes = 10000,
+  uint32_t max_materials = 10000,
+  uint32_t max_lights = 100,
+  uint32_t max_textures = 1000);
 
 /**
-  * Initializes various backend systems required to render scene data.
-  * 
-  * This call avoids using any OpenGL resources, to enable use on systems without displays.
-  * @param verbose If false, visii will avoid outputing any unneccessary text
+  * Deprecated. Please use initialize(headless = True) instead.
 */
-void initializeHeadless(bool verbose = false);
+void initializeHeadless(
+  bool verbose = false,
+  uint32_t max_entities = 10000,
+  uint32_t max_cameras = 10,
+  uint32_t max_transforms = 10000,
+  uint32_t max_meshes = 10000,
+  uint32_t max_materials = 10000,
+  uint32_t max_lights = 100,
+  uint32_t max_textures = 1000);
 
 /**
   * Initializes various backend systems required to render scene data.
   * 
   * @param headless If true, avoids using any OpenGL resources, to enable use on systems without displays.
   * @param window_on_top Keeps the window opened during an interactive session on top of any other windows. (assuming headless is False)
+  * @param lazy_updates If True, visii will only upload components to the GPU on call to 
+  * render/render_to_png/render_data for better scene editing performance. (assuming headless is False. Always on when headless is True)
   * @param verbose If false, visii will avoid outputing any unneccessary text
+  * @param max_entities The max number of creatable Entity components.
+  * @param max_cameras The max number of creatable Camera components.
+  * @param max_transforms The max number of creatable Transform components.
+  * @param max_meshes The max number of creatable Mesh components.
+  * @param max_materials The max number of creatable Material components.
+  * @param max_lights The max number of creatable Light components.
+  * @param max_textures The max number of creatable Texture components.
 */
-void initialize(bool headless = false, bool window_on_top = false, bool verbose = false);
+void initialize(
+  bool headless = false, 
+  bool window_on_top = false, 
+  bool lazy_updates = false, 
+  bool verbose = false,
+  uint32_t max_entities = 10000,
+  uint32_t max_cameras = 10,
+  uint32_t max_transforms = 10000,
+  uint32_t max_meshes = 10000,
+  uint32_t max_materials = 10000,
+  uint32_t max_lights = 100,
+  uint32_t max_textures = 1000);
 
 /**
   * Cleans up any allocated resources
@@ -46,7 +77,7 @@ void deinitialize();
  * Registers a callback which is called on the render thread before each frame
  * of rendering. This is a workaround for the memory corruption bugs in ViSII which
  * are sometimes triggered when changing the scene while rendering is occurring.
- * To disable the callback, pass nullptr here.
+ * To disable the callback, pass nullptr/None here.
  */
 void registerPreRenderCallback(std::function<void()> callback);
 
@@ -149,7 +180,7 @@ void setDirectLightingClamp(float clamp);
  * @param diffuse_depth The maximum number of diffuse bounces allowed per ray.
  * @param specular_depth The maximum number of specular (reflection/refraction) bounces allowed per ray.
  */ 
-void setMaxBounceDepth(uint32_t diffuse_depth, uint32_t specular_depth);
+void setMaxBounceDepth(uint32_t diffuse_depth = 2, uint32_t specular_depth = 8);
 
 /**
  * Sets the number of light samples to take per path vertex. A higher number of samples will reduce noise per frame, but
@@ -277,6 +308,21 @@ glm::vec3 getSceneAabbCenter();
 
 // This is for internal purposes. Forces the scene bounds to update.
 void updateSceneAabb(Entity* entity);
+
+/** 
+ * If enabled, the interactive window image will change asynchronously as scene components are altered.
+ * However, bulk component edits will slow down, as each component edit will individually cause the renderer to 
+ * temporarily lock components while being uploaded to the GPU.
+ */
+void enableUpdates();
+
+/** 
+ * If disabled, the interactive window image will only show scene changes on call to render, render_to_png, and render_data.
+ * Bulk component edits will be much faster when disabled, as all component edits can be done without the renderer 
+ * locking them for upload to the GPU. 
+ */
+void disableUpdates();
+
 
 // This is for internal testing purposes. Don't call this unless you know what you're doing.
 void __test__(std::vector<std::string> args);

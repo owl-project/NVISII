@@ -29,6 +29,18 @@ class Mesh : public StaticFactory
     friend class StaticFactory;
     friend class Entity;
     public:
+        /**
+         * Instantiates a null Mesh. Used to mark a row in the table as null. 
+         * Note: for internal use only. 
+         */
+        Mesh();
+
+        /**
+         * Instantiates a Mesh with the given name and ID. Used to mark a row in the table as null. 
+         * Note: for internal use only.
+         */
+        Mesh(std::string name, uint32_t id);
+
         /** 
          * Creates a rectangular box centered at the origin aligned along the x, y, and z axis. 
          *
@@ -605,12 +617,23 @@ class Mesh : public StaticFactory
             float thickness = .01f);
 
         /** 
-         * Creates a mesh component from an OBJ file (ignoring any .mtl files) 
-         * 
-         * @param name The name (used as a primary key) for this mesh component
-         * @param path A path to the OBJ file.
+         * Deprecated. Please use create_from_file instead.
         */
         static Mesh* createFromObj(std::string name, std::string path);
+
+        /** 
+         * Creates a mesh component from a file (ignoring any associated materials) 
+         *
+         * Supported file formats include: AMF 3DS AC ASE ASSBIN B3D BVH COLLADA DXF 
+         * CSM HMP IRRMESH IRR LWO LWS M3D MD2 MD3 MD5 MDC MDL NFF NDO OFF OBJ OGRE 
+         * OPENGEX PLY MS3D COB BLEND IFC XGL FBX Q3D Q3BSP RAW SIB SMD STL 
+         * TERRAGEN 3D X X3D GLTF 3MF MMD
+         * 
+         * @param name The name (used as a primary key) for this mesh component
+         * @param path A path to the file.
+        */
+        static Mesh* createFromFile(std::string name, std::string path);
+
 
         // /* Creates a mesh component from an ASCII STL file */
         // static Mesh* createFromStl(std::string name, std::string stlPath);
@@ -682,7 +705,7 @@ class Mesh : public StaticFactory
         static void remove(std::string name);
 
         /** Allocates the tables used to store all mesh components */
-        static void initializeFactory();
+        static void initializeFactory(uint32_t max_components);
 
         /** @returns True if the tables used to store all mesh components have been allocated, and False otherwise */
         static bool isFactoryInitialized();
@@ -839,11 +862,6 @@ class Mesh : public StaticFactory
         static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
     private:
-        /** Creates an uninitialized mesh. Useful for preallocation. */
-        Mesh();
-
-        /** Creates a mesh with the given name and id. */
-        Mesh(std::string name, uint32_t id);
 
         static std::set<Mesh*> dirtyMeshes;
 
@@ -854,8 +872,8 @@ class Mesh : public StaticFactory
         static bool factoryInitialized;
         
         /** A list of the mesh components, allocated statically */
-        static Mesh meshes[MAX_MESHES];
-        static MeshStruct meshStructs[MAX_MESHES];
+        static std::vector<Mesh> meshes;
+        static std::vector<MeshStruct> meshStructs;
 
         /** A lookup table of name to mesh id */
         static std::map<std::string, uint32_t> lookupTable;
@@ -928,9 +946,6 @@ class Mesh : public StaticFactory
 
         // /** Creates an index buffer, and uploads index data stored in the indices list */
         // void createTriangleIndexBuffer(bool allow_edits, bool submit_immediately);
-
-        // /* Loads in an OBJ mesh and copies per vertex data to the GPU */
-        void loadObj(std::string objPath);
 
         // /* Loads in an STL mesh and copies per vertex data to the GPU */
         // void load_stl(std::string stlPath);

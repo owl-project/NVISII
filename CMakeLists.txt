@@ -21,13 +21,13 @@ endif(APPLE)
 
 # If on windows, use c++14 (oldest available by modern msvc)
 if(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14" CACHE STRING "" FORCE)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif(MSVC)
 
 if(UNIX)
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14" CACHE STRING "" FORCE)
 endif(UNIX)
 
 # Set the default install prefix path
@@ -98,7 +98,7 @@ option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" OFF)
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	# Enable c++11 and hide symbols which shouldn't be visible
   message(WARN "ENABLING FPIC")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" CACHE STRING "" FORCE)
 endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
@@ -242,6 +242,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/stb/)
 # tiny things
 include_directories(SYSTEM externals/tiny/)
 
+# assimp
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE STRING "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE STRING "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE STRING "" FORCE)
+add_subdirectory (externals/assimp EXCLUDE_FROM_ALL)
+set(assimp_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/assimp/include/" "${CMAKE_CURRENT_BINARY_DIR}/externals/assimp/include/")
+
 # ImGUI
 add_definitions(-D IMGUI_IMPL_OPENGL_LOADER_GLAD)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/imgui/)
@@ -308,6 +315,7 @@ set(
   # ${TBB_LIBRARIES}
   #owl
   ${OWL_LIBRARIES}
+  assimp
   )
 
 set (

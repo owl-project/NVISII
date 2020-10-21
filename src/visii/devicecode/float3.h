@@ -67,6 +67,10 @@ __device__ glm::vec2 make_vec2(float2 v) {
 	return glm::vec2(v.x, v.y);
 }
 
+__device__ glm::ivec3 make_ivec3(int3 v) {
+	return glm::ivec3(v.x, v.y, v.z);
+}
+
 __device__ glm::mat4 to_mat4(float xfm_[12])
 {
     glm::mat4 xfm;
@@ -109,6 +113,14 @@ __device__ bool all_zero(const float3 &v) {
 
 __device__ float dot(const float3 a, const float3 b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+__device__ float4 operator*(const mat4 &l, const float4 &r) {
+	return make_float4(l * make_vec4(r));
+}
+
+__device__ float4 operator*(const float4 &l, const float4 &r) {
+	return make_float4(l.x * r.x, l.y * r.y, l.z * r.z, l.w * r.w);
 }
 
 __device__ float4 operator*(const uint32_t s, const float4 &v) {

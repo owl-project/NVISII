@@ -12,8 +12,27 @@
 class Texture : public StaticFactory
 {
 	friend class StaticFactory;
+	friend class Material;
+	friend class Light;
   public:
-	
+	/**
+      * Instantiates a null Texture. Used to mark a row in the table as null. 
+      * Note: for internal use only. 
+     */
+    Texture();
+    
+    /**
+    * Instantiates a Texture with the given name and ID. Used to mark a row in the table as null. 
+    * Note: for internal use only.
+    */
+    Texture(std::string name, uint32_t id);
+
+	/**
+    * Destructs a Texture.
+    * Note: for internal use only.
+    */
+	~Texture();
+
 	/** 
 	 * Constructs a Texture with the given name.
 	 * @param name The name of the texture to create.
@@ -22,14 +41,19 @@ class Texture : public StaticFactory
 	static Texture *create(std::string name);
 
 	/** 
-	 * Constructs a Texture with the given name from a image located on the filesystem. 
+	 * Deprecated. Please use createFromFile. 
+	*/
+	static Texture *createFromImage(std::string name, std::string path, bool linear = false);
+
+	/** 
+	 * Constructs a Texture with the given name from a file. 
 	 * @param name The name of the texture to create.
 	 * Supported formats include JPEG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, and PNM
 	 * @param path The path to the image.
 	 * @param linear Indicates the image to load should not be gamma corrected.
      * @returns a Texture allocated by the renderer. 
 	*/
-	static Texture *createFromImage(std::string name, std::string path, bool linear = false);
+	static Texture *createFromFile(std::string name, std::string path, bool linear = false);
 
 	/** 
 	 * Constructs a Texture with the given name from custom user data.
@@ -108,7 +132,7 @@ class Texture : public StaticFactory
 	static void remove(std::string name);
 
 	/** Allocates the tables used to store all Texture components */
-	static void initializeFactory();
+	static void initializeFactory(uint32_t max_components);
 
 	/** @returns True if the tables used to store all Texture components have been allocated, and False otherwise */
 	static bool isFactoryInitialized();
@@ -160,14 +184,6 @@ class Texture : public StaticFactory
     uint32_t getHeight();
 
   private:
-  	/** Creates an uninitialized texture. Useful for preallocation. */
-	Texture();
-
-	~Texture();
-
-	/** Creates a texture with the given name and id. */
-	Texture(std::string name, uint32_t id);
-
   	/* TODO */
 	static std::shared_ptr<std::recursive_mutex> editMutex;
 
@@ -175,8 +191,8 @@ class Texture : public StaticFactory
 	static bool factoryInitialized;
 	
     /** A list of the camera components, allocated statically */
-	static Texture textures[MAX_TEXTURES];
-	static TextureStruct textureStructs[MAX_TEXTURES];
+	static std::vector<Texture> textures;
+	static std::vector<TextureStruct> textureStructs;
 	
 	/** A lookup table of name to camera id */
 	static std::map<std::string, uint32_t> lookupTable;

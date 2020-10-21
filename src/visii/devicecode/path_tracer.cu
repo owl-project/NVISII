@@ -6,7 +6,7 @@ template<class T>
 __device__
 T read(T* buf, size_t addr, size_t size, uint32_t line) {
     if (buf == nullptr) {::printf("Device Side Error on Line %d: buffer was nullptr.\n", line); asm("trap;");}
-    if (addr >= size) {::printf("Device Side Error on Line %d: out of bounds access (addr: %zu, size %zu).\n", __LINE__, addr, size); asm("trap;");}
+    if (addr >= size) {::printf("Device Side Error on Line %d: out of bounds access (addr: %d, size %d).\n", line, uint32_t(addr), uint32_t(size)); asm("trap;");}
     return buf[addr];
 }
 
@@ -73,7 +73,7 @@ cudaTextureObject_t getEnvironmentTexture()
     auto &LP = optixLaunchParams;
     cudaTextureObject_t tex = 0;
     if (LP.environmentMapID >= 0) {
-        return LP.textureObjects[LP.environmentMapID];
+        return read((cudaTextureObject_t*)LP.textureObjects.data, LP.environmentMapID, LP.textureObjects.count, __LINE__);
     } else if ((LP.environmentMapID == -2) && (LP.proceduralSkyTexture != 0)) {
         return LP.proceduralSkyTexture;
     }
@@ -149,18 +149,18 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
     auto &LP = optixLaunchParams;
     cameraEntity = LP.cameraEntity;
     if (!cameraEntity.initialized) return false;
-    if ((cameraEntity.transform_id < 0) || (cameraEntity.transform_id >= MAX_TRANSFORMS)) return false;
-    if ((cameraEntity.camera_id < 0) || (cameraEntity.camera_id >= MAX_CAMERAS)) return false;
-    camera = LP.cameras[cameraEntity.camera_id];
-    transform = LP.transforms[cameraEntity.transform_id];
+    if ((cameraEntity.transform_id < 0) || (cameraEntity.transform_id >= LP.transforms.count)) return false;
+    if ((cameraEntity.camera_id < 0) || (cameraEntity.camera_id >= LP.cameras.count)) return false;
+    camera = LP.cameras.get(cameraEntity.camera_id, __LINE__);
+    transform = LP.transforms.get(cameraEntity.transform_id, __LINE__);
     return true;
 }
 
 inline __device__ 
 float3 sampleTexture(int32_t textureId, float2 texCoord, float3 defaultVal) {
     auto &LP = optixLaunchParams;
-    if (textureId < 0 || textureId >= (MAX_TEXTURES + MAX_MATERIALS * NUM_MAT_PARAMS)) return defaultVal;
-    cudaTextureObject_t tex = LP.textureObjects[textureId];
+    if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
+    cudaTextureObject_t tex = LP.textureObjects.get(textureId, __LINE__);
     if (!tex) return defaultVal;
     return make_float3(tex2D<float4>(tex, texCoord.x, texCoord.y));
 }
@@ -168,8 +168,8 @@ float3 sampleTexture(int32_t textureId, float2 texCoord, float3 defaultVal) {
 inline __device__ 
 float sampleTexture(int32_t textureId, float2 texCoord, int8_t channel, float defaultVal) {
     auto &LP = optixLaunchParams;
-    if (textureId < 0 || textureId >= (MAX_TEXTURES + MAX_MATERIALS * NUM_MAT_PARAMS)) return defaultVal;
-    cudaTextureObject_t tex = LP.textureObjects[textureId];
+    if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
+    cudaTextureObject_t tex = LP.textureObjects.get(textureId, __LINE__);
     if (!tex) return defaultVal;
     if (channel == 0) return tex2D<float4>(tex, texCoord.x, texCoord.y).x;
     if (channel == 1) return tex2D<float4>(tex, texCoord.x, texCoord.y).y;
@@ -182,20 +182,18 @@ __device__
 void loadMeshTriIndices(int meshID, int numIndices, int primitiveID, int3 &triIndices)
 {
     auto &LP = optixLaunchParams;
-    auto *indexLists = (owl::device::Buffer *)LP.indexLists.data;
-    int3 *indices = (int3*) read(indexLists, meshID, MAX_MESHES, __LINE__).data;
-    triIndices = read(indices, primitiveID, numIndices, __LINE__);   
+    auto indices = LP.indexLists.get(meshID, __LINE__);
+    triIndices = indices.get(primitiveID, __LINE__);   
 }
 
 __device__
 void loadMeshVertexData(int meshID, int numVertices, int3 indices, float2 barycentrics, float3 &position, float3 &geometricNormal, float3 &edge1, float3 &edge2)
 {
     auto &LP = optixLaunchParams;
-    owl::device::Buffer *vertexLists = (owl::device::Buffer *)LP.vertexLists.data;
-    float3 *vertices = (float3*) read(vertexLists, meshID, MAX_MESHES, __LINE__).data;
-    const float3 A = read(vertices, indices.x, numVertices, __LINE__);
-    const float3 B = read(vertices, indices.y, numVertices, __LINE__);
-    const float3 C = read(vertices, indices.z, numVertices, __LINE__);
+    auto vertices = LP.vertexLists.get(meshID, __LINE__);
+    const float3 A = vertices.get(indices.x, __LINE__);
+    const float3 B = vertices.get(indices.y, __LINE__);
+    const float3 C = vertices.get(indices.z, __LINE__);
     edge1 = B - A;
     edge2 = C - A;
     position = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
@@ -206,11 +204,10 @@ __device__
 void loadMeshUVData(int meshID, int numTexCoords, int3 indices, float2 barycentrics, float2 &uv, float2 &edge1, float2 &edge2)
 {
     auto &LP = optixLaunchParams;
-    owl::device::Buffer *texCoordLists = (owl::device::Buffer *)LP.texCoordLists.data;
-    float2 *texCoords = (float2*) read(texCoordLists, meshID, MAX_MESHES, __LINE__).data;
-    const float2 &A = read(texCoords, indices.x, numTexCoords, __LINE__);
-    const float2 &B = read(texCoords, indices.y, numTexCoords, __LINE__);
-    const float2 &C = read(texCoords, indices.z, numTexCoords, __LINE__);
+    auto texCoords = LP.texCoordLists.get(meshID, __LINE__);
+    const float2 &A = texCoords.get(indices.x, __LINE__);
+    const float2 &B = texCoords.get(indices.y, __LINE__);
+    const float2 &C = texCoords.get(indices.z, __LINE__);
     edge1 = B - A;
     edge2 = C - A;
     uv = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
@@ -220,11 +217,10 @@ __device__
 void loadMeshNormalData(int meshID, int numNormals, int3 indices, float2 barycentrics, float2 uv, float3 &normal)
 {
     auto &LP = optixLaunchParams;
-    owl::device::Buffer *normalLists = (owl::device::Buffer *)LP.normalLists.data;
-    float4 *normals = (float4*) read(normalLists, meshID, MAX_MESHES, __LINE__).data;
-    const float3 &A = make_float3(read(normals, indices.x, numNormals, __LINE__));
-    const float3 &B = make_float3(read(normals, indices.y, numNormals, __LINE__));
-    const float3 &C = make_float3(read(normals, indices.z, numNormals, __LINE__));
+    auto normals = LP.normalLists.get(meshID, __LINE__);
+    const float3 &A = make_float3(normals.get(indices.x, __LINE__));
+    const float3 &B = make_float3(normals.get(indices.y, __LINE__));
+    const float3 &C = make_float3(normals.get(indices.z, __LINE__));
     normal = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
 }
 
@@ -245,6 +241,7 @@ void loadDisneyMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat,
     mat.flatness = sampleTexture(p.subsurface_texture_id, uv, p.subsurface_texture_channel, 0.f);
     mat.subsurface_color = sampleTexture(p.subsurface_color_texture_id, uv, make_float3(0.8f, 0.8f, 0.8f));
     mat.transmission_roughness = sampleTexture(p.transmission_roughness_texture_id, uv, p.transmission_roughness_texture_channel, 0.f);
+    mat.alpha = sampleTexture(p.alpha_texture_id, uv, p.alpha_texture_channel, 1.f);
     
     mat.transmission_roughness = max(max(mat.transmission_roughness, MIN_ROUGHNESS), roughnessMinimum);
     mat.roughness = max(max(mat.roughness, MIN_ROUGHNESS), roughnessMinimum);
@@ -554,6 +551,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     // Shade each hit point on a path using NEE with MIS
     do {     
+        float alpha = 0.f;
+
         // If ray misses, terminate the ray
         if (payload.tHit <= 0.f) {
             // Compute lighting from environment
@@ -580,9 +579,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
 
         // Otherwise, load the object we hit.
-        const int entityID = read(LP.instanceToEntityMap, payload.instanceID, LP.numInstances, __LINE__);
-        EntityStruct entity = read(LP.entities, entityID, MAX_ENTITIES, __LINE__);
-        MeshStruct mesh = read(LP.meshes, entity.mesh_id, MAX_MESHES, __LINE__);
+        const int entityID = read((uint32_t*)LP.instanceToEntityMap.data, payload.instanceID, LP.instanceToEntityMap.count, __LINE__);
+        EntityStruct entity = LP.entities.get(entityID, __LINE__);
+        MeshStruct mesh = LP.meshes.get(entity.mesh_id, __LINE__);
 
         // Skip forward if the hit object is invisible for this ray type, skip it.
         if (((entity.flags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
@@ -611,11 +610,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Load material data for the hit object
         DisneyMaterial mat; MaterialStruct entityMaterial;
-        if (entity.material_id >= 0 && entity.material_id < MAX_MATERIALS) {
-            entityMaterial = read(LP.materials, entity.material_id, MAX_MATERIALS, __LINE__);
+        if (entity.material_id >= 0 && entity.material_id < LP.materials.count) {
+            entityMaterial = LP.materials.get(entity.material_id, __LINE__);
             loadDisneyMaterial(entityMaterial, uv, mat, MIN_ROUGHNESS);
         }
-        
+       
         // Compute tangent and bitangent based on UVs
         {
             float f = 1.0f / (uv_e1.x * uv_e2.y - uv_e2.x * uv_e1.y);
@@ -667,7 +666,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             tbn = glm::column(tbn, 1, make_vec3(v_y) );
             tbn = glm::column(tbn, 2, make_vec3(v_z) );   
             float3 dN;
-            if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
+            if (entity.light_id >= 0 && entity.light_id < LP.lights.count) {
                 dN = make_float3(0.5f, .5f, 1.f);
             } else {
                 dN = sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float3(0.5f, .5f, 1.f));
@@ -676,7 +675,22 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_z = make_float3(tbn * make_vec3(dN));
         }
 
-        // If we didn't it glass, flip the surface normal to face forward.
+        // Potentially skip forward if the hit object is transparent 
+        if ((entity.light_id == -1) && (mat.alpha < 1.f)) {
+            float alpha_rnd = lcg_randomf(rng);
+
+            if (alpha_rnd > mat.alpha) {
+                ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
+                payload.tHit = -1.f;
+                ray.time = time;
+                owl::traceRay( LP.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+                ++bounce;     
+                specularBounce++; // counting transparency as a specular bounce for now
+                continue;
+            }
+        }
+
+        // If we didn't hit glass, flip the surface normal to face forward.
         if ((mat.specular_transmission == 0.f) && (entity.light_id == -1)) {
             v_z = faceNormalForward(w_o, v_gz, v_z);
         }
@@ -686,11 +700,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // If the entity we hit is a light, terminate the path.
         // Note that NEE/MIS will also potentially terminate the path, preventing double-counting.
-        if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
+        if (entity.light_id >= 0 && entity.light_id < LP.lights.count) {
             float dotNWi = max(dot(ray.direction, v_z), 0.f);
             if ((dotNWi > EPSILON) && (bounce != 0)) break;
 
-            LightStruct entityLight = LP.lights[entity.light_id];
+            LightStruct entityLight = LP.lights.get(entity.light_id, __LINE__);
             float3 lightEmission;
             if (entityLight.color_texture_id == -1) lightEmission = make_float3(entityLight.r, entityLight.g, entityLight.b);
             else lightEmission = sampleTexture(entityLight.color_texture_id, uv, make_float3(0.f, 0.f, 0.f));
@@ -720,10 +734,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
 
         // Next, sample the light source by importance sampling the light
-        owl::device::Buffer *vertexLists = (owl::device::Buffer *)LP.vertexLists.data;
-        owl::device::Buffer *normalLists = (owl::device::Buffer *)LP.normalLists.data;
-        owl::device::Buffer *texCoordLists = (owl::device::Buffer *)LP.texCoordLists.data;
-        auto &i2e = LP.instanceToEntityMap;
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
         for (uint32_t lid = 0; lid < LP.numLightSamples; ++lid) 
         {
@@ -732,6 +742,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 bsdf, bsdfColor;
             float3 lightEmission;
             float3 lightDir;
+            float lightDistance = 1e20f;
             int numTris;
 
             // sample background
@@ -778,56 +789,55 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             else 
             {
                 if (numLights == 0) continue;
-                sampledLightIDs[lid] = read(LP.lightEntities, randomID, LP.numLightEntities, __LINE__);
-                EntityStruct light_entity = read(LP.entities, sampledLightIDs[lid], MAX_ENTITIES, __LINE__);
-                LightStruct light_light = read(LP.lights, light_entity.light_id, MAX_LIGHTS, __LINE__);
-                TransformStruct transform = read(LP.transforms, light_entity.transform_id, MAX_TRANSFORMS, __LINE__);
-                MeshStruct mesh = read(LP.meshes, light_entity.mesh_id, MAX_MESHES, __LINE__);
+                sampledLightIDs[lid] = read((uint32_t*)LP.lightEntities.data, randomID, LP.lightEntities.count, __LINE__);
+                EntityStruct light_entity = LP.entities.get(sampledLightIDs[lid], __LINE__);
+                LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
+                TransformStruct transform = LP.transforms.get(light_entity.transform_id, __LINE__);
+                MeshStruct mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
                 uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
-                owl::device::Buffer *indexLists = (owl::device::Buffer *)LP.indexLists.data;
-                ivec3 *indices = (ivec3*) read(indexLists, light_entity.mesh_id, MAX_MESHES, __LINE__).data;
-                float3 *vertices = (float3*) read(vertexLists, light_entity.mesh_id, MAX_MESHES, __LINE__).data;
-                vec4 *normals = (vec4*) read(normalLists, light_entity.mesh_id, MAX_MESHES, __LINE__).data;
-                vec2 *texCoords = (vec2*) read(texCoordLists, light_entity.mesh_id, MAX_MESHES, __LINE__).data;
-                ivec3 triIndex = read(indices, random_tri_id, mesh.numTris, __LINE__);   
+                auto indices = LP.indexLists.get(light_entity.mesh_id, __LINE__);
+                auto vertices = LP.vertexLists.get(light_entity.mesh_id, __LINE__);
+                auto normals = LP.normalLists.get(light_entity.mesh_id, __LINE__);
+                auto texCoords = LP.texCoordLists.get(light_entity.mesh_id, __LINE__);
+                int3 triIndex = indices.get(random_tri_id, __LINE__);
                 
                 // Sample the light to compute an incident light ray to this point
                 auto &ltw = transform.localToWorld;
-                vec3 dir; vec2 uv;
-                vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
+                float3 dir; float2 uv;
+                float3 pos = hit_p;
                  // Might be a bug here with normal transform...
-                vec4 n1 = ltw * read(normals, triIndex.x, mesh.numVerts, __LINE__);
-                vec4 n2 = ltw * read(normals, triIndex.y, mesh.numVerts, __LINE__);
-                vec4 n3 = ltw * read(normals, triIndex.z, mesh.numVerts, __LINE__);
-                vec4 v1 = ltw * vec4(make_vec3(read(vertices, triIndex.x, mesh.numVerts, __LINE__)), 1.0f);
-                vec4 v2 = ltw * vec4(make_vec3(read(vertices, triIndex.y, mesh.numVerts, __LINE__)), 1.0f);
-                vec4 v3 = ltw * vec4(make_vec3(read(vertices, triIndex.z, mesh.numVerts, __LINE__)), 1.0f);
-                vec2 uv1 = read(texCoords, triIndex.x, mesh.numVerts, __LINE__);
-                vec2 uv2 = read(texCoords, triIndex.y, mesh.numVerts, __LINE__);
-                vec2 uv3 = read(texCoords, triIndex.z, mesh.numVerts, __LINE__);
+                float3 n1 = make_float3(ltw * normals.get(triIndex.x, __LINE__));
+                float3 n2 = make_float3(ltw * normals.get(triIndex.y, __LINE__));
+                float3 n3 = make_float3(ltw * normals.get(triIndex.z, __LINE__));
+                float3 v1 = make_float3(ltw * make_float4(vertices.get(triIndex.x, __LINE__), 1.0f));
+                float3 v2 = make_float3(ltw * make_float4(vertices.get(triIndex.y, __LINE__), 1.0f));
+                float3 v3 = make_float3(ltw * make_float4(vertices.get(triIndex.z, __LINE__), 1.0f));
+                float2 uv1 = texCoords.get(triIndex.x, __LINE__);
+                float2 uv2 = texCoords.get(triIndex.y, __LINE__);
+                float2 uv3 = texCoords.get(triIndex.z, __LINE__);
                 sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
-                    lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, 
+                    lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDFs[lid], uv, 
                     /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
                 
                 numTris = mesh.numTris;
                 lightDir = make_float3(dir.x, dir.y, dir.z);
                 if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
-                else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv), make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
+                else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
             }
 
             disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, bsdf, bsdfColor, forcedBsdf);
-            dotNWi = max(dot(lightDir, v_gz), 0.f);
+            dotNWi = max(dot(lightDir, v_z), 0.f);
             lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
             if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
                 RayPayload payload; payload.instanceID = -2;
                 owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
-                ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f; // Consider shrinking the length of this ray depending on triangle sampled pos.
+                ray.tmin = EPSILON * 10.f; ray.tmax = lightDistance + EPSILON; // needs to be distance to light, else anyhit logic breaks.
                 ray.origin = hit_p; ray.direction = lightDir;
                 ray.time = time;
                 owl::traceRay( LP.world, ray, payload, occlusion_flags);
                 bool visible = (randomID == numLights) ?
                     (payload.instanceID == -2) : 
-                    (payload.instanceID >= 0 && read(i2e, payload.instanceID, LP.numInstances, __LINE__) == sampledLightIDs[lid]);
+                    ((payload.instanceID == -2) || (read((uint32_t*)LP.instanceToEntityMap.data, payload.instanceID, LP.instanceToEntityMap.count, __LINE__) == sampledLightIDs[lid]));
                 if (visible) {
                     if (randomID != numLights) lightEmission = lightEmission / (payload.tHit * payload.tHit);
                     float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
@@ -876,15 +886,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 }
                 else if (payload.instanceID != -1) {
                     // Case where we hit the light, and also previously sampled the same light
-                    int entityID = read(LP.instanceToEntityMap, payload.instanceID, LP.numInstances, __LINE__);
+                    int entityID = read((uint32_t*) LP.instanceToEntityMap.data, payload.instanceID, LP.instanceToEntityMap.count, __LINE__);
                     bool visible = (entityID == sampledLightIDs[lid]);
                     // We hit the light we sampled previously
                     if (visible) {
                         int3 indices; float3 p, p_e1, p_e2; float3 lv_gz; 
                         float2 uv, uv_e1, uv_e2;
-                        EntityStruct light_entity = read(LP.entities, sampledLightIDs[lid], MAX_ENTITIES, __LINE__);
-                        MeshStruct light_mesh = read(LP.meshes, light_entity.mesh_id, MAX_MESHES, __LINE__);
-                        LightStruct light_light = read(LP.lights, light_entity.light_id, MAX_LIGHTS, __LINE__);
+                        EntityStruct light_entity = LP.entities.get(sampledLightIDs[lid], __LINE__);
+                        MeshStruct light_mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
+                        LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
                         loadMeshTriIndices(light_entity.mesh_id, light_mesh.numTris, payload.primitiveID, indices);
                         loadMeshUVData(light_entity.mesh_id, light_mesh.numVerts, indices, payload.barycentrics, uv, uv_e1, uv_e2);
 

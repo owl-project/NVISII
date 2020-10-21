@@ -1,3 +1,7 @@
+#ifndef TINYOBJLOADER_IMPLEMENTATION
+#define TINYOBJLOADER_IMPLEMENTATION
+#endif
+
 #include  <visii/visii.h>
 
 #include <thread>
@@ -60,11 +64,11 @@ std::vector<Entity*> importOBJ(std::string name_prefix, std::string filepath, st
     std::set<OBJTextureInfo, OBJTextureInfoCompare> texture_paths;
     std::map<std::string, Texture*> texture_map;
 
-    if (materials.size() >= MAX_MATERIALS) {
+    if (materials.size() >= Material::getCount()) {
         throw std::runtime_error(std::string("Error, total materials found is ") 
             + std::to_string(materials.size()) 
             + std::string(" but max supported materials is set to ")
-            + std::to_string(MAX_MATERIALS) 
+            + std::to_string(Material::getCount()) 
         );
     }
 

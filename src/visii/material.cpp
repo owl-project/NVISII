@@ -1,8 +1,8 @@
 #include <visii/material.h>
 #include <visii/texture.h>
 
-Material Material::materials[MAX_MATERIALS];
-MaterialStruct Material::materialStructs[MAX_MATERIALS];
+std::vector<Material> Material::materials;
+std::vector<MaterialStruct> Material::materialStructs;
 std::map<std::string, uint32_t> Material::lookupTable;
 std::shared_ptr<std::recursive_mutex> Material::editMutex;
 bool Material::factoryInitialized = false;
@@ -65,9 +65,16 @@ std::string Material::toString() {
 	return output;
 }
 
-void Material::initializeFactory()
+MaterialStruct &Material::getStruct() {
+	if (!isInitialized()) throw std::runtime_error("Error: material is uninitialized.");
+	return materialStructs[id];
+}
+
+void Material::initializeFactory(uint32_t max_components)
 {
 	if (isFactoryInitialized()) return;
+	materials.resize(max_components);
+	materialStructs.resize(max_components);
 	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
@@ -96,7 +103,7 @@ void Material::updateComponents()
 {
 	if (!anyDirty) return;
 
-	for (int i = 0; i < MAX_MATERIALS; ++i) {
+	for (int i = 0; i < materials.size(); ++i) {
 		if (materials[i].isDirty()) {
             materials[i].markClean();
         }
@@ -136,27 +143,37 @@ Material* Material::create(std::string name,
 	float clearcoat,
 	float clearcoat_roughness)
 {
-	auto mat = StaticFactory::create(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
-	mat->setBaseColor(base_color);
-	mat->setRoughness(roughness);
-	mat->setMetallic(metallic);
-	mat->setSpecular(specular);
-	mat->setSpecularTint(specular_tint);
-	mat->setTransmission(transmission);
-	mat->setTransmissionRoughness(transmission_roughness);
-	mat->setIor(ior);
-	mat->setAlpha(alpha);
-	mat->setSubsurfaceRadius(subsurface_radius);
-	mat->setSubsurfaceColor(subsurface_color);
-	mat->setSubsurface(subsurface);
-	mat->setAnisotropic(anisotropic);
-	mat->setAnisotropicRotation(anisotropic_rotation);
-	mat->setSheen(sheen);
-	mat->setSheenTint(sheen_tint);
-	mat->setClearcoat(clearcoat);
-	mat->setClearcoatRoughness(clearcoat_roughness);
-	anyDirty = true;
-	return mat;
+	auto createMaterial = [base_color,roughness,metallic,specular,specular_tint,transmission,
+		transmission_roughness,ior,alpha,subsurface_radius,subsurface_color,subsurface,anisotropic,
+		anisotropic_rotation,sheen,sheen_tint,clearcoat,clearcoat_roughness] (Material* mat)
+	{
+		mat->setBaseColor(base_color);
+		mat->setRoughness(roughness);
+		mat->setMetallic(metallic);
+		mat->setSpecular(specular);
+		mat->setSpecularTint(specular_tint);
+		mat->setTransmission(transmission);
+		mat->setTransmissionRoughness(transmission_roughness);
+		mat->setIor(ior);
+		mat->setAlpha(alpha);
+		mat->setSubsurfaceRadius(subsurface_radius);
+		mat->setSubsurfaceColor(subsurface_color);
+		mat->setSubsurface(subsurface);
+		mat->setAnisotropic(anisotropic);
+		mat->setAnisotropicRotation(anisotropic_rotation);
+		mat->setSheen(sheen);
+		mat->setSheenTint(sheen_tint);
+		mat->setClearcoat(clearcoat);
+		mat->setClearcoatRoughness(clearcoat_roughness);
+		anyDirty = true;
+	};
+
+	try {
+		return StaticFactory::create<Material>(editMutex, name, "Material", lookupTable, materials.data(), materials.size(), createMaterial);
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Material", lookupTable, materials.data(), materials.size());
+		throw;
+	}
 }
 
 std::shared_ptr<std::recursive_mutex> Material::getEditMutex()
@@ -165,25 +182,25 @@ std::shared_ptr<std::recursive_mutex> Material::getEditMutex()
 }
 
 Material* Material::get(std::string name) {
-	return StaticFactory::get(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
+	return StaticFactory::get(editMutex, name, "Material", lookupTable, materials.data(), materials.size());
 }
 
 void Material::remove(std::string name) {
-	StaticFactory::remove(editMutex, name, "Material", lookupTable, materials, MAX_MATERIALS);
+	StaticFactory::remove(editMutex, name, "Material", lookupTable, materials.data(), materials.size());
 	anyDirty = true;
 }
 
 MaterialStruct* Material::getFrontStruct()
 {
-	return materialStructs;
+	return materialStructs.data();
 }
 
 Material* Material::getFront() {
-	return materials;
+	return materials.data();
 }
 
 uint32_t Material::getCount() {
-	return MAX_MATERIALS;
+	return materials.size();
 }
 
 std::string Material::getName()
@@ -197,6 +214,7 @@ std::map<std::string, uint32_t> Material::getNameToIdMap()
 }
 
 void Material::setBaseColor(glm::vec3 color) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	base_color.r = color.r;
 	base_color.g = color.g;
 	base_color.b = color.b;
@@ -209,17 +227,26 @@ glm::vec3 Material::getBaseColor() {
 
 void Material::setBaseColorTexture(Texture *texture) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].base_color_texture_id = texture->getId();
+	auto &material = getStruct();
+	material.base_color_texture_id = texture->getId();
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearBaseColorTexture() {
-	materialStructs[id].base_color_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.base_color_texture_id != -1) 
+		textures[material.base_color_texture_id].materials.erase(id);
+	material.base_color_texture_id = -1;
 	markDirty();
 }
 
 void Material::setSubsurfaceColor(glm::vec3 color) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	subsurface_color.r = color.r;
 	subsurface_color.g = color.g;
 	subsurface_color.b = color.b;
@@ -232,17 +259,26 @@ glm::vec3 Material::getSubsurfaceColor() {
 
 void Material::setSubsurfaceColorTexture(Texture *texture) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].subsurface_color_texture_id = texture->getId();
+	auto &material = getStruct();
+	material.subsurface_color_texture_id = texture->getId();
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearSubsurfaceColorTexture() {
-	materialStructs[id].subsurface_color_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.subsurface_color_texture_id != -1) 
+		textures[material.subsurface_color_texture_id].materials.erase(id);
+	material.subsurface_color_texture_id = -1;
 	markDirty();
 }
 
 void Material::setSubsurfaceRadius(glm::vec3 radius) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	subsurface_radius = glm::vec4(radius.x, radius.y, radius.z, 0.0);
 	markDirty();
 }
@@ -253,18 +289,27 @@ glm::vec3 Material::getSubsurfaceRadius() {
 
 void Material::setSubsurfaceRadiusTexture(Texture *texture) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].subsurface_radius_texture_id = texture->getId();
+	auto &material = getStruct();
+	material.subsurface_radius_texture_id = texture->getId();
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearSubsurfaceRadiusTexture() {
-	materialStructs[id].subsurface_radius_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.subsurface_radius_texture_id != -1) 
+		textures[material.subsurface_radius_texture_id].materials.erase(id);
+	material.subsurface_radius_texture_id = -1;
 	markDirty();
 }
 
 void Material::setAlpha(float a) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	base_color.a = a;
 	markDirty();
 }
@@ -276,18 +321,27 @@ float Material::getAlpha()
 
 void Material::setAlphaTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].alpha_texture_id = texture->getId();
-	materialStructs[id].alpha_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.alpha_texture_id = texture->getId();
+	material.alpha_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearAlphaTexture() {
-	materialStructs[id].alpha_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.alpha_texture_id != -1) 
+		textures[material.alpha_texture_id].materials.erase(id);
+	material.alpha_texture_id = -1;
 	markDirty();
 }
 
 void Material::setSubsurface(float subsurface) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->subsurface = subsurface;
 	markDirty();
 }
@@ -298,18 +352,27 @@ float Material::getSubsurface() {
 
 void Material::setSubsurfaceTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].subsurface_texture_id = texture->getId();
-	materialStructs[id].subsurface_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.subsurface_texture_id = texture->getId();
+	material.subsurface_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearSubsurfaceTexture() {
-	materialStructs[id].subsurface_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.subsurface_texture_id != -1) 
+		textures[material.subsurface_texture_id].materials.erase(id);
+	material.subsurface_texture_id = -1;
 	markDirty();
 }
 
 void Material::setMetallic(float metallic) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->metallic = metallic;
 	markDirty();
 }
@@ -320,18 +383,27 @@ float Material::getMetallic() {
 
 void Material::setMetallicTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].metallic_texture_id = texture->getId();
-	materialStructs[id].metallic_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.metallic_texture_id = texture->getId();
+	material.metallic_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearMetallicTexture() {
-	materialStructs[id].metallic_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.metallic_texture_id != -1) 
+		textures[material.metallic_texture_id].materials.erase(id);
+	material.metallic_texture_id = -1;
 	markDirty();
 }
 
 void Material::setSpecular(float specular) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->specular = specular;
 	markDirty();
 }
@@ -342,40 +414,59 @@ float Material::getSpecular() {
 
 void Material::setSpecularTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].specular_texture_id = texture->getId();
-	materialStructs[id].specular_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.specular_texture_id = texture->getId();
+	material.specular_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearSpecularTexture() {
-	materialStructs[id].specular_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.specular_texture_id != -1) 
+		textures[material.specular_texture_id].materials.erase(id);
+	material.specular_texture_id = -1;
 	markDirty();
 }
 
 void Material::setSpecularTint(float specular_tint) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->specular_tint = specular_tint;
 	markDirty();
 }
 
 float Material::getSpecularTint() {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	return specular_tint;
 }
 
 void Material::setSpecularTintTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].specular_tint_texture_id = texture->getId();
-	materialStructs[id].specular_tint_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.specular_tint_texture_id = texture->getId();
+	material.specular_tint_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearSpecularTintTexture() {
-	materialStructs[id].specular_tint_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.specular_tint_texture_id != -1) 
+		textures[material.specular_tint_texture_id].materials.erase(id);
+	material.specular_tint_texture_id = -1;
 	markDirty();
 }
 
 void Material::setRoughness(float roughness) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->roughness = roughness;
 	markDirty();
 }
@@ -386,18 +477,27 @@ float Material::getRoughness() {
 
 void Material::setRoughnessTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].roughness_texture_id = texture->getId();
-	materialStructs[id].roughness_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.roughness_texture_id = texture->getId();
+	material.roughness_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearRoughnessTexture() {
-	materialStructs[id].roughness_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.roughness_texture_id != -1) 
+		textures[material.roughness_texture_id].materials.erase(id);
+	material.roughness_texture_id = -1;
 	markDirty();
 }
 
 void Material::setAnisotropic(float anisotropic) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->anisotropic = anisotropic;
 	markDirty();
 }
@@ -408,18 +508,27 @@ float Material::getAnisotropic() {
 
 void Material::setAnisotropicTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].anisotropic_texture_id = texture->getId();
-	materialStructs[id].anisotropic_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.anisotropic_texture_id = texture->getId();
+	material.anisotropic_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearAnisotropicTexture() {
-	materialStructs[id].anisotropic_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.anisotropic_texture_id != -1) 
+		textures[material.anisotropic_texture_id].materials.erase(id);
+	material.anisotropic_texture_id = -1;
 	markDirty();
 }
 
 void Material::setAnisotropicRotation(float anisotropic_rotation) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->anisotropic_rotation = anisotropic_rotation;
 	markDirty();
 }
@@ -430,18 +539,27 @@ float Material::getAnisotropicRotation() {
 
 void Material::setAnisotropicRotationTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].anisotropic_rotation_texture_id = texture->getId();
-	materialStructs[id].anisotropic_rotation_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.anisotropic_rotation_texture_id = texture->getId();
+	material.anisotropic_rotation_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearAnisotropicRotationTexture() {
-	materialStructs[id].anisotropic_rotation_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.anisotropic_rotation_texture_id != -1) 
+		textures[material.anisotropic_rotation_texture_id].materials.erase(id);
+	material.anisotropic_rotation_texture_id = -1;
 	markDirty();
 }
 
 void Material::setSheen(float sheen) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->sheen = sheen;
 	markDirty();
 }
@@ -452,18 +570,27 @@ float Material::getSheen() {
 
 void Material::setSheenTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].sheen_texture_id = texture->getId();
-	materialStructs[id].sheen_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.sheen_texture_id = texture->getId();
+	material.sheen_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearSheenTexture() {
-	materialStructs[id].sheen_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.sheen_texture_id != -1) 
+		textures[material.sheen_texture_id].materials.erase(id);
+	material.sheen_texture_id = -1;
 	markDirty();
 }
 
 void Material::setSheenTint(float sheen_tint) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->sheen_tint = sheen_tint;
 	markDirty();
 }
@@ -474,18 +601,27 @@ float Material::getSheenTint() {
 
 void Material::setSheenTintTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].sheen_tint_texture_id = texture->getId();
-	materialStructs[id].sheen_tint_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.sheen_tint_texture_id = texture->getId();
+	material.sheen_tint_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearSheenTintTexture() {
-	materialStructs[id].sheen_tint_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.sheen_tint_texture_id != -1) 
+		textures[material.sheen_tint_texture_id].materials.erase(id);
+	material.sheen_tint_texture_id = -1;
 	markDirty();
 }
 
 void Material::setClearcoat(float clearcoat) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->clearcoat = clearcoat;
 	markDirty();
 }
@@ -496,18 +632,27 @@ float Material::getClearcoat() {
 
 void Material::setClearcoatTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].clearcoat_texture_id = texture->getId();
-	materialStructs[id].clearcoat_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.clearcoat_texture_id = texture->getId();
+	material.clearcoat_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearClearcoatTexture() {
-	materialStructs[id].clearcoat_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.clearcoat_texture_id != -1) 
+		textures[material.clearcoat_texture_id].materials.erase(id);
+	material.clearcoat_texture_id = -1;
 	markDirty();
 }
 
 void Material::setClearcoatRoughness(float clearcoat_roughness) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->clearcoat_roughness = clearcoat_roughness;
 	markDirty();
 }
@@ -518,18 +663,27 @@ float Material::getClearcoatRoughness() {
 
 void Material::setClearcoatRoughnessTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].clearcoat_roughness_texture_id = texture->getId();
-	materialStructs[id].clearcoat_roughness_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.clearcoat_roughness_texture_id = texture->getId();
+	material.clearcoat_roughness_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearClearcoatRoughnessTexture() {
-	materialStructs[id].clearcoat_roughness_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.clearcoat_roughness_texture_id != -1) 
+		textures[material.clearcoat_roughness_texture_id].materials.erase(id);
+	material.clearcoat_roughness_texture_id = -1;
 	markDirty();
 }
 
 void Material::setIor(float ior) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->ior = ior;
 	markDirty();
 }
@@ -540,18 +694,27 @@ float Material::getIor() {
 
 void Material::setIorTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].ior_texture_id = texture->getId();
-	materialStructs[id].ior_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.ior_texture_id = texture->getId();
+	material.ior_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearIorTexture() {
-	materialStructs[id].ior_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.ior_texture_id != -1) 
+		textures[material.ior_texture_id].materials.erase(id);
+	material.ior_texture_id = -1;
 	markDirty();
 }
 
 void Material::setTransmission(float transmission) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->transmission = transmission;
 	markDirty();
 }
@@ -562,18 +725,27 @@ float Material::getTransmission() {
 
 void Material::setTransmissionTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].transmission_texture_id = texture->getId();
-	materialStructs[id].transmission_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.transmission_texture_id = texture->getId();
+	material.transmission_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearTransmissionTexture() {
-	materialStructs[id].transmission_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.transmission_texture_id != -1) 
+		textures[material.transmission_texture_id].materials.erase(id);
+	material.transmission_texture_id = -1;
 	markDirty();
 }
 
 void Material::setTransmissionRoughness(float transmission_roughness) {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	this->transmission_roughness = transmission_roughness;
 	markDirty();
 }
@@ -584,14 +756,22 @@ float Material::getTransmissionRoughness() {
 
 void Material::setTransmissionRoughnessTexture(Texture *texture, int channel) 
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].transmission_roughness_texture_id = texture->getId();
-	materialStructs[id].transmission_roughness_texture_channel = clamp(channel, 0, 3);
+	auto &material = getStruct();
+	material.transmission_roughness_texture_id = texture->getId();
+	material.transmission_roughness_texture_channel = clamp(channel, 0, 3);
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearTransmissionRoughnessTexture() {
-	materialStructs[id].transmission_roughness_texture_id = -1;
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.transmission_roughness_texture_id != -1) 
+		textures[material.transmission_roughness_texture_id].materials.erase(id);
+	material.transmission_roughness_texture_id = -1;
 	markDirty();
 }
 
@@ -616,13 +796,21 @@ void Material::clearTransmissionRoughnessTexture() {
 
 void Material::setNormalMapTexture(Texture *texture)
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
 	if (!texture) throw std::runtime_error( std::string("Invalid texture handle"));
-	materialStructs[id].normal_map_texture_id = texture->getId();
+	auto &material = getStruct();
+	material.normal_map_texture_id = texture->getId();
+	texture->materials.insert(id);
 	markDirty();
 }
 
 void Material::clearNormalMapTexture()
 {
+	std::lock_guard<std::recursive_mutex> lock(*Material::getEditMutex().get());
+	auto &material = getStruct();
+	auto textures = Texture::getFront();
+	if (material.normal_map_texture_id != -1) 
+		textures[material.normal_map_texture_id].materials.erase(id);
 	materialStructs[id].normal_map_texture_id = -1;
 	markDirty();
 }
