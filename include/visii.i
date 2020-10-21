@@ -205,6 +205,55 @@ namespace std {
 // // %feature("kwargs") material;
 // // %feature("kwargs") mesh;
 
+%typemap(in) std::function<void()> (void *argp = 0, int res = 0) {
+  if ($input == Py_None) {
+    $1 = nullptr;
+  }
+  else if (!PyFunction_Check($input)) {
+    PyErr_SetString(PyExc_ValueError, "in method '" "$symname" "', argument " "$argnum" " Expected a function");
+    return NULL;
+  }
+  else {
+    #if Python_VERSION_MAJOR==3
+    PyObject* fc = PyObject_GetAttrString($input, "__code__");
+    #else
+    PyObject* fc = PyObject_GetAttrString($input, "func_code");
+    #endif
+    if (!fc) {
+      #if Python_VERSION_MAJOR==3
+      PyErr_SetString(PyExc_ValueError, "in method '" "$symname" "', argument " "$argnum" " function has no \"__code__\" member ");
+      #else
+      PyErr_SetString(PyExc_ValueError, "in method '" "$symname" "', argument " "$argnum" " function has no \"func_code\" member");
+      #endif
+      return NULL;
+    }
+
+    PyObject* ac = PyObject_GetAttrString(fc, "co_argcount");
+    if(!ac) {
+      PyErr_SetString(PyExc_ValueError, "in method '" "$symname" "', argument " "$argnum" " function has no \"co_argcount\" member");
+      Py_DECREF(fc);
+      return NULL;
+    }
+
+    // we now have the argument count, do something with this function
+    const int count = PyInt_AsLong(ac);
+    Py_DECREF(ac);
+    Py_DECREF(fc);
+
+    if (count != 0) {
+      PyErr_SetString(PyExc_ValueError, "in method '" "$symname" "', argument " "$argnum" " function has an unexpected argument");
+      return NULL;
+    }
+  }
+  $1 = [$input]() {
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
+    PyEval_CallObject($input, NULL);
+    /* Release the thread. No Python API allowed beyond this point. */
+    PyGILState_Release(gstate);
+  };
+}
+
 %include "visii/visii.h"
 %include "visii/utilities/static_factory.h"
 %include "visii/camera.h"
@@ -215,6 +264,34 @@ namespace std {
 %include "visii/material.h"
 %include "visii/mesh.h"
 
+// void registerPreRenderCallback(std::function<void()> callback);
+// %feature("director") CallBack;
+
+// %inline %{
+// struct CallBack {
+//   virtual void handle() = 0;
+//   virtual ~CallBack() {}
+// };
+// %}
+
+// %{
+// static CallBack *handler_ptr = NULL;
+// static void handler_helper() {
+//   // Make the call up to the target language when handler_ptr
+//   // is an instance of a target language director class
+//   handler_ptr->handle();
+// }
+// // If desired, handler_ptr above could be changed to a thread-local variable in order to make thread-safe
+// %}
+
+// %inline %{
+// int binary_op_wrapper(int a, int b, BinaryOp *handler) {
+//   handler_ptr = handler;
+//   int result = binary_op(a, b, &handler_helper);
+//   handler = NULL;
+//   return result;
+// }
+// %}
 
 
 // Cleanup on exit
