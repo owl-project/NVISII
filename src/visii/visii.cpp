@@ -510,15 +510,11 @@ void initializeOptix(bool headless)
         { "world",                   OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
         { "cameraEntity",            OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
         { "entities",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, entities)},
-        { "transforms",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, transforms)},
-        { "transformCount",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, transformCount)},
-        { "cameras",                 OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, cameras)},
-        { "cameraCount",             OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, cameraCount)},
+        { "transforms",              OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, transforms)},
+        { "cameras",                 OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, cameras)},
         { "materials",               OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, materials)},
-        { "meshes",                  OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, meshes)},
-        { "meshCount",               OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, meshCount)},
-        { "lights",                  OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lights)},
-        { "lightCount",              OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, lightCount)},
+        { "meshes",                  OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, meshes)},
+        { "lights",                  OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, lights)},
         { "textures",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
         { "lightEntities",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
         { "vertexLists",             OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
@@ -584,7 +580,7 @@ void initializeOptix(bool headless)
     /* Create Component Buffers */
     // note, extra textures reserved for internal use
     OD.entityBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(EntityStruct),        MAX_ENTITIES,   nullptr);
-    OD.transformBuffer           = deviceBufferCreate(OD.context, OWL_BUFFER,                         Transform::getCount(), nullptr);
+    OD.transformBuffer           = deviceBufferCreate(OD.context, OWL_USER_TYPE(TransformStruct),     Transform::getCount(), nullptr);
     OD.cameraBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),        Camera::getCount(),    nullptr);
     OD.materialBuffer            = deviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),      MAX_MATERIALS,  nullptr);
     OD.meshBuffer                = deviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),          Mesh::getCount(),     nullptr);
@@ -598,21 +594,12 @@ void initializeOptix(bool headless)
     OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        MAX_TEXTURES + NUM_MAT_PARAMS * MAX_MATERIALS,   nullptr);
 
-    
-    OD.LP.transformCount = Transform::getCount();
-    OD.LP.cameraCount = Camera::getCount();
-    OD.LP.meshCount = Mesh::getCount();
-    OD.LP.lightCount = Light::getCount();
     launchParamsSetBuffer(OD.launchParams, "entities",             OD.entityBuffer);
     launchParamsSetBuffer(OD.launchParams, "transforms",           OD.transformBuffer);
-    launchParamsSetRaw(OD.launchParams, "transformCount",          &OD.LP.transformCount);
     launchParamsSetBuffer(OD.launchParams, "cameras",              OD.cameraBuffer);
-    launchParamsSetRaw(OD.launchParams, "cameraCount",             &OD.LP.cameraCount);
     launchParamsSetBuffer(OD.launchParams, "materials",            OD.materialBuffer);
     launchParamsSetBuffer(OD.launchParams, "meshes",               OD.meshBuffer);
-    launchParamsSetRaw(OD.launchParams, "meshCount",               &OD.LP.meshCount);
     launchParamsSetBuffer(OD.launchParams, "lights",               OD.lightBuffer);
-    launchParamsSetRaw(OD.launchParams, "lightCount",              &OD.LP.lightCount);
     launchParamsSetBuffer(OD.launchParams, "textures",             OD.textureBuffer);
     launchParamsSetBuffer(OD.launchParams, "lightEntities",        OD.lightEntitiesBuffer);
     launchParamsSetBuffer(OD.launchParams, "instanceToEntityMap",  OD.instanceToEntityMapBuffer);
@@ -622,12 +609,13 @@ void initializeOptix(bool headless)
     launchParamsSetBuffer(OD.launchParams, "indexLists",           OD.indexListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "textureObjects",       OD.textureObjectsBuffer);
 
-    OD.vertexLists.resize(OD.LP.meshCount);
-    OD.normalLists.resize(OD.LP.meshCount);
-    OD.texCoordLists.resize(OD.LP.meshCount);
-    OD.indexLists.resize(OD.LP.meshCount);
-    OD.geomList.resize(OD.LP.meshCount);
-    OD.blasList.resize(OD.LP.meshCount);
+    uint32_t meshCount = Mesh::getCount();
+    OD.vertexLists.resize(meshCount);
+    OD.normalLists.resize(meshCount);
+    OD.texCoordLists.resize(meshCount);
+    OD.indexLists.resize(meshCount);
+    OD.geomList.resize(meshCount);
+    OD.blasList.resize(meshCount);
 
     OD.LP.environmentMapID = -1;
     OD.LP.environmentMapRotation = glm::quat(1,0,0,0);
@@ -1321,21 +1309,21 @@ void updateComponents()
     if (dirtyTransforms.size() > 0) {
         Transform::updateComponents();
         
-        // for each device
-        for (uint32_t id = 0; id < owlGetDeviceCount(OptixData.context); ++id)
-        {
-            cudaSetDevice(id);
+        // // for each device
+        // for (uint32_t id = 0; id < owlGetDeviceCount(OptixData.context); ++id)
+        // {
+        //     cudaSetDevice(id);
 
-            TransformStruct* devTransforms = (TransformStruct*)owlBufferGetPointer(OptixData.transformBuffer, id);
-            TransformStruct* transformStructs = Transform::getFrontStruct();
-            for (auto &t : dirtyTransforms) {
-                if (!t->isInitialized()) continue;
-                CUDA_CHECK(cudaMemcpy(&devTransforms[t->getAddress()], &transformStructs[t->getAddress()], sizeof(TransformStruct), cudaMemcpyHostToDevice));
-            }
-        }
+        //     TransformStruct* devTransforms = (TransformStruct*)owlBufferGetPointer(OptixData.transformBuffer, id);
+        //     TransformStruct* transformStructs = Transform::getFrontStruct();
+        //     for (auto &t : dirtyTransforms) {
+        //         if (!t->isInitialized()) continue;
+        //         CUDA_CHECK(cudaMemcpy(&devTransforms[t->getAddress()], &transformStructs[t->getAddress()], sizeof(TransformStruct), cudaMemcpyHostToDevice));
+        //     }
+        // }
 
-        cudaSetDevice(0);
-        // bufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
+        // cudaSetDevice(0);
+        owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
     }   
 
     // Manage Cameras

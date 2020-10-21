@@ -149,10 +149,10 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
     auto &LP = optixLaunchParams;
     cameraEntity = LP.cameraEntity;
     if (!cameraEntity.initialized) return false;
-    if ((cameraEntity.transform_id < 0) || (cameraEntity.transform_id >= LP.transformCount)) return false;
-    if ((cameraEntity.camera_id < 0) || (cameraEntity.camera_id >= LP.cameraCount)) return false;
-    camera = LP.cameras[cameraEntity.camera_id];
-    transform = LP.transforms[cameraEntity.transform_id];
+    if ((cameraEntity.transform_id < 0) || (cameraEntity.transform_id >= LP.transforms.count)) return false;
+    if ((cameraEntity.camera_id < 0) || (cameraEntity.camera_id >= LP.cameras.count)) return false;
+    camera = read((CameraStruct*)LP.cameras.data, cameraEntity.camera_id, LP.cameras.count, __LINE__);
+    transform = read((TransformStruct*)LP.transforms.data, cameraEntity.transform_id, LP.transforms.count, __LINE__);
     return true;
 }
 
@@ -183,7 +183,7 @@ void loadMeshTriIndices(int meshID, int numIndices, int primitiveID, int3 &triIn
 {
     auto &LP = optixLaunchParams;
     auto *indexLists = (owl::device::Buffer *)LP.indexLists.data;
-    int3 *indices = (int3*) read(indexLists, meshID, LP.meshCount, __LINE__).data;
+    int3 *indices = (int3*) read(indexLists, meshID, LP.indexLists.count, __LINE__).data;
     triIndices = read(indices, primitiveID, numIndices, __LINE__);   
 }
 
@@ -192,7 +192,7 @@ void loadMeshVertexData(int meshID, int numVertices, int3 indices, float2 baryce
 {
     auto &LP = optixLaunchParams;
     owl::device::Buffer *vertexLists = (owl::device::Buffer *)LP.vertexLists.data;
-    float3 *vertices = (float3*) read(vertexLists, meshID, LP.meshCount, __LINE__).data;
+    float3 *vertices = (float3*) read(vertexLists, meshID, LP.vertexLists.count, __LINE__).data;
     const float3 A = read(vertices, indices.x, numVertices, __LINE__);
     const float3 B = read(vertices, indices.y, numVertices, __LINE__);
     const float3 C = read(vertices, indices.z, numVertices, __LINE__);
@@ -207,7 +207,7 @@ void loadMeshUVData(int meshID, int numTexCoords, int3 indices, float2 barycentr
 {
     auto &LP = optixLaunchParams;
     owl::device::Buffer *texCoordLists = (owl::device::Buffer *)LP.texCoordLists.data;
-    float2 *texCoords = (float2*) read(texCoordLists, meshID, LP.meshCount, __LINE__).data;
+    float2 *texCoords = (float2*) read(texCoordLists, meshID, LP.texCoordLists.count, __LINE__).data;
     const float2 &A = read(texCoords, indices.x, numTexCoords, __LINE__);
     const float2 &B = read(texCoords, indices.y, numTexCoords, __LINE__);
     const float2 &C = read(texCoords, indices.z, numTexCoords, __LINE__);
@@ -221,7 +221,7 @@ void loadMeshNormalData(int meshID, int numNormals, int3 indices, float2 barycen
 {
     auto &LP = optixLaunchParams;
     owl::device::Buffer *normalLists = (owl::device::Buffer *)LP.normalLists.data;
-    float4 *normals = (float4*) read(normalLists, meshID, LP.meshCount, __LINE__).data;
+    float4 *normals = (float4*) read(normalLists, meshID, LP.normalLists.count, __LINE__).data;
     const float3 &A = make_float3(read(normals, indices.x, numNormals, __LINE__));
     const float3 &B = make_float3(read(normals, indices.y, numNormals, __LINE__));
     const float3 &C = make_float3(read(normals, indices.z, numNormals, __LINE__));
@@ -585,7 +585,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // Otherwise, load the object we hit.
         const int entityID = read(LP.instanceToEntityMap, payload.instanceID, LP.numInstances, __LINE__);
         EntityStruct entity = read(LP.entities, entityID, MAX_ENTITIES, __LINE__);
-        MeshStruct mesh = read(LP.meshes, entity.mesh_id, LP.meshCount, __LINE__);
+        MeshStruct mesh = read((MeshStruct*)LP.meshes.data, entity.mesh_id, LP.meshes.count, __LINE__);
 
         // Skip forward if the hit object is invisible for this ray type, skip it.
         if (((entity.flags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
@@ -670,7 +670,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             tbn = glm::column(tbn, 1, make_vec3(v_y) );
             tbn = glm::column(tbn, 2, make_vec3(v_z) );   
             float3 dN;
-            if (entity.light_id >= 0 && entity.light_id < LP.lightCount) {
+            if (entity.light_id >= 0 && entity.light_id < LP.lights.count) {
                 dN = make_float3(0.5f, .5f, 1.f);
             } else {
                 dN = sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float3(0.5f, .5f, 1.f));
@@ -704,11 +704,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // If the entity we hit is a light, terminate the path.
         // Note that NEE/MIS will also potentially terminate the path, preventing double-counting.
-        if (entity.light_id >= 0 && entity.light_id < LP.lightCount) {
+        if (entity.light_id >= 0 && entity.light_id < LP.lights.count) {
             float dotNWi = max(dot(ray.direction, v_z), 0.f);
             if ((dotNWi > EPSILON) && (bounce != 0)) break;
 
-            LightStruct entityLight = LP.lights[entity.light_id];
+            LightStruct entityLight = ((LightStruct*)LP.lights.data)[entity.light_id];
             float3 lightEmission;
             if (entityLight.color_texture_id == -1) lightEmission = make_float3(entityLight.r, entityLight.g, entityLight.b);
             else lightEmission = sampleTexture(entityLight.color_texture_id, uv, make_float3(0.f, 0.f, 0.f));
@@ -799,15 +799,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if (numLights == 0) continue;
                 sampledLightIDs[lid] = read(LP.lightEntities, randomID, LP.numLightEntities, __LINE__);
                 EntityStruct light_entity = read(LP.entities, sampledLightIDs[lid], MAX_ENTITIES, __LINE__);
-                LightStruct light_light = read(LP.lights, light_entity.light_id, LP.lightCount, __LINE__);
-                TransformStruct transform = read(LP.transforms, light_entity.transform_id, LP.transformCount, __LINE__);
-                MeshStruct mesh = read(LP.meshes, light_entity.mesh_id, LP.meshCount, __LINE__);
+                LightStruct light_light = read((LightStruct*)LP.lights.data, light_entity.light_id, LP.lights.count, __LINE__);
+                TransformStruct transform = read((TransformStruct*)LP.transforms.data, light_entity.transform_id, LP.transforms.count, __LINE__);
+                MeshStruct mesh = read((MeshStruct*)LP.meshes.data, light_entity.mesh_id, LP.meshes.count, __LINE__);
                 uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
                 owl::device::Buffer *indexLists = (owl::device::Buffer *)LP.indexLists.data;
-                ivec3 *indices = (ivec3*) read(indexLists, light_entity.mesh_id, LP.meshCount, __LINE__).data;
-                float3 *vertices = (float3*) read(vertexLists, light_entity.mesh_id, LP.meshCount, __LINE__).data;
-                vec4 *normals = (vec4*) read(normalLists, light_entity.mesh_id, LP.meshCount, __LINE__).data;
-                vec2 *texCoords = (vec2*) read(texCoordLists, light_entity.mesh_id, LP.meshCount, __LINE__).data;
+                ivec3 *indices = (ivec3*) read(indexLists, light_entity.mesh_id, LP.indexLists.count, __LINE__).data;
+                float3 *vertices = (float3*) read(vertexLists, light_entity.mesh_id, LP.vertexLists.count, __LINE__).data;
+                vec4 *normals = (vec4*) read(normalLists, light_entity.mesh_id, LP.normalLists.count, __LINE__).data;
+                vec2 *texCoords = (vec2*) read(texCoordLists, light_entity.mesh_id, LP.texCoordLists.count, __LINE__).data;
                 ivec3 triIndex = read(indices, random_tri_id, mesh.numTris, __LINE__);   
                 
                 // Sample the light to compute an incident light ray to this point
@@ -902,8 +902,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         int3 indices; float3 p, p_e1, p_e2; float3 lv_gz; 
                         float2 uv, uv_e1, uv_e2;
                         EntityStruct light_entity = read(LP.entities, sampledLightIDs[lid], MAX_ENTITIES, __LINE__);
-                        MeshStruct light_mesh = read(LP.meshes, light_entity.mesh_id, LP.meshCount, __LINE__);
-                        LightStruct light_light = read(LP.lights, light_entity.light_id, LP.lightCount, __LINE__);
+                        MeshStruct light_mesh = read((MeshStruct*)LP.meshes.data, light_entity.mesh_id, LP.meshes.count, __LINE__);
+                        LightStruct light_light = read((LightStruct*)LP.lights.data, light_entity.light_id, LP.lights.count, __LINE__);
                         loadMeshTriIndices(light_entity.mesh_id, light_mesh.numTris, payload.primitiveID, indices);
                         loadMeshUVData(light_entity.mesh_id, light_mesh.numVerts, indices, payload.barycentrics, uv, uv_e1, uv_e2);
 
