@@ -113,11 +113,11 @@ class Transform : public StaticFactory
       * Note: for internal use only. 
      */
     Transform();
-/**
-      * Instantiates a Transform with the given name and ID. Used to mark a row in the table as null. 
-      * Note: for internal use only.
-     */
     
+    /**
+    * Instantiates a Transform with the given name and ID. Used to mark a row in the table as null. 
+    * Note: for internal use only.
+    */
     Transform(std::string name, uint32_t id);
     
     /**
