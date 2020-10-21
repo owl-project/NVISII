@@ -12,69 +12,29 @@ float PdfAtoW( float aPdfA, float aDist2, float aCosThere ){
     return aPdfA * aDist2 / absCosTheta;
 }
 
-// inline __device__
-// float4 uniformPointWithinTriangle( const float4 &v1, const float4 &v2, const float4 &v3, float rand1, float rand2 ) {
-//     rand1 = sqrt(rand1);
-//     return (1.0f - rand1)* v1 + rand1 * (1.0f-rand2) * v2 + rand1 * rand2 * v3;
-// }
-
-// inline __device__
-// float2 uniformUVWithinTriangle( const float2 &uv1, const float2 &uv2, const float2 &uv3, float rand1, float rand2 ) {
-//     rand1 = sqrt(rand1);
-//     return (1.0f - rand1)* uv1 + rand1 * (1.0f-rand2) * uv2 + rand1 * rand2 * uv3;
-// }
-
-// inline __device__
-// void sampleTriangle(const float3 &pos, 
-// 					const float4 &n1, const float4 &n2, const float4 &n3, 
-// 					const float4 &v1, const float4 &v2, const float4 &v3, 
-// 					const float2 &uv1, const float2 &uv2, const float2 &uv3, 
-// 					const float rand1, const float rand2, 
-//           float3 &dir, float &distance, float &pdf, float2 &uv,
-// 					bool double_sided, bool use_surface_area)
-// {
-// 	float3 p = make_float3(uniformPointWithinTriangle( v1, v2, v3, rand1, rand2 ));
-// 	float3 n = make_float3(uniformPointWithinTriangle( n1, n2, n3, rand1, rand2 ));
-// 	uv = uniformUVWithinTriangle( uv1, uv2, uv3, rand1, rand2 );
-// 	float pdfA;
-// 	if (use_surface_area) {
-// 		float triangleArea = fabs(length(cross(make_float3(v1)-make_float3(v2), make_float3(v3)-make_float3(v2))) * 0.5);
-// 		float pdfA = 1.0f / triangleArea;
-// 	} else{
-// 		pdfA = 1.0f;
-// 	}
-// 	dir = p - pos;
-// 	float d2 = dot(dir, dir); 
-// 	float d = sqrt(d2); // linear
-//   distance = d;
-// 	dir = dir / d;
-// 	float aCosThere = max(0.0, (double_sided) ? fabs(dot(-dir,n)) : dot(-dir,n));
-// 	pdf = PdfAtoW( pdfA, d2, aCosThere );
-// }
-
 inline __device__
-vec3 uniformPointWithinTriangle( const vec3 &v1, const vec3 &v2, const vec3 &v3, float rand1, float rand2 ) {
+float3 uniformPointWithinTriangle( const float3 &v1, const float3 &v2, const float3 &v3, float rand1, float rand2 ) {
     rand1 = sqrt(rand1);
     return (1.0f - rand1)* v1 + rand1 * (1.0f-rand2) * v2 + rand1 * rand2 * v3;
 }
 
 inline __device__
-vec2 uniformUVWithinTriangle( const vec2 &uv1, const vec2 &uv2, const vec2 &uv3, float rand1, float rand2 ) {
+float2 uniformUVWithinTriangle( const float2 &uv1, const float2 &uv2, const float2 &uv3, float rand1, float rand2 ) {
     rand1 = sqrt(rand1);
     return (1.0f - rand1)* uv1 + rand1 * (1.0f-rand2) * uv2 + rand1 * rand2 * uv3;
 }
 
 inline __device__
-void sampleTriangle(const vec3 &pos, 
-					const vec3 &n1, const vec3 &n2, const vec3 &n3, 
-					const vec3 &v1, const vec3 &v2, const vec3 &v3, 
-					const vec2 &uv1, const vec2 &uv2, const vec2 &uv3, 
+void sampleTriangle(const float3 &pos, 
+					const float3 &n1, const float3 &n2, const float3 &n3, 
+					const float3 &v1, const float3 &v2, const float3 &v3, 
+					const float2 &uv1, const float2 &uv2, const float2 &uv3, 
 					const float rand1, const float rand2, 
-          vec3 &dir, float &distance, float &pdf, vec2 &uv,
+          float3 &dir, float &distance, float &pdf, float2 &uv,
 					bool double_sided, bool use_surface_area)
 {
-	vec3 p = uniformPointWithinTriangle( v1, v2, v3, rand1, rand2 );
-	vec3 n = uniformPointWithinTriangle( n1, n2, n3, rand1, rand2 );
+	float3 p = uniformPointWithinTriangle( v1, v2, v3, rand1, rand2 );
+	float3 n = uniformPointWithinTriangle( n1, n2, n3, rand1, rand2 );
 	uv = uniformUVWithinTriangle( uv1, uv2, uv3, rand1, rand2 );
 	float pdfA;
 	if (use_surface_area) {
@@ -87,7 +47,7 @@ void sampleTriangle(const vec3 &pos,
 	float d2 = dot(dir, dir); 
 	float d = sqrt(d2); // linear
   distance = d;
-	dir /= d;
+	dir = (dir / d);
 	float aCosThere = max(0.0, (double_sided) ? fabs(dot(-dir,n)) : dot(-dir,n));
 	pdf = PdfAtoW( pdfA, d2, aCosThere );
 }

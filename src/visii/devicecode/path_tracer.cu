@@ -803,26 +803,26 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 
                 // Sample the light to compute an incident light ray to this point
                 auto &ltw = transform.localToWorld;
-                vec3 dir; vec2 uv;
-                vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
+                float3 dir; float2 uv;
+                float3 pos = hit_p;
                  // Might be a bug here with normal transform...
-                float4 n1 = ltw * normals.get(triIndex.x, __LINE__);
-                float4 n2 = ltw * normals.get(triIndex.y, __LINE__);
-                float4 n3 = ltw * normals.get(triIndex.z, __LINE__);
-                float4 v1 = ltw * make_float4(vertices.get(triIndex.x, __LINE__), 1.0f);
-                float4 v2 = ltw * make_float4(vertices.get(triIndex.y, __LINE__), 1.0f);
-                float4 v3 = ltw * make_float4(vertices.get(triIndex.z, __LINE__), 1.0f);
+                float3 n1 = make_float3(ltw * normals.get(triIndex.x, __LINE__));
+                float3 n2 = make_float3(ltw * normals.get(triIndex.y, __LINE__));
+                float3 n3 = make_float3(ltw * normals.get(triIndex.z, __LINE__));
+                float3 v1 = make_float3(ltw * make_float4(vertices.get(triIndex.x, __LINE__), 1.0f));
+                float3 v2 = make_float3(ltw * make_float4(vertices.get(triIndex.y, __LINE__), 1.0f));
+                float3 v3 = make_float3(ltw * make_float4(vertices.get(triIndex.z, __LINE__), 1.0f));
                 float2 uv1 = texCoords.get(triIndex.x, __LINE__);
                 float2 uv2 = texCoords.get(triIndex.y, __LINE__);
                 float2 uv3 = texCoords.get(triIndex.z, __LINE__);
-                sampleTriangle(pos, make_vec3(n1), make_vec3(n2), make_vec3(n3), make_vec3(v1), make_vec3(v2), make_vec3(v3), make_vec2(uv1), make_vec2(uv2), make_vec2(uv3), 
+                sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
                     lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDFs[lid], uv, 
                     /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
                 
                 numTris = mesh.numTris;
                 lightDir = make_float3(dir.x, dir.y, dir.z);
                 if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
-                else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv), make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
+                else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
             }
 
             disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, bsdf, bsdfColor, forcedBsdf);
