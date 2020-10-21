@@ -509,7 +509,7 @@ void initializeOptix(bool headless)
         { "accumPtr",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
         { "world",                   OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
         { "cameraEntity",            OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
-        { "entities",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, entities)},
+        { "entities",                OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, entities)},
         { "transforms",              OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, transforms)},
         { "cameras",                 OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, cameras)},
         { "materials",               OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, materials)},
@@ -579,7 +579,7 @@ void initializeOptix(bool headless)
 
     /* Create Component Buffers */
     // note, extra textures reserved for internal use
-    OD.entityBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(EntityStruct),        MAX_ENTITIES,   nullptr);
+    OD.entityBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(EntityStruct),        Entity::getCount(),   nullptr);
     OD.transformBuffer           = deviceBufferCreate(OD.context, OWL_USER_TYPE(TransformStruct),     Transform::getCount(), nullptr);
     OD.cameraBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(CameraStruct),        Camera::getCount(),    nullptr);
     OD.materialBuffer            = deviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),      Material::getCount(),  nullptr);
@@ -634,7 +634,6 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "environmentMapWidth", &OD.LP.environmentMapWidth);
     launchParamsSetRaw(OD.launchParams, "environmentMapHeight", &OD.LP.environmentMapHeight);
 
-                            
     OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
                             OWL_TEXEL_FORMAT_R32F,
                             GGX_E_avg_size,1,

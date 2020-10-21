@@ -6,8 +6,8 @@
 #include <visii/mesh.h>
 #include <visii/visii.h>
 
-Entity Entity::entities[MAX_ENTITIES];
-EntityStruct Entity::entityStructs[MAX_ENTITIES];
+std::vector<Entity> Entity::entities;
+std::vector<EntityStruct> Entity::entityStructs;
 std::map<std::string, uint32_t> Entity::lookupTable;
 std::shared_ptr<std::recursive_mutex> Entity::editMutex;
 bool Entity::factoryInitialized = false;
@@ -243,6 +243,8 @@ glm::vec3 Entity::getAabbCenter()
 void Entity::initializeFactory()
 {
 	if (isFactoryInitialized()) return;
+	entities.resize(1000000);
+	entityStructs.resize(1000000);
 	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
@@ -361,9 +363,9 @@ Entity* Entity::create(
 		dirtyEntities.insert(entity);
 	};
 	try {
-		return StaticFactory::create<Entity>(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES, createEntity);
+		return StaticFactory::create<Entity>(editMutex, name, "Entity", lookupTable, entities.data(), entities.size(), createEntity);
 	} catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
+		StaticFactory::removeIfExists(editMutex, name, "Entity", lookupTable, entities.data(), entities.size());
 		throw;
 	}
 }
@@ -374,7 +376,7 @@ std::shared_ptr<std::recursive_mutex> Entity::getEditMutex()
 }
 
 Entity* Entity::get(std::string name) {
-	return StaticFactory::get(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
+	return StaticFactory::get(editMutex, name, "Entity", lookupTable, entities.data(), entities.size());
 }
 
 void Entity::remove(std::string name) {
@@ -386,20 +388,20 @@ void Entity::remove(std::string name) {
 	entity->clearMesh();
 	entity->clearTransform();
 	int32_t oldID = entity->getId();
-	StaticFactory::remove(editMutex, name, "Entity", lookupTable, entities, MAX_ENTITIES);
+	StaticFactory::remove(editMutex, name, "Entity", lookupTable, entities.data(), entities.size());
 	dirtyEntities.insert(&entities[oldID]);
 }
 
 EntityStruct* Entity::getFrontStruct() {
-	return entityStructs;
+	return entityStructs.data();
 }
 
 Entity* Entity::getFront() {
-	return entities;
+	return entities.data();
 }
 
 uint32_t Entity::getCount() {
-	return MAX_ENTITIES;
+	return entities.size();
 }
 
 std::string Entity::getName()

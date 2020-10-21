@@ -37,15 +37,19 @@ private:
 	static bool factoryInitialized;
 	
     /** The table of Entity components */
-	static Entity entities[MAX_ENTITIES];
+	static std::vector<Entity> entities;
 
     /** The table of Entity structs */
-	static EntityStruct entityStructs[MAX_ENTITIES];
+	static std::vector<EntityStruct> entityStructs;
 
     /** A lookup table where, given the name of a component, returns the primary key of that component */
 	static std::map<std::string, uint32_t> lookupTable;
+	
+	static std::set<Entity*> dirtyEntities;
+	static std::set<Entity*> renderableEntities;
 
-    /**
+public:
+	/**
 	 * Instantiates a null Entity. Used to mark a row in the table as null. 
      * Note: for internal use only. 
 	 */
@@ -56,11 +60,7 @@ private:
      * Note: for internal use only.
 	 */
 	Entity(std::string name, uint32_t id);
-	
-	static std::set<Entity*> dirtyEntities;
-	static std::set<Entity*> renderableEntities;
 
-public:
     /**
 	 * Constructs an Entity with the given name.
 	 * 

@@ -584,7 +584,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Otherwise, load the object we hit.
         const int entityID = read((uint32_t*)LP.instanceToEntityMap.data, payload.instanceID, LP.instanceToEntityMap.count, __LINE__);
-        EntityStruct entity = read(LP.entities, entityID, MAX_ENTITIES, __LINE__);
+        EntityStruct entity = read((EntityStruct*)LP.entities.data, entityID, LP.entities.count, __LINE__);
         MeshStruct mesh = read((MeshStruct*)LP.meshes.data, entity.mesh_id, LP.meshes.count, __LINE__);
 
         // Skip forward if the hit object is invisible for this ray type, skip it.
@@ -797,7 +797,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             {
                 if (numLights == 0) continue;
                 sampledLightIDs[lid] = read((uint32_t*)LP.lightEntities.data, randomID, LP.lightEntities.count, __LINE__);
-                EntityStruct light_entity = read(LP.entities, sampledLightIDs[lid], MAX_ENTITIES, __LINE__);
+                EntityStruct light_entity = read((EntityStruct*)LP.entities.data, sampledLightIDs[lid], LP.entities.count, __LINE__);
                 LightStruct light_light = read((LightStruct*)LP.lights.data, light_entity.light_id, LP.lights.count, __LINE__);
                 TransformStruct transform = read((TransformStruct*)LP.transforms.data, light_entity.transform_id, LP.transforms.count, __LINE__);
                 MeshStruct mesh = read((MeshStruct*)LP.meshes.data, light_entity.mesh_id, LP.meshes.count, __LINE__);
@@ -900,7 +900,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     if (visible) {
                         int3 indices; float3 p, p_e1, p_e2; float3 lv_gz; 
                         float2 uv, uv_e1, uv_e2;
-                        EntityStruct light_entity = read(LP.entities, sampledLightIDs[lid], MAX_ENTITIES, __LINE__);
+                        EntityStruct light_entity = read((EntityStruct*)LP.entities.data, sampledLightIDs[lid], LP.entities.count, __LINE__);
                         MeshStruct light_mesh = read((MeshStruct*)LP.meshes.data, light_entity.mesh_id, LP.meshes.count, __LINE__);
                         LightStruct light_light = read((LightStruct*)LP.lights.data, light_entity.light_id, LP.lights.count, __LINE__);
                         loadMeshTriIndices(light_entity.mesh_id, light_mesh.numTris, payload.primitiveID, indices);

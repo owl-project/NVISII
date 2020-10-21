@@ -42,7 +42,7 @@ struct LaunchParams {
     mat4 viewT1;
 
     EntityStruct    cameraEntity;
-    EntityStruct    *entities = nullptr;
+    owl::device::Buffer entities;
     owl::device::Buffer transforms;
     owl::device::Buffer materials;
     owl::device::Buffer cameras;

@@ -137,6 +137,8 @@ namespace std {
 }
 
 /* -------- Ignores --------------*/
+%ignore Entity::Entity();
+%ignore Entity::Entity(std::string name, uint32_t id);
 %ignore Entity::initializeFactory();
 %ignore Entity::getFront();
 %ignore Entity::getFrontStruct();
