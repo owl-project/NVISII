@@ -15,7 +15,24 @@ class Texture : public StaticFactory
 	friend class Material;
 	friend class Light;
   public:
-	
+	/**
+      * Instantiates a null Texture. Used to mark a row in the table as null. 
+      * Note: for internal use only. 
+     */
+    Texture();
+    
+    /**
+    * Instantiates a Texture with the given name and ID. Used to mark a row in the table as null. 
+    * Note: for internal use only.
+    */
+    Texture(std::string name, uint32_t id);
+
+	/**
+    * Destructs a Texture.
+    * Note: for internal use only.
+    */
+	~Texture();
+
 	/** 
 	 * Constructs a Texture with the given name.
 	 * @param name The name of the texture to create.
@@ -167,14 +184,6 @@ class Texture : public StaticFactory
     uint32_t getHeight();
 
   private:
-  	/** Creates an uninitialized texture. Useful for preallocation. */
-	Texture();
-
-	~Texture();
-
-	/** Creates a texture with the given name and id. */
-	Texture(std::string name, uint32_t id);
-
   	/* TODO */
 	static std::shared_ptr<std::recursive_mutex> editMutex;
 
@@ -182,8 +191,8 @@ class Texture : public StaticFactory
 	static bool factoryInitialized;
 	
     /** A list of the camera components, allocated statically */
-	static Texture textures[MAX_TEXTURES];
-	static TextureStruct textureStructs[MAX_TEXTURES];
+	static std::vector<Texture> textures;
+	static std::vector<TextureStruct> textureStructs;
 	
 	/** A lookup table of name to camera id */
 	static std::map<std::string, uint32_t> lookupTable;

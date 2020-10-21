@@ -159,7 +159,7 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
 inline __device__ 
 float3 sampleTexture(int32_t textureId, float2 texCoord, float3 defaultVal) {
     auto &LP = optixLaunchParams;
-    if (textureId < 0 || textureId >= (MAX_TEXTURES + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
+    if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
     cudaTextureObject_t tex = LP.textureObjects[textureId];
     if (!tex) return defaultVal;
     return make_float3(tex2D<float4>(tex, texCoord.x, texCoord.y));
@@ -168,7 +168,7 @@ float3 sampleTexture(int32_t textureId, float2 texCoord, float3 defaultVal) {
 inline __device__ 
 float sampleTexture(int32_t textureId, float2 texCoord, int8_t channel, float defaultVal) {
     auto &LP = optixLaunchParams;
-    if (textureId < 0 || textureId >= (MAX_TEXTURES + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
+    if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
     cudaTextureObject_t tex = LP.textureObjects[textureId];
     if (!tex) return defaultVal;
     if (channel == 0) return tex2D<float4>(tex, texCoord.x, texCoord.y).x;

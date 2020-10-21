@@ -183,6 +183,10 @@ namespace std {
 %ignore Mesh::Mesh();
 %ignore Mesh::Mesh(std::string name, uint32_t id);
 
+%ignore Texture::Texture();
+%ignore Texture::Texture(std::string name, uint32_t id);
+%ignore Texture::~Texture();
+
 /* -------- Renames --------------*/
 %rename("%(undercase)s",%$isfunction) "";
 %rename("%(undercase)s",%$isclass) "";

@@ -4,8 +4,8 @@
 #include <stb_image_write.h>
 #include <cstring>
 
-Texture Texture::textures[MAX_TEXTURES];
-TextureStruct Texture::textureStructs[MAX_TEXTURES];
+std::vector<Texture> Texture::textures;
+std::vector<TextureStruct> Texture::textureStructs;
 std::map<std::string, uint32_t> Texture::lookupTable;
 std::shared_ptr<std::recursive_mutex> Texture::editMutex;
 bool Texture::factoryInitialized = false;
@@ -73,6 +73,8 @@ uint32_t Texture::getHeight() {
 void Texture::initializeFactory()
 {
     if (isFactoryInitialized()) return;
+    textures.resize(32768);
+    textureStructs.resize(32768);
     editMutex = std::make_shared<std::recursive_mutex>();
     factoryInitialized = true;
 }
@@ -101,7 +103,7 @@ void Texture::updateComponents()
 {
 	if (!anyDirty) return;
 
-	for (int i = 0; i < MAX_TEXTURES; ++i) {
+	for (int i = 0; i < textures.size(); ++i) {
 		if (textures[i].isDirty()) {
             textures[i].markClean();
         }
@@ -122,7 +124,7 @@ void Texture::clearAll()
 
 /* Static Factory Implementations */
 Texture* Texture::create(std::string name) {
-    auto l = StaticFactory::create(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+    auto l = StaticFactory::create(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
     anyDirty = true;
     return l;
 }
@@ -159,9 +161,9 @@ Texture* Texture::createFromFile(std::string name, std::string path, bool linear
     };
 
     try {
-        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures.data(), textures.size(), create);
     } catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
 		throw;
 	}
 }
@@ -181,9 +183,9 @@ Texture* Texture::createFromData(std::string name, uint32_t width, uint32_t heig
     };
 
     try {
-        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures.data(), textures.size(), create);
     } catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
 		throw;
 	}
 }
@@ -236,9 +238,9 @@ Texture* Texture::createHSV(std::string name, Texture* tex, float hue, float sat
     };
 
     try {
-        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures.data(), textures.size(), create);
     } catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
 		throw;
 	}
 }
@@ -267,9 +269,9 @@ Texture* Texture::createMix(std::string name, Texture* a, Texture* b, float mix)
     };
 
     try {
-        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures.data(), textures.size(), create);
     } catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
 		throw;
 	}
 }
@@ -298,9 +300,9 @@ Texture* Texture::createAdd(std::string name, Texture* a, Texture* b)
     };
 
     try {
-        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures.data(), textures.size(), create);
     } catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
 		throw;
 	}
 }
@@ -329,9 +331,9 @@ Texture* Texture::createMultiply(std::string name, Texture* a, Texture* b)
     };
 
     try {
-        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES, create);
+        return StaticFactory::create<Texture>(editMutex, name, "Texture", lookupTable, textures.data(), textures.size(), create);
     } catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+		StaticFactory::removeIfExists(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
 		throw;
 	}
 }
@@ -356,27 +358,27 @@ std::shared_ptr<std::recursive_mutex> Texture::getEditMutex()
 }
 
 Texture* Texture::get(std::string name) {
-    return StaticFactory::get(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+    return StaticFactory::get(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
 }
 
 void Texture::remove(std::string name) {
     auto t = get(name);
 	if (!t) return;
     std::vector<glm::vec4>().swap(t->texels);
-    StaticFactory::remove(editMutex, name, "Texture", lookupTable, textures, MAX_TEXTURES);
+    StaticFactory::remove(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
     anyDirty = true;
 }
 
 Texture* Texture::getFront() {
-    return textures;
+    return textures.data();
 }
 
 TextureStruct* Texture::getFrontStruct() {
-    return textureStructs;
+    return textureStructs.data();
 }
 
 uint32_t Texture::getCount() {
-    return MAX_TEXTURES;
+    return textures.size();
 }
 
 std::string Texture::getName()

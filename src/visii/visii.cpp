@@ -515,7 +515,7 @@ void initializeOptix(bool headless)
         { "materials",               OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, materials)},
         { "meshes",                  OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, meshes)},
         { "lights",                  OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, lights)},
-        { "textures",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, textures)},
+        { "textures",                OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, textures)},
         { "lightEntities",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
         { "vertexLists",             OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
         { "normalLists",             OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, normalLists)},
@@ -585,14 +585,14 @@ void initializeOptix(bool headless)
     OD.materialBuffer            = deviceBufferCreate(OD.context, OWL_USER_TYPE(MaterialStruct),      Material::getCount(),  nullptr);
     OD.meshBuffer                = deviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),          Mesh::getCount(),     nullptr);
     OD.lightBuffer               = deviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),         Light::getCount(),     nullptr);
-    OD.textureBuffer             = deviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       MAX_TEXTURES + NUM_MAT_PARAMS * Material::getCount(),   nullptr);
+    OD.textureBuffer             = deviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       Texture::getCount() + NUM_MAT_PARAMS * Material::getCount(),   nullptr);
     OD.lightEntitiesBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
-    OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        MAX_TEXTURES + NUM_MAT_PARAMS * Material::getCount(),   nullptr);
+    OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        Texture::getCount() + NUM_MAT_PARAMS * Material::getCount(),   nullptr);
 
     launchParamsSetBuffer(OD.launchParams, "entities",             OD.entityBuffer);
     launchParamsSetBuffer(OD.launchParams, "transforms",           OD.transformBuffer);
@@ -618,8 +618,8 @@ void initializeOptix(bool headless)
     OD.blasList.resize(meshCount);
 
     uint32_t materialCount = Material::getCount();
-    OD.textureObjects.resize(MAX_TEXTURES + NUM_MAT_PARAMS * materialCount);
-    OD.textureStructs.resize(MAX_TEXTURES + NUM_MAT_PARAMS * materialCount);
+    OD.textureObjects.resize(Texture::getCount() + NUM_MAT_PARAMS * materialCount);
+    OD.textureStructs.resize(Texture::getCount() + NUM_MAT_PARAMS * materialCount);
     OD.materialStructs.resize(materialCount);
 
     OD.LP.environmentMapID = -1;
@@ -1214,7 +1214,7 @@ void updateComponents()
 
         // Allocate cuda textures for all texture components
         Texture* textures = Texture::getFront();
-        for (uint32_t tid = 0; tid < MAX_TEXTURES; ++tid) {
+        for (uint32_t tid = 0; tid < Texture::getCount(); ++tid) {
             if (!textures[tid].isDirty()) continue;
             if (OD.textureObjects[tid]) { 
                 owlTexture2DDestroy(OD.textureObjects[tid]); 
@@ -1254,7 +1254,7 @@ void updateComponents()
                     OptixData.textureStructs[index].height = 1;
                 };
 
-                int off = MAX_TEXTURES + mid * NUM_MAT_PARAMS;
+                int off = Texture::getCount() + mid * NUM_MAT_PARAMS;
                 auto &m = materials[mid];
                 auto &ms = matStructs[mid];
                 auto &odms = OptixData.materialStructs[mid];
