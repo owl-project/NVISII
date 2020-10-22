@@ -14,14 +14,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/matrix_interpolation.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
+// #include <glm/gtx/matrix_decompose.hpp>
 #include <map>
 #include <mutex>
 
 #include <visii/utilities/static_factory.h>
 #include <visii/transform_struct.h>
 
-using namespace glm;
 using namespace std;
 
 /**
@@ -45,38 +44,38 @@ class Transform : public StaticFactory
 	  std::set<int32_t> children;
 
     /* Local <=> Parent */
-    vec3 scale = vec3(1.0);
-    vec3 position = vec3(0.0);
-    quat rotation = quat(1.0f, 0.0f, 0.0f, 0.0f);
+    glm::vec3 scale = glm::vec3(1.0);
+    glm::vec3 position = glm::vec3(0.0);
+    glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
-    vec3 prevScale = vec3(1.0);
-    vec3 prevPosition = vec3(0.0);
-    quat prevRotation = quat(1.0f, 0.0f, 0.0f, 0.0f);
+    glm::vec3 prevScale = glm::vec3(1.0);
+    glm::vec3 prevPosition = glm::vec3(0.0);
+    glm::quat prevRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
-    vec3 linearMotion = vec3(0.0);
-    quat angularMotion = quat(1.f,0.f,0.f,0.f);
-    vec3 scalarMotion = vec3(0.0);
+    glm::vec3 linearMotion = glm::vec3(0.0);
+    glm::quat angularMotion = glm::quat(1.f,0.f,0.f,0.f);
+    glm::vec3 scalarMotion = glm::vec3(0.0);
 
-    mat4 localToParentTransform = mat4(1);
-    mat4 localToParentMatrix = mat4(1);
-    mat4 parentToLocalMatrix = mat4(1);
+    glm::mat4 localToParentTransform = glm::mat4(1);
+    glm::mat4 localToParentMatrix = glm::mat4(1);
+    glm::mat4 parentToLocalMatrix = glm::mat4(1);
 
-    mat4 prevLocalToParentTransform = mat4(1);
-    mat4 prevLocalToParentMatrix = mat4(1);
-    mat4 prevParentToLocalMatrix = mat4(1);
+    glm::mat4 prevLocalToParentTransform = glm::mat4(1);
+    glm::mat4 prevLocalToParentMatrix = glm::mat4(1);
+    glm::mat4 prevParentToLocalMatrix = glm::mat4(1);
 
     /* Local <=> World */
-    mat4 localToWorldMatrix = mat4(1);
-    mat4 worldToLocalMatrix = mat4(1);
+    glm::mat4 localToWorldMatrix = glm::mat4(1);
+    glm::mat4 worldToLocalMatrix = glm::mat4(1);
 
-    mat4 prevLocalToWorldMatrix = mat4(1);
-    mat4 prevWorldToLocalMatrix = mat4(1);
+    glm::mat4 prevLocalToWorldMatrix = glm::mat4(1);
+    glm::mat4 prevWorldToLocalMatrix = glm::mat4(1);
 
-  	static std::shared_ptr<std::mutex> editMutex;
+  	static std::shared_ptr<std::recursive_mutex> editMutex;
     static bool factoryInitialized;
 
-    static Transform transforms[MAX_TRANSFORMS];
-    static TransformStruct transformStructs[MAX_TRANSFORMS];
+    static std::vector<Transform> transforms;
+    static std::vector<TransformStruct> transformStructs;
     static std::map<std::string, uint32_t> lookupTable;
     
     /* Updates cached rotation values */
@@ -105,12 +104,22 @@ class Transform : public StaticFactory
     glm::mat4 computeWorldToLocalMatrix(bool previous);
     // glm::mat4 computePrevWorldToLocalMatrix(bool previous);
 
-    Transform();
-    Transform(std::string name, uint32_t id);
 
     static std::set<Transform*> dirtyTransforms;
 
   public:
+    /**
+      * Instantiates a null Transform. Used to mark a row in the table as null. 
+      * Note: for internal use only. 
+     */
+    Transform();
+    
+    /**
+    * Instantiates a Transform with the given name and ID. Used to mark a row in the table as null. 
+    * Note: for internal use only.
+    */
+    Transform(std::string name, uint32_t id);
+    
     /**
      * Constructs a transform with the given name.
      * 
@@ -121,9 +130,9 @@ class Transform : public StaticFactory
      * @returns a reference to a transform component
     */
     static Transform* create(std::string name, 
-      vec3 scale = vec3(1.0f), 
-      quat rotation = quat(1.0f, 0.0f, 0.0f, 0.0f),
-      vec3 position = vec3(0.f) 
+      glm::vec3 scale = glm::vec3(1.0f), 
+      glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+      glm::vec3 position = glm::vec3(0.f) 
     );
 
     /**
@@ -134,7 +143,7 @@ class Transform : public StaticFactory
      * @returns a reference to a transform component
     */
     static Transform* createFromMatrix(std::string name, 
-      mat4 transform = mat4(1.0f)
+      glm::mat4 transform = glm::mat4(1.0f)
     );
 
     /** 
@@ -158,6 +167,9 @@ class Transform : public StaticFactory
     /** @returns the unique integer ID for this component */
 	  int32_t getId();
 
+    // For internal use
+    int32_t getAddress();
+
     /** @returns A map whose key is a transform name and whose value is the ID for that transform */
 	  static std::map<std::string, uint32_t> getNameToIdMap();
 
@@ -165,7 +177,7 @@ class Transform : public StaticFactory
     static void remove(std::string name);
 
     /** Allocates the tables used to store all transform components */
-    static void initializeFactory();
+    static void initializeFactory(uint32_t max_components);
 
     /** @returns True if the tables used to store all transform components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
@@ -189,7 +201,7 @@ class Transform : public StaticFactory
 	  void markDirty();
 
     /** For internal use. Returns the mutex used to lock transforms for processing by the renderer. */
-    static std::shared_ptr<std::mutex> getEditMutex();
+    static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
     /** @returns a json string representation of the current component */
     std::string toString();
@@ -203,7 +215,7 @@ class Transform : public StaticFactory
      *  @param previous If true, uses the previous transform as the transform to apply.
      *  @return The transformed direction.
     */
-    vec3 transformDirection(vec3 direction, bool previous = false);
+    glm::vec3 transformDirection(glm::vec3 direction, bool previous = false);
 
     /** 
      * Transforms position from local to parent. Note, affected by scale.
@@ -213,7 +225,7 @@ class Transform : public StaticFactory
      * @param previous If true, uses the previous transform as the transform to apply.
      * @return The transformed point. 
     */
-    vec3 transformPoint(vec3 point, bool previous = false);
+    glm::vec3 transformPoint(glm::vec3 point, bool previous = false);
 
     /** 
      * Transforms vector from local to parent.
@@ -224,7 +236,7 @@ class Transform : public StaticFactory
      * @param previous If true, uses the previous transform as the transform to apply.
      * @return The transformed vector.
     */
-    vec3 transformVector(vec3 vector, bool previous = false);
+    glm::vec3 transformVector(glm::vec3 vector, bool previous = false);
 
     /** 
      * Transforms a direction from parent space to local space.
@@ -235,7 +247,7 @@ class Transform : public StaticFactory
      * @param previous If true, uses the previous transform as the transform to apply.
      * @return The transformed direction.
     */
-    vec3 inverseTransformDirection(vec3 direction, bool previous = false);
+    glm::vec3 inverseTransformDirection(glm::vec3 direction, bool previous = false);
 
     /** 
      * Transforms position from parent space to local space.
@@ -246,7 +258,7 @@ class Transform : public StaticFactory
      * @param previous If true, uses the previous transform as the transform to apply.
      * @return The transformed point.
     */
-    vec3 inverseTransformPoint(vec3 point, bool previous = false);
+    glm::vec3 inverseTransformPoint(glm::vec3 point, bool previous = false);
 
     /** 
      * Transforms a vector from parent space to local space.
@@ -257,7 +269,7 @@ class Transform : public StaticFactory
      * @param previous If true, uses the previous transform as the transform to apply.
      * @return The transformed vector.
     */
-    vec3 inverseTransformVector(vec3 vector, bool previous = false);
+    glm::vec3 inverseTransformVector(glm::vec3 vector, bool previous = false);
 
     /**
      *  Rotates the transform so the forward vector points at the target's current position.
@@ -269,7 +281,7 @@ class Transform : public StaticFactory
      * @param eye (optional) The position to place the object
      * @param previous If true, edits the previous translation and/or rotation.
     */
-    void lookAt(vec3 at, vec3 up, vec3 eye = vec3(NAN), bool previous = false);
+    void lookAt(glm::vec3 at, glm::vec3 up, glm::vec3 eye = glm::vec3(NAN), bool previous = false);
 
     // /**
     //  *  For motion blur. Rotates the prev transform so the forward vector points at the target's current position.
@@ -280,14 +292,14 @@ class Transform : public StaticFactory
     //  * @param up The unit direction pointing upwards
     //  * @param eye (optional) The position to place the object
     // */
-    // void prevLookAt(vec3 at, vec3 up, vec3 eye = vec3(NAN));
+    // void prevLookAt(glm::vec3 at, glm::vec3 up, glm::vec3 eye = glm::vec3(NAN));
 
     // /**
     // Applies a rotation of eulerAngles.z degrees around the z axis, eulerAngles.x degrees around 
     // the x axis, and eulerAngles.y degrees around the y axis (in that order).
     // If relativeTo is not specified, rotation is relative to local space.
     // */
-    // void rotate(vec3 eularAngles, Space = Space::Local);
+    // void rotate(glm::vec3 eularAngles, Space = Space::Local);
 
     // /** 
     //  * Rotates the transform about the provided axis, passing through the provided point in parent 
@@ -298,7 +310,7 @@ class Transform : public StaticFactory
     //  * @param angle The angle (in radians) to rotate.
     //  * @param axis  The axis to rotate about.
     // */
-    // void rotateAround(vec3 point, float angle, vec3 axis);
+    // void rotateAround(glm::vec3 point, float angle, glm::vec3 axis);
 
     /** 
      * Rotates the transform through the provided quaternion, passing through the provided point in parent 
@@ -309,14 +321,17 @@ class Transform : public StaticFactory
      * @param quaternion The quaternion to use for rotation.
      * @param previous If true, edits the previous translation and rotation.
     */
-    void rotateAround(vec3 point, glm::quat quaternion, bool previous = false);
+    void rotateAround(glm::vec3 point, glm::quat quaternion, bool previous = false);
 
     /** 
      * Sets an optional additional transform, useful for representing normally unsupported transformations
      * like sheers and projections. 
      * 
-     * @param transformation  a 4 by 4 column major transformation matrix
-     * @param decompose       attempts to use singular value decomposition to decompose the provided transform into a translation, rotation, and scale 
+     * @param transformation a 4 by 4 column major transformation matrix
+     * @param decompose attempts to use the technique described in "Graphics Gems II: Decomposing a Matrix Into Simple Transformations" 
+     * to represent the transform as a user controllable translation, rotation, and scale.
+     * If a sheer is detected, or if the decomposition failed, this will fall back to a non-decomposed transformation, and user 
+     * controllable translation, rotation, and scale will be set to identity values.
      * @param previous If true, edits the previous translation, rotation, and scale.
     */
     void setTransform(glm::mat4 transformation, bool decompose = true, bool previous = false);
@@ -325,7 +340,7 @@ class Transform : public StaticFactory
      * @param previous If true, returns the previous rotation.
      * @return A quaternion rotating the transform from local to parent 
      */
-    quat getRotation(bool previous = false);
+    glm::quat getRotation(bool previous = false);
 
     /** 
      * Sets the rotation of the transform from local to parent via a quaternion 
@@ -333,7 +348,7 @@ class Transform : public StaticFactory
      * @param newRotation The new rotation quaternion to set the current transform quaternion to.
      * @param previous If true, edits the previous rotation.
     */
-    void setRotation(quat newRotation, bool previous = false);
+    void setRotation(glm::quat newRotation, bool previous = false);
 
     // /** 
     //  * Sets the rotation of the transform from local to parent using an axis 
@@ -342,7 +357,7 @@ class Transform : public StaticFactory
     //  * @param angle The angle (in radians) to rotate.
     //  * @param axis  The axis to rotate about.
     // */
-    // void setRotation(float angle, vec3 axis);
+    // void setRotation(float angle, glm::vec3 axis);
 
     /** 
      * Adds a rotation to the existing transform rotation from local to parent 
@@ -351,7 +366,7 @@ class Transform : public StaticFactory
      * @param additionalRotation The rotation quaternion apply to the existing transform quaternion.
      * @param previous If true, edits the previous rotation.
     */
-    void addRotation(quat additionalRotation, bool previous = false);
+    void addRotation(glm::quat additionalRotation, bool previous = false);
 
     // /** 
     //  * Adds a rotation to the existing transform rotation from local to parent 
@@ -361,55 +376,55 @@ class Transform : public StaticFactory
     //  * @param angle The angle (in radians) to rotate the current transform quaterion by.
     //  * @param axis  The axis to rotate about.
     // */
-    // void addRotation(float angle, vec3 axis);
+    // void addRotation(float angle, glm::vec3 axis);
 
     /** 
      * @param previous If true, returns the previous parent-space position.
      * @returns a position vector describing where this transform will be translated to in its' parent's space. 
      */
-    vec3 getPosition(bool previous = false);
+    glm::vec3 getPosition(bool previous = false);
 
     /** 
      * @param previous If true, returns the previous parent-space right vector.
      * @returns a vector pointing right relative to the current transform placed in its' parent's space. 
      */
-    vec3 getRight(bool previous = false);
+    glm::vec3 getRight(bool previous = false);
 
     /** 
      * @param previous If true, returns the previous parent-space up vector.
      * @returns a vector pointing up relative to the current transform placed in its' parent's space. 
      */
-    vec3 getUp(bool previous = false);
+    glm::vec3 getUp(bool previous = false);
 
     /** 
      * @param previous If true, returns the previous parent-space forward vector.
      * @returns a vector pointing forward relative to the current transform placed in its' parent's space. 
      */
-    vec3 getForward(bool previous = false);
+    glm::vec3 getForward(bool previous = false);
 
     /** 
      * @param previous If true, returns the previous world-space position.
      * @returns a position vector describing where this transform will be translated to in world-space. 
      */
-    vec3 getWorldPosition(bool previous = false);
+    glm::vec3 getWorldPosition(bool previous = false);
 
     /** 
      * @param previous If true, returns the previous world-space right vector.
      * @returns a vector pointing right relative to the current transform placed in world-space. 
      */
-    vec3 getWorldRight(bool previous = false);
+    glm::vec3 getWorldRight(bool previous = false);
 
     /** 
      * @param previous If true, returns the previous world-space up vector.
      * @returns a vector pointing up relative to the current transform placed in world-space. 
      */
-    vec3 getWorldUp(bool previous = false);
+    glm::vec3 getWorldUp(bool previous = false);
 
     /** 
      * @param previous If true, returns the previous world-space forward vector.
      * @returns a vector pointing forward relative to the current transform placed in world-space. 
      */
-    vec3 getWorldForward(bool previous = false);
+    glm::vec3 getWorldForward(bool previous = false);
 
     /** 
      * Sets the position vector describing where this transform should be translated to when placed in its 
@@ -418,7 +433,7 @@ class Transform : public StaticFactory
      * @param newPosition The new position to set the current transform position to.
      * @param previous If true, edits the previous position.
     */
-    void setPosition(vec3 newPosition, bool previous = false);
+    void setPosition(glm::vec3 newPosition, bool previous = false);
 
     /** 
      * Adds to the current the position vector describing where this transform should be translated to 
@@ -427,7 +442,7 @@ class Transform : public StaticFactory
      * @param additionalPosition The position (interpreted as a vector) to add onto the current transform position.
      * @param previous If true, edits the previous position.
     */
-    void addPosition(vec3 additionalPosition, bool previous = false);
+    void addPosition(glm::vec3 additionalPosition, bool previous = false);
 
     // /**
     //  * Sets the position vector describing where this transform should be translated to when placed in its 
@@ -454,7 +469,7 @@ class Transform : public StaticFactory
      * @returns the scale of this transform from local to parent space along its right, up, and forward 
      * directions respectively 
      */
-    vec3 getScale(bool previous = false);
+    glm::vec3 getScale(bool previous = false);
 
     /** 
      * Sets the scale of this transform from local to parent space along its right, up, and forward 
@@ -463,7 +478,7 @@ class Transform : public StaticFactory
      * @param newScale The new scale to set the current transform scale to.
      * @param previous If true, edits the previous scale.
     */
-    void setScale(vec3 newScale, bool previous = false);
+    void setScale(glm::vec3 newScale, bool previous = false);
 
     // /** 
     //  * Sets the scale of this transform from local to parent space along its right, up, and forward 
@@ -480,7 +495,7 @@ class Transform : public StaticFactory
      * @param additionalScale The scale to add onto the current transform scale.
      * @param previous If true, edits the previous scale.
     */
-    void addScale(vec3 additionalScale, bool previous = false);
+    void addScale(glm::vec3 additionalScale, bool previous = false);
 
     // /** 
     //  * Sets the scale of this transform from local to parent space along its right, up, and forward 
@@ -517,7 +532,7 @@ class Transform : public StaticFactory
      * @param velocity The new linear velocity to set the current transform linear velocity to, in meters per second.
      * @param frames_per_second Used to convert meters per second into meters per frame. Useful for animations.
     */
-    void setLinearVelocity(vec3 velocity, float frames_per_second = 1.0f, float mix = 0.0f);
+    void setLinearVelocity(glm::vec3 velocity, float frames_per_second = 1.0f, float mix = 0.0f);
 
     /** 
      * Sets the angular velocity vector describing how fast this transform is rotating within its 
@@ -526,7 +541,7 @@ class Transform : public StaticFactory
      * @param velocity The new angular velocity to set the current transform angular velocity to, in radians per second.
      * @param frames_per_second Used to convert radians per second into scale per frame. Useful for animations.
     */
-    void setAngularVelocity(quat velocity, float frames_per_second = 1.0f, float mix = 0.0f);
+    void setAngularVelocity(glm::quat velocity, float frames_per_second = 1.0f, float mix = 0.0f);
 
     /** 
      * Sets the scalar velocity vector describing how fast this transform is scaling within its 
@@ -535,7 +550,7 @@ class Transform : public StaticFactory
      * @param velocity The new scalar velocity to set the current transform scalar velocity to, in additional scale per second
      * @param frames_per_second Used to convert additional scale per second into additional scale per frame. Useful for animations.
     */
-    void setScalarVelocity(vec3 velocity, float frames_per_second = 1.0f, float mix = 0.0f);
+    void setScalarVelocity(glm::vec3 velocity, float frames_per_second = 1.0f, float mix = 0.0f);
 
     /**
      * Resets any "previous" transform data, effectively clearing any current motion blur.

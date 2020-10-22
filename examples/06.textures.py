@@ -5,7 +5,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--spp', 
-                    default=100,
+                    default=512,
                     type=int,
                     help = "number of sample per pixel, higher the more costly")
 parser.add_argument('--width', 
@@ -27,7 +27,7 @@ parser.add_argument('--out',
 opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize_headless()
+visii.initialize(headless=True, verbose=True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
@@ -35,31 +35,39 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
+    camera = visii.camera.create(
         name = "camera", 
-        field_of_view = 0.785398, 
         aspect = float(opt.width)/float(opt.height)
     )
 )
 
 camera.get_transform().look_at(
-    visii.vec3(0,0,2), # look at (world coordinate)
-    visii.vec3(0,0,1), # up vector
-    visii.vec3(-2,0,2), # camera_origin    
+    at = (0,0,.5),
+    up = (0,0,1),
+    eye = (-2,0,.5),
 )
 visii.set_camera_entity(camera)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.set_dome_light_intensity(1)
+visii.set_dome_light_intensity(3)
 
 # load the textures
-dome = visii.texture.create_from_image("dome", "content/kiara_4_mid-morning_4k.hdr")
-floor_tex = visii.texture.create_from_image("floor",'content/photos_2020_5_11_fst_gray-wall-grunge.jpg')
+dome = visii.texture.create_from_file("dome", "content/kiara_4_mid-morning_4k.hdr")
+tex = visii.texture.create_from_file("tex",'content/photos_2020_5_11_fst_gray-wall-grunge.jpg')
 
-# we can add HDR images to act as dome
-visii.set_dome_light_texture(dome)
+# Textures can be mixed and altered. 
+# Checkout create_hsv, create_add, create_multiply, and create_mix
+floor_tex = visii.texture.create_hsv("floor", tex, 
+    hue = 0, saturation = .5, value = 1.0, mix = 1.0)
 
+# we can add HDR images to act as a dome that lights up our scene
+
+# use "enable_cdf" for dome light textures that contain 
+# bright objects that cast shadows (like the sun). Note
+# that this has a significant impact on rendering performance,
+# and is disabled by default.
+visii.set_dome_light_texture(dome, enable_cdf = True)
 
 # Lets set some objects in the scene
 entity = visii.entity.create(
@@ -68,35 +76,30 @@ entity = visii.entity.create(
     transform = visii.transform.create("transform_floor"),
     material = visii.material.create("material_floor")
 )
-entity.get_transform().set_scale(visii.vec3(5))
+entity.get_transform().set_scale((1,1,1))
 mat = visii.material.get("material_floor")
 
-mat.set_roughness(1)
+mat.set_roughness(.5)
 
-# Lets set the base color of the object to be a texture. 
+# Lets set the base color and roughness of the object to use a texture. 
 # but the textures could also be used to set other
 # material propreties
 mat.set_base_color_texture(floor_tex)
+mat.set_roughness_texture(tex)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
-sphere = visii.entity.create(
-    name="sphere",
-    mesh = visii.mesh.create_sphere("sphere"),
-    transform = visii.transform.create("sphere"),
-    material = visii.material.create("sphere")
+knot = visii.entity.create(
+    name="knot",
+    mesh = visii.mesh.create_torus_knot("knot"),
+    transform = visii.transform.create("knot"),
+    material = visii.material.create("knot")
 )
-sphere.get_transform().set_position(
-    visii.vec3(0,0,2))
-sphere.get_transform().set_scale(
-    visii.vec3(0.2))
-sphere.get_material().set_base_color(
-    visii.vec3(1,1,1))  
-sphere.get_material().set_roughness(0)   
-sphere.get_material().set_metallic(1)   
-
-
+knot.get_transform().set_position((0,0,.5))
+knot.get_transform().set_scale((0.2, 0.2, 0.2))
+knot.get_material().set_base_color((1,1,1))  
+knot.get_material().set_roughness(0)   
+knot.get_material().set_metallic(1)   
 
 #%%
 # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -106,12 +109,6 @@ visii.render_to_png(
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
     image_path=f"{opt.out}"
-)
-visii.render_to_hdr(
-    width=int(opt.width), 
-    height=int(opt.height), 
-    samples_per_pixel=int(opt.spp),
-    image_path=f"{(opt.out).replace('png', 'hdr')}"
 )
 
 # let's clean up the GPU

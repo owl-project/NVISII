@@ -38,6 +38,19 @@ class Material : public StaticFactory
   friend class StaticFactory;
   friend class Entity;
   public:
+
+    /**
+      * Instantiates a null Material. Used to mark a row in the table as null. 
+      * Note: for internal use only. 
+     */
+    Material();
+    
+    /**
+    * Instantiates a Material with the given name and ID. Used to mark a row in the table as null. 
+    * Note: for internal use only.
+    */
+    Material(std::string name, uint32_t id);
+
     /**
      * Constructs a material with the given name.
      * 
@@ -63,7 +76,7 @@ class Material : public StaticFactory
      * @param clearcoat_roughness Microfacet surface roughness of clearcoat specular. 
     */
     static Material* create(std::string name,
-      vec3  base_color = vec3(.8f, .8f, .8f),
+      glm::vec3  base_color = glm::vec3(.8f, .8f, .8f),
       float roughness = .5f,
       float metallic = 0.f, 
       float specular = .5f,
@@ -72,8 +85,8 @@ class Material : public StaticFactory
       float transmission_roughness = 0.f, 
       float ior = 1.45f, 
       float alpha = 1.0f, 
-      vec3  subsurface_radius = vec3(1.0, .2, .1),
-      vec3  subsurface_color = vec3(0.8f, 0.8f, 0.8f),
+      glm::vec3  subsurface_radius = glm::vec3(1.0, .2, .1),
+      glm::vec3  subsurface_color = glm::vec3(0.8f, 0.8f, 0.8f),
       float subsurface = 0.f,
       float anisotropic = 0.f, 
       float anisotropic_rotation = 0.f,
@@ -109,7 +122,7 @@ class Material : public StaticFactory
     static void remove(std::string name);
 
     /** Allocates the tables used to store all material components */
-    static void initializeFactory();
+    static void initializeFactory(uint32_t max_components);
 
     /** @returns True if the tables used to store all material components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
@@ -135,11 +148,14 @@ class Material : public StaticFactory
     /** Tags the current component as being modified since the previous frame. */
     void markDirty();
 
+    /** Returns the simplified struct used to represent the current component */
+	  MaterialStruct &getStruct();
+
     /** Tags the current component as being unmodified since the previous frame. */
     void markClean() { dirty = false; }
 
     /** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
-    static std::shared_ptr<std::mutex> getEditMutex();
+    static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
     /** Returns a json string representation of the current component */
     std::string toString();
@@ -154,7 +170,7 @@ class Material : public StaticFactory
      * 
      * @param color a red, green, blue color intensity vector, usually between 0 and 1 
     */
-    void setBaseColor(vec3 color);
+    void setBaseColor(glm::vec3 color);
     
     /** 
      * The diffuse or metal surface color. Texture is expected to be RGB. Overrides any existing constant base color. 
@@ -171,7 +187,7 @@ class Material : public StaticFactory
      *
      * @returns the color intensity vector 
     */
-    vec3 getBaseColor();
+    glm::vec3 getBaseColor();
 
     /** 
      * Mix between diffuse and subsurface scattering. 
@@ -206,7 +222,7 @@ class Material : public StaticFactory
      *
      * @param subsurface_radius control the subsurface radius. The X, Y and Z values of this vector are mapped to the R, G and B radius values, respectively. 
     */
-    void setSubsurfaceRadius(vec3 subsurfaceRadius);
+    void setSubsurfaceRadius(glm::vec3 subsurfaceRadius);
 
     /** 
      * Average distance that light scatters below the surface. Higher radius gives a softer appearance, 
@@ -225,14 +241,14 @@ class Material : public StaticFactory
      * 
      * @returns The subsurface scattering distance is specified separately for the RGB channels. 
     */
-    vec3 getSubsurfaceRadius();
+    glm::vec3 getSubsurfaceRadius();
 
     /**
      * The subsurface scattering base color. 
      * 
      * @param color the color intensity vector, usually between 0 and 1 
     */
-    void setSubsurfaceColor(vec3 color);
+    void setSubsurfaceColor(glm::vec3 color);
 
     /** 
      * The subsurface scattering base color. Overrides any existing constant subsurface color 
@@ -249,7 +265,7 @@ class Material : public StaticFactory
      * 
      * @returns the color intensity vector, usually between 0 and 1 
     */
-    vec3 getSubsurfaceColor();    
+    glm::vec3 getSubsurfaceColor();    
 
     /** 
      * Blends between a non-metallic and metallic material model. 
@@ -627,21 +643,16 @@ class Material : public StaticFactory
     // bool is_hidden();
 
   private:
-    /* Creates an uninitialized material. Useful for preallocation. */
-    Material();
-
-    /* Creates a material with the given name and id. */
-    Material(std::string name, uint32_t id);
 
     /* TODO */
-    static std::shared_ptr<std::mutex> editMutex;
+    static std::shared_ptr<std::recursive_mutex> editMutex;
 
     /* TODO */
     static bool factoryInitialized;
 
     /*  A list of the material components, allocated statically */
-    static Material materials[MAX_MATERIALS];
-    static MaterialStruct materialStructs[MAX_MATERIALS];
+    static std::vector<Material> materials;
+    static std::vector<MaterialStruct> materialStructs;
 
     /* A lookup table of name to material id */
     static std::map<std::string, uint32_t> lookupTable;
@@ -651,4 +662,23 @@ class Material : public StaticFactory
 
     /* Indicates this component has been edited */
     bool dirty = true;
+
+    // constant material data for when textures aren't set.
+    glm::vec4 base_color = glm::vec4(0.f);
+    glm::vec4 subsurface_radius = glm::vec4(0.f);
+    glm::vec4 subsurface_color = glm::vec4(0.f);
+    float subsurface = 0.f;
+    float metallic = 0.f;
+    float specular = 0.f;
+    float specular_tint = 0.f;
+    float roughness = 0.f;
+    float anisotropic = 0.f;
+    float anisotropic_rotation = 0.f;
+    float sheen = 0.f;
+    float sheen_tint = 0.f;
+    float clearcoat = 0.f;
+    float clearcoat_roughness = 0.f;
+    float ior = 0.f;
+    float transmission = 0.f;
+    float transmission_roughness = 0.f;
 };

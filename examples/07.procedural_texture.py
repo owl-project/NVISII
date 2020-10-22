@@ -29,7 +29,7 @@ parser.add_argument('--out',
 opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize_headless()
+visii.initialize(headless=True, verbose=True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
@@ -37,95 +37,85 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
+    camera = visii.camera.create(
         name = "camera", 
-        field_of_view = 0.785398, 
         aspect = float(opt.width)/float(opt.height)
     )
-)
-
-camera.get_transform().look_at(
-    visii.vec3(0,0,0), # look at (world coordinate)
-    visii.vec3(0,0,1), # up vector
-    visii.vec3(-2,0,2), # camera_origin    
 )
 visii.set_camera_entity(camera)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Lets use noise package to create a 2d perlin noise 
-# texture
+# Lets use noise package to create a 2D noise texture
+img_shape = (20,20,4)
+img = np.zeros(img_shape)
+for i in range(img_shape[0]):
+    for j in range(img_shape[1]):
+        for c in range(4):
+            img[i][j][c] = noise.snoise2(  
+                i, j, 
+                octaves=10, 
+                persistence=.25, 
+                lacunarity=1.0,
+                base=c
+            )
 
-shape = (1024,1024)
-img = np.zeros(shape)
-
-for i in range(shape[0]):
-    for j in range(shape[1]):
-        img[i][j] = noise.pnoise2(  
-            i/100.0, 
-            j/100.0, 
-            octaves=6, 
-            persistence=0.5, 
-            lacunarity=2.0, 
-            repeatx=1024, 
-            repeaty=1024, 
-            base=0  
-        )
-
-data = np.concatenate([
-        img.reshape(shape[0],shape[1],1),
-        img.reshape(shape[0],shape[1],1),
-        img.reshape(shape[0],shape[1],1),
-        img.reshape(shape[0],shape[1],1),
-    ]
-)
-
+# Going to create two textures, one for the noise,
+# and one for 1 - the noise
 noise = visii.texture.create_from_data(
     'noise',
-    shape[0],
-    shape[1],
-    data.reshape(shape[0]*shape[1],4).astype(np.float32).flatten().tolist()
+    img_shape[0],
+    img_shape[1],
+    1.0 - img.astype(np.float32)
 )    
 
+noise_inv = visii.texture.create_from_data(
+    'noise_inv',
+    img_shape[0],
+    img_shape[1],
+    img.astype(np.float32)
+)    
+
+# Set the sky
+dome = visii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
 visii.set_dome_light_intensity(1)
+visii.set_dome_light_texture(dome)
 
-# Lets set some objects in the scene
-entity = visii.entity.create(
-    name = "floor",
-    mesh = visii.mesh.create_plane("mesh_floor"),
-    transform = visii.transform.create("transform_floor"),
-    material = visii.material.create("material_floor")
+# Lets make some objects for our scene
+cylinder = visii.entity.create(
+    name = "cylinder",
+    mesh = visii.mesh.create_capped_cylinder("mesh_cylinder"),
+    transform = visii.transform.create("transform_cylinder"),
+    material = visii.material.create("material_cylinder")
 )
-entity.get_transform().set_scale(visii.vec3(2))
+cylinder.get_transform().set_scale((1.0, 1.0, .3))
+cylinder.get_transform().set_position((0.0, 0.0, -.3))
 
-mat = visii.material.get("material_floor")
-mat.set_metallic(1)
-mat.set_roughness(0)
+# going to use the noise texture to create a marble-like base color
+cylinder.get_material().set_roughness_texture(noise)   
 
-mat.set_roughness_texture(noise)
-# # # # # # # # # # # # # # # # # # # # # # # # #
-
-
-sphere = visii.entity.create(
-    name="sphere",
-    mesh = visii.mesh.create_sphere("sphere"),
-    transform = visii.transform.create("sphere"),
-    material = visii.material.create("sphere")
+teapot = visii.entity.create(
+    name="teapot",
+    mesh = visii.mesh.create_teapotahedron("teapot", segments = 64),
+    transform = visii.transform.create("teapot"),
+    material = visii.material.create("teapot")
 )
-sphere.get_transform().set_position(
-    visii.vec3(0,0,0.5))
-sphere.get_transform().set_scale(
-    visii.vec3(0.3))
-sphere.get_material().set_base_color(
-    visii.vec3(0.2,1,0.1))  
-sphere.get_material().set_roughness(1)   
-sphere.get_material().set_metallic(0)   
+teapot.get_transform().set_position((0,0,0.0))
+teapot.get_transform().set_scale((0.2, 0.2, 0.2))
+teapot.get_material().set_base_color((0.8,.1,0.1))  
 
+# Use the noise to alternate between smooth metal and rough plastic
+teapot.get_material().set_metallic_texture(noise)   
+teapot.get_material().set_roughness_texture(noise_inv)
 
+# Make the camera look at the center of the object
+camera.get_transform().look_at(
+    at = teapot.get_aabb_center(), # look at (world coordinate)
+    up = (0,0,1), # up vector
+    eye = (1.8,1.8,1.0), # camera_origin    
+)
 
-#%%
 # # # # # # # # # # # # # # # # # # # # # # # # #
-
 visii.render_to_png(
     width=int(opt.width), 
     height=int(opt.height), 

@@ -21,13 +21,13 @@ endif(APPLE)
 
 # If on windows, use c++14 (oldest available by modern msvc)
 if(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14" CACHE STRING "" FORCE)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif(MSVC)
 
 if(UNIX)
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14" CACHE STRING "" FORCE)
 endif(UNIX)
 
 # Set the default install prefix path
@@ -97,7 +97,8 @@ option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" OFF)
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	# Enable c++11 and hide symbols which shouldn't be visible
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+  message(WARN "ENABLING FPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" CACHE STRING "" FORCE)
 endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
@@ -163,9 +164,9 @@ endif()
 if(WIN32 OR NOT Python_INCLUDE_DIRS)
 set(PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
 if(PYTHON_VERSION)
-  find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development)
+  find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Development NumPy)
 else()
-  find_package(Python  COMPONENTS Development)
+  find_package(Python  COMPONENTS Development NumPy)
 endif()
 endif()
 
@@ -187,14 +188,23 @@ if (MSVC AND NOT Python_LIBRARIES)
     "in the \"Advanced Options\" tab of the Python installation wizard, and to run with python_d.exe")
 endif()
 include_directories(SYSTEM ${Python_INCLUDE_DIRS})
+include_directories(SYSTEM ${Python_NumPy_INCLUDE_DIRS})
+message(WARN "Numpy Include Dir is: ")
+message(WARN ${Python_NumPy_INCLUDE_DIRS})
+if (NOT EXISTS ${Python_NumPy_INCLUDE_DIRS})
+message(ERROR "ERROR, numpy include dir does not exist!")
+endif()
 
-# # glm
+if (NOT EXISTS ${Python_NumPy_INCLUDE_DIRS}/numpy/arrayObject.h)
+message(ERROR "ERROR, arrayObject does not exist!")
+endif()
+
+# glm
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
 
 # geometry generator
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/externals/generator)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/generator/include)
-set_property(TARGET generator PROPERTY FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/externals/generator")
 
 # glad
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/glad/include)
@@ -231,6 +241,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/stb/)
 
 # tiny things
 include_directories(SYSTEM externals/tiny/)
+
+# assimp
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE STRING "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE STRING "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE STRING "" FORCE)
+add_subdirectory (externals/assimp EXCLUDE_FROM_ALL)
+set(assimp_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/assimp/include/" "${CMAKE_CURRENT_BINARY_DIR}/externals/assimp/include/")
 
 # ImGUI
 add_definitions(-D IMGUI_IMPL_OPENGL_LOADER_GLAD)
@@ -298,6 +315,7 @@ set(
   # ${TBB_LIBRARIES}
   #owl
   ${OWL_LIBRARIES}
+  assimp
   )
 
 set (
@@ -355,7 +373,7 @@ endif()
 
 macro(cuda_compile_and_embed output_var cuda_file)
   set(var_name ${output_var})
-  cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --keep ${NVCC_VERBOSE_FLAG})
+  cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS --generate-line-info -use_fast_math -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --keep ${NVCC_VERBOSE_FLAG})
   list(GET ptx_files 0 ptx_file)
   set(embedded_file ${ptx_file}_embedded.c)
   add_custom_command(
@@ -394,7 +412,8 @@ cuda_compile_and_embed(ptxCode ${SRC_CU})
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  ViSII Library                                                   │
 # └──────────────────────────────────────────────────────────────────┘
-cuda_add_library(visii_lib SHARED ${SRC} ${HDR} ${ptxCode} OPTIONS --expt-relaxed-constexpr -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
+cuda_add_library(visii_lib STATIC ${SRC} ${HDR} ${ptxCode} OPTIONS --expt-relaxed-constexpr -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
+set_target_properties(visii_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(visii_lib ${LIBRARIES})
 set_target_properties(visii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 install(TARGETS visii_lib 
@@ -441,7 +460,8 @@ install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PRE
 install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL)
 install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL RENAME _visii_d.pyd)
 install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL RENAME _visii_d.pdb)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/setup.py DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/python/setup.py DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/python/importers DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/)
 
 # # TBB DLL for windows
 # if (WIN32) 
@@ -449,13 +469,13 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/setup.py DESTINATION ${CMAKE_INSTA
 # install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb_debug.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
 # endif(WIN32)
 
-
-
-
 # If we want apps using visii to be able to also use OWL, we have to export these:
-set(OWL_INCLUDES ${OWL_INCLUDES} PARENT_SCOPE)
-set(OWL_VIEWER_INCLUDES ${OWL_VIEWER_INCLUDES} PARENT_SCOPE)
-set(OWL_LIBRARIES ${OWL_LIBRARIES} PARENT_SCOPE)
-set(OWL_VIEWER_LIBRARIES ${OWL_VIEWER_LIBRARIES} PARENT_SCOPE)
-set(OWL_HAVE_TBB ${OWL_HAVE_TBB} PARENT_SCOPE)
-set(OWL_CXX_FLAGS ${OWL_CXX_FLAGS} PARENT_SCOPE)
+get_directory_property(hasParent PARENT_DIRECTORY)
+if(hasParent)
+  set(OWL_INCLUDES ${OWL_INCLUDES} PARENT_SCOPE)
+  set(OWL_VIEWER_INCLUDES ${OWL_VIEWER_INCLUDES} PARENT_SCOPE)
+  set(OWL_LIBRARIES ${OWL_LIBRARIES} PARENT_SCOPE)
+  set(OWL_VIEWER_LIBRARIES ${OWL_VIEWER_LIBRARIES} PARENT_SCOPE)
+  set(OWL_HAVE_TBB ${OWL_HAVE_TBB} PARENT_SCOPE)
+  set(OWL_CXX_FLAGS ${OWL_CXX_FLAGS} PARENT_SCOPE)
+endif()

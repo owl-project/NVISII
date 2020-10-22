@@ -1,10 +1,10 @@
 #include <visii/camera.h>
 #include <glm/gtx/matrix_transform_2d.hpp>
 
-Camera Camera::cameras[MAX_CAMERAS];
-CameraStruct Camera::cameraStructs[MAX_CAMERAS];
+std::vector<Camera> Camera::cameras;
+std::vector<CameraStruct> Camera::cameraStructs;
 std::map<std::string, uint32_t> Camera::lookupTable;
-std::shared_ptr<std::mutex> Camera::editMutex;
+std::shared_ptr<std::recursive_mutex> Camera::editMutex;
 bool Camera::factoryInitialized = false;
 bool Camera::anyDirty = true;
 // int32_t Camera::minRenderOrder = 0;
@@ -27,7 +27,7 @@ Camera::Camera(std::string name, uint32_t id) {
 
     cameraStructs[id].apertureDiameter = 0.0;
     cameraStructs[id].focalDistance = 1.0;
-	// this->render_complete_mutex = std::make_shared<std::mutex>();
+	// this->render_complete_mutex = std::make_shared<std::recursive_mutex>();
 	// this->cv = std::make_shared<std::condition_variable>();
 }
 
@@ -45,10 +45,12 @@ CameraStruct Camera::getStruct() {
 	return cameraStructs[id];
 }
 
-void Camera::initializeFactory()
+void Camera::initializeFactory(uint32_t max_components)
 {
 	if (isFactoryInitialized()) return;
-	editMutex = std::make_shared<std::mutex>();
+    cameras.resize(max_components);
+    cameraStructs.resize(max_components);
+	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
 
@@ -73,7 +75,7 @@ void Camera::markDirty() {
 
 void Camera::updateComponents()
 {
-    for (int i = 0; i < MAX_CAMERAS; ++i) {
+    for (int i = 0; i < cameras.size(); ++i) {
 		if (cameras[i].isDirty()) {
             cameras[i].markClean();
         }
@@ -89,14 +91,14 @@ void Camera::updateComponents()
     //     if (SSBOMemory == vk::DeviceMemory()) return;
     //     if (stagingSSBOMemory == vk::DeviceMemory()) return;
         
-    //     auto bufferSize = MAX_CAMERAS * sizeof(CameraStruct);
+    //     auto bufferSize = cameras.size() * sizeof(CameraStruct);
 
     // 	/* Pin the buffer */
     // 	pinnedMemory = (CameraStruct*) device.mapMemory(stagingSSBOMemory, 0, bufferSize);
     // 	if (pinnedMemory == nullptr) return;
         
     // 	/* TODO: remove this for loop */
-    // 	for (uint32_t i = 0; i < MAX_CAMERAS; ++i) {
+    // 	for (uint32_t i = 0; i < cameras.size(); ++i) {
     // 		if (!cameras[i].is_initialized()) continue;
     // 		pinnedMemory[i] = cameras[i].camera_struct;
 
@@ -173,54 +175,87 @@ void Camera::clearAll()
 }
 
 /* Static Factory Implementations */
-Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, float aspect)
+
+Camera* Camera::create(std::string name, float fieldOfView, float aspect)
 {
-	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 	try {
-        camera->usePerspectiveFromFOV(fieldOfView, aspect);
+        camera->setFOV(fieldOfView, aspect);
         return camera;
 	} catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
+		throw;
+	}
+}
+
+Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, float aspect)
+{
+    static bool createPerspectiveFromFOVDeprecatedShown = false;
+    if (createPerspectiveFromFOVDeprecatedShown == false) {
+        std::cout<<"Warning, create_perspective_from_fov is deprecated and will be removed in a subsequent release. Please switch to create_from_fov." << std::endl;
+        createPerspectiveFromFOVDeprecatedShown = true;
+    }
+    return createFromFOV(name, fieldOfView, aspect);
+}
+
+Camera* Camera::createFromFOV(std::string name, float fieldOfView, float aspect)
+{
+	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
+	try {
+        camera->setFOV(fieldOfView, aspect);
+        return camera;
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 		throw;
 	}
 }
 
 Camera* Camera::createPerspectiveFromFocalLength(std::string name, float focalLength, float sensorWidth, float sensorHeight)
 {
-	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+    static bool createPerspectiveFromFocalLength = false;
+    if (createPerspectiveFromFocalLength == false) {
+        std::cout<<"Warning, create_perspective_from_focal_length is deprecated and will be removed in a subsequent release. Please switch to create_from_focal_length." << std::endl;
+        createPerspectiveFromFocalLength = true;
+    }
+    return createFromFocalLength(name, focalLength, sensorWidth, sensorHeight);
+}
+
+Camera* Camera::createFromFocalLength(std::string name, float focalLength, float sensorWidth, float sensorHeight)
+{
+	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 	try {
-        camera->usePerspectiveFromFocalLength(focalLength, sensorWidth, sensorHeight);
+        camera->setFocalLength(focalLength, sensorWidth, sensorHeight);
         return camera;
 	} catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 		throw;
 	}
 }
 
-std::shared_ptr<std::mutex> Camera::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Camera::getEditMutex()
 {
 	return editMutex;
 }
 
 Camera* Camera::get(std::string name) {
-	return StaticFactory::get(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	return StaticFactory::get(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 }
 
 void Camera::remove(std::string name) {
-	StaticFactory::remove(editMutex, name, "Camera", lookupTable, cameras, MAX_CAMERAS);
+	StaticFactory::remove(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 	anyDirty = true;
 }
 
 CameraStruct* Camera::getFrontStruct() {
-	return cameraStructs;
+	return cameraStructs.data();
 }
 
 Camera* Camera::getFront() {
-	return cameras;
+	return cameras.data();
 }
 
 uint32_t Camera::getCount() {
-	return MAX_CAMERAS;
+	return cameras.size();
 }
 
 std::string Camera::getName()
@@ -296,14 +331,14 @@ glm::mat4 makeProjRH(float fovY_radians, float aspectWbyH, float zNear)
 // 	mark_dirty();
 // };
 
-void Camera::usePerspectiveFromFOV(float fieldOfView, float aspect)
+void Camera::setFOV(float fieldOfView, float aspect)
 {
     cameraStructs[id].proj = glm::perspective(fieldOfView, aspect, 1.f, 1000.f);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
     markDirty();
 }
 
-void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth, float sensorHeight)
+void Camera::setFocalLength(float focalLength, float sensorWidth, float sensorHeight)
 {
     float aspect = sensorWidth / sensorHeight;
     float fovy = 2.f*atan(0.5f*sensorHeight / focalLength);
@@ -445,14 +480,14 @@ glm::mat4 Camera::getProjection() {
 
 // uint32_t Camera::GetSSBOSize()
 // {
-// 	return MAX_CAMERAS * sizeof(CameraStruct);
+// 	return cameras.size() * sizeof(CameraStruct);
 // }
 
 // std::vector<Camera *> Camera::GetCamerasByOrder(uint32_t order)
 // {
 // 	/* Todo: improve the performance of this. */
 // 	std::vector<Camera *> selected_cameras;
-// 	for (uint32_t i = 0; i < MAX_CAMERAS; ++i) {
+// 	for (uint32_t i = 0; i < cameras.size(); ++i) {
 // 		if (!cameras[i].is_initialized()) continue;
 
 // 		if (cameras[i].renderOrder == order) {
@@ -495,7 +530,7 @@ glm::mat4 Camera::getProjection() {
 // {
 // 	{
 // 		auto m = render_complete_mutex.get();
-// 		std::lock_guard<std::mutex> lk(*m);
+// 		std::lock_guard<std::recursive_mutex> lk(*m);
 // 		render_ready = true;
 // 	}
 // 	cv->notify_one();
@@ -505,7 +540,7 @@ glm::mat4 Camera::getProjection() {
 // {
 // 	// Wait until main() sends data
 // 	auto m = render_complete_mutex.get();
-//     std::unique_lock<std::mutex> lk(*m);
+//     std::unique_lock<std::recursive_mutex> lk(*m);
 // 	render_ready = false;
 //     cv->wait(lk, [this]{return render_ready;});
 // 	render_ready = false;

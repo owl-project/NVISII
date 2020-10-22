@@ -4,6 +4,10 @@
 #define M_PI 3.14159265358979323846f
 #endif
 
+#ifndef M_PI_2
+#define M_PI_2 (2.f * M_PI)
+#endif
+
 #ifndef M_1_PI
 #define M_1_PI 0.318309886183790671538f
 #endif
@@ -30,4 +34,3 @@
 // typedef unsigned int uint32_t;
 // typedef unsigned short uint16_t;
 // #endif
-

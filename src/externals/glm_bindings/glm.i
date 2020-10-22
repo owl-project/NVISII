@@ -1,4 +1,3 @@
-
 %{
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -42,6 +41,7 @@
 #include <glm/gtx/compatibility.hpp>
 #include <glm/gtx/fast_square_root.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtc/type_ptr.hpp>
 %}
 
 
@@ -134,13 +134,13 @@ namespace glm {
     %feature("python:slot", "tp_repr", functype="reprfunc") __repr__;
     std::string __repr__() { return glm::to_string(*$self); }
 }
-
+ 
 /* Vectors */
 %include "std_vector.i"
 namespace std {
     %template(Vec2Vector) vector<glm::vec2>;
-    %template(Vec3Vector) vector<glm::vec3>;
     %template(Vec4Vector) vector<glm::vec4>;
+    %template(Vec3Vector) vector<glm::vec3>;
     
     %template(IVec2Vector) vector<glm::ivec2>;
     %template(IVec3Vector) vector<glm::ivec3>;
