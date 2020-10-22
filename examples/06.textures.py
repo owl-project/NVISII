@@ -35,9 +35,8 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
+    camera = visii.camera.create(
         name = "camera", 
-        field_of_view = 0.785398, 
         aspect = float(opt.width)/float(opt.height)
     )
 )
@@ -54,8 +53,8 @@ visii.set_camera_entity(camera)
 visii.set_dome_light_intensity(3)
 
 # load the textures
-dome = visii.texture.create_from_image("dome", "content/kiara_4_mid-morning_4k.hdr")
-tex = visii.texture.create_from_image("tex",'content/photos_2020_5_11_fst_gray-wall-grunge.jpg')
+dome = visii.texture.create_from_file("dome", "content/kiara_4_mid-morning_4k.hdr")
+tex = visii.texture.create_from_file("tex",'content/photos_2020_5_11_fst_gray-wall-grunge.jpg')
 
 # Textures can be mixed and altered. 
 # Checkout create_hsv, create_add, create_multiply, and create_mix

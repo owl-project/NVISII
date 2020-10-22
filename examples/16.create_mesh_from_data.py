@@ -58,6 +58,9 @@ visii.set_dome_light_intensity(1)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
+# Although ViSII has official support for stl files through mesh.create_from_file,
+# let's open the STL from another library, and use the create_from_data interface. 
+
 # let load the object using open3d
 mesh = o3d.io.read_triangle_mesh("content/dragon.stl")
 

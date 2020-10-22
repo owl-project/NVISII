@@ -49,17 +49,17 @@ else:
     print(f'created folder {opt.outf}/')
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.initialize(headless=False)
+# show an interactive window, and use "lazy" updates for faster object creation time 
+visii.initialize(headless=False, lazy_updates=True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
-
 
 # Create a camera
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
+    camera = visii.camera.create_from_fov(
         name = "camera", 
         field_of_view = 0.85,
         aspect = float(opt.width)/float(opt.height)
@@ -72,7 +72,7 @@ camera.get_transform().look_at(
 )
 visii.set_camera_entity(camera)
 
-# ISetup bullet physics stuff
+# Setup bullet physics stuff
 seconds_per_step = 1.0 / 240.0
 frames_per_second = 30.0
 physicsClient = p.connect(p.GUI) # non-graphical version
@@ -135,9 +135,7 @@ p.createMultiBody(
 )    
 
 # lets create a bunch of objects 
-# mesh = visii.mesh.create_torus('mesh')
 mesh = visii.mesh.create_teapotahedron('mesh')
-# mesh = visii.mesh.create_sphere('mesh')
 
 # set up for pybullet - here we will use indices for 
 # objects with holes 

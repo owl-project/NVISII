@@ -49,9 +49,8 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
+    camera = visii.camera.create(
         name = "camera", 
-        field_of_view = 0.785398, 
         aspect = float(opt.width)/float(opt.height)
     )
 )
@@ -95,9 +94,9 @@ mesh1 = visii.entity.create(
     material = visii.material.create("mesh1")
 )
 
-brick_base_color = visii.texture.create_from_image("bricks_base_color", "./content/Bricks051_2K_Color.jpg")
-brick_normal = visii.texture.create_from_image("bricks_normal", "./content/Bricks051_2K_Normal.jpg", linear=True)
-brick_roughness = visii.texture.create_from_image("bricks_roughness", "./content/Bricks051_2K_Roughness.jpg", linear=True)
+brick_base_color = visii.texture.create_from_file("bricks_base_color", "./content/Bricks051_2K_Color.jpg")
+brick_normal = visii.texture.create_from_file("bricks_normal", "./content/Bricks051_2K_Normal.jpg", linear=True)
+brick_roughness = visii.texture.create_from_file("bricks_roughness", "./content/Bricks051_2K_Roughness.jpg", linear=True)
 mesh1.get_material().set_roughness_texture(brick_roughness)
 mesh1.get_material().set_normal_map_texture(brick_normal)
 mesh1.get_material().set_base_color_texture(brick_base_color)

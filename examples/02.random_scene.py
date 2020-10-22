@@ -10,7 +10,19 @@ USE_DENOISER = True
 FILE_NAME = "tmp.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize(headless = True, verbose = True)
+
+# visii uses components to create a scene. 
+# We can increase the max component limit here if necessary.
+# In this case, we'll need 16 meshes, a material for each object,
+# and finally a transform for each object as well as one more for the camera.
+visii.initialize(headless = True, verbose = True, 
+    max_entities = NB_OBJS + 1,
+    max_transforms = NB_OBJS + 1,  
+    max_materials = NB_OBJS,
+    max_meshes = 16
+    # these are also available
+    # max_lights, max_textures, & max_cameras
+)
 
 if USE_DENOISER is True: 
     visii.enable_denoiser()
@@ -20,9 +32,8 @@ if USE_DENOISER is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
-        name = "camera", 
-        field_of_view = 0.785398, 
+    camera = visii.camera.create(
+        name = "camera",  
         aspect = float(WIDTH)/float(HEIGHT)
     )
 )
@@ -33,6 +44,7 @@ camera.get_transform().look_at(
     up = (1,0,0), # up vector
     eye = (0,0,5), # camera_origin    
 )
+
 # set the camera
 visii.set_camera_entity(camera)
 

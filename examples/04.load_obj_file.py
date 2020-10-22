@@ -37,9 +37,8 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
-        name = "camera", 
-        field_of_view = 0.785398, 
+    camera = visii.camera.create(
+        name = "camera",  
         aspect = float(opt.width)/float(opt.height)
     )
 )
@@ -51,13 +50,15 @@ camera.get_transform().look_at(
 )
 visii.set_camera_entity(camera)
 
-visii.set_dome_light_intensity(3)
+visii.set_dome_light_sky(sun_position = (10, 10, 1), saturation = 2)
+visii.set_dome_light_exposure(1)
+visii.set_dome_light_intensity(2)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # This function loads a signle obj mesh. It ignores 
 # the associated .mtl file
-mesh = visii.mesh.create_from_obj("obj", opt.path_obj)
+mesh = visii.mesh.create_from_file("obj", opt.path_obj)
 
 obj_entity = visii.entity.create(
     name="obj_entity",

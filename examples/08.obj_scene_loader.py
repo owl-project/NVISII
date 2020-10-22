@@ -37,9 +37,8 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
-        name = "camera", 
-        field_of_view = 0.785398, 
+    camera = visii.camera.create(
+        name = "camera",  
         aspect = float(opt.width)/float(opt.height)
     )
 )

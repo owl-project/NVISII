@@ -44,9 +44,8 @@ visii.initialize(headless=False, verbose=True)
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
+    camera = visii.camera.create(
         name = "camera", 
-        field_of_view = 0.785398, 
         aspect = float(opt.width)/float(opt.height)
     )
 )
@@ -96,7 +95,7 @@ mesh1.get_transform().set_scale((0.1, 0.1, 0.1), previous = False)
 mesh1.get_transform().set_scale((0.1, 0.1, 0.1), previous = True)
 mesh1.get_transform().set_position((0.05, 0.0, 0), previous=False)
 
-tex = visii.texture.create_from_image("dome", "./content/teatro_massimo_2k.hdr")
+tex = visii.texture.create_from_file("dome", "./content/teatro_massimo_2k.hdr")
 visii.set_dome_light_texture(tex, enable_cdf=True)
 visii.set_dome_light_intensity(0.8)
 

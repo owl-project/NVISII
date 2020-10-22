@@ -54,9 +54,8 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
+    camera = visii.camera.create(
         name = "camera", 
-        field_of_view = 0.785398, 
         aspect = float(opt.width)/float(opt.height)
     )
 )
@@ -111,9 +110,9 @@ mat.set_roughness(1)
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # load the texture 
-color_tex = visii.texture.create_from_image("color",'content/Bricks051_2K_Color.jpg')
-normal_tex = visii.texture.create_from_image("normal",'content/Bricks051_2K_Normal.jpg', linear = True)
-rough_tex = visii.texture.create_from_image("rough",'content/Bricks051_2K_Roughness.jpg', linear = True)
+color_tex = visii.texture.create_from_file("color",'content/Bricks051_2K_Color.jpg')
+normal_tex = visii.texture.create_from_file("normal",'content/Bricks051_2K_Normal.jpg', linear = True)
+rough_tex = visii.texture.create_from_file("rough",'content/Bricks051_2K_Roughness.jpg', linear = True)
 
 mat.set_base_color_texture(color_tex)
 mat.set_normal_map_texture(normal_tex)

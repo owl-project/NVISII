@@ -11,11 +11,11 @@ parser.add_argument('--spp',
                     type=int,
                     help = "number of sample per pixel, higher the more costly")
 parser.add_argument('--width', 
-                    default=1000,
+                    default=1920,
                     type=int,
                     help = 'image output width')
 parser.add_argument('--height', 
-                    default=1000,
+                    default=1080,
                     type=int,
                     help = 'image output height')
 parser.add_argument('--noise',
@@ -31,10 +31,11 @@ opt = parser.parse_args()
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize_interactive()
 visii.set_dome_light_intensity(.8)
+visii.resize_window(int(opt.width), int(opt.height))
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # load the textures
-dome = visii.texture.create_from_image("dome", "content/teatro_massimo_2k.hdr")
+dome = visii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
 
 # we can add HDR images to act as dome
 visii.set_dome_light_texture(dome)
@@ -60,9 +61,8 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
+    camera = visii.camera.create(
         name = "camera", 
-        field_of_view = 0.785398, 
         aspect = float(opt.width)/float(opt.height)
     )
 )

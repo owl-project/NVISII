@@ -37,9 +37,8 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
+    camera = visii.camera.create(
         name = "camera", 
-        field_of_view = 0.785398, 
         aspect = float(opt.width)/float(opt.height)
     )
 )
@@ -78,7 +77,7 @@ noise_inv = visii.texture.create_from_data(
 )    
 
 # Set the sky
-dome = visii.texture.create_from_image("dome", "content/teatro_massimo_2k.hdr")
+dome = visii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
 visii.set_dome_light_intensity(1)
 visii.set_dome_light_texture(dome)
 
