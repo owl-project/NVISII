@@ -25,11 +25,14 @@ parser.add_argument('--noise',
 parser.add_argument('--out',
                     default='tmp.png',
                     help = "output filename")
+parser.add_argument('--control',
+                    default=False,
+                    help = "output filename")
 
 opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize_interactive()
+visii.initialize()
 visii.set_dome_light_intensity(.8)
 visii.resize_window(int(opt.width), int(opt.height))
 # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -185,118 +188,128 @@ for i_s, s in enumerate(sdb):
 
 # visii.render_to_png(1024, 1024, 1000, "motion_blur_3")
 
+if opt.control:
 
-# # # # # # # # # # # # # # # # # # # # # # # # #
-import pygame 
-pygame.init()
-screen = pygame.display.set_mode((400, 400))
 
-while game_running:
+    # # # # # # # # # # # # # # # # # # # # # # # # #
+    import pygame 
+    pygame.init()
+    screen = pygame.display.set_mode((400, 400))
 
-    # visii camera matrix 
-    cam_matrix = camera.get_transform().get_local_to_world_matrix()
-    to_add = visii.vec4(0,0,0,0)
+    while game_running:
 
-    keys = pygame.key.get_pressed()
-    mouse = pygame.mouse.get_pressed()
-    mouseRel = pygame.mouse.get_rel()
-    
-    # print(mouseRel)
+        # visii camera matrix 
+        cam_matrix = camera.get_transform().get_local_to_world_matrix()
+        to_add = visii.vec4(0,0,0,0)
 
-    # camera control
-    # Forward and backward
-    if keys[pygame.K_w]:
-        to_add[2] = 1 * speed_camera * -1
-    if keys[pygame.K_s]:
-        to_add[2] = 1 * speed_camera
+        keys = pygame.key.get_pressed()
+        mouse = pygame.mouse.get_pressed()
+        mouseRel = pygame.mouse.get_rel()
+        
+        # print(mouseRel)
 
-    # left and right 
-    if keys[pygame.K_a]:
-        to_add[0] = 1 * speed_camera * -1
-    if keys[pygame.K_d]:
-        to_add[0] = 1 * speed_camera
+        # camera control
+        # Forward and backward
+        if keys[pygame.K_w]:
+            to_add[2] = 1 * speed_camera * -1
+        if keys[pygame.K_s]:
+            to_add[2] = 1 * speed_camera
 
-    # up and down
-    if keys[pygame.K_q]:
-        to_add[1] = 1 * speed_camera * -1
-    if keys[pygame.K_e]:
-        to_add[1] = 1 * speed_camera 
+        # left and right 
+        if keys[pygame.K_a]:
+            to_add[0] = 1 * speed_camera * -1
+        if keys[pygame.K_d]:
+            to_add[0] = 1 * speed_camera
 
-    # camera rotation
-    if mouse[0]:
-        pygame.event.set_grab(True)
-        pygame.mouse.set_visible(False)
-        camera_movement = mouseRel
-        rotate_camera = True
-    else:
-        if rotate_camera:
-            pygame.mouse.set_pos([200,200])
-        pygame.event.set_grab(False)
-        pygame.mouse.set_visible(True)
-        rotate_camera = False
-            
-    for event in pygame.event.get():
-        # print(event)
+        # up and down
+        if keys[pygame.K_q]:
+            to_add[1] = 1 * speed_camera * -1
+        if keys[pygame.K_e]:
+            to_add[1] = 1 * speed_camera 
 
-        # Game is running check for quit
-        if event.type == pygame.QUIT:
-            game_running = False
-            
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+        # camera rotation
+        if mouse[0]:
+            pygame.event.set_grab(True)
+            pygame.mouse.set_visible(False)
+            camera_movement = mouseRel
+            rotate_camera = True
+        else:
+            if rotate_camera:
+                pygame.mouse.set_pos([200,200])
+            pygame.event.set_grab(False)
+            pygame.mouse.set_visible(True)
+            rotate_camera = False
+                
+        for event in pygame.event.get():
+            # print(event)
+
+            # Game is running check for quit
+            if event.type == pygame.QUIT:
                 game_running = False
+                
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    game_running = False
 
-            # change speed movement
-            if event.key == pygame.K_UP:
-                speed_camera *= 0.5 
-                print('decrease speed camera')
-            if event.key == pygame.K_DOWN:
-                speed_camera /= 0.5
-                print('increase speed camera')
+                # change speed movement
+                if event.key == pygame.K_UP:
+                    speed_camera *= 0.5 
+                    print('decrease speed camera')
+                if event.key == pygame.K_DOWN:
+                    speed_camera /= 0.5
+                    print('increase speed camera')
 
-    # set mouse in the middle when moving
+        # set mouse in the middle when moving
 
-    if rotate_camera:
-        x_rot -= (camera_movement[0]) * 0.001
-        y_rot -= (camera_movement[1]) * 0.001
+        if rotate_camera:
+            x_rot -= (camera_movement[0]) * 0.001
+            y_rot -= (camera_movement[1]) * 0.001
 
-        init_rot = visii.angleAxis(
-            visii.pi() * .5,
-            visii.vec3(1,0,0)
-        )
-
-        rot_x_to_apply = visii.angleAxis( 
-            x_rot + visii.pi() * 1.25, 
-            # camera.get_transform().get_up()
-            visii.vec3(0,1,0)
-        )        
-
-        rot_y_to_apply = visii.angleAxis( 
-            y_rot, 
-            visii.vec3(1,0,0)
-        ) 
-       
-        camera.get_transform().set_rotation(init_rot * rot_x_to_apply * rot_y_to_apply)
-        camera.get_transform().clear_motion()
-        camera.get_camera().set_aperture_diameter(5000)
-        camera.get_camera().set_focal_distance(500)
-
-    # control the camera
-    if abs(to_add[0]) > 0.0 or \
-       abs(to_add[1]) > 0.0 or \
-       abs(to_add[2]) > 0.0:
-
-        to_add_world = cam_matrix * to_add
-
-        camera.get_transform().add_position(
-            visii.vec3(
-                to_add_world[0],
-                to_add_world[1],
-                to_add_world[2]
+            init_rot = visii.angleAxis(
+                visii.pi() * .5,
+                visii.vec3(1,0,0)
             )
-        )
-        camera.get_camera().set_aperture_diameter(5000)
-        camera.get_camera().set_focal_distance(500)
+
+            rot_x_to_apply = visii.angleAxis( 
+                x_rot + visii.pi() * 1.25, 
+                # camera.get_transform().get_up()
+                visii.vec3(0,1,0)
+            )        
+
+            rot_y_to_apply = visii.angleAxis( 
+                y_rot, 
+                visii.vec3(1,0,0)
+            ) 
+        
+            camera.get_transform().set_rotation(init_rot * rot_x_to_apply * rot_y_to_apply)
+            camera.get_transform().clear_motion()
+            camera.get_camera().set_aperture_diameter(5000)
+            camera.get_camera().set_focal_distance(500)
+
+        # control the camera
+        if abs(to_add[0]) > 0.0 or \
+        abs(to_add[1]) > 0.0 or \
+        abs(to_add[2]) > 0.0:
+
+            to_add_world = cam_matrix * to_add
+
+            camera.get_transform().add_position(
+                visii.vec3(
+                    to_add_world[0],
+                    to_add_world[1],
+                    to_add_world[2]
+                )
+            )
+            camera.get_camera().set_aperture_diameter(5000)
+            camera.get_camera().set_focal_distance(500)
+
+
+visii.render_to_png(
+    width=int(opt.width), 
+    height=int(opt.height), 
+    samples_per_pixel=int(opt.spp),
+    image_path=f"{opt.out}"
+)
 
 # let's clean up the GPU
 visii.deinitialize()

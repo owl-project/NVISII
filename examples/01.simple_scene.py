@@ -23,7 +23,7 @@ camera.set_transform(visii.transform.create(name = "camera_transform"))
 
 # To make our camera entity act like a "camera", we'll add a camera component
 camera.set_camera(
-    visii.camera.create_perspective_from_fov(
+    visii.camera.create_from_fov(
         name = "camera_camera", 
         field_of_view = 0.785398, # note, this is in radians
         aspect = float(WIDTH)/float(HEIGHT)
