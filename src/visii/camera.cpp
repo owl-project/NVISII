@@ -175,11 +175,34 @@ void Camera::clearAll()
 }
 
 /* Static Factory Implementations */
-Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, float aspect)
+
+Camera* Camera::create(std::string name, float fieldOfView, float aspect)
 {
 	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 	try {
-        camera->usePerspectiveFromFOV(fieldOfView, aspect);
+        camera->setFOV(fieldOfView, aspect);
+        return camera;
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
+		throw;
+	}
+}
+
+Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, float aspect)
+{
+    static bool createPerspectiveFromFOVDeprecatedShown = false;
+    if (createPerspectiveFromFOVDeprecatedShown == false) {
+        std::cout<<"Warning, create_perspective_from_fov is deprecated and will be removed in a subsequent release. Please switch to create_from_fov." << std::endl;
+        createPerspectiveFromFOVDeprecatedShown = true;
+    }
+    return createFromFOV(name, fieldOfView, aspect);
+}
+
+Camera* Camera::createFromFOV(std::string name, float fieldOfView, float aspect)
+{
+	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
+	try {
+        camera->setFOV(fieldOfView, aspect);
         return camera;
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
@@ -189,9 +212,19 @@ Camera* Camera::createPerspectiveFromFOV(std::string name, float fieldOfView, fl
 
 Camera* Camera::createPerspectiveFromFocalLength(std::string name, float focalLength, float sensorWidth, float sensorHeight)
 {
+    static bool createPerspectiveFromFocalLength = false;
+    if (createPerspectiveFromFocalLength == false) {
+        std::cout<<"Warning, create_perspective_from_focal_length is deprecated and will be removed in a subsequent release. Please switch to create_from_focal_length." << std::endl;
+        createPerspectiveFromFocalLength = true;
+    }
+    return createFromFocalLength(name, focalLength, sensorWidth, sensorHeight);
+}
+
+Camera* Camera::createFromFocalLength(std::string name, float focalLength, float sensorWidth, float sensorHeight)
+{
 	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
 	try {
-        camera->usePerspectiveFromFocalLength(focalLength, sensorWidth, sensorHeight);
+        camera->setFocalLength(focalLength, sensorWidth, sensorHeight);
         return camera;
 	} catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
@@ -298,14 +331,14 @@ glm::mat4 makeProjRH(float fovY_radians, float aspectWbyH, float zNear)
 // 	mark_dirty();
 // };
 
-void Camera::usePerspectiveFromFOV(float fieldOfView, float aspect)
+void Camera::setFOV(float fieldOfView, float aspect)
 {
     cameraStructs[id].proj = glm::perspective(fieldOfView, aspect, 1.f, 1000.f);
     cameraStructs[id].projinv = glm::inverse(cameraStructs[id].proj);
     markDirty();
 }
 
-void Camera::usePerspectiveFromFocalLength(float focalLength, float sensorWidth, float sensorHeight)
+void Camera::setFocalLength(float focalLength, float sensorWidth, float sensorHeight)
 {
     float aspect = sensorWidth / sensorHeight;
     float fovy = 2.f*atan(0.5f*sensorHeight / focalLength);

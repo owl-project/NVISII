@@ -1141,10 +1141,10 @@ Mesh* Mesh::createWireframeBoundingBox(
 
 Mesh* Mesh::createFromObj(std::string name, std::string path)
 {
-	static bool createFromImageDeprecatedShown = false;
-    if (createFromImageDeprecatedShown == false) {
+	static bool createFromFileDeprecatedShown = false;
+    if (createFromFileDeprecatedShown == false) {
         std::cout<<"Warning, create_from_obj is deprecated and will be removed in a subsequent release. Please switch to create_from_file." << std::endl;
-        createFromImageDeprecatedShown = true;
+        createFromFileDeprecatedShown = true;
     }
 	return createFromFile(name, path);
 }
