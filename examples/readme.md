@@ -94,9 +94,12 @@ A simple script that loads a texture, normal and roughness map and apply them to
 ## 15.camera_motion_car_blur.py
 An interactive demo for controlling the camera similar to to a first person shooter control using `w,a,s,d` and `q` and `e` for up and down. Using the left click on the mouse you can rotate the camera. Here is an [example](https://imgur.com/VYda2UF) of the sort of motion you can generate.
 
-## 16.load_stl.py
-This example shows how to use `open3d` to load a 3d `stl` object and render it with visii. 
+## 16.create_mesh_from_data.py
+This example shows how to create a mesh using an external package (in this case, `open3d`) and render it with visii. 
 This is the exact same scene as `4.load_obj_file.py`. 
+
+## 17.alpha_transparency.py
+Although not entirely realistic, alpha transparency is a useful feature for making objects "see-through" without necessarily bending rays due to refraction. This is commonly used to handle alpha cutouts (eg. for leaves) but is also used frequently when "visualizing" scientific data. Here, we use PySide2 to demonstrate the difference between "alpha transparency" and "transmission.
 
 ## Notes
 All these examples were developed and tested on Ubuntu 18.04 with cuda 11.0, NVIDIA drivers
