@@ -75,9 +75,7 @@ void deinitialize();
 
 /**
  * Registers a callback which is called on the render thread before each frame
- * of rendering. This is a workaround for the memory corruption bugs in ViSII which
- * are sometimes triggered when changing the scene while rendering is occurring.
- * To disable the callback, pass nullptr/None here.
+ * of rendering. To disable the callback, pass nullptr/None here.
  */
 void registerPreRenderCallback(std::function<void()> callback);
 
