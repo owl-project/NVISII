@@ -27,7 +27,7 @@ parser.add_argument('--out',
 opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize(headless = True)
+visii.initialize(headless = True, verbose = True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()

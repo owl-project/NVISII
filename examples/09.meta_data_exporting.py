@@ -41,7 +41,7 @@ else:
     print(f'created folder {opt.outf}/')
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.initialize(headless=False, verbose=True)
+visii.initialize(headless=False, verbose=True, lazy_updates = True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
