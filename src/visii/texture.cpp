@@ -69,6 +69,12 @@ uint32_t Texture::getHeight() {
     return textureStructs[id].height;
 }
 
+void Texture::setScale(glm::vec2 scale)
+{
+    textureStructs[id].scale = scale;
+    markDirty();
+}
+
 /* SSBO logic */
 void Texture::initializeFactory(uint32_t max_components)
 {

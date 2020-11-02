@@ -183,6 +183,15 @@ class Texture : public StaticFactory
     /** @returns the height of the texture in texels */
     uint32_t getHeight();
 
+	/**
+	 * Sets the "scale" of a texture. Useful for patterns that repeat, eg tiles.
+	 * Under the hood, this scales the texture coordinates of the object this texture influences.
+	 * @param scale The scale of the texture. A value of [.5,.5] will cause a texture to take 
+	 * up half the footprint in UV space of the original texture, effectively causing the texture 
+	 * to repeat in a pattern. Textures can be flipped in either U and/or V using negative scales.
+	*/
+	void setScale(glm::vec2 scale);
+
   private:
   	/* TODO */
 	static std::shared_ptr<std::recursive_mutex> editMutex;

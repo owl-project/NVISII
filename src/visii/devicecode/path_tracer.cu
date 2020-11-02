@@ -162,6 +162,9 @@ float3 sampleTexture(int32_t textureId, float2 texCoord, float3 defaultVal) {
     if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
     cudaTextureObject_t tex = LP.textureObjects.get(textureId, __LINE__);
     if (!tex) return defaultVal;
+    TextureStruct texInfo = LP.textures.get(textureId, __LINE__);
+    texCoord.x = texCoord.x * texInfo.scale.x;
+    texCoord.y = texCoord.y * texInfo.scale.y;
     return make_float3(tex2D<float4>(tex, texCoord.x, texCoord.y));
 }
 
@@ -171,6 +174,9 @@ float sampleTexture(int32_t textureId, float2 texCoord, int8_t channel, float de
     if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
     cudaTextureObject_t tex = LP.textureObjects.get(textureId, __LINE__);
     if (!tex) return defaultVal;
+    TextureStruct texInfo = LP.textures.get(textureId, __LINE__);
+    texCoord.x = texCoord.x * texInfo.scale.x;
+    texCoord.y = texCoord.y * texInfo.scale.y;
     if (channel == 0) return tex2D<float4>(tex, texCoord.x, texCoord.y).x;
     if (channel == 1) return tex2D<float4>(tex, texCoord.x, texCoord.y).y;
     if (channel == 2) return tex2D<float4>(tex, texCoord.x, texCoord.y).z;
