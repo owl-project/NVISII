@@ -97,7 +97,7 @@ option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" OFF)
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	# Enable c++11 and hide symbols which shouldn't be visible
-  message(WARN "ENABLING FPIC")
+  # message(WARN "ENABLING FPIC")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" CACHE STRING "" FORCE)
 endif()
 
@@ -189,8 +189,8 @@ if (MSVC AND NOT Python_LIBRARIES)
 endif()
 include_directories(SYSTEM ${Python_INCLUDE_DIRS})
 include_directories(SYSTEM ${Python_NumPy_INCLUDE_DIRS})
-message(WARN "Numpy Include Dir is: ")
-message(WARN ${Python_NumPy_INCLUDE_DIRS})
+# message(WARN "Numpy Include Dir is: ")
+# message(WARN ${Python_NumPy_INCLUDE_DIRS})
 if (NOT EXISTS ${Python_NumPy_INCLUDE_DIRS})
 message(ERROR "ERROR, numpy include dir does not exist!")
 endif()
@@ -198,6 +198,10 @@ endif()
 if (NOT EXISTS ${Python_NumPy_INCLUDE_DIRS}/numpy/arrayObject.h)
 message(ERROR "ERROR, arrayObject does not exist!")
 endif()
+
+# gli
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/gli)
+
 
 # glm
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)
