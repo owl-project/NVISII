@@ -705,7 +705,7 @@ void initializeOptix(bool headless)
     // Setup denoiser
     OptixDenoiserOptions options;
     options.inputKind = OPTIX_DENOISER_INPUT_RGB;//_ALBEDO;//_NORMAL;
-    // options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
+    options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
     auto optixContext = getOptixContext(OD.context, 0);
     auto cudaStream = getStream(OD.context, 0);
     OPTIX_CHECK(optixDenoiserCreate(optixContext, &options, &OD.denoiser));
