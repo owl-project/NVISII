@@ -2,14 +2,6 @@
 #define PMEVENT( x ) asm volatile("pmevent " #x ";")
 
 #include <stdint.h>
-template<class T>
-__device__
-T read(T* buf, size_t addr, size_t size, uint32_t line) {
-    if (buf == nullptr) {::printf("Device Side Error on Line %d: buffer was nullptr.\n", line); asm("trap;");}
-    if (addr >= size) {::printf("Device Side Error on Line %d: out of bounds access (addr: %d, size %d).\n", line, uint32_t(addr), uint32_t(size)); asm("trap;");}
-    return buf[addr];
-}
-
 #include "launch_params.h"
 #include "types.h"
 #include "path_tracer.h"
@@ -73,7 +65,7 @@ cudaTextureObject_t getEnvironmentTexture()
     auto &LP = optixLaunchParams;
     cudaTextureObject_t tex = 0;
     if (LP.environmentMapID >= 0) {
-        return read((cudaTextureObject_t*)LP.textureObjects.data, LP.environmentMapID, LP.textureObjects.count, __LINE__);
+        return LP.textureObjects.get(LP.environmentMapID, __LINE__);
     } else if ((LP.environmentMapID == -2) && (LP.proceduralSkyTexture != 0)) {
         return LP.proceduralSkyTexture;
     }
@@ -121,7 +113,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     // If we don't need motion vectors, (or in the future if an object 
     // doesn't have motion blur) then return.
     if (LP.renderDataMode == RenderDataFlags::NONE) return;
-    
+   
     OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
     float4 trf00, trf01, trf02;
     float4 trf10, trf11, trf12;
@@ -585,7 +577,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
 
         // Otherwise, load the object we hit.
-        const int entityID = read((uint32_t*)LP.instanceToEntityMap.data, payload.instanceID, LP.instanceToEntityMap.count, __LINE__);
+        const int entityID = LP.instanceToEntityMap.get(payload.instanceID, __LINE__);
         EntityStruct entity = LP.entities.get(entityID, __LINE__);
         MeshStruct mesh = LP.meshes.get(entity.mesh_id, __LINE__);
 
@@ -795,7 +787,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             else 
             {
                 if (numLights == 0) continue;
-                sampledLightIDs[lid] = read((uint32_t*)LP.lightEntities.data, randomID, LP.lightEntities.count, __LINE__);
+                sampledLightIDs[lid] = LP.lightEntities.get(randomID, __LINE__);
                 EntityStruct light_entity = LP.entities.get(sampledLightIDs[lid], __LINE__);
                 LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
                 TransformStruct transform = LP.transforms.get(light_entity.transform_id, __LINE__);
@@ -843,7 +835,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 owl::traceRay( LP.world, ray, payload, occlusion_flags);
                 bool visible = (randomID == numLights) ?
                     (payload.instanceID == -2) : 
-                    ((payload.instanceID == -2) || (read((uint32_t*)LP.instanceToEntityMap.data, payload.instanceID, LP.instanceToEntityMap.count, __LINE__) == sampledLightIDs[lid]));
+                    ((payload.instanceID == -2) || (LP.instanceToEntityMap.get(payload.instanceID, __LINE__) == sampledLightIDs[lid]));
                 if (visible) {
                     if (randomID != numLights) lightEmission = lightEmission / (payload.tHit * payload.tHit);
                     float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
@@ -892,7 +884,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 }
                 else if (payload.instanceID != -1) {
                     // Case where we hit the light, and also previously sampled the same light
-                    int entityID = read((uint32_t*) LP.instanceToEntityMap.data, payload.instanceID, LP.instanceToEntityMap.count, __LINE__);
+                    int entityID = LP.instanceToEntityMap.get(payload.instanceID, __LINE__);
                     bool visible = (entityID == sampledLightIDs[lid]);
                     // We hit the light we sampled previously
                     if (visible) {
