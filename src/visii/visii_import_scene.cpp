@@ -56,10 +56,14 @@ std::string dirnameOf(const std::string& fname)
          : fname.substr(0, pos);
 }
 
-Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::quat rotation, bool reuse_textures)
+Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::quat rotation, std::vector<std::string> args)
 {
     std::string directory = dirnameOf(path);
-    
+    bool verbose = false;
+    for (uint32_t i = 0; i < args.size(); ++i) {
+        if (args[i].compare("verbose") == 0) verbose = true;
+    }
+
     Scene visiiScene;
 
     // Check and validate the specified model file extension.
@@ -85,17 +89,11 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         throw std::runtime_error(
             std::string("Error: \"") + path + std::string("\"") + err);
     }
-
-    if (scene->mNumMeshes <= 0) 
-        throw std::runtime_error(
-            std::string("Error: \"") + path + 
-            std::string("\" positions must be greater than 1!"));
     
     std::set<TextureInfo, TextureInfoCompare> texture_paths;
     std::map<std::string, Texture*> texture_map;
     std::map<Material*, Light*> material_light_map;
 
-    
     // load materials
     for (uint32_t materialIdx = 0; materialIdx < scene->mNumMaterials; ++materialIdx) {
         auto &material = scene->mMaterials[materialIdx];
@@ -105,7 +103,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
             duplicateCount += 1;
             materialName += std::to_string(duplicateCount);
         }
-        std::cout<<"Creating material " << materialName << std::endl;
+        if (verbose) std::cout<< "Creating material " << materialName << std::endl;
         auto mat = Material::create(materialName);
         visiiScene.materials.push_back(mat);
         material_light_map[mat] = nullptr;
@@ -117,7 +115,9 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 std::string path = directory + "/" + std::string(Path.C_Str());
                 std::replace(path.begin(), path.end(), '\\', '/');
                 texture_paths.insert({path, /* is bump */false, false});
+                if (verbose) std::cout<< "\tDetected attached DIFFUSE texture - " << path << std::endl;
             }
+            else if (verbose) std::cout<< "\tERROR: Detected attached DIFFUSE texture but importer failed! " << path << std::endl;
         }
 
         if (material->GetTextureCount(aiTextureType_SPECULAR) > 0) {
@@ -125,7 +125,9 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 std::string path = directory + "/" + std::string(Path.C_Str());
                 std::replace(path.begin(), path.end(), '\\', '/');
                 texture_paths.insert({path, /* is bump */false, false});
+                if (verbose) std::cout<< "\tDetected attached SPECULAR texture - " << path << std::endl;
             }
+            else if (verbose) std::cout<< "\tERROR: Detected attached SPECULAR texture but importer failed! " << path << std::endl;
         }
 
         // normal map
@@ -134,7 +136,9 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 std::string path = directory + "/" + std::string(Path.C_Str());
                 std::replace(path.begin(), path.end(), '\\', '/');
                 texture_paths.insert({path, /* is bump */false, true});
+                if (verbose) std::cout<< "\tDetected attached NORMALS texture - " << path << std::endl;
             }
+            else if (verbose) std::cout<< "\tERROR: Detected attached NORMALS texture but importer failed! " << path << std::endl;
         }
 
         // emission map
@@ -143,7 +147,9 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 std::string path = directory + "/" + std::string(Path.C_Str());
                 std::replace(path.begin(), path.end(), '\\', '/');
                 texture_paths.insert({path, /* is bump */false, true});
+                if (verbose) std::cout<< "\tDetected attached EMISSIVE texture - " << path << std::endl;
             }
+            else if (verbose) std::cout<< "\tERROR: Detected attached EMISSIVE texture but importer failed! " << path << std::endl;
         }        
 
         // PBR materials
@@ -152,7 +158,9 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 std::string path = directory + "/" + std::string(Path.C_Str());
                 std::replace(path.begin(), path.end(), '\\', '/');
                 texture_paths.insert({path, /* is bump */false, false});
+                if (verbose) std::cout<< "\tDetected attached BASE_COLOR texture - " << path << std::endl;
             }
+            else if (verbose) std::cout<< "\tERROR: Detected attached BASE_COLOR texture but importer failed! " << path << std::endl;
         }
 
         if (material->GetTextureCount(aiTextureType_METALNESS) > 0) {
@@ -160,7 +168,9 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 std::string path = directory + "/" + std::string(Path.C_Str());
                 std::replace(path.begin(), path.end(), '\\', '/');
                 texture_paths.insert({path, /* is bump */false, true});
+                if (verbose) std::cout<< "\tDetected attached METALNESS texture - " << path << std::endl;
             }
+            else if (verbose) std::cout<< "\tERROR: Detected attached METALNESS texture but importer failed! " << path << std::endl;
         }
 
         if (material->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
@@ -168,32 +178,28 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 std::string path = directory + "/" + std::string(Path.C_Str());
                 std::replace(path.begin(), path.end(), '\\', '/');
                 texture_paths.insert({path, /* is bump */false, true});
+                if (verbose) std::cout<< "\tDetected attached DIFFUSE_ROUGHNESS texture - " << path << std::endl;
             }
+            else if (verbose) std::cout<< "\tERROR: Detected attached DIFFUSE_ROUGHNESS texture but importer failed! " << path << std::endl;
         }
     }
 
     // load textures
     for (auto &tex : texture_paths)
     {
-        // std::cout<<"Texture path " << tex.path << std::endl;
-        // auto &texture = scene->mTextures[textureIdx];
-        // auto texturePath = std::string(texture->mFilename.C_Str());
-
         std::string textureName = tex.path;
-        if (!reuse_textures) {
-            int duplicateCount = 0;
-            while (Texture::get(textureName) != nullptr) {
-                duplicateCount += 1;
-                textureName += std::to_string(duplicateCount);
-            }
+        int duplicateCount = 0;
+        while (Texture::get(textureName) != nullptr) {
+            duplicateCount += 1;
+            textureName += std::to_string(duplicateCount);
         }
-        std::cout<<"Creating texture " << textureName << std::endl;
+        if (verbose) std::cout<<"Loading texture " << textureName << std::endl;
 
         Texture* texture = nullptr;
         try {
             texture = (Texture::get(textureName) != nullptr) ? Texture::get(textureName) : Texture::createFromFile(textureName, tex.path);
         } catch (exception& e) {
-            std::cout<<"Warning: unable to create texture " << textureName <<  " : " << std::string(e.what()) <<std::endl;
+            if (verbose) std::cout<<"Warning: unable to load texture " << textureName <<  " : " << std::string(e.what()) <<std::endl;
         }
         visiiScene.textures.push_back(texture);
         texture_map[tex.path] = texture;
@@ -275,8 +281,25 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         std::vector<float> texCoords;
         std::vector<uint32_t> indices;
 
+        std::string meshName = std::string(aiMesh->mName.C_Str());
+        int duplicateCount = 0;
+        while (Mesh::get(meshName) != nullptr) {
+            duplicateCount += 1;
+            meshName += std::to_string(duplicateCount);
+        }
+        if (verbose) std::cout<<"Loading mesh " << meshName << std::endl;
+
         // mesh at the very least needs positions...
-        if (!aiMesh->HasPositions()) continue;
+        if (!aiMesh->HasPositions()) {
+            if (verbose) std::cout<<"\tERROR: mesh " << meshName << " has no positions" << std::endl;
+            continue;
+        }
+        if (!aiMesh->HasNormals()) {
+            if (verbose) std::cout<<"\tWARNING: mesh " << meshName << " has no normals" << std::endl;
+        }
+        if (!aiMesh->HasTextureCoords(0)) {
+            if (verbose) std::cout<<"\tWARNING: mesh " << meshName << " has no texture coordinates" << std::endl;
+        }
 
         // note that we triangulated the meshes above
         for (uint32_t vid = 0; vid < aiMesh->mNumVertices; ++vid) {
@@ -309,6 +332,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
             texCoords.push_back(v.texcoord.y);
         }
 
+        bool validFaces = true;
         for (uint32_t faceIdx = 0; faceIdx < aiMesh->mNumFaces; ++faceIdx) {
             // faces must have only 3 indices
             auto &aiFace = aiFaces[faceIdx];			
@@ -318,18 +342,17 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
             indices.push_back(aiFace.mIndices[2]);
             if (((aiFace.mIndices[0]) >= positions.size()) || 
                 ((aiFace.mIndices[1]) >= positions.size()) || 
-                ((aiFace.mIndices[2]) >= positions.size()))
-                throw std::runtime_error(
-                    std::string("Error: \"") + path +
-                    std::string("\" invalid mesh index detected!"));
+                ((aiFace.mIndices[2]) >= positions.size())) {
+
+                if (verbose) std::cout<<"\tERROR: mesh " << meshName << " has an invalid face index at face " << faceIdx << ". Skipping..." <<std::endl;
+                validFaces = false;
+                break;
+            }                
         }
 
-        std::string meshName = std::string(aiMesh->mName.C_Str());
-        int duplicateCount = 0;
-        while (Mesh::get(meshName) != nullptr) {
-            duplicateCount += 1;
-            meshName += std::to_string(duplicateCount);
-        }
+        // if we found a face that would result in an access violation, don't make this mesh.
+        if (!validFaces) continue; 
+
         auto mesh = Mesh::createFromData(
             meshName, 
             positions, 3,
@@ -339,37 +362,47 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
             indices
         );
         visiiScene.meshes.push_back(mesh);
-        std::cout<<meshName<<std::endl;
     }
 
     // load lights
     for (uint32_t lightIdx = 0; lightIdx < scene->mNumLights; ++lightIdx) {
         auto light = scene->mLights[lightIdx];
-        // std::cout<<"Light: " << std::string(light->mName.C_Str()) << std::endl;
-        // if (light->mType == aiLightSource_DIRECTIONAL) {
-        //     std::cout<<"Directional"<<std::endl;
-        // } else if (light->mType == aiLightSource_POINT) {
-        //     std::cout<<"point"<<std::endl;
-        // } else if (light->mType == aiLightSource_SPOT) {
-        //     std::cout<<"spot"<<std::endl;
-        // } else if (light->mType == aiLightSource_AMBIENT) {
-        //     std::cout<<"ambient"<<std::endl;
-        // } else if (light->mType == aiLightSource_AREA) {
-        //     std::cout<<"area"<<std::endl;
-        // } 
+        if (verbose) {
+            std::cout<<"Found light: " << std::string(light->mName.C_Str()) << std::endl;
+            if (light->mType == aiLightSource_DIRECTIONAL) {
+                std::cout<<"Directional"<<std::endl;
+            } else if (light->mType == aiLightSource_POINT) {
+                std::cout<<"Point"<<std::endl;
+            } else if (light->mType == aiLightSource_SPOT) {
+                std::cout<<"Spot"<<std::endl;
+            } else if (light->mType == aiLightSource_AMBIENT) {
+                std::cout<<"Ambient"<<std::endl;
+            } else if (light->mType == aiLightSource_AREA) {
+                std::cout<<"Area"<<std::endl;
+            } 
+        }
     }
 
-    std::function<void(aiNode*, Transform*)> addNode;
-    addNode = [&scene, &visiiScene, &material_light_map, &addNode, position, rotation, scale]
-        (aiNode* node, Transform* parentTransform) {
+    // load cameras
+    for (uint32_t cameraIdx = 0; cameraIdx < scene->mNumCameras; ++cameraIdx) {
+        auto camera = scene->mCameras[cameraIdx];
+        if (verbose) {
+            std::cout<<"Found camera: " << std::string(camera->mName.C_Str()) << std::endl;
+        }
+    }
+
+    std::function<void(aiNode*, Transform*, int level)> addNode;
+    addNode = [&scene, &visiiScene, &material_light_map, &addNode, position, rotation, scale, verbose]
+        (aiNode* node, Transform* parentTransform, int level) 
+    {
         // Create the transform to represent this node
         std::string transformName = std::string(node->mName.C_Str());
-        std::cout<<transformName<<std::endl;
         int duplicateCount = 0;
         while (Transform::get(transformName) != nullptr) {
             duplicateCount += 1;
             transformName += std::to_string(duplicateCount);
         }
+        if (verbose) std::cout<< std::string(level, '\t') << "Creating transform " << transformName << std::endl;
         auto transform = Transform::create(transformName);
         transform->setTransform(aiMatrix4x4ToGlm(&node->mTransformation));
         if (parentTransform == nullptr) {
@@ -387,25 +420,36 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
             auto mesh = visiiScene.meshes[meshIndex];
             auto &aiMesh = scene->mMeshes[meshIndex];
             auto material = visiiScene.materials[aiMesh->mMaterialIndex];
-            auto entity = Entity::create(transformName + "_" + mesh->getName());
+            
+            duplicateCount = 0;
+            std::string entityName = transformName + "_" + mesh->getName();
+            while (Entity::get(transformName) != nullptr) {
+                duplicateCount += 1;
+                entityName += std::to_string(duplicateCount);
+            }    
+            if (verbose) std::cout<< std::string(level, '\t') << "Creating entity " << entityName << " with" <<std::endl;
+
+            auto entity = Entity::create(entityName);
             entity->setMesh(mesh);
+            if (verbose) std::cout<< std::string(level + 1, '\t') << "mesh: \"" << mesh->getName() << "\", " << std::endl;
             entity->setMaterial(material);
-            if (material_light_map[material]) {
-                entity->setLight(material_light_map[material]);
+            if (verbose) std::cout<< std::string(level + 1, '\t') << "material: \"" << material->getName() << "\", " << std::endl;
+            Light* light = material_light_map[material];
+            if (light) {
+                entity->setLight(light);
+                if (verbose) std::cout<< std::string(level + 1, '\t') << "light: \"" << light->getName() << "\", " << std::endl;
             }
             entity->setTransform(transform);
+            if (verbose) std::cout<< std::string(level + 1, '\t') << "transform: \"" << transform->getName() << "\", " << std::endl;
         }
 
         for (uint32_t cid = 0; cid < node->mNumChildren; ++cid) 
-            addNode(node->mChildren[cid], transform);
+            addNode(node->mChildren[cid], transform, level+1);
     };
 
-    addNode(scene->mRootNode, nullptr);
-
-    // mesh->computeMetadata();
-
+    addNode(scene->mRootNode, nullptr, 0);
     aiReleaseImport(scene);
-    // dirtyMeshes.insert(mesh);
 
+    if (verbose) std::cout<<"Done!"<<std::endl;
     return visiiScene;
 }

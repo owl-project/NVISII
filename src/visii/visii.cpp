@@ -636,20 +636,22 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "environmentMapWidth", &OD.LP.environmentMapWidth);
     launchParamsSetRaw(OD.launchParams, "environmentMapHeight", &OD.LP.environmentMapHeight);
 
-    OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
-                            OWL_TEXEL_FORMAT_R32F,
-                            GGX_E_avg_size,1,
-                            GGX_E_avg,
-                            OWL_TEXTURE_LINEAR,
-                            OWL_TEXTURE_CLAMP);
-    OWLTexture GGX_E_LOOKUP = owlTexture2DCreate(OD.context,
-                            OWL_TEXEL_FORMAT_R32F,
-                            GGX_E_size[0],GGX_E_size[1],
-                            GGX_E,
-                            OWL_TEXTURE_LINEAR,
-                            OWL_TEXTURE_CLAMP);
-    launchParamsSetTexture(OD.launchParams, "GGX_E_AVG_LOOKUP", GGX_E_AVG_LOOKUP);
-    launchParamsSetTexture(OD.launchParams, "GGX_E_LOOKUP",     GGX_E_LOOKUP);
+    // OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
+    //                         OWL_TEXEL_FORMAT_R32F,
+    //                         GGX_E_avg_size,1,
+    //                         GGX_E_avg,
+    //                         OWL_TEXTURE_LINEAR,
+    //                         OWL_COLOR_SPACE_LINEAR,
+    //                         OWL_TEXTURE_CLAMP);
+    // OWLTexture GGX_E_LOOKUP = owlTexture2DCreate(OD.context,
+    //                         OWL_TEXEL_FORMAT_R32F,
+    //                         GGX_E_size[0],GGX_E_size[1],
+    //                         GGX_E,
+    //                         OWL_TEXTURE_LINEAR,
+    //                         OWL_TEXTURE_CLAMP,
+    //                         OWL_COLOR_SPACE_LINEAR);
+    // launchParamsSetTexture(OD.launchParams, "GGX_E_AVG_LOOKUP", GGX_E_AVG_LOOKUP);
+    // launchParamsSetTexture(OD.launchParams, "GGX_E_LOOKUP",     GGX_E_LOOKUP);
     
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
     launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
@@ -940,7 +942,7 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
     auto func = [texture, enableCDF] () {
         OptixData.LP.environmentMapID = texture->getId();
         if (enableCDF) {
-            std::vector<glm::vec4> texels = texture->getTexels();
+            std::vector<glm::vec4> texels = texture->getFloatTexels();
 
             int width = texture->getWidth();
             int height = texture->getHeight();
@@ -1224,12 +1226,15 @@ void updateComponents()
             }
             if (!textures[tid].isInitialized()) continue;
             bool isHDR = textures[tid].isHDR();
+            bool isLinear = textures[tid].isLinear();
             OD.textureObjects[tid] = owlTexture2DCreate(
                 OD.context, 
                 (isHDR) ? OWL_TEXEL_FORMAT_RGBA32F : OWL_TEXEL_FORMAT_RGBA8,
                 textures[tid].getWidth(), textures[tid].getHeight(), 
-                ((isHDR) ? (void*)textures[tid].getTexels().data() : (void*)textures[tid].get8BitTexels().data()),
-                OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
+                ((isHDR) ? (void*)textures[tid].getFloatTexels().data() : (void*)textures[tid].getByteTexels().data()),
+                OWL_TEXTURE_LINEAR, 
+                OWL_TEXTURE_WRAP,
+                (isLinear) ? OWL_COLOR_SPACE_LINEAR: OWL_COLOR_SPACE_SRGB);
         }
 
         // Create additional cuda textures for material constants
@@ -1253,7 +1258,7 @@ void updateComponents()
                     if (glm::all(glm::equal(c, defaultVal))) return;
                     OD.textureObjects[index] = owlTexture2DCreate(
                         OD.context, OWL_TEXEL_FORMAT_RGBA32F,
-                        1,1, &c, OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
+                        1,1, &c, OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP, OWL_COLOR_SPACE_LINEAR);
                     OptixData.textureStructs[index] = TextureStruct();
                     OptixData.textureStructs[index].width = 1;
                     OptixData.textureStructs[index].height = 1;

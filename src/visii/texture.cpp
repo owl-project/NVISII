@@ -10,6 +10,7 @@
 #include <gli/convert.hpp>
 #include <gli/core/s3tc.hpp>
 
+#include <glm/gtc/color_space.hpp>
 std::vector<Texture> Texture::textures;
 std::vector<TextureStruct> Texture::textureStructs;
 std::map<std::string, uint32_t> Texture::lookupTable;
@@ -25,7 +26,8 @@ Texture::Texture()
 
 Texture::~Texture()
 {
-    std::vector<glm::vec4>().swap(this->texels);
+    std::vector<glm::vec4>().swap(this->floatTexels);
+    std::vector<glm::u8vec4>().swap(this->byteTexels);
 }
 
 Texture::Texture(std::string name, uint32_t id)
@@ -34,22 +36,10 @@ Texture::Texture(std::string name, uint32_t id)
     this->name = name;
     this->id = id;
 
-    // ------------------------------------------------------------------
-    // create a 4x4 checkerboard texture
-    // ------------------------------------------------------------------
-    glm::ivec2 texSize = glm::ivec2(4);
-    std::vector<vec4> texels;
-    for (int iy=0;iy<texSize.y;iy++) {
-        for (int ix=0;ix<texSize.x;ix++) {
-            texels.push_back(((ix ^ iy)&1) ?
-                            vec4(0,1,0,0) :
-                            vec4(1));
-        }
-    }
-
-    textureStructs[id].width = 4;
-    textureStructs[id].height = 4;
-    this->texels = texels;
+    textureStructs[id].width = -1;
+    textureStructs[id].height = -1;
+    this->floatTexels = std::vector<vec4>();
+    this->byteTexels = std::vector<u8vec4>();
     
     markDirty();
 }
@@ -63,15 +53,24 @@ std::string Texture::toString() {
     return output;
 }
 
-std::vector<vec4> Texture::getTexels() {
-    return texels;
+std::vector<vec4> Texture::getFloatTexels() {
+    // If natively represented as 32f, return that. 
+    // otherwise, cast 8uc to 32f.
+    if (floatTexels.size() > 0) return floatTexels;
+    std::vector<vec4> floatTexels(byteTexels.size());
+    for (uint32_t i = 0; i < byteTexels.size(); ++i) {
+        floatTexels[i] = vec4(byteTexels[i]) / 255.0f;
+    }
+    return floatTexels;
 }
 
-std::vector<i8vec4> Texture::get8BitTexels() {
-    // todo: optimize this...
-    std::vector<i8vec4> texels8(texels.size());
-    for (uint32_t i = 0; i < texels.size(); ++i) {
-        texels8[i] = i8vec4(texels[i] * 255.0f);
+std::vector<u8vec4> Texture::getByteTexels() {
+    // If natively represented as 8uc, return that. 
+    // otherwise, cast 32f to 8uc.
+    if (byteTexels.size() > 0) return byteTexels;
+    std::vector<u8vec4> texels8(floatTexels.size());
+    for (uint32_t i = 0; i < floatTexels.size(); ++i) {
+        texels8[i] = u8vec4(floatTexels[i] * 255.0f);
     }
     return texels8;
 }
@@ -92,11 +91,12 @@ void Texture::setScale(glm::vec2 scale)
 
 bool Texture::isHDR()
 {
-    // todo: optimize this...
-    for (uint32_t i = 0; i < texels.size(); ++i) {
-        if (glm::any(glm::greaterThan(texels[i], vec4(1.f)))) return true;
-    }
-    return false;
+    // if the texture is natively represented as a 32 bit-per-channel texture, it's HDR.
+    return (floatTexels.size() > 0);
+}
+
+bool Texture::isLinear() {
+    return linear;
 }
 
 /* SSBO logic */
@@ -153,12 +153,6 @@ void Texture::clearAll()
 }	
 
 /* Static Factory Implementations */
-Texture* Texture::create(std::string name) {
-    auto l = StaticFactory::create(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
-    anyDirty = true;
-    return l;
-}
-
 Texture* Texture::createFromImage(std::string name, std::string path, bool linear) {
     static bool createFromImageDeprecatedShown = false;
     if (createFromImageDeprecatedShown == false) {
@@ -188,22 +182,35 @@ Texture* Texture::createFromFile(std::string name, std::string path, bool linear
             if (tex2D.empty())
                 throw std::runtime_error( std::string("Error: image " + path + " is empty"));
 
-            if (gli::is_compressed(format)) {
-                std::cout<<format<<std::endl;
-                // if (!gli::is_s3tc_compressed(format)) {
-                //     throw std::runtime_error( std::string("Error: image " + path + " is compressed using an algorithm other than S3TC (currently unsupported)"));
-                // }
+            // gli detects whether or not a texture is srgb. Ignore "linear" parameter above.
+            l->linear = (!gli::is_srgb(format));
 
+            if (gli::is_compressed(format)) {
                 if ((format != gli::FORMAT_RGBA_DXT1_UNORM_BLOCK8) &&
                     (format != gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16) &&
                     (format != gli::FORMAT_R_ATI1N_UNORM_BLOCK8) &&
                     (format != gli::FORMAT_RG_ATI2N_UNORM_BLOCK16)
-                ) throw std::runtime_error( std::string("Error: image " + path + " is compressed using an unsupported S3TC format.")
-                        + std::string("Supported formats are FORMAT_RGBA_DXT1_UNORM_BLOCK8, FORMAT_RGBA_DXT5_UNORM_BLOCK16, FORMAT_R_ATI1N_UNORM_BLOCK8, FORMAT_RG_ATI2N_UNORM_BLOCK16"));
+                )
+                throw std::runtime_error(std::string("Error: image " + path + " is compressed using an unsupported S3TC format. " + 
+                        "Supported formats are " + 
+                        "FORMAT_RGBA32_SFLOAT_PACK32, " +
+                        "FORMAT_RGBA8_SRGB_PACK8, " +
+                        "FORMAT_R32_SFLOAT_PACK32, " +
+                        "FORMAT_R8_SRGB_PACK8, " +
+                        "FORMAT_RG32_SFLOAT_PACK32, " +
+                        "FORMAT_RG8_SRGB_PACK8" + 
+                        "FORMAT_RGBA_DXT1_UNORM_BLOCK8, " +
+                        "FORMAT_RGBA_DXT5_UNORM_BLOCK16, " +
+                        "FORMAT_R_ATI1N_UNORM_BLOCK8, " +
+                        "FORMAT_RG_ATI2N_UNORM_BLOCK16")); 
 
                 // decompress RGBA DXT1
                 gli::texture2d &TextureCompressed = tex2D;
-                gli::texture2d TextureLocalDecompressed(gli::FORMAT_RGBA32_SFLOAT_PACK32, TextureCompressed.extent(), TextureCompressed.levels(), TextureCompressed.swizzles());
+                gli::texture2d TextureLocalDecompressed(
+                    gli::FORMAT_RGBA32_SFLOAT_PACK32, 
+                    TextureCompressed.extent(), 
+                    TextureCompressed.levels(), 
+                    TextureCompressed.swizzles());
                 gli::extent2d BlockExtent;
                 {
                     gli::extent3d TempExtent = gli::block_extent(format);
@@ -259,45 +266,105 @@ Texture* Texture::createFromFile(std::string name, std::string path, bool linear
                 }
                 
                 TextureLocalDecompressed = gli::flip(TextureLocalDecompressed);
+                
                 int lvl = 0;
                 textureStructs[l->getId()].width = (uint32_t)(TextureLocalDecompressed.extent(lvl).x);
                 textureStructs[l->getId()].height = (uint32_t)(TextureLocalDecompressed.extent(lvl).y);
-                l->texels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
                 auto image = TextureLocalDecompressed[lvl]; // get mipmap 0
-                memcpy(l->texels.data(), image.data(), (uint32_t)image.size());
-                l->markDirty();
-                
+                if (gli::is_float(format)) {
+                    l->floatTexels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
+                    memcpy(l->floatTexels.data(), image.data(), (uint32_t)image.size());
+                } else {
+                    l->byteTexels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
+                    std::vector<vec4> temp(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
+                    memcpy(temp.data(), image.data(), (uint32_t)image.size());
+                    for (uint32_t i = 0; i < temp.size(); ++i) l->byteTexels[i] = u8vec4(temp[i] * 255.f);
+                }
+                l->markDirty();                
             }
             else {
-                gli::convert(tex2D, gli::format::FORMAT_RGBA32_SFLOAT_PACK32);
                 tex2D = gli::flip(tex2D);
                 textureStructs[l->getId()].width = (uint32_t)(tex2D.extent().x);
                 textureStructs[l->getId()].height = (uint32_t)(tex2D.extent().y);
-                l->texels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
                 auto image = tex2D[0]; // get mipmap 0
-                memcpy(l->texels.data(), image.data(), (uint32_t)image.size());
+                if (format == gli::FORMAT_RGBA32_SFLOAT_PACK32) {
+                    l->floatTexels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
+                    memcpy(l->floatTexels.data(), image.data(), (uint32_t)image.size());
+                }
+                else if (format == gli::FORMAT_RGBA8_SRGB_PACK8) {
+                    l->byteTexels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
+                    memcpy(l->byteTexels.data(), image.data(), (uint32_t)image.size());
+                }
+                if (format == gli::FORMAT_R32_SFLOAT_PACK32) {
+                    tex2D = gli::convert(tex2D, gli::format::FORMAT_RGBA32_SFLOAT_PACK32);
+                    l->floatTexels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
+                    memcpy(l->floatTexels.data(), image.data(), (uint32_t)image.size());
+                }
+                else if (format == gli::FORMAT_R8_SRGB_PACK8) {
+                    tex2D = gli::convert(tex2D, gli::format::FORMAT_RGBA8_SRGB_PACK8);
+                    l->byteTexels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
+                    memcpy(l->byteTexels.data(), image.data(), (uint32_t)image.size());
+                }
+                if (format == gli::FORMAT_RG32_SFLOAT_PACK32) {
+                    tex2D = gli::convert(tex2D, gli::format::FORMAT_RGBA32_SFLOAT_PACK32);
+                    l->floatTexels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
+                    memcpy(l->floatTexels.data(), image.data(), (uint32_t)image.size());
+                }
+                else if (format == gli::FORMAT_RG8_SRGB_PACK8) {
+                    tex2D = gli::convert(tex2D, gli::format::FORMAT_RGBA8_SRGB_PACK8);
+                    l->byteTexels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
+                    memcpy(l->byteTexels.data(), image.data(), (uint32_t)image.size());
+                }
+                else {
+                    throw std::runtime_error(std::string("Error: image " + path + " uses an unsupported format. " + 
+                        "Supported formats are " + 
+                        "FORMAT_RGBA32_SFLOAT_PACK32, " +
+                        "FORMAT_RGBA8_SRGB_PACK8, " +
+                        "FORMAT_R32_SFLOAT_PACK32, " +
+                        "FORMAT_R8_SRGB_PACK8, " +
+                        "FORMAT_RG32_SFLOAT_PACK32, " +
+                        "FORMAT_RG8_SRGB_PACK8" + 
+                        "FORMAT_RGBA_DXT1_UNORM_BLOCK8, " +
+                        "FORMAT_RGBA_DXT5_UNORM_BLOCK16, " +
+                        "FORMAT_R_ATI1N_UNORM_BLOCK8, " +
+                        "FORMAT_RG_ATI2N_UNORM_BLOCK16"));
+                }
                 l->markDirty();
             }
         }
         else {
-            int x, y, num_channels;
-            stbi_set_flip_vertically_on_load(true);
-            if (linear) {
-                stbi_ldr_to_hdr_gamma(1.0f);
-            } else {
-                stbi_ldr_to_hdr_gamma(2.2f);
+            if (extension.compare(".hdr") == 0) {
+                int x, y, num_channels;
+                stbi_set_flip_vertically_on_load(true);
+                l->linear = true; // Since we convert HDR images from srgb to linear, srgb is always false here.
+                float* pixels = stbi_loadf(path.c_str(), &x, &y, &num_channels, STBI_rgb_alpha);
+                if (!pixels) { 
+                    std::string reason (stbi_failure_reason());
+                    throw std::runtime_error(std::string("Error: failed to load texture image \"") + path + std::string("\". Reason: ") + reason); 
+                }
+                l->floatTexels.resize(x * y);
+                memcpy(l->floatTexels.data(), pixels, x * y * 4 * sizeof(float));
+                textureStructs[l->getId()].width = x;
+                textureStructs[l->getId()].height = y;
+                l->markDirty();
+                stbi_image_free(pixels);
             }
-            float* pixels = stbi_loadf(path.c_str(), &x, &y, &num_channels, STBI_rgb_alpha);
-            if (!pixels) { 
-                std::string reason (stbi_failure_reason());
-                throw std::runtime_error(std::string("Error: failed to load texture image \"") + path + std::string("\". Reason: ") + reason); 
+            else {
+                l->linear = linear; // if linear is true, treat the texture contents as if it were not sRGB.
+                int x, y, num_channels;
+                stbi_set_flip_vertically_on_load(true);
+                stbi_uc* pixels = stbi_load(path.c_str(), &x, &y, &num_channels, STBI_rgb_alpha);
+                if (!pixels) { 
+                    std::string reason (stbi_failure_reason());
+                    throw std::runtime_error(std::string("Error: failed to load texture image \"") + path + std::string("\". Reason: ") + reason); 
+                }
+                l->byteTexels.resize(x * y);
+                memcpy(l->byteTexels.data(), pixels, x * y * 4 * sizeof(stbi_uc));
+                textureStructs[l->getId()].width = x;
+                textureStructs[l->getId()].height = y;
+                l->markDirty();
+                stbi_image_free(pixels);
             }
-            l->texels.resize(x * y);
-            memcpy(l->texels.data(), pixels, x * y * 4 * sizeof(float));
-            textureStructs[l->getId()].width = x;
-            textureStructs[l->getId()].height = y;
-            l->markDirty();
-            stbi_image_free(pixels);
         }
 
     };
@@ -310,15 +377,31 @@ Texture* Texture::createFromFile(std::string name, std::string path, bool linear
 	}
 }
 
-Texture* Texture::createFromData(std::string name, uint32_t width, uint32_t height, const float* data, uint32_t length)
+Texture* Texture::createFromData(std::string name, uint32_t width, uint32_t height, const float* data, uint32_t length, bool linear, bool hdr)
 {
     if (length != (width * height * 4)) { throw std::runtime_error("Error: width * height * 4 does not equal length of data!"); }
     if (width == 0) { throw std::runtime_error("Error: width must be greater than 0!"); }
     if (height == 0) { throw std::runtime_error("Error: height must be greater than 0!"); }
 
-    auto create = [width, height, length, data] (Texture* l) {
-        l->texels.resize(width * height);
-        memcpy(l->texels.data(), data, width * height * 4 * sizeof(float));
+    auto create = [width, height, length, data, linear, hdr] (Texture* l) {
+        // user must specify if texture should be srgb or linear. 
+        // we default to linear here as SRGB is more common for images that are stored / loaded from disk.
+        l->linear = linear; 
+        if (hdr) {
+            l->floatTexels.resize(width * height);
+            memcpy(l->floatTexels.data(), data, width * height * 4 * sizeof(float));
+        } else {
+            // gotta convert from float to byte. 
+            // TODO: update function signature to accept void* instead of just float*
+            l->byteTexels.resize(width * height);
+            for (uint32_t i = 0; i < length; ++i) {
+                l->byteTexels[i] = u8vec4(vec4(
+                    data[i * 4 + 0], 
+                    data[i * 4 + 1], 
+                    data[i * 4 + 2], 
+                    data[i * 4 + 3]) * 255.f);
+            }
+        }
         textureStructs[l->getId()].width = width;
         textureStructs[l->getId()].height = height;
         l->markDirty();
@@ -350,14 +433,15 @@ vec3 hsv2rgb(vec3 c)
     return c.z * mix(vec3(K.x), clamp(p - vec3(K.x), 0.0f, 1.0f), c.y);
 }
 
-Texture* Texture::createHSV(std::string name, Texture* tex, float hue, float sat, float val, float alpha)
+Texture* Texture::createHSV(std::string name, Texture* tex, float hue, float sat, float val, float alpha, bool hdr)
 {
-    auto create = [tex, hue, sat, val, alpha] (Texture* l) {
+    auto create = [tex, hue, sat, val, alpha, hdr] (Texture* l) {
         if (!tex || !tex->isInitialized()) throw std::runtime_error(std::string("Error: input texture is null/uninitialized!")); 
 
         uint32_t width = tex->getWidth();
         uint32_t height = tex->getHeight();
-        l->texels.resize(width * height);
+        if (hdr) l->floatTexels.resize(width * height);
+        else l->byteTexels.resize(width * height);
         textureStructs[l->getId()].width = width;
         textureStructs[l->getId()].height = height;
 
@@ -366,13 +450,17 @@ Texture* Texture::createHSV(std::string name, Texture* tex, float hue, float sat
             for (uint32_t x = 0; x < width; ++x) {
                 vec2 off = vec2(1 / float(width), 1 / float(height)); 
                 vec2 uv = vec2(x / float(width), y / float(height)) + .5f * off;
-                vec4 c = tex->sample(uv);
+                vec4 c = tex->sampleFloatTexels(uv);
+                if (!tex->isLinear()) c = glm::convertSRGBToLinear(c);
                 vec3 rgb = vec3(c);
                 vec3 hsv = rgb2hsv(rgb);
                 hsv.x = (hsv.x + dh) - (long)(hsv.x + dh);
                 hsv.y = clamp(sat * hsv.y, 0.f, 1.f); hsv.z = clamp(hsv.z * val, 0.f, 1.f);
                 rgb = mix(rgb, hsv2rgb(hsv), alpha);
-                l->texels[y * width + x] = vec4( rgb.r, rgb.g, rgb.b, c.a); // todo, transform in HSV space...
+                vec4 result = vec4( rgb.r, rgb.g, rgb.b, c.a);
+                if (!tex->isLinear()) result = glm::convertLinearToSRGB(result);
+                if (hdr) l->floatTexels[y * width + x] = vec4( rgb.r, rgb.g, rgb.b, c.a);
+                else l->byteTexels[y * width + x] = u8vec4(vec4(rgb.r, rgb.g, rgb.b, c.a) * 255.f);
             }
         }
         
@@ -387,15 +475,16 @@ Texture* Texture::createHSV(std::string name, Texture* tex, float hue, float sat
 	}
 }
 
-Texture* Texture::createMix(std::string name, Texture* a, Texture* b, float mix)
+Texture* Texture::createMix(std::string name, Texture* a, Texture* b, float mix, bool hdr)
 {
-    auto create = [a, b, mix] (Texture* l) {
+    auto create = [a, b, mix, hdr] (Texture* l) {
         if (!a || !a->isInitialized()) throw std::runtime_error(std::string("Error: Texture A is null/uninitialized!")); 
         if (!b || !b->isInitialized()) throw std::runtime_error(std::string("Error: Texture B is null/uninitialized!")); 
 
         uint32_t width = ::max(a->getWidth(), b->getWidth());
         uint32_t height = ::max(a->getHeight(), b->getHeight());
-        l->texels.resize(width * height);
+        if (hdr) l->floatTexels.resize(width * height);
+        else l->byteTexels.resize(width * height);
         textureStructs[l->getId()].width = width;
         textureStructs[l->getId()].height = height;
 
@@ -403,7 +492,14 @@ Texture* Texture::createMix(std::string name, Texture* a, Texture* b, float mix)
             for (uint32_t x = 0; x < width; ++x) {
                 vec2 off = vec2(1 / float(width), 1 / float(height)); 
                 vec2 uv = vec2(x / float(width), y / float(height)) + .5f * off;
-                l->texels[y * width + x] = glm::mix(a->sample(uv), b->sample(uv), mix);
+                vec4 ac = a->sampleFloatTexels(uv);
+                vec4 bc = b->sampleFloatTexels(uv);
+                if (!a->isLinear()) ac = glm::convertSRGBToLinear(ac);
+                if (!b->isLinear()) bc = glm::convertSRGBToLinear(bc);
+                vec4 result = glm::mix(ac, bc, mix);
+                if (!a->isLinear() && !b->isLinear()) result = glm::convertLinearToSRGB(result);
+                if (hdr) l->floatTexels[y * width + x] = result;
+                else l->byteTexels[y * width + x] = u8vec4(result * 255.f);
             }
         }
         
@@ -418,15 +514,16 @@ Texture* Texture::createMix(std::string name, Texture* a, Texture* b, float mix)
 	}
 }
 
-Texture* Texture::createAdd(std::string name, Texture* a, Texture* b)
+Texture* Texture::createAdd(std::string name, Texture* a, Texture* b, bool hdr)
 {
-    auto create = [a, b] (Texture* l) {
+    auto create = [a, b, hdr] (Texture* l) {
         if (!a || !a->isInitialized()) throw std::runtime_error(std::string("Error: Texture A is null/uninitialized!")); 
         if (!b || !b->isInitialized()) throw std::runtime_error(std::string("Error: Texture B is null/uninitialized!")); 
 
         uint32_t width = ::max(a->getWidth(), b->getWidth());
         uint32_t height = ::max(a->getHeight(), b->getHeight());
-        l->texels.resize(width * height);
+        if (hdr) l->floatTexels.resize(width * height);
+        else l->byteTexels.resize(width * height);
         textureStructs[l->getId()].width = width;
         textureStructs[l->getId()].height = height;
 
@@ -434,7 +531,14 @@ Texture* Texture::createAdd(std::string name, Texture* a, Texture* b)
             for (uint32_t x = 0; x < width; ++x) {
                 vec2 off = vec2(1 / float(width), 1 / float(height)); 
                 vec2 uv = vec2(x / float(width), y / float(height)) + .5f * off;
-                l->texels[y * width + x] = a->sample(uv) + b->sample(uv);
+                vec4 ac = a->sampleFloatTexels(uv);
+                vec4 bc = b->sampleFloatTexels(uv);
+                if (!a->isLinear()) ac = glm::convertSRGBToLinear(ac);
+                if (!b->isLinear()) bc = glm::convertSRGBToLinear(bc);
+                vec4 result = ac + bc;
+                if (!a->isLinear() && !b->isLinear()) result = glm::convertLinearToSRGB(result);
+                if (hdr) l->floatTexels[y * width + x] = result;
+                else l->byteTexels[y * width + x] = u8vec4(result * 255.f);
             }
         }
         
@@ -449,15 +553,16 @@ Texture* Texture::createAdd(std::string name, Texture* a, Texture* b)
 	}
 }
 
-Texture* Texture::createMultiply(std::string name, Texture* a, Texture* b)
+Texture* Texture::createMultiply(std::string name, Texture* a, Texture* b, bool hdr)
 {
-    auto create = [a, b] (Texture* l) {
+    auto create = [a, b, hdr] (Texture* l) {
         if (!a || !a->isInitialized()) throw std::runtime_error(std::string("Error: Texture A is null/uninitialized!")); 
         if (!b || !b->isInitialized()) throw std::runtime_error(std::string("Error: Texture B is null/uninitialized!")); 
 
         uint32_t width = ::max(a->getWidth(), b->getWidth());
         uint32_t height = ::max(a->getHeight(), b->getHeight());
-        l->texels.resize(width * height);
+        if (hdr) l->floatTexels.resize(width * height);
+        else l->byteTexels.resize(width * height);
         textureStructs[l->getId()].width = width;
         textureStructs[l->getId()].height = height;
 
@@ -465,10 +570,16 @@ Texture* Texture::createMultiply(std::string name, Texture* a, Texture* b)
             for (uint32_t x = 0; x < width; ++x) {
                 vec2 off = vec2(1 / float(width), 1 / float(height)); 
                 vec2 uv = vec2(x / float(width), y / float(height)) + .5f * off;
-                l->texels[y * width + x] = a->sample(uv) * b->sample(uv);
+                vec4 ac = a->sampleFloatTexels(uv);
+                vec4 bc = b->sampleFloatTexels(uv);
+                if (!a->isLinear()) ac = glm::convertSRGBToLinear(ac);
+                if (!b->isLinear()) bc = glm::convertSRGBToLinear(bc);
+                vec4 result = ac * bc;
+                if (!a->isLinear() && !b->isLinear()) result = glm::convertLinearToSRGB(result);
+                if (hdr) l->floatTexels[y * width + x] = result;
+                else l->byteTexels[y * width + x] = u8vec4(result * 255.f);
             }
         }
-        
         l->markDirty();
     };
 
@@ -480,18 +591,31 @@ Texture* Texture::createMultiply(std::string name, Texture* a, Texture* b)
 	}
 }
 
-vec4 Texture::sample(vec2 uv) {
+vec4 Texture::sampleFloatTexels(vec2 uv) {
     uint32_t width = textureStructs[id].width;
     uint32_t height = textureStructs[id].height;
     vec2 coord = uv * vec2(width-1, height-1);
     ivec2 coord_floor = glm::ivec2(glm::floor(coord));
     ivec2 coord_ceil = glm::ivec2(glm::ceil(coord));
-    return texels[coord_floor.y * width + coord_floor.x]; // todo, interpolate four surrouding pixels
-    // vec2 remainder = coord - vec2(coord_floor);
-    // return glm::mix(
-    //     texels[coord_floor.y * width + coord_floor.x],
-    //     texels[coord_ceil.y * width + coord_ceil.x],
-    //     remainder);
+
+    // todo, interpolate four surrouding pixels
+    if (floatTexels.size() > 0)
+        return floatTexels[coord_floor.y * width + coord_floor.x]; 
+    else 
+        return vec4(byteTexels[coord_floor.y * width + coord_floor.x]) / 255.f; 
+}
+
+u8vec4 Texture::sampleByteTexels(vec2 uv) {
+    uint32_t width = textureStructs[id].width;
+    uint32_t height = textureStructs[id].height;
+    vec2 coord = uv * vec2(width-1, height-1);
+    ivec2 coord_floor = glm::ivec2(glm::floor(coord));
+    ivec2 coord_ceil = glm::ivec2(glm::ceil(coord));
+    // todo, interpolate four surrouding pixels
+    if (byteTexels.size() > 0)
+        return floatTexels[coord_floor.y * width + coord_floor.x]; 
+    else 
+        return u8vec4(floatTexels[coord_floor.y * width + coord_floor.x] * 255.f); 
 }
 
 std::shared_ptr<std::recursive_mutex> Texture::getEditMutex()
@@ -506,7 +630,8 @@ Texture* Texture::get(std::string name) {
 void Texture::remove(std::string name) {
     auto t = get(name);
 	if (!t) return;
-    std::vector<glm::vec4>().swap(t->texels);
+    std::vector<glm::vec4>().swap(t->floatTexels);
+    std::vector<glm::u8vec4>().swap(t->byteTexels);
     StaticFactory::remove(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
     anyDirty = true;
 }
