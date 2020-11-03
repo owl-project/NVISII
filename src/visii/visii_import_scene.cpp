@@ -26,6 +26,7 @@ class Vertex
 struct TextureInfo {
     std::string path = "";
     bool is_bump = false;
+    bool is_linear = false;
 };
 
 struct TextureInfoCompare {
@@ -55,15 +56,11 @@ std::string dirnameOf(const std::string& fname)
          : fname.substr(0, pos);
 }
 
-Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::quat rotation)
+Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::quat rotation, bool reuse_textures)
 {
     std::string directory = dirnameOf(path);
     
     Scene visiiScene;
-
-    // temporary
-    auto material = Material::create("default");
-    visiiScene.materials.push_back(material);
 
     // Check and validate the specified model file extension.
     const char* extension = strrchr(path.c_str(), '.');
@@ -96,22 +93,81 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
     
     std::set<TextureInfo, TextureInfoCompare> texture_paths;
     std::map<std::string, Texture*> texture_map;
+    std::map<Material*, Light*> material_light_map;
+
     
     // load materials
     for (uint32_t materialIdx = 0; materialIdx < scene->mNumMaterials; ++materialIdx) {
         auto &material = scene->mMaterials[materialIdx];
-        auto name = std::string(material->GetName().C_Str());
-        std::cout<<"Creating material " << name << std::endl;
-        auto mat = Material::create(name);
+        auto materialName = std::string(material->GetName().C_Str());
+        int duplicateCount = 0;
+        while (Material::get(materialName) != nullptr) {
+            duplicateCount += 1;
+            materialName += std::to_string(duplicateCount);
+        }
+        std::cout<<"Creating material " << materialName << std::endl;
+        auto mat = Material::create(materialName);
         visiiScene.materials.push_back(mat);
+        material_light_map[mat] = nullptr;
+        aiString Path;
         
-        // todo, add texture paths to map above, load later and connect
+        // Diffuse/specular workflow
         if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
-            aiString Path;
             if (material->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
                 std::string path = directory + "/" + std::string(Path.C_Str());
                 std::replace(path.begin(), path.end(), '\\', '/');
-                texture_paths.insert({path, /* is bump */false});
+                texture_paths.insert({path, /* is bump */false, false});
+            }
+        }
+
+        if (material->GetTextureCount(aiTextureType_SPECULAR) > 0) {
+            if (material->GetTexture(aiTextureType_SPECULAR, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::string path = directory + "/" + std::string(Path.C_Str());
+                std::replace(path.begin(), path.end(), '\\', '/');
+                texture_paths.insert({path, /* is bump */false, false});
+            }
+        }
+
+        // normal map
+        if (material->GetTextureCount(aiTextureType_NORMALS) > 0) {
+            if (material->GetTexture(aiTextureType_NORMALS, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::string path = directory + "/" + std::string(Path.C_Str());
+                std::replace(path.begin(), path.end(), '\\', '/');
+                texture_paths.insert({path, /* is bump */false, true});
+            }
+        }
+
+        // emission map
+        if (material->GetTextureCount(aiTextureType_EMISSIVE) > 0) {
+            if (material->GetTexture(aiTextureType_EMISSIVE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::string path = directory + "/" + std::string(Path.C_Str());
+                std::replace(path.begin(), path.end(), '\\', '/');
+                texture_paths.insert({path, /* is bump */false, true});
+            }
+        }        
+
+        // PBR materials
+        if (material->GetTextureCount(aiTextureType_BASE_COLOR) > 0) {
+            if (material->GetTexture(aiTextureType_BASE_COLOR, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::string path = directory + "/" + std::string(Path.C_Str());
+                std::replace(path.begin(), path.end(), '\\', '/');
+                texture_paths.insert({path, /* is bump */false, false});
+            }
+        }
+
+        if (material->GetTextureCount(aiTextureType_METALNESS) > 0) {
+            if (material->GetTexture(aiTextureType_METALNESS, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::string path = directory + "/" + std::string(Path.C_Str());
+                std::replace(path.begin(), path.end(), '\\', '/');
+                texture_paths.insert({path, /* is bump */false, true});
+            }
+        }
+
+        if (material->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
+            if (material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::string path = directory + "/" + std::string(Path.C_Str());
+                std::replace(path.begin(), path.end(), '\\', '/');
+                texture_paths.insert({path, /* is bump */false, true});
             }
         }
     }
@@ -124,13 +180,21 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         // auto texturePath = std::string(texture->mFilename.C_Str());
 
         std::string textureName = tex.path;
-        int duplicateCount = 0;
-        while (Texture::get(textureName) != nullptr) {
-            duplicateCount += 1;
-            textureName += std::to_string(duplicateCount);
+        if (!reuse_textures) {
+            int duplicateCount = 0;
+            while (Texture::get(textureName) != nullptr) {
+                duplicateCount += 1;
+                textureName += std::to_string(duplicateCount);
+            }
         }
         std::cout<<"Creating texture " << textureName << std::endl;
-        auto texture = Texture::createFromFile(textureName, tex.path);
+
+        Texture* texture = nullptr;
+        try {
+            texture = (Texture::get(textureName) != nullptr) ? Texture::get(textureName) : Texture::createFromFile(textureName, tex.path);
+        } catch (exception& e) {
+            std::cout<<"Warning: unable to create texture " << textureName <<  " : " << std::string(e.what()) <<std::endl;
+        }
         visiiScene.textures.push_back(texture);
         texture_map[tex.path] = texture;
     }
@@ -140,14 +204,60 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         auto &material = scene->mMaterials[materialIdx];
         auto name = std::string(material->GetName().C_Str());
         auto mat = visiiScene.materials[materialIdx];
+        aiString Path;
         
         // todo, add texture paths to map above, load later and connect
         if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
-            aiString Path;
             if (material->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
                 std::string path = directory + "/" + std::string(Path.C_Str());
                 std::replace(path.begin(), path.end(), '\\', '/');
-                mat->setBaseColorTexture(texture_map[path]);
+                if (texture_map[path]) mat->setBaseColorTexture(texture_map[path]);
+                if (texture_map[path]) mat->setAlphaTexture(texture_map[path], 3);
+            }
+        }
+
+        if (material->GetTextureCount(aiTextureType_SPECULAR) > 0) {
+            if (material->GetTexture(aiTextureType_SPECULAR, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::string path = directory + "/" + std::string(Path.C_Str());
+                std::replace(path.begin(), path.end(), '\\', '/');
+                if (texture_map[path])  mat->setSpecularTexture(texture_map[path], 0); // assuming grayscale specular map
+            }
+        }
+
+        if (material->GetTextureCount(aiTextureType_NORMALS) > 0) {
+            if (material->GetTexture(aiTextureType_NORMALS, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::string path = directory + "/" + std::string(Path.C_Str());
+                std::replace(path.begin(), path.end(), '\\', '/');
+                if (texture_map[path]) mat->setNormalMapTexture(texture_map[path]);
+            }
+        }
+
+        if (material->GetTextureCount(aiTextureType_EMISSIVE) > 0) {
+            if (material->GetTexture(aiTextureType_EMISSIVE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::string path = directory + "/" + std::string(Path.C_Str());
+                std::replace(path.begin(), path.end(), '\\', '/');
+                if (texture_map[path]) {
+                    material_light_map[mat] = Light::create(mat->getName());
+                    material_light_map[mat]->setColorTexture(texture_map[path]);
+                    visiiScene.lights.push_back(material_light_map[mat]);
+                }
+            }
+        }  
+
+        if (material->GetTextureCount(aiTextureType_BASE_COLOR) > 0) {
+            if (material->GetTexture(aiTextureType_BASE_COLOR, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::string path = directory + "/" + std::string(Path.C_Str());
+                std::replace(path.begin(), path.end(), '\\', '/');
+                if (texture_map[path])  mat->setBaseColorTexture(texture_map[path]);
+                if (texture_map[path])  mat->setAlphaTexture(texture_map[path], 3);
+            }
+        }
+
+        if (material->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
+            if (material->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::string path = directory + "/" + std::string(Path.C_Str());
+                std::replace(path.begin(), path.end(), '\\', '/');
+                if (texture_map[path])  mat->setRoughnessTexture(texture_map[path], 0); // assuming first channel works...
             }
         }
     }
@@ -232,8 +342,26 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         std::cout<<meshName<<std::endl;
     }
 
+    // load lights
+    for (uint32_t lightIdx = 0; lightIdx < scene->mNumLights; ++lightIdx) {
+        auto light = scene->mLights[lightIdx];
+        // std::cout<<"Light: " << std::string(light->mName.C_Str()) << std::endl;
+        // if (light->mType == aiLightSource_DIRECTIONAL) {
+        //     std::cout<<"Directional"<<std::endl;
+        // } else if (light->mType == aiLightSource_POINT) {
+        //     std::cout<<"point"<<std::endl;
+        // } else if (light->mType == aiLightSource_SPOT) {
+        //     std::cout<<"spot"<<std::endl;
+        // } else if (light->mType == aiLightSource_AMBIENT) {
+        //     std::cout<<"ambient"<<std::endl;
+        // } else if (light->mType == aiLightSource_AREA) {
+        //     std::cout<<"area"<<std::endl;
+        // } 
+    }
+
     std::function<void(aiNode*, Transform*)> addNode;
-    addNode = [&scene, &visiiScene, &addNode, position, rotation, scale](aiNode* node, Transform* parentTransform) {
+    addNode = [&scene, &visiiScene, &material_light_map, &addNode, position, rotation, scale]
+        (aiNode* node, Transform* parentTransform) {
         // Create the transform to represent this node
         std::string transformName = std::string(node->mName.C_Str());
         std::cout<<transformName<<std::endl;
@@ -262,6 +390,9 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
             auto entity = Entity::create(transformName + "_" + mesh->getName());
             entity->setMesh(mesh);
             entity->setMaterial(material);
+            if (material_light_map[material]) {
+                entity->setLight(material_light_map[material]);
+            }
             entity->setTransform(transform);
         }
 

@@ -170,6 +170,9 @@ class Texture : public StaticFactory
     /** @returns a flattened list of texels */
     std::vector<vec4> getTexels();
 
+    /** @returns a flattened list of 8-bit texels */
+	std::vector<i8vec4> get8BitTexels();
+
 	/**
 	 * Sample the texture at the given texture coordinates
 	 * @param uv A pair of values between [0,0] and [1,1]
@@ -191,6 +194,9 @@ class Texture : public StaticFactory
 	 * to repeat in a pattern. Textures can be flipped in either U and/or V using negative scales.
 	*/
 	void setScale(glm::vec2 scale);
+
+	/** @returns True if the texture contains any values above 1 */
+    bool isHDR();
 
   private:
   	/* TODO */

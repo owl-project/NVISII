@@ -1223,9 +1223,12 @@ void updateComponents()
                 OD.textureObjects[tid] = 0; 
             }
             if (!textures[tid].isInitialized()) continue;
+            bool isHDR = textures[tid].isHDR();
             OD.textureObjects[tid] = owlTexture2DCreate(
-                OD.context, OWL_TEXEL_FORMAT_RGBA32F,
-                textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
+                OD.context, 
+                (isHDR) ? OWL_TEXEL_FORMAT_RGBA32F : OWL_TEXEL_FORMAT_RGBA8,
+                textures[tid].getWidth(), textures[tid].getHeight(), 
+                ((isHDR) ? (void*)textures[tid].getTexels().data() : (void*)textures[tid].get8BitTexels().data()),
                 OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
         }
 

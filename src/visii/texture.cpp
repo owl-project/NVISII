@@ -4,6 +4,12 @@
 #include <stb_image_write.h>
 #include <cstring>
 
+#include <algorithm>
+
+#include <gli/gli.hpp>
+#include <gli/convert.hpp>
+#include <gli/core/s3tc.hpp>
+
 std::vector<Texture> Texture::textures;
 std::vector<TextureStruct> Texture::textureStructs;
 std::map<std::string, uint32_t> Texture::lookupTable;
@@ -61,6 +67,15 @@ std::vector<vec4> Texture::getTexels() {
     return texels;
 }
 
+std::vector<i8vec4> Texture::get8BitTexels() {
+    // todo: optimize this...
+    std::vector<i8vec4> texels8(texels.size());
+    for (uint32_t i = 0; i < texels.size(); ++i) {
+        texels8[i] = i8vec4(texels[i] * 255.0f);
+    }
+    return texels8;
+}
+
 uint32_t Texture::getWidth() {
     return textureStructs[id].width;
 }
@@ -73,6 +88,15 @@ void Texture::setScale(glm::vec2 scale)
 {
     textureStructs[id].scale = scale;
     markDirty();
+}
+
+bool Texture::isHDR()
+{
+    // todo: optimize this...
+    for (uint32_t i = 0; i < texels.size(); ++i) {
+        if (glm::any(glm::greaterThan(texels[i], vec4(1.f)))) return true;
+    }
+    return false;
 }
 
 /* SSBO logic */
@@ -146,24 +170,136 @@ Texture* Texture::createFromImage(std::string name, std::string path, bool linea
 
 Texture* Texture::createFromFile(std::string name, std::string path, bool linear) {
     auto create = [path, linear] (Texture* l) {
-        int x, y, num_channels;
-        stbi_set_flip_vertically_on_load(true);
-        if (linear) {
-            stbi_ldr_to_hdr_gamma(1.0f);
-        } else {
-            stbi_ldr_to_hdr_gamma(2.2f);
+        // first, check the extension
+        std::string extension = std::string(strrchr(path.c_str(), '.'));
+        std::transform(extension.data(), extension.data() + extension.size(), 
+            std::addressof(extension[0]), [](unsigned char c){ return std::tolower(c); });
+        
+        if ((extension.compare(".dds") == 0) || (extension.compare(".ktx") == 0)) {
+            auto texture = gli::load(path);
+            if (texture.target() != gli::target::TARGET_2D) {
+                std::string reason = "Currently only 2D textures supported!";
+                throw std::runtime_error(std::string("Error: failed to load texture image \"") + 
+                    path + std::string("\". Reason: ") + reason); 
+            }
+
+            auto tex2D = gli::texture2d(texture);
+            auto format = tex2D.format();
+            if (tex2D.empty())
+                throw std::runtime_error( std::string("Error: image " + path + " is empty"));
+
+            if (gli::is_compressed(format)) {
+                std::cout<<format<<std::endl;
+                // if (!gli::is_s3tc_compressed(format)) {
+                //     throw std::runtime_error( std::string("Error: image " + path + " is compressed using an algorithm other than S3TC (currently unsupported)"));
+                // }
+
+                if ((format != gli::FORMAT_RGBA_DXT1_UNORM_BLOCK8) &&
+                    (format != gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16) &&
+                    (format != gli::FORMAT_R_ATI1N_UNORM_BLOCK8) &&
+                    (format != gli::FORMAT_RG_ATI2N_UNORM_BLOCK16)
+                ) throw std::runtime_error( std::string("Error: image " + path + " is compressed using an unsupported S3TC format.")
+                        + std::string("Supported formats are FORMAT_RGBA_DXT1_UNORM_BLOCK8, FORMAT_RGBA_DXT5_UNORM_BLOCK16, FORMAT_R_ATI1N_UNORM_BLOCK8, FORMAT_RG_ATI2N_UNORM_BLOCK16"));
+
+                // decompress RGBA DXT1
+                gli::texture2d &TextureCompressed = tex2D;
+                gli::texture2d TextureLocalDecompressed(gli::FORMAT_RGBA32_SFLOAT_PACK32, TextureCompressed.extent(), TextureCompressed.levels(), TextureCompressed.swizzles());
+                gli::extent2d BlockExtent;
+                {
+                    gli::extent3d TempExtent = gli::block_extent(format);
+                    BlockExtent.x = TempExtent.x;
+                    BlockExtent.y = TempExtent.y;
+                }
+
+                for(size_t Level = 0; Level < TextureCompressed.levels(); ++Level) {
+                    gli::extent2d TexelCoord, BlockCoord;
+                    gli::extent2d LevelExtent = TextureCompressed.extent(Level);
+                    gli::extent2d LevelExtentInBlocks = glm::max(gli::extent2d(1, 1), LevelExtent / BlockExtent);
+                    gli::extent2d DecompressedBlockCoord;
+                    for(BlockCoord.y = 0, TexelCoord.y = 0; BlockCoord.y < LevelExtentInBlocks.y; ++BlockCoord.y, TexelCoord.y += BlockExtent.y) {
+                        for(BlockCoord.x = 0, TexelCoord.x = 0; BlockCoord.x < LevelExtentInBlocks.x; ++BlockCoord.x, TexelCoord.x += BlockExtent.x) {
+                            if (format == gli::FORMAT_RGBA_DXT1_UNORM_BLOCK8) {
+                                const gli::detail::dxt1_block *DXT1Block = TextureCompressed.data<gli::detail::dxt1_block>(0, 0, Level) + (BlockCoord.y * LevelExtentInBlocks.x + BlockCoord.x);
+                                const gli::detail::texel_block4x4 DecompressedBlock = gli::detail::decompress_dxt1_block(*DXT1Block);
+                                for(DecompressedBlockCoord.y = 0; DecompressedBlockCoord.y < glm::min(4, LevelExtent.y); ++DecompressedBlockCoord.y) {
+                                    for(DecompressedBlockCoord.x = 0; DecompressedBlockCoord.x < glm::min(4, LevelExtent.x); ++DecompressedBlockCoord.x) {
+                                        TextureLocalDecompressed.store(TexelCoord + DecompressedBlockCoord, Level, DecompressedBlock.Texel[DecompressedBlockCoord.y][DecompressedBlockCoord.x]);
+                                    }
+                                }
+                            }
+                            else if (format == gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16) {
+                                const gli::detail::dxt5_block *DXT5Block = TextureCompressed.data<gli::detail::dxt5_block>(0, 0, Level) + (BlockCoord.y * LevelExtentInBlocks.x + BlockCoord.x);
+                                const gli::detail::texel_block4x4 DecompressedBlock = gli::detail::decompress_dxt5_block(*DXT5Block);
+                                for(DecompressedBlockCoord.y = 0; DecompressedBlockCoord.y < glm::min(4, LevelExtent.y); ++DecompressedBlockCoord.y) {
+                                    for(DecompressedBlockCoord.x = 0; DecompressedBlockCoord.x < glm::min(4, LevelExtent.x); ++DecompressedBlockCoord.x) {
+                                        TextureLocalDecompressed.store(TexelCoord + DecompressedBlockCoord, Level, DecompressedBlock.Texel[DecompressedBlockCoord.y][DecompressedBlockCoord.x]);
+                                    }
+                                }
+                            }
+                            else if (format == gli::FORMAT_R_ATI1N_UNORM_BLOCK8) {
+                                const gli::detail::bc4_block *BC4Block = TextureCompressed.data<gli::detail::bc4_block>(0, 0, Level) + (BlockCoord.y * LevelExtentInBlocks.x + BlockCoord.x);
+						        const gli::detail::texel_block4x4 DecompressedBlock = gli::detail::decompress_bc4unorm_block(*BC4Block);
+                                for(DecompressedBlockCoord.y = 0; DecompressedBlockCoord.y < glm::min(4, LevelExtent.y); ++DecompressedBlockCoord.y) {
+                                    for(DecompressedBlockCoord.x = 0; DecompressedBlockCoord.x < glm::min(4, LevelExtent.x); ++DecompressedBlockCoord.x) {
+                                        TextureLocalDecompressed.store(TexelCoord + DecompressedBlockCoord, Level, DecompressedBlock.Texel[DecompressedBlockCoord.y][DecompressedBlockCoord.x]);
+                                    }
+                                }
+                            }
+                            else if (format == gli::FORMAT_RG_ATI2N_UNORM_BLOCK16) {
+                                const gli::detail::bc5_block *BC5Block = TextureCompressed.data<gli::detail::bc5_block>(0, 0, Level) + (BlockCoord.y * LevelExtentInBlocks.x + BlockCoord.x);
+                                const gli::detail::texel_block4x4 DecompressedBlock = gli::detail::decompress_bc5unorm_block(*BC5Block);
+                                for(DecompressedBlockCoord.y = 0; DecompressedBlockCoord.y < glm::min(4, LevelExtent.y); ++DecompressedBlockCoord.y) {
+                                    for(DecompressedBlockCoord.x = 0; DecompressedBlockCoord.x < glm::min(4, LevelExtent.x); ++DecompressedBlockCoord.x) {
+                                        TextureLocalDecompressed.store(TexelCoord + DecompressedBlockCoord, Level, DecompressedBlock.Texel[DecompressedBlockCoord.y][DecompressedBlockCoord.x]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                TextureLocalDecompressed = gli::flip(TextureLocalDecompressed);
+                int lvl = 0;
+                textureStructs[l->getId()].width = (uint32_t)(TextureLocalDecompressed.extent(lvl).x);
+                textureStructs[l->getId()].height = (uint32_t)(TextureLocalDecompressed.extent(lvl).y);
+                l->texels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
+                auto image = TextureLocalDecompressed[lvl]; // get mipmap 0
+                memcpy(l->texels.data(), image.data(), (uint32_t)image.size());
+                l->markDirty();
+                
+            }
+            else {
+                gli::convert(tex2D, gli::format::FORMAT_RGBA32_SFLOAT_PACK32);
+                tex2D = gli::flip(tex2D);
+                textureStructs[l->getId()].width = (uint32_t)(tex2D.extent().x);
+                textureStructs[l->getId()].height = (uint32_t)(tex2D.extent().y);
+                l->texels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
+                auto image = tex2D[0]; // get mipmap 0
+                memcpy(l->texels.data(), image.data(), (uint32_t)image.size());
+                l->markDirty();
+            }
         }
-        float* pixels = stbi_loadf(path.c_str(), &x, &y, &num_channels, STBI_rgb_alpha);
-        if (!pixels) { 
-            std::string reason (stbi_failure_reason());
-            throw std::runtime_error(std::string("Error: failed to load texture image \"") + path + std::string("\". Reason: ") + reason); 
+        else {
+            int x, y, num_channels;
+            stbi_set_flip_vertically_on_load(true);
+            if (linear) {
+                stbi_ldr_to_hdr_gamma(1.0f);
+            } else {
+                stbi_ldr_to_hdr_gamma(2.2f);
+            }
+            float* pixels = stbi_loadf(path.c_str(), &x, &y, &num_channels, STBI_rgb_alpha);
+            if (!pixels) { 
+                std::string reason (stbi_failure_reason());
+                throw std::runtime_error(std::string("Error: failed to load texture image \"") + path + std::string("\". Reason: ") + reason); 
+            }
+            l->texels.resize(x * y);
+            memcpy(l->texels.data(), pixels, x * y * 4 * sizeof(float));
+            textureStructs[l->getId()].width = x;
+            textureStructs[l->getId()].height = y;
+            l->markDirty();
+            stbi_image_free(pixels);
         }
-        l->texels.resize(x * y);
-        memcpy(l->texels.data(), pixels, x * y * 4 * sizeof(float));
-        textureStructs[l->getId()].width = x;
-        textureStructs[l->getId()].height = y;
-        l->markDirty();
-        stbi_image_free(pixels);
+
     };
 
     try {
