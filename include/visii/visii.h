@@ -365,6 +365,38 @@ void enableUpdates();
  */
 void disableUpdates();
 
+/** 
+ * If in interactive mode, returns True if the specified button is pressed but not held.
+ * @param The button to check. Not case sensitive. Possible options include:
+ * SPACE, APOSTROPHE, COMMA, MINUS, PERIOD, SLASH, SEMICOLON, EQUAL, UP, DOWN, LEFT, RIGHT
+ * 0-9, A->Z, [, ], \, `, ESCAPE, ENTER, TAB, BACKSPACE, INSERT, DELETE, PAGE_UP, PAGE_DOWN, HOME, 
+ * CAPS_LOCK, SCROLL_LOCK, NUM_LOCK, PRINT_SCREEN, PAUSE, F1 -> F25, KP_0 -> KP_9,
+ * KP_DECIMAL, KP_DIVIDE, KP_MULTIPLY, KP_SUBTRACT, KP_ADD, KP_ENTER, KP_EQUAL, 
+ * LEFT_SHIFT, LEFT_CONTROL, LEFT_ALT, LEFT_SUPER, RIGHT_SHIFT, RIGHT_CONTROL, RIGHT_ALT, RIGHT_SUPER,
+ * MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT
+*/
+bool isButtonPressed(std::string button);
+
+/** 
+ * If in interactive mode, returns True if the specified button is held down.
+ * @param The button to check. Not case sensitive. Possible options include:
+ * SPACE, APOSTROPHE, COMMA, MINUS, PERIOD, SLASH, SEMICOLON, EQUAL, UP, DOWN, LEFT, RIGHT
+ * 0-9, A->Z, [, ], \, `, ESCAPE, ENTER, TAB, BACKSPACE, INSERT, DELETE, PAGE_UP, PAGE_DOWN, HOME, 
+ * CAPS_LOCK, SCROLL_LOCK, NUM_LOCK, PRINT_SCREEN, PAUSE, F1 -> F25, KP_0 -> KP_9,
+ * KP_DECIMAL, KP_DIVIDE, KP_MULTIPLY, KP_SUBTRACT, KP_ADD, KP_ENTER, KP_EQUAL, 
+ * LEFT_SHIFT, LEFT_CONTROL, LEFT_ALT, LEFT_SUPER, RIGHT_SHIFT, RIGHT_CONTROL, RIGHT_ALT, RIGHT_SUPER,
+ * MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT
+*/
+bool isButtonHeld(std::string button);
+
+/** Returns the position of the cursor relative to the window */
+vec2 getCursorPos();
+
+/** Returns size of the window */
+ivec2 getWindowSize();
+
+/** Returns true if the close button on the window was clicked. */
+bool shouldWindowClose();
 
 // This is for internal testing purposes. Don't call this unless you know what you're doing.
 void __test__(std::vector<std::string> args);

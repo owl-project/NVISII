@@ -2184,6 +2184,73 @@ void deinitialize()
     sleep(1); 
 }
 
+bool isButtonPressed(std::string button) {
+    if (ViSII.headlessMode) return false;
+    auto glfw = Libraries::GLFW::Get();
+    std::transform(button.begin(), button.end(), button.begin(),
+            [](unsigned char c){ return std::toupper(c); });
+    bool pressed, prevPressed;
+    if (button.compare("MOUSE_LEFT") == 0) {
+        pressed = glfw->get_button_action("VISII", 0) == 1;
+        prevPressed = glfw->get_button_action_prev("VISII", 0) == 1;
+    }
+    else if (button.compare("MOUSE_RIGHT") == 0) {
+        pressed = glfw->get_button_action("VISII", 1) == 1;
+        prevPressed = glfw->get_button_action_prev("VISII", 1) == 1;
+    }
+    else if (button.compare("MOUSE_MIDDLE") == 0) {
+        pressed = glfw->get_button_action("VISII", 2) == 1;
+        prevPressed = glfw->get_button_action_prev("VISII", 2) == 1;
+    }
+    else {
+        pressed = glfw->get_key_action("ViSII", glfw->get_key_code(button)) == 1;
+        prevPressed = glfw->get_key_action_prev("ViSII", glfw->get_key_code(button)) == 1;
+    }
+    
+    return pressed && !prevPressed;
+}
+
+bool isButtonHeld(std::string button) {
+    if (ViSII.headlessMode) return false;
+    auto glfw = Libraries::GLFW::Get();
+    std::transform(button.begin(), button.end(), button.begin(),
+            [](unsigned char c){ return std::toupper(c); });
+    if (button.compare("MOUSE_LEFT") == 0) return glfw->get_button_action("VISII", 0) >= 1;
+    if (button.compare("MOUSE_RIGHT") == 0) return glfw->get_button_action("VISII", 1) >= 1;
+    if (button.compare("MOUSE_MIDDLE") == 0) return glfw->get_button_action("VISII", 2) >= 1;
+    return glfw->get_key_action("ViSII", glfw->get_key_code(button)) >= 1;
+}
+
+vec2 getCursorPos()
+{
+    if (ViSII.headlessMode) return vec2(NAN, NAN);
+    auto glfw = Libraries::GLFW::Get();
+    auto pos = glfw->get_cursor_pos("ViSII");
+    return vec2(pos[0], pos[1]);
+}
+
+ivec2 getWindowSize()
+{
+    if (ViSII.headlessMode) return ivec2(NAN, NAN);
+    
+    auto func = [] () {
+        auto glfw = Libraries::GLFW::Get();
+        glfwGetFramebufferSize(WindowData.window, &WindowData.currentSize.x, &WindowData.currentSize.y);
+    };
+    auto future = enqueueCommand(func);
+    if (ViSII.render_thread_id != std::this_thread::get_id()) 
+        future.wait();
+
+    return WindowData.currentSize;
+}
+
+bool shouldWindowClose()
+{
+    if (ViSII.headlessMode) return false;
+    auto glfw = Libraries::GLFW::Get();
+    return glfw->should_close("ViSII");
+}
+
 void __test__(std::vector<std::string> args) {
     if (args.size() != 1) return;
 

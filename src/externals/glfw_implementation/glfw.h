@@ -36,7 +36,7 @@ namespace Libraries {
         bool wait_events();
         bool does_window_exist(string key);
         bool post_empty_event();
-        bool should_close();
+        bool should_close(string key);
         void swap_buffers(string key);
         std::string get_key_from_ptr(GLFWwindow* ptr);
         bool set_scroll(std::string key, double xoffset, double yoffset);
@@ -45,12 +45,19 @@ namespace Libraries {
         std::array<float, 2> get_cursor_pos(std::string key);
         bool set_button_data(std::string key, int button, int action, int mods);
         int get_button_action(std::string key, int button);
+        int get_button_action_prev(std::string key, int button);
         int get_button_mods(std::string key, int button);
+        int get_button_mods_prev(std::string key, int button);
 
         bool set_key_data(std::string window_key, int key, int scancode, int action, int mods);
         int get_key_scancode(std::string window_key, int key);
         int get_key_action(std::string window_key, int key);
+        int get_key_action_prev(std::string window_key, int key);
         int get_key_mods(std::string window_key, int key);
+        int get_key_mods_prev(std::string window_key, int key);
+
+        bool set_should_close(std::string window_key, bool should_close);
+
         static int get_key_code(std::string key);
         GLFWwindow* get_ptr(std::string key);
         std::shared_ptr<std::mutex> get_mutex();
@@ -84,8 +91,12 @@ namespace Libraries {
             double yscroll = 0.f;
             double xpos;
             double ypos;
+            bool shouldClose = false;
+             // This is a bit inefficient, but allows lookup by GLFW key
             Button buttons[8];
-            Key keys[349]; // This is a bit inefficient, but allows lookup by GLFW key
+            Button buttonsPrev[8];
+            Key keys[349];
+            Key keysPrev[349];
         };
 
         static unordered_map<string, Window> &Windows();

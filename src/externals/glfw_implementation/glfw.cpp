@@ -11,13 +11,13 @@ void resize_window_callback(GLFWwindow * window, int width, int height) {
 
 void close_window_callback(GLFWwindow *window)
 {
+    auto window_key = Libraries::GLFW::Get()->get_key_from_ptr(window);
+    if (window_key.size() > 0) {
+        Libraries::GLFW::Get()->set_should_close(window_key, true);
+    }    
+    
     // disable closing the window for now
     glfwSetWindowShouldClose(window, GLFW_FALSE);
-
-    // auto window_key = Libraries::GLFW::Get()->get_key_from_ptr(window);
-    // if (window_key.size() > 0) {
-    //     Libraries::GLFW::Get()->destroy_window(window_key);
-    // }
 }
 
 void cursor_position_callback(GLFWwindow * window, double xpos, double ypos) {
@@ -314,7 +314,7 @@ namespace Libraries {
         if (initialized == false)
             throw std::runtime_error( std::string("Error: Uninitialized, cannot poll events."));
 
-        if (should_close()) return false;
+        if ((Windows().size() == 0) || (initialized == false)) return false;
  
         for (auto &i : Windows()) {
             if (glfwWindowShouldClose(i.second.ptr)) {
@@ -324,6 +324,9 @@ namespace Libraries {
             }
             // reset scroll
             set_scroll(i.first, 0, 0);
+            // copy events
+            memcpy(i.second.keysPrev, i.second.keys, sizeof(i.second.keysPrev));
+            memcpy(i.second.buttonsPrev, i.second.buttons, sizeof(i.second.buttonsPrev));
         }
         glfwPollEvents();
         
@@ -347,10 +350,30 @@ namespace Libraries {
         return true;
     }
 
-    bool GLFW::should_close() {
-        if (initialized == false) return true;
-        if (Windows().size() == 0) return true;
-        return false;
+    bool GLFW::set_should_close(std::string window_key, bool should_close)
+    {
+        if (initialized == false)
+            throw std::runtime_error( std::string("Error: Uninitialized, cannot set should close."));
+
+        auto ittr = Windows().find(window_key);
+        if ( ittr == Windows().end() )
+            throw std::runtime_error( std::string("Error: window does not exist, cannot set should close."));
+
+        auto window = &Windows()[window_key];
+        window->shouldClose = should_close;
+        return true;
+    }
+
+    bool GLFW::should_close(std::string window_key) {
+        if (initialized == false)
+            throw std::runtime_error( std::string("Error: Uninitialized."));
+        
+        auto ittr = Windows().find(window_key);
+        if ( ittr == Windows().end() )
+            throw std::runtime_error( std::string("Error: window does not exist."));
+
+        auto window = &Windows()[window_key];
+        return window->shouldClose;
     }
 
     std::shared_ptr<std::mutex> GLFW::get_mutex()
@@ -455,6 +478,21 @@ namespace Libraries {
         return window->buttons[button].action;
     }
 
+    int GLFW::get_button_action_prev(std::string key, int button) {
+        if (initialized == false)
+            throw std::runtime_error( std::string("Error: Uninitialized, cannot get button action."));
+
+        auto ittr = Windows().find(key);
+        if ( ittr == Windows().end() )
+            throw std::runtime_error( std::string("Error: window does not exist, cannot get button action."));
+        
+        if ((button >= 7) || (button < 0))
+            throw std::runtime_error( std::string("Error: Button must be between 0 and 7."));
+
+        auto window = &Windows()[key];
+        return window->buttonsPrev[button].action;
+    }
+
     int GLFW::get_button_mods(std::string key, int button) {
         if (initialized == false) {
             throw std::runtime_error( std::string("Error: Uninitialized, cannot get button mods."));
@@ -470,6 +508,23 @@ namespace Libraries {
 
         auto window = &Windows()[key];
         return window->buttons[button].mods;
+    }
+
+    int GLFW::get_button_mods_prev(std::string key, int button) {
+        if (initialized == false) {
+            throw std::runtime_error( std::string("Error: Uninitialized, cannot get button mods."));
+            std::cout << "GLFW: "<<std::endl;
+            return false;
+        }
+        auto ittr = Windows().find(key);
+        if ( ittr == Windows().end() )
+            throw std::runtime_error( std::string("Error: window does not exist, cannot get button mods."));
+        
+        if ((button >= 7) || (button < 0))
+            throw std::runtime_error( std::string("Error: Button must be between 0 and 7."));
+
+        auto window = &Windows()[key];
+        return window->buttonsPrev[button].mods;
     }
 
     bool GLFW::set_key_data(std::string window_key, int key, int scancode, int action, int mods) {
@@ -505,6 +560,21 @@ namespace Libraries {
         return window->keys[key].action;
     }
 
+    int GLFW::get_key_action_prev(std::string window_key, int key) {
+        if (initialized == false)
+            throw std::runtime_error( std::string("Error: Uninitialized, cannot get button mods."));
+
+        auto ittr = Windows().find(window_key);
+        if ( ittr == Windows().end() )
+            throw std::runtime_error( std::string("Error: window does not exist, cannot get button mods."));
+
+        if ((key >= 348) || (key < 0))
+            throw std::runtime_error( std::string("Error: Button must be between 0 and 348."));
+
+        auto window = &Windows()[window_key];
+        return window->keysPrev[key].action;
+    }
+
     int GLFW::get_key_scancode(std::string window_key, int key) {
         if (initialized == false)
             throw std::runtime_error( std::string("Error: Uninitialized, cannot get button mods."));
@@ -535,12 +605,28 @@ namespace Libraries {
         return window->keys[key].mods;
     }
 
+    int GLFW::get_key_mods_prev(std::string window_key, int key) {
+        if (initialized == false)
+            throw std::runtime_error( std::string("Error: Uninitialized, cannot get key mods."));
+
+        auto ittr = Windows().find(window_key);
+        if ( ittr == Windows().end() )
+            throw std::runtime_error( std::string("Error: window does not exist, cannot get key mods."));
+        
+        if ((key >= 348) || (key < 0))
+            throw std::runtime_error( std::string("Error: Button must be between 0 and 348."));
+
+        auto window = &Windows()[window_key];
+        return window->keysPrev[key].mods;
+    }
+
     double GLFW::get_time() {
         return glfwGetTime();
     }
 
     int GLFW::get_key_code(std::string key) {
-        std::transform(key.begin(), key.end(), key.begin(), [](char c){ return std::toupper(c); });
+        std::transform(key.begin(), key.end(), key.begin(),
+            [](unsigned char c){ return std::toupper(c); });    
         if (key.compare("SPACE") == 0) return GLFW_KEY_SPACE;
         else if (key.compare("APOSTROPHE") == 0) return GLFW_KEY_APOSTROPHE;
         else if (key.compare("COMMA") == 0) return GLFW_KEY_COMMA;
