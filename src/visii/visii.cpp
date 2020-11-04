@@ -1693,8 +1693,7 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
 
         // remove trailing whitespace from option, convert to lowercase
         std::string option = trim(_option);
-        std::transform(option.begin(), option.end(), option.begin(),
-            [](unsigned char c){ return std::tolower(c); });
+        std::transform(option.data(), option.data() + option.size(), std::addressof(option[0]), [](unsigned char c){ return std::tolower(c); });
 
         if (option == std::string("none")) {
             OptixData.LP.renderDataMode = RenderDataFlags::NONE;
@@ -2187,20 +2186,20 @@ void deinitialize()
 bool isButtonPressed(std::string button) {
     if (ViSII.headlessMode) return false;
     auto glfw = Libraries::GLFW::Get();
-    std::transform(button.begin(), button.end(), button.begin(),
-            [](unsigned char c){ return std::toupper(c); });
+    std::transform(button.data(), button.data() + button.size(), 
+        std::addressof(button[0]), [](unsigned char c){ return std::toupper(c); });
     bool pressed, prevPressed;
     if (button.compare("MOUSE_LEFT") == 0) {
-        pressed = glfw->get_button_action("VISII", 0) == 1;
-        prevPressed = glfw->get_button_action_prev("VISII", 0) == 1;
+        pressed = glfw->get_button_action("ViSII", 0) == 1;
+        prevPressed = glfw->get_button_action_prev("ViSII", 0) == 1;
     }
     else if (button.compare("MOUSE_RIGHT") == 0) {
-        pressed = glfw->get_button_action("VISII", 1) == 1;
-        prevPressed = glfw->get_button_action_prev("VISII", 1) == 1;
+        pressed = glfw->get_button_action("ViSII", 1) == 1;
+        prevPressed = glfw->get_button_action_prev("ViSII", 1) == 1;
     }
     else if (button.compare("MOUSE_MIDDLE") == 0) {
-        pressed = glfw->get_button_action("VISII", 2) == 1;
-        prevPressed = glfw->get_button_action_prev("VISII", 2) == 1;
+        pressed = glfw->get_button_action("ViSII", 2) == 1;
+        prevPressed = glfw->get_button_action_prev("ViSII", 2) == 1;
     }
     else {
         pressed = glfw->get_key_action("ViSII", glfw->get_key_code(button)) == 1;
@@ -2213,11 +2212,11 @@ bool isButtonPressed(std::string button) {
 bool isButtonHeld(std::string button) {
     if (ViSII.headlessMode) return false;
     auto glfw = Libraries::GLFW::Get();
-    std::transform(button.begin(), button.end(), button.begin(),
-            [](unsigned char c){ return std::toupper(c); });
-    if (button.compare("MOUSE_LEFT") == 0) return glfw->get_button_action("VISII", 0) >= 1;
-    if (button.compare("MOUSE_RIGHT") == 0) return glfw->get_button_action("VISII", 1) >= 1;
-    if (button.compare("MOUSE_MIDDLE") == 0) return glfw->get_button_action("VISII", 2) >= 1;
+    std::transform(button.data(), button.data() + button.size(), 
+        std::addressof(button[0]), [](unsigned char c){ return std::toupper(c); });
+    if (button.compare("MOUSE_LEFT") == 0) return glfw->get_button_action("ViSII", 0) >= 1;
+    if (button.compare("MOUSE_RIGHT") == 0) return glfw->get_button_action("ViSII", 1) >= 1;
+    if (button.compare("MOUSE_MIDDLE") == 0) return glfw->get_button_action("ViSII", 2) >= 1;
     return glfw->get_key_action("ViSII", glfw->get_key_code(button)) >= 1;
 }
 
@@ -2227,6 +2226,23 @@ vec2 getCursorPos()
     auto glfw = Libraries::GLFW::Get();
     auto pos = glfw->get_cursor_pos("ViSII");
     return vec2(pos[0], pos[1]);
+}
+
+void setCursorMode(std::string mode)
+{
+    if (ViSII.headlessMode) return;
+    auto func = [mode] () {
+        std::string mode_ = mode;
+        std::transform(mode_.data(), mode_.data() + mode_.size(), 
+            std::addressof(mode_[0]), [](unsigned char c){ return std::toupper(c); });
+        int value = GLFW_CURSOR_NORMAL;
+        if (mode_.compare("NORMAL") == 0) value = GLFW_CURSOR_NORMAL;
+        if (mode_.compare("HIDDEN") == 0) value = GLFW_CURSOR_HIDDEN;
+        if (mode_.compare("DISABLED") == 0) value = GLFW_CURSOR_DISABLED;
+        glfwSetInputMode(WindowData.window, GLFW_CURSOR, value);
+    };
+    auto future = enqueueCommand(func);
+    if (ViSII.render_thread_id != std::this_thread::get_id()) future.wait();
 }
 
 ivec2 getWindowSize()
