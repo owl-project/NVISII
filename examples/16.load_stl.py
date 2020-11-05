@@ -59,7 +59,13 @@ visii.set_dome_light_intensity(1)
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # let load the object using open3d
-mesh = o3d.io.read_triangle_mesh("content/dragon.stl")
+from pycollada import *
+# mesh = o3d.io.read_triangle_mesh("content/l1.DAE")
+# mesh = pycollada 
+f = open('content/l1.DAE')
+mesh = Collada(f)
+
+raise()
 
 if not mesh.has_vertex_normals():
     mesh = mesh.compute_vertex_normals()
