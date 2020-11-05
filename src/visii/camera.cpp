@@ -464,6 +464,7 @@ void Camera::setIntrinsics(float fx, float fy, float cx, float cy, float width, 
     float f = far;
     P[2][2] = (f + n) / (n - f);
     P[3][2] = (2.f * f * n) / (n - f);
+    cameraStructs[id].proj = P;
     markDirty();
 }
 
