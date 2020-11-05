@@ -24,9 +24,9 @@ struct RayPayload {
     int primitiveID = -1;
     float2 barycentrics;
     float tHit = -1.f;
-    // float localToWorld[12];
-    // float localToWorldT0[12];
-    // float localToWorldT1[12];
+    float localToWorld[12];
+    float localToWorldT0[12];
+    float localToWorldT1[12];
 };
 
 __device__
@@ -127,7 +127,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     // const float4* transform = (const float4*)( &transformData->transform[key][0] );
 
     // This seems to cause most of the stalls in san miguel scene.
-    // optixGetObjectToWorldTransformMatrix(prd.localToWorld);
+    optixGetObjectToWorldTransformMatrix(prd.localToWorld);
     // const int entityID = LP.instanceToEntityMap.get(prd.instanceID, __LINE__);
     // EntityStruct entity = LP.entities.get(entityID, __LINE__);
     // TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
@@ -147,20 +147,20 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     
     // If we don't need motion vectors, (or in the future if an object 
     // doesn't have motion blur) then return.
-    // if (LP.renderDataMode == RenderDataFlags::NONE) return;
+    if (LP.renderDataMode == RenderDataFlags::NONE) return;
    
-    // // OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
-    // float4 trf00, trf01, trf02;
-    // float4 trf10, trf11, trf12;
+    OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
+    float4 trf00, trf01, trf02;
+    float4 trf10, trf11, trf12;
     
-    // optix_impl::optixGetInterpolatedTransformationFromHandle( trf00, trf01, trf02, handle, /* time */ 0.f, true );
-    // optix_impl::optixGetInterpolatedTransformationFromHandle( trf10, trf11, trf12, handle, /* time */ 1.f, true );
-    // memcpy(&prd.localToWorldT0[0], &trf00, sizeof(trf00));
-    // memcpy(&prd.localToWorldT0[4], &trf01, sizeof(trf01));
-    // memcpy(&prd.localToWorldT0[8], &trf02, sizeof(trf02));
-    // memcpy(&prd.localToWorldT1[0], &trf10, sizeof(trf10));
-    // memcpy(&prd.localToWorldT1[4], &trf11, sizeof(trf11));
-    // memcpy(&prd.localToWorldT1[8], &trf12, sizeof(trf12));
+    optix_impl::optixGetInterpolatedTransformationFromHandle( trf00, trf01, trf02, handle, /* time */ 0.f, true );
+    optix_impl::optixGetInterpolatedTransformationFromHandle( trf10, trf11, trf12, handle, /* time */ 1.f, true );
+    memcpy(&prd.localToWorldT0[0], &trf00, sizeof(trf00));
+    memcpy(&prd.localToWorldT0[4], &trf01, sizeof(trf01));
+    memcpy(&prd.localToWorldT0[8], &trf02, sizeof(trf02));
+    memcpy(&prd.localToWorldT1[0], &trf10, sizeof(trf10));
+    memcpy(&prd.localToWorldT1[4], &trf11, sizeof(trf11));
+    memcpy(&prd.localToWorldT1[8], &trf12, sizeof(trf12));
 }
 
 OPTIX_CLOSEST_HIT_PROGRAM(ShadowRay)()
@@ -530,6 +530,21 @@ bool debugging() {
     return glm::all(glm::equal(pixelID, ivec2(LP.frameSize.x / 2, LP.frameSize.y / 2)));
 }
 
+__device__
+glm::mat4 test_interpolate(glm::mat4& _mat1, glm::mat4& _mat2, float _time)
+{
+    glm::quat rot0 = glm::quat_cast(_mat1);
+    glm::quat rot1= glm::quat_cast(_mat2);
+
+    glm::quat finalRot = glm::slerp(rot0, rot1, _time);
+
+    glm::mat4 finalMat = glm::mat4_cast(finalRot);
+
+    finalMat[3] = _mat1[3] * (1 - _time) + _mat2[3] * _time;
+    
+    return finalMat;
+}
+
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     auto &LP = optixLaunchParams;
@@ -661,7 +676,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             
         // Transform geometry data into world space
         {
-            glm::mat4 xfm = glm::interpolate(transform.localToWorldPrev, transform.localToWorld, time);//to_mat4(payload.localToWorld);
+            // both glm::interpolate and my own interpolation functions cause artifacts... 
+            // optix transform seems to work though
+            // glm::mat4 xfm = test_interpolate(transform.localToWorld, transform.localToWorld, time);
+            glm::mat4 xfm = to_mat4(payload.localToWorld);
             p = make_float3(xfm * make_vec4(mp, 1.0f));
             hit_p = p;
             glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
@@ -672,8 +690,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_x = -cross(v_y, v_z);
 
             if (LP.renderDataMode != RenderDataFlags::NONE) {
-                glm::mat4 xfmt0 = transform.localToWorldPrev;//to_mat4(payload.localToWorldT0);
-                glm::mat4 xfmt1 = transform.localToWorld;//to_mat4(payload.localToWorldT1);
+                // glm::mat4 xfmt0 = transform.localToWorldPrev;
+                // glm::mat4 xfmt1 = transform.localToWorld;
+                glm::mat4 xfmt0 = to_mat4(payload.localToWorldT0);
+                glm::mat4 xfmt1 = to_mat4(payload.localToWorldT1);
                 vec4 tmp1 = LP.proj * LP.viewT0 * xfmt0 * make_vec4(mp, 1.0f);
                 vec4 tmp2 = LP.proj * LP.viewT1 * xfmt1 * make_vec4(mp, 1.0f);
                 float3 pt0 = make_float3(tmp1 / tmp1.w) * .5f;
@@ -790,7 +810,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 {
                     // Reduces noise for strangely noisy dome light textures, but at the expense 
                     // of a highly uncoalesced binary search through a 2D CDF.
-                    // Unused by default to avoid the hit to performance
+                    // disabled by default to avoid the hit to performance
                     float rx = lcg_randomf(rng);
                     float ry = lcg_randomf(rng);
                     float* rows = LP.environmentMapRows;
@@ -804,6 +824,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     y = max(min(y, height - 1), 0);
                     rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
                     lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
+                    lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
                     lightPDFs[lid] = row_pdf * col_pdf * invjacobian;
                 } 
                 else 

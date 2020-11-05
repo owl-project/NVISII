@@ -64,12 +64,14 @@ void initialize(
   uint32_t max_textures = 1000);
 
 /**
-  * Cleans up any allocated resources
+  * Removes any allocated components but keeps visii initialized.
+  * Call this if you would like to clear the current scene.
 */
 void clearAll();
 
 /**
-  * closes windows and shuts down any running backend systems.
+  * Closes the interactive window, and shuts down any running backend systems.
+  * Call this function at the end of your script.
 */
 void deinitialize();
 
@@ -208,14 +210,6 @@ void samplePixelArea(glm::vec2 x_sample_interval = glm::vec2(0.f, 1.f), glm::vec
  * @param time_sample_interval The interval to sample rays within along in time. A value of [0,1] will result in motion blur across the entire frame.
  */ 
 void sampleTimeInterval(glm::vec2 time_sample_interval = glm::vec2(0.f, 1.f));
-
-/**
-  * If using interactive mode, resizes the window to the specified dimensions.
-  * 
-  * @param width The width to resize the window to
-  * @param height The height to resize the window to
-*/
-void resizeWindow(uint32_t width, uint32_t height);
 
 /** Enables the Optix denoiser. */
 void enableDenoiser();
@@ -366,6 +360,14 @@ void disableUpdates();
 
 /*** If in interactive mode, returns true if updates are enabled, and false otherwise */
 bool areUpdatesEnabled();
+
+/**
+  * If using interactive mode, resizes the window to the specified dimensions.
+  * 
+  * @param width The width to resize the window to
+  * @param height The height to resize the window to
+*/
+void resizeWindow(uint32_t width, uint32_t height);
 
 /** 
  * If in interactive mode, returns True if the specified button is pressed but not held.

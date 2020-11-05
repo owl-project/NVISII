@@ -131,6 +131,10 @@ __device__ float dot(const float3 a, const float3 b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+__device__ float3 operator*(const quat &l, const float3 &r) {
+	return make_float3(l * make_vec3(r));
+}
+
 __device__ float4 operator*(const mat4 &l, const float4 &r) {
 	return make_float4(l * make_vec4(r));
 }
