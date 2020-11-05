@@ -325,8 +325,8 @@ namespace Libraries {
             // reset scroll
             set_scroll(i.first, 0, 0);
             // copy events
-            memcpy(i.second.keysPrev, i.second.keys, sizeof(i.second.keysPrev));
-            memcpy(i.second.buttonsPrev, i.second.buttons, sizeof(i.second.buttonsPrev));
+            std::memcpy(i.second.keysPrev, i.second.keys, sizeof(i.second.keysPrev));
+            std::memcpy(i.second.buttonsPrev, i.second.buttons, sizeof(i.second.buttonsPrev));
         }
         glfwPollEvents();
         

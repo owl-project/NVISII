@@ -60,8 +60,10 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
 {
     std::string directory = dirnameOf(path);
     bool verbose = false;
+    bool max_quality = false;
     for (uint32_t i = 0; i < args.size(); ++i) {
         if (args[i].compare("verbose") == 0) verbose = true;
+        if (args[i].compare("max_quality") == 0) max_quality = true;
     }
 
     Scene visiiScene;
@@ -79,10 +81,14 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
             std::string(" \"The specified model file extension \"") 
             + std::string(extension) + std::string("\" is currently unsupported."));
 
-    auto scene = aiImportFile(path.c_str(), 
-        aiProcessPreset_TargetRealtime_MaxQuality | 
-        aiProcess_Triangulate |
-        aiProcess_PreTransformVertices );
+    if (verbose) std::cout<<"Importing " << path <<  "..." << std::endl;
+    if (max_quality && verbose) std::cout<<"Note: max quality enabled " << std::endl;
+
+    unsigned int flags;
+    if (max_quality) flags = aiProcessPreset_TargetRealtime_MaxQuality;
+    else flags = aiProcessPreset_TargetRealtime_Fast;
+
+    auto scene = aiImportFile(path.c_str(), flags | aiProcess_Triangulate );
     
     if (!scene) {
         std::string err = std::string(aiGetErrorString());
@@ -269,6 +275,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
     }
 
     // load objects
+    visiiScene.meshes.resize(scene->mNumMeshes, nullptr);
     for (uint32_t meshIdx = 0; meshIdx < scene->mNumMeshes; ++meshIdx) {
         auto &aiMesh = scene->mMeshes[meshIdx];
         auto &aiVertices = aiMesh->mVertices;
@@ -353,15 +360,20 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         // if we found a face that would result in an access violation, don't make this mesh.
         if (!validFaces) continue; 
 
-        auto mesh = Mesh::createFromData(
-            meshName, 
-            positions, 3,
-            normals, 3,
-            /*colors*/{}, 3,
-            texCoords, 2,
-            indices
-        );
-        visiiScene.meshes.push_back(mesh);
+        try {
+            visiiScene.meshes[meshIdx] = Mesh::createFromData(
+                meshName, 
+                positions, 3,
+                normals, 3,
+                /*colors*/{}, 3,
+                texCoords, 2,
+                indices
+            );
+        }
+        catch (exception& e) {
+            if (verbose) std::cout<<"Warning: unable to load mesh " << meshName <<  " : " << std::string(e.what()) <<std::endl;
+            continue;
+        }
     }
 
     // load lights
@@ -418,6 +430,11 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         for (uint32_t mid = 0; mid < node->mNumMeshes; ++mid) {
             uint32_t meshIndex = node->mMeshes[mid];
             auto mesh = visiiScene.meshes[meshIndex];
+            if (mesh == nullptr) {
+                if (verbose) std::cout<< std::string(level, '\t') << "Warning: Skipping entity in " << transformName << " (bad mesh)" <<std::endl;
+                continue;
+            }
+
             auto &aiMesh = scene->mMeshes[meshIndex];
             auto material = visiiScene.materials[aiMesh->mMaterialIndex];
             

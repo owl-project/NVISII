@@ -14,6 +14,7 @@
 #include <map>
 #include <utility>
 #include <array>
+#include <string.h>
 
 #include <visii/utilities/singleton.h>
 
