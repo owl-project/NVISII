@@ -364,6 +364,9 @@ void enableUpdates();
  */
 void disableUpdates();
 
+/*** If in interactive mode, returns true if updates are enabled, and false otherwise */
+bool areUpdatesEnabled();
+
 /** 
  * If in interactive mode, returns True if the specified button is pressed but not held.
  * @param The button to check. Not case sensitive. Possible options include:

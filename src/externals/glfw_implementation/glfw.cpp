@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cctype>
 #include <string>
+#include <cstring>
 
 int windowed_xpos, windowed_ypos, windowed_width, windowed_height;
 

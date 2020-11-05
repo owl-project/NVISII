@@ -58,6 +58,9 @@ std::string dirnameOf(const std::string& fname)
 
 Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::quat rotation, std::vector<std::string> args)
 {
+    bool updatesEnabled = areUpdatesEnabled();
+
+    disableUpdates();
     std::string directory = dirnameOf(path);
     bool verbose = false;
     bool max_quality = false;
@@ -467,6 +470,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
     addNode(scene->mRootNode, nullptr, 0);
     aiReleaseImport(scene);
 
+    if (updatesEnabled) enableUpdates();
     if (verbose) std::cout<<"Done!"<<std::endl;
     return visiiScene;
 }

@@ -2154,6 +2154,11 @@ void disableUpdates()
     if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
 }
 
+bool areUpdatesEnabled()
+{
+    return lazyUpdatesEnabled == false;
+}
+
 #ifdef __unix__
 # include <unistd.h>
 #elif defined _WIN32
