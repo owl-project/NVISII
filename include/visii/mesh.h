@@ -10,6 +10,7 @@
 #include <iostream>
 #include <map>
 #include <mutex>
+#include <array>
 
 /* External includes */
 #include <glm/glm.hpp>
@@ -28,6 +29,18 @@ class Mesh : public StaticFactory
     friend class StaticFactory;
     friend class Entity;
     public:
+        /**
+         * Instantiates a null Mesh. Used to mark a row in the table as null. 
+         * Note: for internal use only. 
+         */
+        Mesh();
+
+        /**
+         * Instantiates a Mesh with the given name and ID. Used to mark a row in the table as null. 
+         * Note: for internal use only.
+         */
+        Mesh(std::string name, uint32_t id);
+
         /** 
          * Creates a rectangular box centered at the origin aligned along the x, y, and z axis. 
          *
@@ -604,12 +617,23 @@ class Mesh : public StaticFactory
             float thickness = .01f);
 
         /** 
-         * Creates a mesh component from an OBJ file (ignoring any .mtl files) 
-         * 
-         * @param name The name (used as a primary key) for this mesh component
-         * @param path A path to the OBJ file.
+         * Deprecated. Please use create_from_file instead.
         */
         static Mesh* createFromObj(std::string name, std::string path);
+
+        /** 
+         * Creates a mesh component from a file (ignoring any associated materials) 
+         *
+         * Supported file formats include: AMF 3DS AC ASE ASSBIN B3D BVH COLLADA DXF 
+         * CSM HMP IRRMESH IRR LWO LWS M3D MD2 MD3 MD5 MDC MDL NFF NDO OFF OBJ OGRE 
+         * OPENGEX PLY MS3D COB BLEND IFC XGL FBX Q3D Q3BSP RAW SIB SMD STL 
+         * TERRAGEN 3D X X3D GLTF 3MF MMD
+         * 
+         * @param name The name (used as a primary key) for this mesh component
+         * @param path A path to the file.
+        */
+        static Mesh* createFromFile(std::string name, std::string path);
+
 
         // /* Creates a mesh component from an ASCII STL file */
         // static Mesh* createFromStl(std::string name, std::string stlPath);
@@ -669,7 +693,10 @@ class Mesh : public StaticFactory
         std::string getName();
 
         /** @returns the unique integer ID for this component */
-          int32_t getId();
+        int32_t getId();
+
+        // For internal use
+        int32_t getAddress();
         
         /** @returns A map whose key is a mesh name and whose value is the ID for that mesh */
         static std::map<std::string, uint32_t> getNameToIdMap();
@@ -678,7 +705,7 @@ class Mesh : public StaticFactory
         static void remove(std::string name);
 
         /** Allocates the tables used to store all mesh components */
-        static void initializeFactory();
+        static void initializeFactory(uint32_t max_components);
 
         /** @returns True if the tables used to store all mesh components have been allocated, and False otherwise */
         static bool isFactoryInitialized();
@@ -704,8 +731,13 @@ class Mesh : public StaticFactory
         /** @returns a json string representation of the current component */
         std::string toString();
         
-        /** @returns a list of per vertex positions */
-        std::vector<glm::vec4> getVertices();
+        /** 
+         * @param vertex_dimensions The number of floats per vertex to return. Valid numbers are 3 or 4.
+         * @returns a list of per vertex positions 
+         */
+        // std::vector<float> getVertices(uint32_t vertex_dimensions = 3);
+        
+        std::vector<std::array<float, 3>> getVertices();
 
         /** @returns a list of per vertex colors */
         std::vector<glm::vec4> getColors();
@@ -827,32 +859,27 @@ class Mesh : public StaticFactory
         // bool should_show_bounding_box();
 
         /** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
-        static std::shared_ptr<std::mutex> getEditMutex();
+        static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
     private:
-        /** Creates an uninitialized mesh. Useful for preallocation. */
-        Mesh();
-
-        /** Creates a mesh with the given name and id. */
-        Mesh(std::string name, uint32_t id);
 
         static std::set<Mesh*> dirtyMeshes;
 
         /* TODO */
-        static std::shared_ptr<std::mutex> editMutex;
+        static std::shared_ptr<std::recursive_mutex> editMutex;
         
         /* TODO */
         static bool factoryInitialized;
         
         /** A list of the mesh components, allocated statically */
-        static Mesh meshes[MAX_MESHES];
-        static MeshStruct meshStructs[MAX_MESHES];
+        static std::vector<Mesh> meshes;
+        static std::vector<MeshStruct> meshStructs;
 
         /** A lookup table of name to mesh id */
         static std::map<std::string, uint32_t> lookupTable;
 
         // /* Lists of per vertex data. These might not match GPU memory if editing is disabled. */
-        std::vector<glm::vec4> positions;
+        std::vector<std::array<float, 3>> positions;
         std::vector<glm::vec4> normals;
         std::vector<glm::vec4> colors;
         std::vector<glm::vec2> texCoords;
@@ -920,9 +947,6 @@ class Mesh : public StaticFactory
         // /** Creates an index buffer, and uploads index data stored in the indices list */
         // void createTriangleIndexBuffer(bool allow_edits, bool submit_immediately);
 
-        // /* Loads in an OBJ mesh and copies per vertex data to the GPU */
-        void loadObj(std::string objPath);
-
         // /* Loads in an STL mesh and copies per vertex data to the GPU */
         // void load_stl(std::string stlPath);
 
@@ -953,7 +977,8 @@ class Mesh : public StaticFactory
             auto genVerts = mesh.vertices();
             while (!genVerts.done()) {
                 auto vertex = genVerts.generate();
-                positions.push_back(glm::vec4(vertex.position.x, vertex.position.y, vertex.position.z, 1.0f));
+                std::array<float, 3> p = {vertex.position.x, vertex.position.y, vertex.position.z};
+                positions.push_back(p);
                 if (flip_z)
                     normals.push_back(glm::vec4(-vertex.normal.x, -vertex.normal.y, -vertex.normal.z, 0.0f));
                 else

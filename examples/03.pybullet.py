@@ -6,6 +6,7 @@ import colorsys
 import subprocess 
 import math
 import pybullet as p 
+import numpy as np
 
 parser = argparse.ArgumentParser()
 
@@ -48,17 +49,17 @@ else:
     print(f'created folder {opt.outf}/')
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.initialize(headless=False)
+# show an interactive window, and use "lazy" updates for faster object creation time 
+visii.initialize(headless=False, lazy_updates=True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
-
 
 # Create a camera
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
+    camera = visii.camera.create_from_fov(
         name = "camera", 
         field_of_view = 0.85,
         aspect = float(opt.width)/float(opt.height)
@@ -71,12 +72,11 @@ camera.get_transform().look_at(
 )
 visii.set_camera_entity(camera)
 
-# ISetup bullet physics stuff
-seconds_per_step = .01
+# Setup bullet physics stuff
+seconds_per_step = 1.0 / 240.0
 frames_per_second = 30.0
-physicsClient = p.connect(p.DIRECT) # non-graphical version
+physicsClient = p.connect(p.GUI) # non-graphical version
 p.setGravity(0,0,-10)
-p.setTimeStep(seconds_per_step)
 
 # Lets set the scene
 
@@ -95,7 +95,7 @@ sun = visii.entity.create(
 )
 sun.get_transform().set_position((10,10,10))
 sun.get_light().set_temperature(5780)
-sun.get_light().set_intensity(1)
+sun.get_light().set_intensity(1000)
 
 floor = visii.entity.create(
     name="floor",
@@ -103,22 +103,14 @@ floor = visii.entity.create(
     transform = visii.transform.create("floor"),
     material = visii.material.create("floor")
 )
-# floor.get_transform().set_position(0,0,-0.1)
 floor.get_transform().set_position((0,0,0))
 floor.get_transform().set_scale((10, 10, 10))
-
-floor.get_material().set_transmission(0)
-floor.get_material().set_metallic(0.0)
 floor.get_material().set_roughness(0.1)
-
 floor.get_material().set_base_color((0.5,0.5,0.5))
 
 # Set the collision with the floor mesh
 # first lets get the vertices 
-vertices = []
-
-for v in floor.get_mesh().get_vertices():
-    vertices.append([v[0],v[1],v[2]])
+vertices = floor.get_mesh().get_vertices()
 
 # get the position of the object
 pos = floor.get_transform().get_position()
@@ -143,16 +135,12 @@ p.createMultiBody(
 )    
 
 # lets create a bunch of objects 
-# mesh = visii.mesh.create_torus('mesh')
 mesh = visii.mesh.create_teapotahedron('mesh')
-# mesh = visii.mesh.create_sphere('mesh')
 
 # set up for pybullet - here we will use indices for 
 # objects with holes 
-vertices = []
-for v in mesh.get_vertices():
-    vertices.append([float(v[0]),float(v[1]),float(v[2])])
-indices = list(mesh.get_triangle_indices())
+vertices = mesh.get_vertices()
+indices = mesh.get_triangle_indices()
 
 ids_pybullet_and_visii_names = []
 
@@ -171,15 +159,14 @@ for i in range(opt.nb_objects):
         random.uniform(-4,4),
         random.uniform(2,5)
     )
-    rot = visii.quat(
+    rot = visii.normalize(visii.quat(
         random.uniform(-1,1),
         random.uniform(-1,1),
         random.uniform(-1,1),
         random.uniform(-1,1),
-    )
-    scale = visii.vec3(
-        random.uniform(0.2,0.5),
-    )
+    ))
+    s = random.uniform(0.2,0.5)
+    scale = (s,s,s)
 
     obj.get_transform().set_position(pos)
     obj.get_transform().set_rotation(rot)
@@ -253,7 +240,7 @@ for i in range(opt.nb_objects):
 
 # Lets run the simulation for a few steps. 
 for i in range (int(opt.nb_frames)):
-    steps_per_frame = math.ceil( (1.0 / seconds_per_step) / frames_per_second)
+    steps_per_frame = math.ceil( 1.0 / (seconds_per_step * frames_per_second) )
     for j in range(steps_per_frame):
         p.stepSimulation()
 
@@ -268,7 +255,7 @@ for i in range (int(opt.nb_frames)):
         obj_entity.get_transform().set_position(pos)
 
         # visii quat expects w as the first argument
-        obj_entity.get_transform().set_rotation((rot[3],rot[0],rot[1],rot[2]))
+        obj_entity.get_transform().set_rotation(rot)
     print(f'rendering frame {str(i).zfill(5)}/{str(opt.nb_frames).zfill(5)}')
     visii.render_to_png(
         width=int(opt.width), 

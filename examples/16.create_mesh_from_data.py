@@ -32,7 +32,7 @@ parser.add_argument('--out',
 opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize_headless()
+visii.initialize(headless = True, verbose = True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
@@ -40,23 +40,25 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
-        name = "camera", 
-        field_of_view = 0.785398, 
+    camera = visii.camera.create(
+        name = "camera",  
         aspect = float(opt.width)/float(opt.height)
     )
 )
 
 camera.get_transform().look_at(
-    visii.vec3(0,0,0), # look at (world coordinate)
-    visii.vec3(0,0,1), # up vector
-    visii.vec3(0.2,0.2,0.2), # camera_origin    
+    at = (0,0,0),
+    up = (0,0,1),
+    eye = (0.2,0.2,0.2),
 )
 visii.set_camera_entity(camera)
 
 visii.set_dome_light_intensity(1)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# Although ViSII has official support for stl files through mesh.create_from_file,
+# let's open the STL from another library, and use the create_from_data interface. 
 
 # let load the object using open3d
 from pycollada import *
@@ -85,14 +87,12 @@ obj_entity = visii.entity.create(
     name="obj_entity",
     mesh = mesh,
     transform = visii.transform.create("obj_entity",
-        scale=visii.vec3(0.3)
+        scale=(0.3, 0.3, 0.3)
     ),
     material = visii.material.create("obj_entity")
 )
 
-obj_entity.get_material().set_base_color(
-    visii.vec3(0.9,0.12,0.08)
-)  
+obj_entity.get_material().set_base_color((0.9,0.12,0.08))  
 obj_entity.get_material().set_roughness(0.7)   
 obj_entity.get_material().set_specular(1)   
 obj_entity.get_material().set_sheen(1)

@@ -15,6 +15,25 @@
 #include <visii/light_struct.h>
 #include <visii/texture_struct.h>
 
+// doesn't seem to have a significant impact on framerate
+#define CHECK_ACCESSES 
+
+template<class T>
+class Buffer : public owl::device::Buffer
+{
+  public:
+  __both__
+  T get(size_t address, uint32_t line) {
+    #if defined(__CUDACC__)
+    #ifdef CHECK_ACCESSES
+    if (data == nullptr) {::printf("Device Side Error on Line %d: buffer was nullptr.\n", line); asm("trap;");}
+    if (address >= count) {::printf("Device Side Error on Line %d: out of bounds access (address: %d, size %d).\n", line, uint32_t(address), uint32_t(count)); asm("trap;");}
+    #endif
+    #endif
+    return ((T*)data)[address];
+  }
+};
+
 struct LaunchParams {
     glm::ivec2 frameSize;
     uint64_t frameID = 0;
@@ -26,6 +45,7 @@ struct LaunchParams {
     glm::vec4 *accumPtr;
     OptixTraversableHandle world;
     float domeLightIntensity = 1.f;
+    float domeLightExposure = 0.f;
     glm::vec3 domeLightColor = glm::vec3(-1.f);
     float directClamp = 100.f; 
     float indirectClamp = 100.f; 
@@ -41,21 +61,22 @@ struct LaunchParams {
     mat4 viewT1;
 
     EntityStruct    cameraEntity;
-    EntityStruct    *entities = nullptr;
-    TransformStruct *transforms = nullptr;
-    MaterialStruct  *materials = nullptr;
-    CameraStruct    *cameras = nullptr;
-    MeshStruct      *meshes = nullptr;
-    LightStruct     *lights = nullptr;
-    TextureStruct   *textures = nullptr;
-    uint32_t        *lightEntities = nullptr;
-    uint32_t        *instanceToEntityMap = nullptr;
+    Buffer<EntityStruct> entities;
+    Buffer<TransformStruct> transforms;
+    Buffer<MaterialStruct> materials;
+    Buffer<CameraStruct> cameras;
+    Buffer<MeshStruct> meshes;
+    Buffer<LightStruct> lights;
+    Buffer<TextureStruct> textures;
+    Buffer<uint32_t> lightEntities;
+    Buffer<uint32_t> instanceToEntityMap;
+    uint32_t         numInstances = 0;
     uint32_t         numLightEntities = 0;
 
-    owl::device::Buffer vertexLists;
-    owl::device::Buffer normalLists;
-    owl::device::Buffer texCoordLists;
-    owl::device::Buffer indexLists;
+    Buffer<Buffer<float3>> vertexLists;
+    Buffer<Buffer<float4>> normalLists;
+    Buffer<Buffer<float2>> texCoordLists;
+    Buffer<Buffer<int3>> indexLists;
 
     int32_t environmentMapID = -1;
     glm::quat environmentMapRotation = glm::quat(1,0,0,0);
@@ -64,7 +85,7 @@ struct LaunchParams {
     int environmentMapWidth = 0;
     int environmentMapHeight = 0;
     cudaTextureObject_t proceduralSkyTexture = 0;
-    cudaTextureObject_t *textureObjects = nullptr;
+    Buffer<cudaTextureObject_t> textureObjects; //cudaTextureObject_t
 
     cudaTextureObject_t GGX_E_AVG_LOOKUP;
     cudaTextureObject_t GGX_E_LOOKUP;
@@ -98,6 +119,7 @@ enum RenderDataFlags : uint32_t {
   TRANSMISSION_INDIRECT_LIGHTING = 17,
   RAY_DIRECTION = 18,
   HEATMAP = 19,
+  TEXTURE_COORDINATES = 20
 };
 
 #define MAX_LIGHT_SAMPLES 10

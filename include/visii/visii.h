@@ -8,39 +8,78 @@
 #include <visii/texture.h>
 
 /**
-  * Initializes various backend systems required to render scene data.
-  * 
-  * @param window_on_top Keeps the window opened during an interactive session on top of any other windows.
-  * @param verbose If false, visii will avoid outputing any unneccessary text
+  * Deprecated. Please use initialize() instead.
 */
-void initializeInteractive(bool window_on_top = false, bool verbose = false);
+void initializeInteractive(
+  bool window_on_top = false, 
+  bool verbose = false,
+  uint32_t max_entities = 10000,
+  uint32_t max_cameras = 10,
+  uint32_t max_transforms = 10000,
+  uint32_t max_meshes = 10000,
+  uint32_t max_materials = 10000,
+  uint32_t max_lights = 100,
+  uint32_t max_textures = 1000);
 
 /**
-  * Initializes various backend systems required to render scene data.
-  * 
-  * This call avoids using any OpenGL resources, to enable use on systems without displays.
-  * @param verbose If false, visii will avoid outputing any unneccessary text
+  * Deprecated. Please use initialize(headless = True) instead.
 */
-void initializeHeadless(bool verbose = false);
+void initializeHeadless(
+  bool verbose = false,
+  uint32_t max_entities = 10000,
+  uint32_t max_cameras = 10,
+  uint32_t max_transforms = 10000,
+  uint32_t max_meshes = 10000,
+  uint32_t max_materials = 10000,
+  uint32_t max_lights = 100,
+  uint32_t max_textures = 1000);
 
 /**
   * Initializes various backend systems required to render scene data.
   * 
   * @param headless If true, avoids using any OpenGL resources, to enable use on systems without displays.
   * @param window_on_top Keeps the window opened during an interactive session on top of any other windows. (assuming headless is False)
+  * @param lazy_updates If True, visii will only upload components to the GPU on call to 
+  * render/render_to_png/render_data for better scene editing performance. (assuming headless is False. Always on when headless is True)
   * @param verbose If false, visii will avoid outputing any unneccessary text
+  * @param max_entities The max number of creatable Entity components.
+  * @param max_cameras The max number of creatable Camera components.
+  * @param max_transforms The max number of creatable Transform components.
+  * @param max_meshes The max number of creatable Mesh components.
+  * @param max_materials The max number of creatable Material components.
+  * @param max_lights The max number of creatable Light components.
+  * @param max_textures The max number of creatable Texture components.
 */
-void initialize(bool headless = false, bool window_on_top = false, bool verbose = false);
+void initialize(
+  bool headless = false, 
+  bool window_on_top = false, 
+  bool lazy_updates = false, 
+  bool verbose = false,
+  uint32_t max_entities = 10000,
+  uint32_t max_cameras = 10,
+  uint32_t max_transforms = 10000,
+  uint32_t max_meshes = 10000,
+  uint32_t max_materials = 10000,
+  uint32_t max_lights = 100,
+  uint32_t max_textures = 1000);
 
 /**
-  * Cleans up any allocated resources
+  * Removes any allocated components but keeps visii initialized.
+  * Call this if you would like to clear the current scene.
 */
 void clearAll();
 
 /**
-  * closes windows and shuts down any running backend systems.
+  * Closes the interactive window, and shuts down any running backend systems.
+  * Call this function at the end of your script.
 */
 void deinitialize();
+
+/**
+ * Registers a callback which is called on the render thread before each frame
+ * of rendering. To disable the callback, pass nullptr/None here.
+ */
+void registerPreRenderCallback(std::function<void()> callback);
 
 /** 
  * Tells the renderer which camera entity to use for rendering. The transform 
@@ -59,6 +98,17 @@ void setCameraEntity(Entity* camera_entity);
  * @param intensity How powerful the dome light is in emitting light
  */ 
 void setDomeLightIntensity(float intensity);
+
+/** 
+ * Modifies the intensity, or brightness, that the dome light (aka environment light) will emit it's color.
+ * Increasing the exposure by 1 will double the energy emitted by the light. 
+ * An exposure of 0 produces an unmodified intensity.
+ * An exposure of -1 cuts the intensity of the light in half.
+ * light_intensity = intensity * pow(2, exposureExposure)
+ * 
+ * @param exposure How powerful the light source is in emitting light.
+ */ 
+void setDomeLightExposure(float exposure);
 
 /** 
  * Sets the color which this dome light will emit.
@@ -88,8 +138,11 @@ void setDomeLightSky(
  * Textures are sampled using a 2D to 3D latitude/longitude strategy.
  * 
  * @param texture The texture to sample for the dome light.
+ * @param enable_cdf If True, reduces noise of sampling a dome light texture, 
+ * but at the expense of frame rate. Useful for dome lights with bright lights 
+ * that should cast shadows.
  */ 
-void setDomeLightTexture(Texture* texture);
+void setDomeLightTexture(Texture* texture, bool enable_cdf = false);
 
 /** Disconnects the dome light texture, reverting back to any existing constant dome light color */
 void clearDomeLightTexture();
@@ -127,7 +180,7 @@ void setDirectLightingClamp(float clamp);
  * @param diffuse_depth The maximum number of diffuse bounces allowed per ray.
  * @param specular_depth The maximum number of specular (reflection/refraction) bounces allowed per ray.
  */ 
-void setMaxBounceDepth(uint32_t diffuse_depth, uint32_t specular_depth);
+void setMaxBounceDepth(uint32_t diffuse_depth = 2, uint32_t specular_depth = 8);
 
 /**
  * Sets the number of light samples to take per path vertex. A higher number of samples will reduce noise per frame, but
@@ -157,14 +210,6 @@ void samplePixelArea(glm::vec2 x_sample_interval = glm::vec2(0.f, 1.f), glm::vec
  * @param time_sample_interval The interval to sample rays within along in time. A value of [0,1] will result in motion blur across the entire frame.
  */ 
 void sampleTimeInterval(glm::vec2 time_sample_interval = glm::vec2(0.f, 1.f));
-
-/**
-  * If using interactive mode, resizes the window to the specified dimensions.
-  * 
-  * @param width The width to resize the window to
-  * @param height The height to resize the window to
-*/
-void resizeWindow(uint32_t width, uint32_t height);
 
 /** Enables the Optix denoiser. */
 void enableDenoiser();
@@ -244,6 +289,49 @@ std::vector<Entity*> importOBJ(std::string name_prefix, std::string file_path, s
         glm::vec3 scale = glm::vec3(1.0f),
         glm::quat rotation = glm::angleAxis(0.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
 
+/**
+ * An object containing a list of components that together represent a scene
+*/
+struct Scene {
+  std::vector<Entity*> entities;
+  std::vector<Transform*> transforms;
+  std::vector<Texture*> textures;
+  std::vector<Material*> materials;
+  std::vector<Mesh*> meshes;
+  std::vector<Light*> lights;
+  std::vector<Camera*> cameras;
+};
+
+/**
+ * Imports a file containing scene data. 
+ * 
+ * Supported file formats include: AMF 3DS AC ASE ASSBIN B3D BVH COLLADA DXF 
+ * CSM HMP IRRMESH IRR LWO LWS M3D MD2 MD3 MD5 MDC MDL NFF NDO OFF OBJ OGRE 
+ * OPENGEX PLY MS3D COB BLEND IFC XGL FBX Q3D Q3BSP RAW SIB SMD STL 
+ * TERRAGEN 3D X X3D GLTF 3MF MMD
+ * 
+ * First, any materials described by the file are used to generate Material components.
+ * Next, any textures required by those materials will be loaded. 
+ * After that, all shapes will be separated by material.
+ * For each separated shape, an entity is created to attach a transform, mesh, and material component together.
+ * These shapes are then translated so that the transform component is centered at the centroid of the shape.
+ * Finally, any specified position, scale, and/or rotation are applied to the generated transforms.
+ * 
+ * @param filepath The path for the file to load
+ * @param position A change in position to apply to all entities generated by this function
+ * @param position A change in scale to apply to all entities generated by this function
+ * @param position A change in rotation to apply to all entities generated by this function
+ * @param args A list of optional arguments that can effect the importer. 
+ * Possible options include: 
+ * "verbose" - print out information related to loading the scene.
+*/
+Scene importScene(
+        std::string file_path,
+        glm::vec3 position = glm::vec3(0.0f), 
+        glm::vec3 scale = glm::vec3(1.0f),
+        glm::quat rotation = glm::angleAxis(0.0f, glm::vec3(1.0f, 0.0f, 0.0f)),
+        std::vector<std::string> args = std::vector<std::string>());
+
 /** @returns the minimum axis aligned bounding box position for the axis aligned bounding box containing all scene geometry*/
 glm::vec3 getSceneMinAabbCorner();
 
@@ -255,6 +343,75 @@ glm::vec3 getSceneAabbCenter();
 
 // This is for internal purposes. Forces the scene bounds to update.
 void updateSceneAabb(Entity* entity);
+
+/** 
+ * If enabled, the interactive window image will change asynchronously as scene components are altered.
+ * However, bulk component edits will slow down, as each component edit will individually cause the renderer to 
+ * temporarily lock components while being uploaded to the GPU.
+ */
+void enableUpdates();
+
+/** 
+ * If disabled, the interactive window image will only show scene changes on call to render, render_to_png, and render_data.
+ * Bulk component edits will be much faster when disabled, as all component edits can be done without the renderer 
+ * locking them for upload to the GPU. 
+ */
+void disableUpdates();
+
+/*** If in interactive mode, returns true if updates are enabled, and false otherwise */
+bool areUpdatesEnabled();
+
+/**
+  * If using interactive mode, resizes the window to the specified dimensions.
+  * 
+  * @param width The width to resize the window to
+  * @param height The height to resize the window to
+*/
+void resizeWindow(uint32_t width, uint32_t height);
+
+/** 
+ * If in interactive mode, returns True if the specified button is pressed but not held.
+ * @param The button to check. Not case sensitive. Possible options include:
+ * SPACE, APOSTROPHE, COMMA, MINUS, PERIOD, SLASH, SEMICOLON, EQUAL, UP, DOWN, LEFT, RIGHT
+ * 0-9, A->Z, [, ], \\, `, ESCAPE, ENTER, TAB, BACKSPACE, INSERT, DELETE, PAGE_UP, PAGE_DOWN, HOME, 
+ * CAPS_LOCK, SCROLL_LOCK, NUM_LOCK, PRINT_SCREEN, PAUSE, F1 -> F25, KP_0 -> KP_9,
+ * KP_DECIMAL, KP_DIVIDE, KP_MULTIPLY, KP_SUBTRACT, KP_ADD, KP_ENTER, KP_EQUAL, 
+ * LEFT_SHIFT, LEFT_CONTROL, LEFT_ALT, LEFT_SUPER, RIGHT_SHIFT, RIGHT_CONTROL, RIGHT_ALT, RIGHT_SUPER,
+ * MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT
+*/
+bool isButtonPressed(std::string button);
+
+/** 
+ * If in interactive mode, returns True if the specified button is held down.
+ * @param The button to check. Not case sensitive. Possible options include:
+ * SPACE, APOSTROPHE, COMMA, MINUS, PERIOD, SLASH, SEMICOLON, EQUAL, UP, DOWN, LEFT, RIGHT
+ * 0-9, A->Z, [, ], \\, `, ESCAPE, ENTER, TAB, BACKSPACE, INSERT, DELETE, PAGE_UP, PAGE_DOWN, HOME, 
+ * CAPS_LOCK, SCROLL_LOCK, NUM_LOCK, PRINT_SCREEN, PAUSE, F1 -> F25, KP_0 -> KP_9,
+ * KP_DECIMAL, KP_DIVIDE, KP_MULTIPLY, KP_SUBTRACT, KP_ADD, KP_ENTER, KP_EQUAL, 
+ * LEFT_SHIFT, LEFT_CONTROL, LEFT_ALT, LEFT_SUPER, RIGHT_SHIFT, RIGHT_CONTROL, RIGHT_ALT, RIGHT_SUPER,
+ * MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT
+*/
+bool isButtonHeld(std::string button);
+
+/** If in interactive mode, returns the position of the cursor relative to the window. */
+glm::vec2 getCursorPos();
+
+/** 
+ * If in interactive mode, sets the mode of the cursor.
+ * @param mode Can be one of the following:
+ * NORMAL - makes the cursor visible and beaving normally
+ * HIDDEN makes the cursor invisible when it is over the content area of the window, 
+ * but does not restrict the cursor from leaving.
+ * DISABLED - hides and grabs the cursor, providing virtual and unlimited cursor movement. 
+ * This is useful for implementing for example 3D camera controls.
+ */
+void setCursorMode(std::string mode);
+
+/** If in interactive mode, returns size of the window */
+glm::ivec2 getWindowSize();
+
+/** If in interactive mode, returns true if the close button on the window was clicked. */
+bool shouldWindowClose();
 
 // This is for internal testing purposes. Don't call this unless you know what you're doing.
 void __test__(std::vector<std::string> args);

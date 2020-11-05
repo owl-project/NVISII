@@ -10,3 +10,9 @@
 [submodule "externals/owl"]
 	path = externals/owl
 	url = https://github.com/owl-project/owl.git
+[submodule "externals/assimp"]
+	path = externals/assimp
+	url = https://github.com/n8vm/assimp.git
+[submodule "externals/gli"]
+	path = externals/gli
+	url = https://github.com/g-truc/gli.git

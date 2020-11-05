@@ -6,3 +6,4 @@ PIL
 scipy
 pygame
 open3d
+PySide2

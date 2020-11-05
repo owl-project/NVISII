@@ -23,7 +23,7 @@ camera.set_transform(visii.transform.create(name = "camera_transform"))
 
 # To make our camera entity act like a "camera", we'll add a camera component
 camera.set_camera(
-    visii.camera.create_perspective_from_fov(
+    visii.camera.create_from_fov(
         name = "camera_camera", 
         field_of_view = 0.785398, # note, this is in radians
         aspect = float(WIDTH)/float(HEIGHT)
@@ -43,6 +43,10 @@ visii.set_camera_entity(camera)
 # transform.set_position((x, y, z)) <- tuples
 # transform.set_position(np.array([x, y, z])) <- numpy arrays
 # transform.set_position(visii.vec3(x, y, z)) <- visii vec3 object
+
+# note that visii quaternions are slightly out of order from a normal list
+# transform.set_rotation([x, y, z, w]) <- lists
+# transform.set_rotation(visii.quat(w, x, y, z)) <- visii quat object
 
 # Lets set the camera to look at an object. 
 # We'll do this by editing the transform component, 

@@ -1,7 +1,5 @@
 // glm::quat bindings
-// 2018 Dan Wilcox <danomatika@gmail.com>
 
-// ----- gtc/quaternion.hpp -----
 %typemap(in) glm::quat (void *argp = 0, int res = 0) {
   int res = SWIG_ConvertPtr($input, &argp, $descriptor(glm::quat*), $disown | 0);
   if (!SWIG_IsOK(res)) 

@@ -1,6 +1,4 @@
 // glm::ivec4 bindings
-
-// ----- detail/type_ivec4.hpp -----
 %typemap(in) glm::ivec4 (void *argp = 0, int res = 0) {
   int res = SWIG_ConvertPtr($input, &argp, $descriptor(glm::ivec4*), $disown | 0);
   if (!SWIG_IsOK(res)) 

@@ -4,13 +4,25 @@ import colorsys
 
 NB_OBJS = 10000
 SAMPLES_PER_PIXEL = 16
-WIDTH = 1000 
-HEIGHT = 500
+WIDTH = 1920 
+HEIGHT = 1080
 USE_DENOISER = True
 FILE_NAME = "tmp.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize(headless = True, verbose = True)
+
+# visii uses components to create a scene. 
+# We can increase the max component limit here if necessary.
+# In this case, we'll need 16 meshes, a material for each object,
+# and finally a transform for each object as well as one more for the camera.
+visii.initialize(headless = True, verbose = True, 
+    max_entities = NB_OBJS + 1,
+    max_transforms = NB_OBJS + 1,  
+    max_materials = NB_OBJS,
+    max_meshes = 16
+    # these are also available
+    # max_lights, max_textures, & max_cameras
+)
 
 if USE_DENOISER is True: 
     visii.enable_denoiser()
@@ -20,9 +32,8 @@ if USE_DENOISER is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
-        name = "camera", 
-        field_of_view = 0.785398, 
+    camera = visii.camera.create(
+        name = "camera",  
         aspect = float(WIDTH)/float(HEIGHT)
     )
 )
@@ -33,12 +44,13 @@ camera.get_transform().look_at(
     up = (1,0,0), # up vector
     eye = (0,0,5), # camera_origin    
 )
+
 # set the camera
 visii.set_camera_entity(camera)
 
 # Change the dome light intensity
-visii.set_dome_light_intensity(2.2)
-visii.set_dome_light_sky(sun_position=[1,2,3])
+visii.set_dome_light_intensity(5)
+visii.set_dome_light_sky(sun_position=(5,-5,5))
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -80,30 +92,23 @@ def add_random_obj(name = "name"):
     mesh = visii.mesh.get(f'mesh_{obj_id}')
     obj.set_mesh(mesh)
 
-    obj.get_transform().set_position(
-        visii.vec3(
-            random.uniform(-5,5),
-            random.uniform(-5,5),
-            random.uniform(-10,3)
-        )
-    )
+    obj.get_transform().set_position((
+        random.uniform(-5,5),
+        random.uniform(-5,5),
+        random.uniform(-1,3)
+    ))
 
-    obj.get_transform().set_rotation(
-        visii.quat(
-            random.uniform(0,1),
-            random.uniform(0,1),
-            random.uniform(0,1),
-            random.uniform(0,1)
-        )
-    )
+    obj.get_transform().set_rotation((
+        random.uniform(0,1),
+        random.uniform(0,1),
+        random.uniform(0,1),
+        random.uniform(0,1)
+    ))
 
-    obj.get_transform().set_scale(
-        visii.vec3(
-            random.uniform(0.15,0.2),
-            random.uniform(0.15,0.2),
-            random.uniform(0.15,0.2)
-        )
-    )  
+    s = random.uniform(0.05,0.15)
+    obj.get_transform().set_scale((
+        s,s,s
+    ))  
 
     rgb = colorsys.hsv_to_rgb(
         random.uniform(0,1),
@@ -111,13 +116,7 @@ def add_random_obj(name = "name"):
         random.uniform(0.7,1)
     )
 
-    obj.get_material().set_base_color(
-        visii.vec3(
-            rgb[0],
-            rgb[1],
-            rgb[2],
-        )
-    )  
+    obj.get_material().set_base_color(rgb)
 
     obj_mat = obj.get_material()
     r = random.randint(0,2)
@@ -159,8 +158,8 @@ def add_random_obj(name = "name"):
 # create a random scene, the values are hard coded in the function defines the values
 for i in range(NB_OBJS):
     add_random_obj(str(i))
-    mn = visii.get_scene_min_aabb_corner()
-    mx = visii.get_scene_max_aabb_corner()
+    print("\rcreating random object", i, end="")
+print(" - done!")
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.render_to_png(

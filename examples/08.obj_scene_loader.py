@@ -7,7 +7,7 @@ import numpy as np
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--spp', 
-                    default=400,
+                    default=512,
                     type=int,
                     help = "number of sample per pixel, higher the more costly")
 parser.add_argument('--width', 
@@ -29,7 +29,7 @@ parser.add_argument('--out',
 opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize_headless()
+visii.initialize(headless=True, verbose=True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
@@ -37,46 +37,48 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
-        name = "camera", 
-        field_of_view = 0.785398, 
+    camera = visii.camera.create(
+        name = "camera",  
         aspect = float(opt.width)/float(opt.height)
     )
 )
 
 camera.get_transform().look_at(
-    visii.vec3(0,0,1.2), # look at (world coordinate)
-    visii.vec3(0,0,1), # up vector
-    visii.vec3(1,-1.5,1.8)
+    at = (0,0,1.2), # look at (world coordinate)
+    up = (0,0,1), # up vector
+    eye = (1,-1.5,1.8)
 )
 visii.set_camera_entity(camera)
 
+visii.set_dome_light_intensity(6)
+visii.set_dome_light_sky(sun_position=[1,1,.1])
+
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# This function loads the 
 sdb = visii.import_obj(
     "sdb", # prefix name
     'content/salle_de_bain_separated/salle_de_bain_separated.obj', #obj path
     'content/salle_de_bain_separated/', # mtl folder 
-    visii.vec3(1,0,0), # translation 
-    visii.vec3(0.1), # scale here
-    visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here
+    position = (1,0,0), # translation 
+    scale = (0.1, 0.1, 0.1), # scale here
+    rotation = visii.angleAxis(3.14 * .5, (1,0,0)) #rotation here
 )
 
-# visii loads each obj model as its own entity
-# you can find them by name where a prefix is added
-# to the obj name defined is added. 
+# Using the above function, 
+# visii loads each obj model as its own entity.
+# You can find them by name (with an optional prefix added
+# to front of each generated component name)
 
-# visii does the same thing for the different material defined 
-# in the mtl file
+# visii generates the same naming pattern for the different 
+# materials defined in the mtl file
 
-# since obj/mtl do not have definition for metallic propreties 
+# since obj/mtl do not have definition for metallic properties 
 # lets add them manually to the material
 mirror = visii.material.get('sdbMirror')
 
 mirror.set_roughness(0)
 mirror.set_metallic(1)
-mirror.set_base_color(visii.vec3(1))
+mirror.set_base_color((1,1,1))
 
 # When loading the obj scene, visii returns a list of entities 
 # you can loop them to find specific objects or add physical 
@@ -87,7 +89,7 @@ mirror.set_base_color(visii.vec3(1))
 for i_s, s in enumerate(sdb):
     if "light" in s.get_name().lower():
         s.set_light(visii.light.create('light'))
-        s.get_light().set_intensity(80)
+        s.get_light().set_intensity(100)
         s.get_light().set_temperature(5000)
         s.clear_material()
 
@@ -98,13 +100,6 @@ visii.render_to_png(
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
     image_path=f"{opt.out}"
-)
-
-visii.render_to_hdr(
-    width=int(opt.width), 
-    height=int(opt.height), 
-    samples_per_pixel=int(opt.spp),
-    image_path=f"{(opt.out).replace('png', 'hdr')}"
 )
 
 # let's clean up the GPU

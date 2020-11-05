@@ -1,7 +1,6 @@
 /* File shared by both host and device */
 #pragma once
 
-#define MAX_TRANSFORMS 1000000
 #include <glm/glm.hpp>
 using namespace glm;
 
@@ -9,8 +8,8 @@ using namespace glm;
 struct TransformStruct
 {
     /* 64 bytes */
-    mat4 worldToLocal;
     mat4 localToWorld;
+    mat4 localToWorldPrev;
     // vec3 translation;
     // quat rotation;
     // vec3 scale;

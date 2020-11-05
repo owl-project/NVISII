@@ -29,7 +29,7 @@ parser.add_argument('--out',
 opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize_headless()
+visii.initialize(headless=True, verbose=True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
@@ -37,27 +37,28 @@ if not opt.noise is True:
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
-    camera = visii.camera.create_perspective_from_fov(
-        name = "camera", 
-        field_of_view = 0.785398, 
+    camera = visii.camera.create(
+        name = "camera",  
         aspect = float(opt.width)/float(opt.height)
     )
 )
 
 camera.get_transform().look_at(
-    visii.vec3(0,0.1,0.1), # look at (world coordinate)
-    visii.vec3(0,0,1), # up vector
-    visii.vec3(1,0.7,0.2), # camera_origin    
+    at = (0,0.1,0.1),
+    up = (0,0,1),
+    eye = (1,0.7,0.2),
 )
 visii.set_camera_entity(camera)
 
-visii.set_dome_light_intensity(1)
+visii.set_dome_light_sky(sun_position = (10, 10, 1), saturation = 2)
+visii.set_dome_light_exposure(1)
+visii.set_dome_light_intensity(2)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# This function loads the obj meshes, it will ignore 
-# other content like materials 
-mesh = visii.mesh.create_from_obj("obj", opt.path_obj)
+# This function loads a signle obj mesh. It ignores 
+# the associated .mtl file
+mesh = visii.mesh.create_from_file("obj", opt.path_obj)
 
 obj_entity = visii.entity.create(
     name="obj_entity",
@@ -65,12 +66,13 @@ obj_entity = visii.entity.create(
     transform = visii.transform.create("obj_entity"),
     material = visii.material.create("obj_entity")
 )
+
 # lets set the obj_entity up
 obj_entity.get_transform().set_rotation( 
-    visii.quat(0.7071, 0.7071, 0, 0)
+    (0.7071, 0, 0, 0.7071)
 )
 obj_entity.get_material().set_base_color(
-    visii.vec3(0.9,0.12,0.08)
+    (0.9,0.12,0.08)
 )  
 obj_entity.get_material().set_roughness(0.7)   
 obj_entity.get_material().set_specular(1)   
@@ -86,5 +88,5 @@ visii.render_to_png(
     image_path=f"{opt.out}"
 )
 
-# let's clean up the GPU
+# let's clean up GPU resources
 visii.deinitialize()

@@ -71,11 +71,11 @@ class Transform : public StaticFactory
     glm::mat4 prevLocalToWorldMatrix = glm::mat4(1);
     glm::mat4 prevWorldToLocalMatrix = glm::mat4(1);
 
-  	static std::shared_ptr<std::mutex> editMutex;
+  	static std::shared_ptr<std::recursive_mutex> editMutex;
     static bool factoryInitialized;
 
-    static Transform transforms[MAX_TRANSFORMS];
-    static TransformStruct transformStructs[MAX_TRANSFORMS];
+    static std::vector<Transform> transforms;
+    static std::vector<TransformStruct> transformStructs;
     static std::map<std::string, uint32_t> lookupTable;
     
     /* Updates cached rotation values */
@@ -104,12 +104,22 @@ class Transform : public StaticFactory
     glm::mat4 computeWorldToLocalMatrix(bool previous);
     // glm::mat4 computePrevWorldToLocalMatrix(bool previous);
 
-    Transform();
-    Transform(std::string name, uint32_t id);
 
     static std::set<Transform*> dirtyTransforms;
 
   public:
+    /**
+      * Instantiates a null Transform. Used to mark a row in the table as null. 
+      * Note: for internal use only. 
+     */
+    Transform();
+    
+    /**
+    * Instantiates a Transform with the given name and ID. Used to mark a row in the table as null. 
+    * Note: for internal use only.
+    */
+    Transform(std::string name, uint32_t id);
+    
     /**
      * Constructs a transform with the given name.
      * 
@@ -157,6 +167,9 @@ class Transform : public StaticFactory
     /** @returns the unique integer ID for this component */
 	  int32_t getId();
 
+    // For internal use
+    int32_t getAddress();
+
     /** @returns A map whose key is a transform name and whose value is the ID for that transform */
 	  static std::map<std::string, uint32_t> getNameToIdMap();
 
@@ -164,7 +177,7 @@ class Transform : public StaticFactory
     static void remove(std::string name);
 
     /** Allocates the tables used to store all transform components */
-    static void initializeFactory();
+    static void initializeFactory(uint32_t max_components);
 
     /** @returns True if the tables used to store all transform components have been allocated, and False otherwise */
     static bool isFactoryInitialized();
@@ -188,7 +201,7 @@ class Transform : public StaticFactory
 	  void markDirty();
 
     /** For internal use. Returns the mutex used to lock transforms for processing by the renderer. */
-    static std::shared_ptr<std::mutex> getEditMutex();
+    static std::shared_ptr<std::recursive_mutex> getEditMutex();
 
     /** @returns a json string representation of the current component */
     std::string toString();

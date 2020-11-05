@@ -96,7 +96,7 @@ vec3 ProceduralSkybox(
     vec3 intensity = vec3(dot(skyColor, W));
     skyColor = glm::mix(intensity, skyColor, saturation);
 
-    skyColor = pow(skyColor, vec3(2.2f));
+    // skyColor = pow(skyColor, vec3(2.2f));
     vec3 color = skyColor;
     return color;
 }

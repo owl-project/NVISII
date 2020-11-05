@@ -1,7 +1,4 @@
 // glm::vec3 bindings
-// 2018 Dan Wilcox <danomatika@gmail.com>
-
-// ----- detail/type_vec3.hpp -----
 %typemap(in) glm::vec3 (void *argp = 0, int res = 0) {
   int res = SWIG_ConvertPtr($input, &argp, $descriptor(glm::vec3*), $disown | 0);
   if (!SWIG_IsOK(res)) 
@@ -29,6 +26,38 @@
   else {
     glm::vec3 * temp = reinterpret_cast< glm::vec3 * >(argp);
     $1 = *temp;
+    if (SWIG_IsNewObj(res)) delete temp;
+  }
+}
+
+%typemap(in) glm::vec3 const & (void *argp = 0, int res = 0, glm::vec3 tmp) {
+  int res = SWIG_ConvertPtr($input, &argp, $descriptor(glm::vec3*), $disown | 0);
+  if (!SWIG_IsOK(res)) 
+  { 
+    if (!PySequence_Check($input)) {
+      PyErr_SetString(PyExc_ValueError, "in method '" "$symname" "', argument " "$argnum" " Expected either a sequence or vec3");
+      return NULL;
+    }
+
+    if (PySequence_Length($input) != 3) {
+      PyErr_SetString(PyExc_ValueError,"in method '" "$symname" "', argument " "$argnum" " Size mismatch. Expected 3 elements");
+      return NULL;
+    }
+
+    $1 = &tmp;
+    for (int i = 0; i < 3; i++) {
+      PyObject *o = PySequence_GetItem($input,i);
+      if (PyNumber_Check(o)) {
+        (*$1)[i] = (float) PyFloat_AsDouble(o);
+      } else {
+        PyErr_SetString(PyExc_ValueError,"in method '" "$symname" "', argument " "$argnum" " Sequence elements must be numbers");      
+        return NULL;
+      }
+    }
+  }   
+  else {
+    glm::vec3 * temp = reinterpret_cast< glm::vec3 * >(argp);
+    $1 = temp;
     if (SWIG_IsNewObj(res)) delete temp;
   }
 }

@@ -1,7 +1,6 @@
 /* File shared by both host and device */
 #pragma once
 
-#define MAX_MESHES 100000
 #include <glm/glm.hpp>
 using namespace glm;
 
@@ -18,5 +17,5 @@ struct MeshStruct {
     float bounding_sphere_radius; // 52
     int32_t show_bounding_box; // 56
     int32_t numTris; // 60
-    int32_t ph3; // 64
+    int32_t numVerts; // 64
 };

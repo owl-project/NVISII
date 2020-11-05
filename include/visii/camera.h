@@ -19,31 +19,19 @@ class Camera : public StaticFactory
     friend class Entity;
 private:
   	/** Prevents multiple components from simultaneously being added and/or removed from the component list */
-	static std::shared_ptr<std::mutex> editMutex;
+		static std::shared_ptr<std::recursive_mutex> editMutex;
 
-	/** Marks that the StaticFactory has allocated the table of components */
-	static bool factoryInitialized;
+		/** Marks that the StaticFactory has allocated the table of components */
+		static bool factoryInitialized;
 
-	/** The table of Camera components */
-	static Camera cameras[MAX_CAMERAS];
+		/** The table of Camera components */
+		static std::vector<Camera> cameras;
 
-	/** The table of Camera structs */
-	static CameraStruct cameraStructs[MAX_CAMERAS];
+		/** The table of Camera structs */
+		static std::vector<CameraStruct> cameraStructs;
 
-	/* A lookup table of name to camera id */
-	static std::map<std::string, uint32_t> lookupTable;
-
-  	/**
-	 * Instantiates a null Camera. Used to mark a row in the table as null. 
-     * Note: for internal use only. 
-	 */
-	Camera();
-
-	/**
-	 * Instantiates a Camera with the given name and ID. Used to mark a row in the table as null. 
-     * Note: for internal use only.
-	 */
-	Camera(std::string name, uint32_t id);
+		/* A lookup table of name to camera id */
+		static std::map<std::string, uint32_t> lookupTable;
 
     /* Indicates that one of the components has been edited */
     static bool anyDirty;
@@ -52,153 +40,214 @@ private:
     bool dirty = true;
 	
   public:
-	/* Creates a camera, which can be used to capture the scene. */
-	
-	/** 
-	 * Constructs a camera component from a field of view.
-	 * The field of view controls the amount of zoom, i.e. the amount of the scene 
-	 * which is visible all at once. A smaller field of view results in a longer focal length (more zoom),
-	 * while larger field of view allow you to see more of the scene at once (shorter focal length, less zoom)
-	 * 
-     * @param name A unique name for this camera.
-     * @param field_of_view Specifies the field of view angle in the y direction. Expressed in radians.
-	 * @param aspect Specifies the aspect ratio that determines the field of view in the x direction. The aspect ratio is a ratio of x (width) to y (height)
-	 * @returns a reference to a camera component
-	*/
-	static Camera *createPerspectiveFromFOV(std::string name, float field_of_view, float aspect);
+  	/**
+		 * Instantiates a null Camera. Used to mark a row in the table as null. 
+     * Note: for internal use only. 
+		*/
+		Camera();
 
-	/** 
-	 * Constructs a camera component from a focal length.
-	 * The focal length controls the amount of zoom, i.e. the amount of the scene 
-	 * which is visible all at once. Longer focal lengths result in a smaller field of view (more zoom),
-	 * while short focal lengths allow you to see more of the scene at once (larger FOV, less zoom)
-	 * 
-     * @param name A unique name for this camera.
-     * @param focal_length Specifies the focal length of the camera lens (in millimeters).
-     * @param sensor_width Specifies the width of the camera sensor (in millimeters). 
-	 * @param sensor_height Specifies the height of the camera sensor (in millimeters). 
-	 * @returns a reference to a camera component
-	*/
-	static Camera *createPerspectiveFromFocalLength(std::string name, float focal_length, float sensor_width, float sensor_height);
+		/**
+		 * Instantiates a Camera with the given name and ID. Used to mark a row in the table as null. 
+		 * Note: for internal use only.
+		 */
+		Camera(std::string name, uint32_t id);
 
-	/** 
-	 * @param name The name of the camera to get
-     * @returns a Camera who's name matches the given name 
-	*/
-	static Camera *get(std::string name);
+		/** 
+		 * Constructs a camera component.
+		 * @param name A unique name for this camera.
+		 * @param field_of_view Specifies the field of view angle in the y direction. Expressed in radians.
+		 * @param aspect Specifies the aspect ratio that determines the field of view in the x direction. The aspect ratio is a ratio of x (width) to y (height)
+		 * @returns a reference to a camera component
+		*/
+		static Camera *create(std::string name, float field_of_view = 0.785398, float aspect = 1.0);
 
-	/** @returns a pointer to the table of CameraStructs */
-	static CameraStruct *getFrontStruct();
+		/** Deprecated in favor of either create or create_from_fov */
+		static Camera *createPerspectiveFromFOV(std::string name, float field_of_view, float aspect);
 
-	/** @returns a pointer to the list of Camera components. */
-	static Camera *getFront();
+		/** 
+		 * Constructs a camera component from a field of view.
+		 * The field of view controls the amount of zoom, i.e. the amount of the scene 
+		 * which is visible all at once. A smaller field of view results in a longer focal length (more zoom),
+		 * while larger field of view allow you to see more of the scene at once (shorter focal length, less zoom)
+		 * 
+		 * @param name A unique name for this camera.
+		 * @param field_of_view Specifies the field of view angle in the y direction. Expressed in radians.
+		 * @param aspect Specifies the aspect ratio that determines the field of view in the x direction. The aspect ratio is a ratio of x (width) to y (height)
+		 * @returns a reference to a camera component
+		*/
+		static Camera *createFromFOV(std::string name, float field_of_view, float aspect);
 
-	/** @returns the number of allocated cameras. */
-	static uint32_t getCount();
+		/** Deprecated in favor of create_from_focal_length */
+		static Camera *createPerspectiveFromFocalLength(std::string name, float focal_length, float sensor_width, float sensor_height);
 
-	/** @returns the name of this component */
-	std::string getName();
+		/** 
+		 * Constructs a camera component from a focal length.
+		 * The focal length controls the amount of zoom, i.e. the amount of the scene 
+		 * which is visible all at once. Longer focal lengths result in a smaller field of view (more zoom),
+		 * while short focal lengths allow you to see more of the scene at once (larger FOV, less zoom)
+		 * 
+		 * @param name A unique name for this camera.
+		 * @param focal_length Specifies the focal length of the camera lens (in millimeters).
+		 * @param sensor_width Specifies the width of the camera sensor (in millimeters). 
+		 * @param sensor_height Specifies the height of the camera sensor (in millimeters). 
+		 * @returns a reference to a camera component
+		*/
+		static Camera *createFromFocalLength(std::string name, float focal_length, float sensor_width, float sensor_height);
 
-	/** @returns A map whose key is a camera name and whose value is the ID for that camera */
-	static std::map<std::string, uint32_t> getNameToIdMap();
+		/** 
+		 * Constructs a camera component from a set of intrinsic properties. 
+		 * These properties are common in computer-vision setups. 
+		 * 
+		 * @param name A unique name for this camera.
+		 * @param fx X-axis focal length in meters.
+		 * @param fy Y-axis focal length in meters.
+		 * @param cx X-axis optical center in pixels.
+		 * @param cy Y-axis optical center in pixels.
+		 * @param width Width of the current viewport, in pixels.
+		 * @param height Height of the current viewport, in pixels.
+		 * @param znear The floating-point distance to the near clipping plane. If not specified, defaults to 0.05.
+		 * @param zfar The floating-point distance to the far clipping plane. zfar must be greater than znear. If not specified, defaults to 100.0.
+		 * @returns a reference to a camera component
+		*/
+		static Camera *createFromIntrinsics(std::string name, float fx, float fy, float cx, float cy, float width, float height, float near = 0.05f, float far = 100.f);
 
-	/** @param name The name of the camera to remove */
-	static void remove(std::string name);
+		/** 
+		 * @param name The name of the camera to get
+			 * @returns a Camera who's name matches the given name 
+		*/
+		static Camera *get(std::string name);
 
-	/** Allocates the tables used to store all Camera components */
-	static void initializeFactory();
+		/** @returns a pointer to the table of CameraStructs */
+		static CameraStruct *getFrontStruct();
 
-	/** @returns True if the tables used to store all Camera components have been allocated, and False otherwise */
-	static bool isFactoryInitialized();
+		/** @returns a pointer to the list of Camera components. */
+		static Camera *getFront();
 
-	/** @returns True the current camera is a valid, initialized camera, and False if the camera was cleared or removed. */
-	bool isInitialized();
+		/** @returns the number of allocated cameras. */
+		static uint32_t getCount();
 
-	/** Iterates through all components, updating any component struct fields and marking components as clean. */
-    static void updateComponents();
+		/** @returns the name of this component */
+		std::string getName();
 
-	/** Clears any existing camera components. */
-	static void clearAll();
+		/** @returns A map whose key is a camera name and whose value is the ID for that camera */
+		static std::map<std::string, uint32_t> getNameToIdMap();
 
-	/** @returns a string representation of the current component */
-    std::string toString();
+		/** @param name The name of the camera to remove */
+		static void remove(std::string name);
 
-	/** Indicates whether or not any cameras are "out of date" and need to be updated through the "update components" function*/
-	static bool areAnyDirty();
+		/** Allocates the tables used to store all Camera components */
+		static void initializeFactory(uint32_t max_components);
 
-    /** @returns True if the camera has been modified since the previous frame, and False otherwise */
-    bool isDirty() { return dirty; }
+		/** @returns True if the tables used to store all Camera components have been allocated, and False otherwise */
+		static bool isFactoryInitialized();
 
-    /** @returns True if the camera has not been modified since the previous frame, and False otherwise */
-    bool isClean() { return !dirty; }
+		/** @returns True the current camera is a valid, initialized camera, and False if the camera was cleared or removed. */
+		bool isInitialized();
 
-    /** Tags the current component as being modified since the previous frame. */
-    void markDirty();
+		/** Iterates through all components, updating any component struct fields and marking components as clean. */
+			static void updateComponents();
 
-    /** Tags the current component as being unmodified since the previous frame. */
-    void markClean() { dirty = false; }
+		/** Clears any existing camera components. */
+		static void clearAll();
 
-	/** Returns the simplified struct used to represent the current component */
-	CameraStruct getStruct();
+		/** @returns a string representation of the current component */
+			std::string toString();
 
-	/** 
-	 * Tells the current camera component to use a projection matrix constructed from a field of view.
-	 * The field of view controls the amount of zoom, i.e. the amount of the scene 
-	 * which is visible all at once. A smaller field of view results in a longer focal length (more zoom),
-	 * while larger field of view allow you to see more of the scene at once (shorter focal length, less zoom)
-	 * 
-     * @param field_of_view Specifies the field of view angle in the y direction. Expressed in radians.
-	 * @param aspect Specifies the aspect ratio that determines the field of view in the x direction. The aspect ratio is a ratio of x (width) to y (height)
-	*/
-	void usePerspectiveFromFOV(float field_of_view, float aspect);
+		/** Indicates whether or not any cameras are "out of date" and need to be updated through the "update components" function*/
+		static bool areAnyDirty();
 
-	//  * @param near Specifies the distance from the viewer to the near clipping plane (always positive) 
+		/** @returns True if the camera has been modified since the previous frame, and False otherwise */
+		bool isDirty() { return dirty; }
 
-	/** 
-	 * Tells the current camera component to use a projection matrix constructed from a focal length.
-	 * The focal length controls the amount of zoom, i.e. the amount of the scene 
-	 * which is visible all at once. Longer focal lengths result in a smaller field of view (more zoom),
-	 * while short focal lengths allow you to see more of the scene at once (larger FOV, less zoom)
-	 * 
-     * @param focal_length Specifies the focal length of the camera lens (in millimeters).
-     * @param sensor_width Specifies the width of the camera sensor (in millimeters). 
-	 * @param sensor_height Specifies the height of the camera sensor (in millimeters). 
-	*/
-	void usePerspectiveFromFocalLength(float focal_length, float sensor_width, float sensor_height);
+		/** @returns True if the camera has not been modified since the previous frame, and False otherwise */
+		bool isClean() { return !dirty; }
 
-	/** 
-	 * Real-world cameras transmit light through a lens that bends and focuses it onto the sensor. 
-	 * Because of this, objects that are a certain distance away are in focus, but objects in front 
-	 * and behind that are blurred.
-	 * 
-	 * @param distance The distance to the camera focal position. Note that this is different from focal length, 
-	 * and has no effect on the perspective of a camera.
-	 */
-	void setFocalDistance(float distance);
+		/** Tags the current component as being modified since the previous frame. */
+		void markDirty();
 
-	/** 
-	 * Real-world cameras transmit light through a lens that bends and focuses it onto the sensor. 
-	 * Because of this, objects that are a certain distance away are in focus, but objects in front 
-	 * and behind that are blurred.
-	 * 
-	 * @param diameter Defines the amount of blurring by setting the diameter of the aperture (in millimeters).
-	 */
-	void setApertureDiameter(float diameter);
-	
-	/** @returns the camera to projection matrix.
-		This transform can be used to achieve perspective (eg a vanishing point), or for scaling
-		an orthographic view. */
-	glm::mat4 getProjection();
+		/** Tags the current component as being unmodified since the previous frame. */
+		void markClean() { dirty = false; }
 
-	/**
-	 * The intrinsic matrix is a 3x3 matrix that transforms 3D (non-homogeneous) cooordinates in camera space into 2D (homogeneous) image coordinates. 
-	 * These types of matrices are commonly used for computer vision applications, but are less common in computer graphics.
-	 * @param width The width of the image (not tracked internally by the camera)
-	 * @param height The height of the image (not tracked internally by the camera)
-	 * @returns An intrinsic matrix representation of the camera's perspective.
-	*/
-	glm::mat3 getIntrinsicMatrix(uint32_t width, uint32_t height);
+		/** Returns the simplified struct used to represent the current component */
+		CameraStruct getStruct();
 
-	/** For internal use. Returns the mutex used to lock cameras for processing by the renderer. */
-	static std::shared_ptr<std::mutex> getEditMutex();
+		/** 
+		 * Tells the current camera component to use a projection matrix constructed from a field of view.
+		 * The field of view controls the amount of zoom, i.e. the amount of the scene 
+		 * which is visible all at once. A smaller field of view results in a longer focal length (more zoom),
+		 * while larger field of view allow you to see more of the scene at once (shorter focal length, less zoom)
+		 * 
+		 * @param field_of_view Specifies the field of view angle in the y direction. Expressed in radians.
+		 * @param aspect Specifies the aspect ratio that determines the field of view in the x direction. The aspect ratio is a ratio of x (width) to y (height)
+		*/
+		void setFOV(float field_of_view, float aspect);
+
+		//  * @param near Specifies the distance from the viewer to the near clipping plane (always positive) 
+
+		/** 
+		 * Tells the current camera component to use a projection matrix constructed from a focal length.
+		 * The focal length controls the amount of zoom, i.e. the amount of the scene 
+		 * which is visible all at once. Longer focal lengths result in a smaller field of view (more zoom),
+		 * while short focal lengths allow you to see more of the scene at once (larger FOV, less zoom)
+		 * 
+		 * @param focal_length Specifies the focal length of the camera lens (in millimeters).
+		 * @param sensor_width Specifies the width of the camera sensor (in millimeters). 
+		 * @param sensor_height Specifies the height of the camera sensor (in millimeters). 
+		 * NOTE: not to be confused with set_focal_distance
+		*/
+		void setFocalLength(float focal_length, float sensor_width, float sensor_height);
+
+		/** 
+		 * Real-world cameras transmit light through a lens that bends and focuses it onto the sensor. 
+		 * Because of this, objects that are a certain distance away are in focus, but objects in front 
+		 * and behind that are blurred.
+		 * 
+		 * @param distance The distance to the camera focal position. Note that this is different from focal length, 
+		 * and has no effect on the perspective of a camera.
+		 * 
+		 * NOTE: not to be confused with set_focal_length
+		 */
+		void setFocalDistance(float distance);
+
+		/** 
+		 * Real-world cameras transmit light through a lens that bends and focuses it onto the sensor. 
+		 * Because of this, objects that are a certain distance away are in focus, but objects in front 
+		 * and behind that are blurred.
+		 * 
+		 * @param diameter Defines the amount of blurring by setting the diameter of the aperture (in millimeters).
+		 */
+		void setApertureDiameter(float diameter);
+		
+		/** @returns the camera to projection matrix.
+			This transform can be used to achieve perspective (eg a vanishing point), or for scaling
+			an orthographic view. */
+		glm::mat4 getProjection();
+
+		/** Sets the projection matrix used to achieve a perspective (eg a vanishing point), or for scaling 
+		 * an orthographic view */
+		void setProjection(glm::mat4 projection);
+		
+		/**
+		 * The intrinsic matrix is a 3x3 matrix that transforms 3D (non-homogeneous) cooordinates in camera space into 2D (homogeneous) image coordinates. 
+		 * These types of matrices are commonly used for computer vision applications, but are less common in computer graphics.
+		 * @param width The width of the image (not tracked internally by the camera)
+		 * @param height The height of the image (not tracked internally by the camera)
+		 * @returns An intrinsic matrix representation of the camera's perspective.
+		*/
+		glm::mat3 getIntrinsicMatrix(float width, float height);
+
+		/** Constructs a projection matrix using custom intrinsics.
+		 * @param fx X-axis focal length in meters.
+		 * @param fy Y-axis focal length in meters.
+		 * @param cx X-axis optical center in pixels.
+		 * @param cy Y-axis optical center in pixels.
+		 * @param width Width of the current viewport, in pixels.
+		 * @param height Height of the current viewport, in pixels.
+		 * @param znear The floating-point distance to the near clipping plane. If not specified, defaults to 0.05.
+		 * @param zfar The floating-point distance to the far clipping plane. zfar must be greater than znear. If not specified, defaults to 100.0.
+		 */
+		void setIntrinsics(float fx, float fy, float cx, float cy, float width, float height, float near = 0.05f, float far = 100.f);
+
+		/** For internal use. Returns the mutex used to lock cameras for processing by the renderer. */
+		static std::shared_ptr<std::recursive_mutex> getEditMutex();
 };
