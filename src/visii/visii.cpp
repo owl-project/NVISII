@@ -620,7 +620,7 @@ void initializeOptix(bool headless)
     OD.blasList.resize(meshCount);
 
     uint32_t materialCount = Material::getCount();
-    OD.textureObjects.resize(Texture::getCount() + NUM_MAT_PARAMS * materialCount);
+    OD.textureObjects.resize(Texture::getCount() + NUM_MAT_PARAMS * materialCount, nullptr);        
     OD.textureStructs.resize(Texture::getCount() + NUM_MAT_PARAMS * materialCount);
     OD.materialStructs.resize(materialCount);
 
@@ -1215,26 +1215,37 @@ void updateComponents()
     if (Texture::areAnyDirty() || Material::areAnyDirty()) {
         std::lock_guard<std::recursive_mutex> material_lock(Material::areAnyDirty()   ? *Material::getEditMutex().get() : dummyMutex);
 
-
         // Allocate cuda textures for all texture components
-        Texture* textures = Texture::getFront();
-        for (uint32_t tid = 0; tid < Texture::getCount(); ++tid) {
-            if (!textures[tid].isDirty()) continue;
+        auto dirtyTextures = Texture::getDirtyTextures();
+        for (auto &texture : dirtyTextures) {
+            int tid = texture->getAddress();
             if (OD.textureObjects[tid]) { 
                 owlTexture2DDestroy(OD.textureObjects[tid]); 
                 OD.textureObjects[tid] = 0; 
             }
-            if (!textures[tid].isInitialized()) continue;
-            bool isHDR = textures[tid].isHDR();
-            bool isLinear = textures[tid].isLinear();
+            if (!texture->isInitialized()) continue;
+            bool isHDR = texture->isHDR();
+            bool isLinear = texture->isLinear();
+            uint32_t width = texture->getWidth();
+            uint32_t height = texture->getHeight();
+            void* texels = ((isHDR) ? (void*)texture->getFloatTexels().data() : (void*)texture->getByteTexels().data());
+            OWLTexelFormat format = ((isHDR) ? OWL_TEXEL_FORMAT_RGBA32F : OWL_TEXEL_FORMAT_RGBA8);
+            OWLTextureColorSpace colorSpace = ((isLinear) ? OWL_COLOR_SPACE_LINEAR: OWL_COLOR_SPACE_SRGB);
+            if (width < 1 || height < 1 || 
+                (isHDR && texture->getFloatTexels().size() != width * height) || 
+                (!isHDR && texture->getByteTexels().size() != width * height)) 
+            {
+                std::cout<<"Internal error: corrupt texture. Attempting to recover..." <<std::endl;
+                return; 
+            }
             OD.textureObjects[tid] = owlTexture2DCreate(
                 OD.context, 
-                (isHDR) ? OWL_TEXEL_FORMAT_RGBA32F : OWL_TEXEL_FORMAT_RGBA8,
-                textures[tid].getWidth(), textures[tid].getHeight(), 
-                ((isHDR) ? (void*)textures[tid].getFloatTexels().data() : (void*)textures[tid].getByteTexels().data()),
+                format,
+                width, height, texels,
                 OWL_TEXTURE_LINEAR, 
                 OWL_TEXTURE_WRAP,
-                (isLinear) ? OWL_COLOR_SPACE_LINEAR: OWL_COLOR_SPACE_SRGB);
+                colorSpace
+                );
         }
 
         // Create additional cuda textures for material constants

@@ -1,4 +1,6 @@
 #include <visii/texture.h>
+#include <visii/light.h>
+#include <visii/material.h>
 
 #include <stb_image.h>
 #include <stb_image_write.h>
@@ -16,12 +18,11 @@ std::vector<TextureStruct> Texture::textureStructs;
 std::map<std::string, uint32_t> Texture::lookupTable;
 std::shared_ptr<std::recursive_mutex> Texture::editMutex;
 bool Texture::factoryInitialized = false;
-bool Texture::anyDirty = true;
+std::set<Texture*> Texture::dirtyTextures;
 
 Texture::Texture()
 {
     this->initialized = false;
-    markDirty();
 }
 
 Texture::~Texture()
@@ -40,8 +41,6 @@ Texture::Texture(std::string name, uint32_t id)
     textureStructs[id].height = -1;
     this->floatTexels = std::vector<vec4>();
     this->byteTexels = std::vector<u8vec4>();
-    
-    markDirty();
 }
 
 std::string Texture::toString() {
@@ -53,7 +52,7 @@ std::string Texture::toString() {
     return output;
 }
 
-std::vector<vec4> Texture::getFloatTexels() {
+std::vector<vec4> &Texture::getFloatTexels() {
     // If natively represented as 32f, return that. 
     // otherwise, cast 8uc to 32f.
     if (floatTexels.size() > 0) return floatTexels;
@@ -64,7 +63,7 @@ std::vector<vec4> Texture::getFloatTexels() {
     return floatTexels;
 }
 
-std::vector<u8vec4> Texture::getByteTexels() {
+std::vector<u8vec4> &Texture::getByteTexels() {
     // If natively represented as 8uc, return that. 
     // otherwise, cast 32f to 8uc.
     if (byteTexels.size() > 0) return byteTexels;
@@ -121,24 +120,33 @@ bool Texture::isInitialized()
 
 bool Texture::areAnyDirty()
 {
-	return anyDirty;
+    return dirtyTextures.size() > 0;
 }
 
 void Texture::markDirty() {
-	dirty = true;
-    anyDirty = true;
+    if (getAddress() < 0 || getAddress() >= textures.size()) {
+        throw std::runtime_error("Error, texture not allocated in list");
+    }
+	dirtyTextures.insert(this);
+	auto materialPointers = Material::getFront();
+	for (auto &mid : materials) {
+		materialPointers[mid].markDirty();
+	}
+    auto lightPointers = Light::getFront();
+	for (auto &lid : lights) {
+		lightPointers[lid].markDirty();
+	}
 };
+
+std::set<Texture*> Texture::getDirtyTextures()
+{
+	return dirtyTextures;
+}
 
 void Texture::updateComponents()
 {
-	if (!anyDirty) return;
-
-	for (int i = 0; i < textures.size(); ++i) {
-		if (textures[i].isDirty()) {
-            textures[i].markClean();
-        }
-	};
-	anyDirty = false;
+    if (dirtyTextures.size() == 0) return;
+	dirtyTextures.clear();
 } 
 
 void Texture::clearAll()
@@ -279,8 +287,7 @@ Texture* Texture::createFromFile(std::string name, std::string path, bool linear
                     std::vector<vec4> temp(textureStructs[l->getId()].width * textureStructs[l->getId()].height);
                     memcpy(temp.data(), image.data(), (uint32_t)image.size());
                     for (uint32_t i = 0; i < temp.size(); ++i) l->byteTexels[i] = u8vec4(temp[i] * 255.f);
-                }
-                l->markDirty();                
+                }            
             }
             else {
                 tex2D = gli::flip(tex2D);
@@ -329,7 +336,6 @@ Texture* Texture::createFromFile(std::string name, std::string path, bool linear
                         "FORMAT_R_ATI1N_UNORM_BLOCK8, " +
                         "FORMAT_RG_ATI2N_UNORM_BLOCK16"));
                 }
-                l->markDirty();
             }
         }
         else {
@@ -346,7 +352,6 @@ Texture* Texture::createFromFile(std::string name, std::string path, bool linear
                 memcpy(l->floatTexels.data(), pixels, x * y * 4 * sizeof(float));
                 textureStructs[l->getId()].width = x;
                 textureStructs[l->getId()].height = y;
-                l->markDirty();
                 stbi_image_free(pixels);
             }
             else {
@@ -362,11 +367,11 @@ Texture* Texture::createFromFile(std::string name, std::string path, bool linear
                 memcpy(l->byteTexels.data(), pixels, x * y * 4 * sizeof(stbi_uc));
                 textureStructs[l->getId()].width = x;
                 textureStructs[l->getId()].height = y;
-                l->markDirty();
                 stbi_image_free(pixels);
             }
         }
 
+        l->markDirty();
     };
 
     try {
@@ -632,8 +637,9 @@ void Texture::remove(std::string name) {
 	if (!t) return;
     std::vector<glm::vec4>().swap(t->floatTexels);
     std::vector<glm::u8vec4>().swap(t->byteTexels);
-    StaticFactory::remove(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
-    anyDirty = true;
+    int32_t oldID = t->getId();
+	StaticFactory::remove(editMutex, name, "Texture", lookupTable, textures.data(), textures.size());
+	dirtyTextures.insert(&textures[oldID]);
 }
 
 Texture* Texture::getFront() {
@@ -651,6 +657,16 @@ uint32_t Texture::getCount() {
 std::string Texture::getName()
 {
     return name;
+}
+
+int32_t Texture::getId()
+{
+    return id;
+}
+
+int32_t Texture::getAddress()
+{
+	return (this - textures.data());
 }
 
 std::map<std::string, uint32_t> Texture::getNameToIdMap()
