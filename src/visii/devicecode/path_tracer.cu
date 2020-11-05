@@ -13,6 +13,8 @@
 
 #include "visii/utilities/procedural_sky.h"
 
+#include <glm/gtx/matrix_interpolation.hpp>
+
 typedef owl::common::LCG<4> Random;
 
 extern "C" __constant__ LaunchParams optixLaunchParams;
@@ -22,9 +24,9 @@ struct RayPayload {
     int primitiveID = -1;
     float2 barycentrics;
     float tHit = -1.f;
-    float localToWorld[12];
-    float localToWorldT0[12];
-    float localToWorldT1[12];
+    // float localToWorld[12];
+    // float localToWorldT0[12];
+    // float localToWorldT1[12];
 };
 
 __device__
@@ -109,23 +111,56 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     prd.tHit = optixGetRayTmax();
     prd.barycentrics = optixGetTriangleBarycentrics();
     prd.primitiveID = optixGetPrimitiveIndex();
-    optixGetObjectToWorldTransformMatrix(prd.localToWorld);
+
+    // const OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
+    // const OptixTransformType type = optixGetTransformTypeFromHandle( handle );
+    // if (type == OPTIX_TRANSFORM_TYPE_MATRIX_MOTION_TRANSFORM) {
+    //     const OptixMatrixMotionTransform* transformData = optixGetMatrixMotionTransformFromHandle( handle );
+    //     memcpy(prd.localToWorld, &transformData->transform[0][0], 12 * sizeof(float));
+    // }
+    // else if (type == OPTIX_TRANSFORM_TYPE_SRT_MOTION_TRANSFORM) {
+    //     const OptixSRTMotionTransform* transformData = optixGetMatrixMotionTransformFromHandle( handle );
+    //     memcpy(prd.localToWorld, &transformData->transform[0][0], 12 * sizeof(float));
+    // }
+    // optixGetInterpolatedTransformation( trf0, trf1, trf2, transformData, time );
+    // const float4* transform = (const float4*)( &transformData->transform[key][0] );
+    // const float4* transform = (const float4*)( &transformData->transform[key][0] );
+
+    // This seems to cause most of the stalls in san miguel scene.
+    // optixGetObjectToWorldTransformMatrix(prd.localToWorld);
+    // const int entityID = LP.instanceToEntityMap.get(prd.instanceID, __LINE__);
+    // EntityStruct entity = LP.entities.get(entityID, __LINE__);
+    // TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
+    // prd.localToWorld[0]  = glm::row(transform.localToWorld, 0).x;
+    // prd.localToWorld[1]  = glm::row(transform.localToWorld, 0).y;
+    // prd.localToWorld[2]  = glm::row(transform.localToWorld, 0).z;
+    // prd.localToWorld[3]  = glm::row(transform.localToWorld, 0).w;
+    // prd.localToWorld[4]  = glm::row(transform.localToWorld, 1).x;
+    // prd.localToWorld[5]  = glm::row(transform.localToWorld, 1).y;
+    // prd.localToWorld[6]  = glm::row(transform.localToWorld, 1).z;
+    // prd.localToWorld[7]  = glm::row(transform.localToWorld, 1).w;
+    // prd.localToWorld[8]  = glm::row(transform.localToWorld, 2).x;
+    // prd.localToWorld[9]  = glm::row(transform.localToWorld, 2).y;
+    // prd.localToWorld[10] = glm::row(transform.localToWorld, 2).z;
+    // prd.localToWorld[11] = glm::row(transform.localToWorld, 2).w;
+    // to_optix_tfm(transform.localToWorld, prd.localToWorld);
+    
     // If we don't need motion vectors, (or in the future if an object 
     // doesn't have motion blur) then return.
-    if (LP.renderDataMode == RenderDataFlags::NONE) return;
+    // if (LP.renderDataMode == RenderDataFlags::NONE) return;
    
-    OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
-    float4 trf00, trf01, trf02;
-    float4 trf10, trf11, trf12;
+    // // OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
+    // float4 trf00, trf01, trf02;
+    // float4 trf10, trf11, trf12;
     
-    optix_impl::optixGetInterpolatedTransformationFromHandle( trf00, trf01, trf02, handle, /* time */ 0.f, true );
-    optix_impl::optixGetInterpolatedTransformationFromHandle( trf10, trf11, trf12, handle, /* time */ 1.f, true );
-    memcpy(&prd.localToWorldT0[0], &trf00, sizeof(trf00));
-    memcpy(&prd.localToWorldT0[4], &trf01, sizeof(trf01));
-    memcpy(&prd.localToWorldT0[8], &trf02, sizeof(trf02));
-    memcpy(&prd.localToWorldT1[0], &trf10, sizeof(trf10));
-    memcpy(&prd.localToWorldT1[4], &trf11, sizeof(trf11));
-    memcpy(&prd.localToWorldT1[8], &trf12, sizeof(trf12));
+    // optix_impl::optixGetInterpolatedTransformationFromHandle( trf00, trf01, trf02, handle, /* time */ 0.f, true );
+    // optix_impl::optixGetInterpolatedTransformationFromHandle( trf10, trf11, trf12, handle, /* time */ 1.f, true );
+    // memcpy(&prd.localToWorldT0[0], &trf00, sizeof(trf00));
+    // memcpy(&prd.localToWorldT0[4], &trf01, sizeof(trf01));
+    // memcpy(&prd.localToWorldT0[8], &trf02, sizeof(trf02));
+    // memcpy(&prd.localToWorldT1[0], &trf10, sizeof(trf10));
+    // memcpy(&prd.localToWorldT1[4], &trf11, sizeof(trf11));
+    // memcpy(&prd.localToWorldT1[8], &trf12, sizeof(trf12));
 }
 
 OPTIX_CLOSEST_HIT_PROGRAM(ShadowRay)()
@@ -503,6 +538,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     auto pixelID = ivec2(launchIndex % LP.frameSize.x, launchIndex / LP.frameSize.x);
     auto dims = ivec2(LP.frameSize.x, LP.frameSize.x);
     uint64_t start_clock = clock();
+    int numLights = LP.numLightEntities;
+    int numLightSamples = LP.numLightSamples;
     
     LCGRand rng = get_rng(LP.frameID + LP.seed * 10007, make_uint2(pixelID.x, pixelID.y), make_uint2(dims.x, dims.y));
     float time = sampleTime(lcg_randomf(rng));
@@ -580,6 +617,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         const int entityID = LP.instanceToEntityMap.get(payload.instanceID, __LINE__);
         EntityStruct entity = LP.entities.get(entityID, __LINE__);
         MeshStruct mesh = LP.meshes.get(entity.mesh_id, __LINE__);
+        TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
 
         // Skip forward if the hit object is invisible for this ray type, skip it.
         if (((entity.flags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
@@ -623,7 +661,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             
         // Transform geometry data into world space
         {
-            glm::mat4 xfm = to_mat4(payload.localToWorld);
+            glm::mat4 xfm = glm::interpolate(transform.localToWorldPrev, transform.localToWorld, time);//to_mat4(payload.localToWorld);
             p = make_float3(xfm * make_vec4(mp, 1.0f));
             hit_p = p;
             glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
@@ -634,8 +672,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_x = -cross(v_y, v_z);
 
             if (LP.renderDataMode != RenderDataFlags::NONE) {
-                glm::mat4 xfmt0 = to_mat4(payload.localToWorldT0);
-                glm::mat4 xfmt1 = to_mat4(payload.localToWorldT1);
+                glm::mat4 xfmt0 = transform.localToWorldPrev;//to_mat4(payload.localToWorldT0);
+                glm::mat4 xfmt1 = transform.localToWorld;//to_mat4(payload.localToWorldT1);
                 vec4 tmp1 = LP.proj * LP.viewT0 * xfmt0 * make_vec4(mp, 1.0f);
                 vec4 tmp2 = LP.proj * LP.viewT1 * xfmt1 * make_vec4(mp, 1.0f);
                 float3 pt0 = make_float3(tmp1 / tmp1.w) * .5f;
@@ -718,7 +756,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // Next, we'll be sampling direct light sources
         int32_t sampledLightIDs[MAX_LIGHT_SAMPLES] = {-2};
         float lightPDFs[MAX_LIGHT_SAMPLES] = {0.f};
-        int numLights = LP.numLightEntities;
         float3 irradiance = make_float3(0.f);
 
         // note, rdForcedBsdf is -1 by default
@@ -733,7 +770,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Next, sample the light source by importance sampling the light
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
-        for (uint32_t lid = 0; lid < LP.numLightSamples; ++lid) 
+        for (uint32_t lid = 0; lid < numLightSamples; ++lid) 
         {
             uint32_t randomID = uint32_t(min(lcg_randomf(rng) * (numLights+1), float(numLights)));
             float dotNWi;
@@ -866,7 +903,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Check if we hit any of the previously sampled lights
         bool hitLight = false;
-        for (uint32_t lid = 0; lid < LP.numLightSamples; ++lid)
+        for (uint32_t lid = 0; lid < numLightSamples; ++lid)
         {
             if (lightPDFs[lid] > EPSILON) 
             {
@@ -915,7 +952,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 }
             }
         }
-        irradiance = irradiance / float(LP.numLightSamples);
+        irradiance = irradiance / float(numLightSamples);
 
         // Accumulate radiance (ie pathThroughput * irradiance), and update the path throughput using the sampled BRDF
         float3 contribution = pathThroughput * irradiance;

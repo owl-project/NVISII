@@ -42,8 +42,8 @@ void Transform::updateComponents()
 	if (dirtyTransforms.size() == 0) return;
 	for (auto &t : dirtyTransforms) {
 		if (!t->isInitialized()) continue;
-		transformStructs[t->id].worldToLocal = t->getWorldToLocalMatrix();
-		transformStructs[t->id].localToWorld = t->getLocalToWorldMatrix();
+		transformStructs[t->id].localToWorld = t->getLocalToWorldMatrix(false);
+		transformStructs[t->id].localToWorldPrev = t->getLocalToWorldMatrix(true);
 	}
 	dirtyTransforms.clear();
 }

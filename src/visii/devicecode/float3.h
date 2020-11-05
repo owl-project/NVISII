@@ -81,6 +81,22 @@ __device__ glm::mat4 to_mat4(float xfm_[12])
 	return xfm;
 }
 
+__device__ void to_optix_tfm(glm::mat4 mat, float *xfm)
+{
+	xfm[0]  = mat[0][0];
+	xfm[1]  = mat[0][1];
+	xfm[2]  = mat[0][2];
+	xfm[3]  = mat[1][0];
+	xfm[4]  = mat[1][1];
+	xfm[5]  = mat[1][2];
+	xfm[6]  = mat[2][0];
+	xfm[7]  = mat[2][1];
+	xfm[8]  = mat[2][2];
+	xfm[9]  = mat[3][0];
+	xfm[10] = mat[3][1];
+	xfm[11] = mat[3][2];
+}
+
 __device__ float length(const float3 &v) {
 	// return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 	return __fsqrt_rn(v.x * v.x + v.y * v.y + v.z * v.z);
