@@ -24,7 +24,7 @@ setup(
     # This package is called visii
     name='visii',
 
-    packages = ['visii', "visii.importers"], # include the package "visii" 
+    packages = ['visii', "visii.utils"], # include the package "visii" 
 
     # make sure the shared library is included
     package_data = {'': ("*.dll", "*.pyd", "*.so")},
