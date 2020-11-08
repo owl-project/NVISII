@@ -12,6 +12,9 @@ void resize_window_callback(GLFWwindow * window, int width, int height) {
 
 void close_window_callback(GLFWwindow *window)
 {
+    // disable closing the window for now
+    // glfwSetWindowShouldClose(window, GLFW_FALSE);
+
     auto window_key = Libraries::GLFW::Get()->get_key_from_ptr(window);
     if (window_key.size() > 0) {
         Libraries::GLFW::Get()->set_should_close(window_key, true);

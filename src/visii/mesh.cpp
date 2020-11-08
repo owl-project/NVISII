@@ -285,8 +285,10 @@ void Mesh::loadData(
 	
 	if (readingIndices) {
 		for (uint32_t i = 0; i < indices_.size(); ++i) {
-			if (indices_[i] >= positions_.size())
-				throw std::runtime_error( std::string("Error, index out of bounds. Index " + std::to_string(i) + " is greater than total positions: " + std::to_string(positions_.size() / position_dimensions)));
+			if (indices_[i] >= (positions_.size() / position_dimensions) )
+				throw std::runtime_error( std::string("Error, index out of bounds. Index at " + std::to_string(i) + " is " 
+				+ std::to_string(indices_[i]) + " which is greater than total positions: " 
+				+ std::to_string(positions_.size() / position_dimensions)));
 		}
 	}
 		
@@ -840,7 +842,6 @@ Mesh* Mesh::createLine(std::string name, glm::vec3 start, glm::vec3 stop, float 
 		using namespace generator;
 		ParametricPath parametricPath {
 			[start, stop](double t) {
-				std::cout<<t<<std::endl;
 				PathVertex vertex;				
 				vertex.position = (stop * float(t)) + (start * (1.0f - float(t)));
 				glm::vec3 tangent = glm::normalize(stop - start);

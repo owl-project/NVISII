@@ -87,7 +87,7 @@ namespace Libraries {
         struct Window {
             uint32_t current_image_index;
             GLFWwindow* ptr;
-            std::array<float,2> extent;
+            std::array<float,2> extent = {1.f, 1.f};
             double xscroll = 0.f;
             double yscroll = 0.f;
             double xpos;
