@@ -312,7 +312,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
             -  vec2(LP.xPixelSamplingInterval[0], LP.yPixelSamplingInterval[0])
             ) * vec2(lcg_randomf(rng),lcg_randomf(rng));
 
-    vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(LP.frameSize);
+    vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(frameSize);
     vec3 right = normalize(glm::column(viewinv, 0));
     vec3 up = normalize(glm::column(viewinv, 1));
     vec3 origin = glm::column(viewinv, 3);
