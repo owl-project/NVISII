@@ -410,6 +410,7 @@ void initializeFrameBuffer(int fbWidth, int fbHeight) {
     auto &OD = OptixData;
     if (OD.imageTexID != -1) {
         cudaGraphicsUnregisterResource(OD.cudaResourceTex);
+        glDeleteTextures(1, &OD.imageTexID);
     }
     
     // Enable Texturing
@@ -671,23 +672,8 @@ void initializeOptix(bool headless)
     OWLVarDecl trianglesGeomVars[] = {{/* sentinel to mark end of list */}};
     OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
     
-    /* Temporary test code */
-    const int NUM_VERTICES = 1;
-    vec3 vertices[NUM_VERTICES] = {{ 0.f, 0.f, 0.f }};
-    const int NUM_INDICES = 1;
-    ivec3 indices[NUM_INDICES] = {{ 0, 0, 0 }};
-    geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
-    geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
-    
-    OWLBuffer vertexBuffer = deviceBufferCreate(OD.context,OWL_FLOAT4,NUM_VERTICES,vertices);
-    OWLBuffer indexBuffer = deviceBufferCreate(OD.context,OWL_INT3,NUM_INDICES,indices);
-    OWLGeom trianglesGeom = geomCreate(OD.context,OD.trianglesGeomType);
-    trianglesSetVertices(trianglesGeom,vertexBuffer,NUM_VERTICES,sizeof(vec4),0);
-    trianglesSetIndices(trianglesGeom,indexBuffer, NUM_INDICES,sizeof(ivec3),0);
-    OWLGroup trianglesGroup = trianglesGeomGroupCreate(OD.context,1,&trianglesGeom);
-    groupBuildAccel(trianglesGroup);
-    OWLGroup world = instanceGroupCreate(OD.context, 1);
-    instanceGroupSetChild(world, 0, trianglesGroup); 
+    // Temporary empty instance acceleration structure
+    OWLGroup world = instanceGroupCreate(OD.context, 0);
     groupBuildAccel(world);
     launchParamsSetGroup(OD.launchParams, "world", world);
 
@@ -1487,7 +1473,9 @@ void drawFrameBufferToWindow()
     const void* fbdevptr = bufferGetPointer(OD.frameBuffer,0);
     cudaArray_t array;
     cudaGraphicsSubResourceGetMappedArray(&array, OD.cudaResourceTex, 0, 0);
+    synchronizeDevices();
     cudaMemcpyToArray(array, 0, 0, fbdevptr, OD.LP.frameSize.x *  OD.LP.frameSize.y  * sizeof(glm::vec4), cudaMemcpyDeviceToDevice);
+    synchronizeDevices();
     cudaGraphicsUnmapResources(1, &OD.cudaResourceTex);
 
     
@@ -1614,10 +1602,13 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
 
     auto readFrameBuffer = [&frameBuffer, width, height, samplesPerPixel, seed] () {
         if (!ViSII.headlessMode) {
-            using namespace Libraries;
-            auto glfw = GLFW::Get();
-            glfw->resize_window("ViSII", width, height);
-            initializeFrameBuffer(width, height);
+            if ((width != WindowData.currentSize.x) || (height != WindowData.currentSize.y))
+            {
+                using namespace Libraries;
+                auto glfw = GLFW::Get();
+                glfw->resize_window("ViSII", width, height);
+                initializeFrameBuffer(width, height);
+            }
         }
         
         OptixData.LP.seed = seed;
@@ -1696,10 +1687,13 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
 
     auto readFrameBuffer = [&frameBuffer, width, height, startFrame, frameCount, bounce, _option, seed] () {
         if (!ViSII.headlessMode) {
-            using namespace Libraries;
-            auto glfw = GLFW::Get();
-            glfw->resize_window("ViSII", width, height);
-            initializeFrameBuffer(width, height);
+            if ((width != WindowData.currentSize.x) || (height != WindowData.currentSize.y))
+            {
+                using namespace Libraries;
+                auto glfw = GLFW::Get();
+                glfw->resize_window("ViSII", width, height);
+                initializeFrameBuffer(width, height);
+            }
         }
 
         // remove trailing whitespace from option, convert to lowercase
@@ -2188,15 +2182,18 @@ void deinitialize()
         if (OptixData.denoiser)
             OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
         clearAll();
+        if (OptixData.imageTexID != -1) {
+            cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
+            glDeleteTextures(1, &OptixData.imageTexID);
+        }
+
+        owlContextDestroy(OptixData.context);
     }
-    // else {
-    //     throw std::runtime_error("Error: already deinitialized!");
-    // }
     initialized = false;
     // sleeping here. 
     // Some strange bug with python where deinitialize immediately before interpreter exit
     // on windows causes lockup. The sleep here fixes that lockup, suggesting some race condition...
-    sleep(1); 
+    sleep(.1); 
 }
 
 bool isButtonPressed(std::string button) {
