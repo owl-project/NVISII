@@ -672,7 +672,10 @@ void initializeOptix(bool headless)
     OWLVarDecl trianglesGeomVars[] = {{/* sentinel to mark end of list */}};
     OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
     
-    // Temporary empty instance acceleration structure
+    /* Temporary test code */
+    geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
+    geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
+        
     OWLGroup world = instanceGroupCreate(OD.context, 0);
     groupBuildAccel(world);
     launchParamsSetGroup(OD.launchParams, "world", world);
