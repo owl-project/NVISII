@@ -26,6 +26,7 @@ Visii
         render_to_hdr,
         render_to_png,
         render_data,
+        render_data_to_file,
         import_scene,
         get_scene_min_aabb_corner,
         get_scene_max_aabb_corner,

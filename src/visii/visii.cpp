@@ -15,6 +15,8 @@
 #include <cuda.h>
 #include <cuda_gl_interop.h>
 
+#include <glm/gtc/color_space.hpp>
+
 #include <devicecode/launch_params.h>
 #include <devicecode/path_tracer.h>
 
@@ -33,6 +35,15 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image.h>
 #include <stb_image_write.h>
+
+// Assimp already seems to define this
+#ifndef TINYEXR_IMPLEMENTATION
+#define MINIZ_HEADER_FILE_ONLY
+// #define TINYEXR_USE_MINIZ 0
+// #include "zlib.h"
+#define TINYEXR_IMPLEMENTATION
+#endif
+#include <tinyexr.h>
 
 #define USE_OPTIX70
 #undef USE_OPTIX71
@@ -1823,15 +1834,67 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
     return frameBuffer;
 }
 
-// void renderDataToHDR(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string field, std::string imagePath)
-// {
-//     std::vector<float> fb = renderData(width, height, startFrame, frameCount, bounce, field);
-//     stbi_flip_vertically_on_write(true);
-//     stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
-// }
+std::string getFileExtension(const std::string &filename) {
+  if (filename.find_last_of(".") != std::string::npos)
+    return filename.substr(filename.find_last_of(".") + 1);
+  return "";
+}
 
+void renderDataToFile(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string field, std::string imagePath, uint32_t seed)
+{
+    std::vector<float> fb = renderData(width, height, startFrame, frameCount, bounce, field);
+    std::string extension = getFileExtension(imagePath);
+    if ((extension.compare("exr") == 0) || (extension.compare("EXR") == 0)) {
+        std::vector<float> colors(4 * width * height);
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {     
+                vec4 color = vec4(
+                    fb[(((height - y) - 1) * width + x) * 4 + 0], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 1], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 2], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 3]);
+                colors[(y * width + x) * 4 + 0] = color.r;
+                colors[(y * width + x) * 4 + 1] = color.g;
+                colors[(y * width + x) * 4 + 2] = color.b;
+                colors[(y * width + x) * 4 + 3] = color.a;
+            }
+        }
+
+        const char* err = nullptr;
+        int ret = SaveEXR(colors.data(), width, height, /*components*/4, /*gp16*/0, imagePath.c_str(), &err);
+        if (TINYEXR_SUCCESS != ret) {
+            throw std::runtime_error(std::string("Error saving EXR : \"") + imagePath + std::string("\". ")
+                + std::string(err));
+        }
+    }
+    else if ((extension.compare("hdr") == 0) || (extension.compare("HDR") == 0)) {
+        stbi_flip_vertically_on_write(true);
+        stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
+    }
+    else if ((extension.compare("png") == 0) || (extension.compare("PNG") == 0)) {
+        std::vector<uint8_t> colors(4 * width * height);
+        for (size_t i = 0; i < (width * height); ++i) {     
+            vec3 color = vec3(fb[i * 4 + 0], fb[i * 4 + 1], fb[i * 4 + 2]);
+            float alpha = fb[i * 4 + 3];
+            color = glm::convertLinearToSRGB(color);
+            colors[i * 4 + 0] = uint8_t(glm::clamp(color.r * 255.f, 0.f, 255.f));
+            colors[i * 4 + 1] = uint8_t(glm::clamp(color.g * 255.f, 0.f, 255.f));
+            colors[i * 4 + 2] = uint8_t(glm::clamp(color.b * 255.f, 0.f, 255.f));
+            colors[i * 4 + 3] = uint8_t(glm::clamp(alpha * 255.f, 0.f, 255.f));
+        }
+        stbi_flip_vertically_on_write(true);
+        stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
+    }
+}
+
+static bool renderToHDRDeprecatedShown = false;
 void renderToHDR(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
 {
+    if (renderToHDRDeprecatedShown == false) {
+        std::cout<<"Warning, render_to_hdr is deprecated and will be removed in a subsequent release. Please switch to render_to_file." << std::endl;
+        renderToHDRDeprecatedShown = true;
+    }
+
     std::vector<float> fb = render(width, height, samplesPerPixel, seed);
     stbi_flip_vertically_on_write(true);
     stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
@@ -1865,8 +1928,14 @@ vec3 Uncharted2Tonemap(vec3 x)
 	return max(vec3(0.0f), ((x*(A*x+C*B)+D*E_)/(x*(A*x+B)+D*F))-E_/F);
 }
 
+static bool renderToPNGDeprecatedShown = false;
 void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
 {
+    if (renderToPNGDeprecatedShown == false) {
+        std::cout<<"Warning, render_to_png is deprecated and will be removed in a subsequent release. Please switch to render_to_file." << std::endl;
+        renderToPNGDeprecatedShown = true;
+    }
+
     // float exposure = 2.f; // TODO: expose as a parameter
 
     std::vector<float> fb = render(width, height, samplesPerPixel, seed);
@@ -1878,7 +1947,7 @@ void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std:
         // color = Uncharted2Tonemap(color * exposure);
         // color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
 
-        color = linearToSRGB(color);
+        color = glm::convertLinearToSRGB(color);
 
         colors[i * 4 + 0] = uint8_t(glm::clamp(color.r * 255.f, 0.f, 255.f));
         colors[i * 4 + 1] = uint8_t(glm::clamp(color.g * 255.f, 0.f, 255.f));
@@ -1887,6 +1956,53 @@ void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std:
     }
     stbi_flip_vertically_on_write(true);
     stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
+}
+
+void renderToFile(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
+{
+    std::vector<float> fb = render(width, height, samplesPerPixel, seed);
+    std::string extension = getFileExtension(imagePath);
+    if ((extension.compare("exr") == 0) || (extension.compare("EXR") == 0)) {
+        std::vector<float> colors(4 * width * height);
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {     
+                vec4 color = vec4(
+                    fb[(((height - y) - 1) * width + x) * 4 + 0], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 1], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 2], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 3]);
+                colors[(y * width + x) * 4 + 0] = color.r;
+                colors[(y * width + x) * 4 + 1] = color.g;
+                colors[(y * width + x) * 4 + 2] = color.b;
+                colors[(y * width + x) * 4 + 3] = color.a;
+            }
+        }
+
+        const char* err = nullptr;
+        int ret = SaveEXR(colors.data(), width, height, /*components*/4, /*gp16*/0, imagePath.c_str(), &err);
+        if (TINYEXR_SUCCESS != ret) {
+            throw std::runtime_error(std::string("Error saving EXR : \"") + imagePath + std::string("\". ")
+                + std::string(err));
+        }
+    }
+    else if ((extension.compare("hdr") == 0) || (extension.compare("HDR") == 0)) {
+        stbi_flip_vertically_on_write(true);
+        stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
+    }
+    else if ((extension.compare("png") == 0) || (extension.compare("PNG") == 0)) {
+        std::vector<uint8_t> colors(4 * width * height);
+        for (size_t i = 0; i < (width * height); ++i) {     
+            vec3 color = vec3(fb[i * 4 + 0], fb[i * 4 + 1], fb[i * 4 + 2]);
+            float alpha = fb[i * 4 + 3];
+            color = glm::convertLinearToSRGB(color);
+            colors[i * 4 + 0] = uint8_t(glm::clamp(color.r * 255.f, 0.f, 255.f));
+            colors[i * 4 + 1] = uint8_t(glm::clamp(color.g * 255.f, 0.f, 255.f));
+            colors[i * 4 + 2] = uint8_t(glm::clamp(color.b * 255.f, 0.f, 255.f));
+            colors[i * 4 + 3] = uint8_t(glm::clamp(alpha * 255.f, 0.f, 255.f));
+        }
+        stbi_flip_vertically_on_write(true);
+        stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
+    }
 }
 
 // void renderDataToPNG(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string field, std::string imagePath)
