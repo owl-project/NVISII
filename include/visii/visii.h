@@ -154,6 +154,13 @@ void clearDomeLightTexture();
  */ 
 void setDomeLightRotation(glm::quat rotation);
 
+/** If enabled, objects will be lit by the dome light. */
+void enableDomeLightSampling();
+
+/** If disabled, objects will not be lit by the dome light. 
+ * Instead, the dome light will only effect the background color. */
+void disableDomeLightSampling();
+
 /** 
  * Clamps the indirect light intensity during progressive image refinement. 
  * This reduces fireflies from indirect lighting, but also removes energy, and biases the resulting image.

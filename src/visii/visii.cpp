@@ -567,6 +567,7 @@ void initializeOptix(bool headless)
         { "renderDataBounce",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, renderDataBounce)},
         { "sceneBBMin",              OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, sceneBBMin)},
         { "sceneBBMax",              OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, sceneBBMax)},
+        { "enableDomeSampling", OWL_USER_TYPE(bool),               OWL_OFFSETOF(LaunchParams, enableDomeSampling)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = launchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
@@ -996,6 +997,18 @@ void setDomeLightRotation(glm::quat rotation)
     resetAccumulation();
 }
 
+void enableDomeLightSampling()
+{
+    OptixData.LP.enableDomeSampling = true;
+    resetAccumulation();
+}
+
+void disableDomeLightSampling()
+{
+    OptixData.LP.enableDomeSampling = false;
+    resetAccumulation();
+}
+
 void setIndirectLightingClamp(float clamp)
 {
     clamp = std::max(float(clamp), float(0.f));
@@ -1375,6 +1388,7 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "domeLightColor", &OptixData.LP.domeLightColor);
     launchParamsSetRaw(OptixData.launchParams, "renderDataMode", &OptixData.LP.renderDataMode);
     launchParamsSetRaw(OptixData.launchParams, "renderDataBounce", &OptixData.LP.renderDataBounce);
+    launchParamsSetRaw(OptixData.launchParams, "enableDomeSampling", &OptixData.LP.enableDomeSampling);
     launchParamsSetRaw(OptixData.launchParams, "seed", &OptixData.LP.seed);
     launchParamsSetRaw(OptixData.launchParams, "proj", &OptixData.LP.proj);
     launchParamsSetRaw(OptixData.launchParams, "viewT0", &OptixData.LP.viewT0);
