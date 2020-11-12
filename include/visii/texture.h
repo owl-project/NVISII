@@ -124,6 +124,12 @@ class Texture : public StaticFactory
 	/** @returns the name of this component */
 	std::string getName();
 
+	/** @returns the unique integer ID for this component */
+	int32_t getId();
+
+	// for internal use
+	int32_t getAddress();
+
 	/** @returns A map whose key is a texture name and whose value is the ID for that texture */
 	static std::map<std::string, uint32_t> getNameToIdMap();
 
@@ -145,20 +151,14 @@ class Texture : public StaticFactory
 	/** Clears any existing Texture components. */
     static void clearAll();	
 
-    /** @returns True if the material has been modified since the previous frame, and False otherwise */
-    bool isDirty() { return dirty; }
-
 	/** Indicates whether or not any entities are "out of date" and need to be updated through the "update components" function */
 	static bool areAnyDirty();
 
-    /** @returns True if the material has not been modified since the previous frame, and False otherwise */
-    bool isClean() { return !dirty; }
+	/** @returns a list of textures that have been modified since the previous frame */
+    static std::set<Texture*> getDirtyTextures();
 
     /** Tags the current component as being modified since the previous frame. */
     void markDirty();
-
-    /** Tags the current component as being unmodified since the previous frame. */
-    void markClean() { dirty = false; }
 
 	/** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
 	static std::shared_ptr<std::recursive_mutex> getEditMutex();
@@ -167,10 +167,10 @@ class Texture : public StaticFactory
     std::string toString();
 
     /** @returns a flattened list of 32-bit float texels */
-    std::vector<vec4> getFloatTexels();
+    std::vector<vec4> &getFloatTexels();
 
     /** @returns a flattened list of 8-bit texels */
-	std::vector<u8vec4> getByteTexels();
+	std::vector<u8vec4> &getByteTexels();
 
 	/**
 	 * Sample the texture at the given texture coordinates
@@ -221,11 +221,7 @@ class Texture : public StaticFactory
 	/** A lookup table of name to camera id */
 	static std::map<std::string, uint32_t> lookupTable;
 
-    /** Indicates that one of the components has been edited */
-    static bool anyDirty;
-
-    /** Indicates this component has been edited */
-    bool dirty = true;
+	static std::set<Texture*> dirtyTextures;
 
     /** The texels of the texture */
     std::vector<vec4> floatTexels;

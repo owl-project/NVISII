@@ -301,7 +301,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     glm::vec4 p1 = glm::column(LP.viewT1, 3);
 
     glm::vec4 pos = glm::mix(p0, p1, time);
-    glm::quat rot = glm::slerp(r0, r1, time);
+    glm::quat rot = (glm::all(glm::equal(r0, r1))) ? r0 : glm::slerp(r0, r1, time);
     glm::mat4 camLocalToWorld = glm::mat4_cast(rot);
     camLocalToWorld = glm::column(camLocalToWorld, 3, pos);
 
@@ -312,7 +312,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
             -  vec2(LP.xPixelSamplingInterval[0], LP.yPixelSamplingInterval[0])
             ) * vec2(lcg_randomf(rng),lcg_randomf(rng));
 
-    vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(LP.frameSize);
+    vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(frameSize);
     vec3 right = normalize(glm::column(viewinv, 0));
     vec3 up = normalize(glm::column(viewinv, 1));
     vec3 origin = glm::column(viewinv, 3);
@@ -555,6 +555,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     uint64_t start_clock = clock();
     int numLights = LP.numLightEntities;
     int numLightSamples = LP.numLightSamples;
+    bool enableDomeSampling = LP.enableDomeSampling;
     
     LCGRand rng = get_rng(LP.frameID + LP.seed * 10007, make_uint2(pixelID.x, pixelID.y), make_uint2(dims.x, dims.y));
     float time = sampleTime(lcg_randomf(rng));
@@ -610,7 +611,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 illum = illum + pathThroughput * (missColor(ray, envTex) * LP.domeLightIntensity);
                 directIllum = illum;
             }
-            else 
+            else if (enableDomeSampling)
                 illum = illum + pathThroughput * (missColor(ray, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
             
             const float envDist = 10000.0f; // large value
@@ -792,7 +793,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
         for (uint32_t lid = 0; lid < numLightSamples; ++lid) 
         {
-            uint32_t randomID = uint32_t(min(lcg_randomf(rng) * (numLights+1), float(numLights)));
+            uint32_t randmax = (enableDomeSampling) ? numLights + 1 : numLights;
+            uint32_t randomID = uint32_t(min(lcg_randomf(rng) * randmax, float(randmax-1)));
             float dotNWi;
             float3 bsdf, bsdfColor;
             float3 lightEmission;
@@ -929,7 +931,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if (lightPDFs[lid] > EPSILON) 
             {
                 // if by sampling the brdf we also hit the light source...
-                if ((payload.instanceID == -1) && (sampledLightIDs[lid] == -1)) {
+                if ((payload.instanceID == -1) && (sampledLightIDs[lid] == -1) && enableDomeSampling) {
                     // Case where we hit the background, and also previously sampled the background   
                     float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
                     float3 lightEmission = missColor(ray, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure);

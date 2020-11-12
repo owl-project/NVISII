@@ -96,6 +96,8 @@ struct LaunchParams {
 
     glm::vec3 sceneBBMin = glm::vec3(0.f);
     glm::vec3 sceneBBMax = glm::vec3(0.f);
+
+    bool enableDomeSampling = true;
 };
 
 enum RenderDataFlags : uint32_t { 
