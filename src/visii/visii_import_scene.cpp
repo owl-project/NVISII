@@ -461,6 +461,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
             }
             entity->setTransform(transform);
             if (verbose) std::cout<< std::string(level + 1, '\t') << "transform: \"" << transform->getName() << "\", " << std::endl;
+            visiiScene.entities.push_back(entity);
         }
 
         for (uint32_t cid = 0; cid < node->mNumChildren; ++cid) 
