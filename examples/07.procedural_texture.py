@@ -1,13 +1,3 @@
-#%%
-import sys, os, math, colorsys
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-import sys, os, math, colorsys
-os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
-sys.path.append(os.path.join(os.getcwd(), "..", "install"))
-
-from ipywidgets import interact, interactive, fixed, interact_manual
-import ipywidgets as widgets
-
 import visii as v
 
 import visii
