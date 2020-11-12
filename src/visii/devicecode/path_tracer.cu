@@ -920,7 +920,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // Next, sample a light source using the importance sampled BDRF direction.
         ray.origin = hit_p;
         ray.direction = w_i;
-        ray.tmin = EPSILON * 100.f;
+        ray.tmin = EPSILON;//* 100.f;
         payload.instanceID = -1;
         payload.tHit = -1.f;
         ray.time = sampleTime(lcg_randomf(rng));
@@ -966,7 +966,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
                         lightEmission = lightEmission / pow(dist, light_light.falloff);
 
-                        if (dotNWi > 0.f) 
+                        if (dotNWi > EPSILON) 
                         {
                             float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
                             float3 Li = (lightEmission * w) / bsdfPDF;

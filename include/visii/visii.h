@@ -250,10 +250,10 @@ void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, st
  * @param width The width of the image to render
  * @param height The height of the image to render
  * @param samples_per_pixel The number of rays to trace and accumulate per pixel.
- * @param image_path The path to use to save the file, including the extension. Supported extensions include EXR, HDR, and PNG 
+ * @param file_path The path to use to save the file, including the extension. Supported extensions include EXR, HDR, and PNG 
  * @param seed A seed used to initialize the random number generator.
 */
-void renderToFile(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path, uint32_t seed = 0);
+void renderToFile(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string file_path, uint32_t seed = 0);
 
 /** 
  * Renders out metadata used to render the current scene, returning the resulting framebuffer back to the user directly.
@@ -288,10 +288,10 @@ std::vector<float> renderData(
  * "position" for rendering out the world space position of the path vertex, "normal" for rendering out the world space normal of the 
  * path vertex, "entity_id" for rendering out the entity ID whose surface the path vertex hit, "denoise_normal" for rendering out
  * the normal buffer supplied to the Optix denoiser, and "denoise_albedo" for rendering out the albedo supplied to the Optix denoiser.   
- * @param image_path The path to use to save the file, including the extension. Supported extensions are EXR, HDR, and PNG
+ * @param file_path The path to use to save the file, including the extension. Supported extensions are EXR, HDR, and PNG
  * @param seed A seed used to initialize the random number generator.
 */
-void renderDataToFile(uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options, std::string image_path, uint32_t seed = 0);
+void renderDataToFile(uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options, std::string file_path, uint32_t seed = 0);
 
 /**
  * Imports an OBJ containing scene data. 
