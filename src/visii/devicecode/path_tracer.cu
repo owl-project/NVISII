@@ -800,6 +800,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float3 lightEmission;
             float3 lightDir;
             float lightDistance = 1e20f;
+            float falloff = 2.0f;
             int numTris;
 
             // sample background
@@ -877,6 +878,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDFs[lid], uv, 
                     /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
                 
+                falloff = light_light.falloff;
                 numTris = mesh.numTris;
                 lightDir = make_float3(dir.x, dir.y, dir.z);
                 if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
@@ -897,7 +899,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     (payload.instanceID == -2) : 
                     ((payload.instanceID == -2) || (LP.instanceToEntityMap.get(payload.instanceID, __LINE__) == sampledLightIDs[lid]));
                 if (visible) {
-                    if (randomID != numLights) lightEmission = lightEmission / (payload.tHit * payload.tHit);
+                    if (randomID != numLights) lightEmission = lightEmission / pow(payload.tHit, falloff);
                     float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
                     float3 Li = (lightEmission * w) / lightPDFs[lid];
                     irradiance = irradiance + (bsdf * bsdfColor * Li);
@@ -918,7 +920,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // Next, sample a light source using the importance sampled BDRF direction.
         ray.origin = hit_p;
         ray.direction = w_i;
-        ray.tmin = EPSILON * 100.f;
+        ray.tmin = EPSILON;//* 100.f;
         payload.instanceID = -1;
         payload.tHit = -1.f;
         ray.time = sampleTime(lcg_randomf(rng));
@@ -930,7 +932,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         {
             if (lightPDFs[lid] > EPSILON) 
             {
-                // if by sampling the brdf we also hit the light source...
+                // if by sampling the brdf we also hit the dome light...
                 if ((payload.instanceID == -1) && (sampledLightIDs[lid] == -1) && enableDomeSampling) {
                     // Case where we hit the background, and also previously sampled the background   
                     float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
@@ -942,8 +944,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     }
                     hitLight = true;
                 }
+                // else if by sampling the brdf we also hit an area light
                 else if (payload.instanceID != -1) {
-                    // Case where we hit the light, and also previously sampled the same light
                     int entityID = LP.instanceToEntityMap.get(payload.instanceID, __LINE__);
                     bool visible = (entityID == sampledLightIDs[lid]);
                     // We hit the light we sampled previously
@@ -962,9 +964,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         float3 lightEmission;
                         if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
                         else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
-                        lightEmission = lightEmission / (dist * dist);
+                        lightEmission = lightEmission / pow(dist, light_light.falloff);
 
-                        if (dotNWi > 0.f) 
+                        if (dotNWi > EPSILON) 
                         {
                             float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
                             float3 Li = (lightEmission * w) / bsdfPDF;

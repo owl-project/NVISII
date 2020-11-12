@@ -399,7 +399,7 @@ Texture* Texture::createFromData(std::string name, uint32_t width, uint32_t heig
             // gotta convert from float to byte. 
             // TODO: update function signature to accept void* instead of just float*
             l->byteTexels.resize(width * height);
-            for (uint32_t i = 0; i < length; ++i) {
+            for (uint32_t i = 0; i < length / 4; ++i) {
                 l->byteTexels[i] = u8vec4(vec4(
                     data[i * 4 + 0], 
                     data[i * 4 + 1], 
