@@ -301,7 +301,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     glm::vec4 p1 = glm::column(LP.viewT1, 3);
 
     glm::vec4 pos = glm::mix(p0, p1, time);
-    glm::quat rot = glm::slerp(r0, r1, time);
+    glm::quat rot = (glm::all(glm::equal(r0, r1))) ? r0 : glm::slerp(r0, r1, time);
     glm::mat4 camLocalToWorld = glm::mat4_cast(rot);
     camLocalToWorld = glm::column(camLocalToWorld, 3, pos);
 
