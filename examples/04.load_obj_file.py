@@ -52,7 +52,6 @@ visii.set_camera_entity(camera)
 
 visii.set_dome_light_sky(sun_position = (10, 10, 1), saturation = 2)
 visii.set_dome_light_exposure(1)
-visii.set_dome_light_intensity(2)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -81,7 +80,7 @@ obj_entity.get_material().set_sheen(1)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.render_to_png(
+visii.render_to_file(
     width=int(opt.width), 
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),

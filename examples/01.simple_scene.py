@@ -71,12 +71,12 @@ sphere.get_material().set_base_color((0.1,0.9,0.08))
 sphere.get_material().set_roughness(0.7)   
 
 # Now that we have a simple scene, let's render it 
-print("rendering to", "01.simple_scene.png")
+print("rendering to", "01_simple_scene.png")
 visii.render_to_file(
     width = 512, 
     height = 512, 
     samples_per_pixel = 50,   
-    image_path = "01.simple_scene.png"
+    file_path = "01_simple_scene.png"
 )
 
 visii.deinitialize()

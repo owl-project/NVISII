@@ -257,11 +257,11 @@ for i in range (int(opt.nb_frames)):
         # visii quat expects w as the first argument
         obj_entity.get_transform().set_rotation(rot)
     print(f'rendering frame {str(i).zfill(5)}/{str(opt.nb_frames).zfill(5)}')
-    visii.render_to_png(
+    visii.render_to_file(
         width=int(opt.width), 
         height=int(opt.height), 
         samples_per_pixel=int(opt.spp),
-        image_path=f"{opt.outf}/{str(i).zfill(5)}.png"
+        file_path=f"{opt.outf}/{str(i).zfill(5)}.png"
     )
 
 p.disconnect()

@@ -11,7 +11,6 @@ NB_OBJS = 10000
 SAMPLES_PER_PIXEL = 16
 WIDTH = 1920 
 HEIGHT = 1080
-FILE_NAME = "02.random_scene.png"
 
 # visii uses sets of components to represent a scene. 
 # We can increase the max component limit here if necessary.
@@ -150,7 +149,7 @@ visii.render_to_file(
     width = WIDTH, 
     height = HEIGHT, 
     samples_per_pixel = SAMPLES_PER_PIXEL,   
-    image_path = FILE_NAME
+    file_path = "02_random_scene.png"
 )
 
 visii.deinitialize()
