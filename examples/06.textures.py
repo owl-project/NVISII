@@ -1,43 +1,21 @@
 import visii
 import random
-import argparse
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument('--spp', 
-                    default=512,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=500,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=500,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--noise',
-                    action='store_true',
-                    default=False,
-                    help = "if added the output of the ray tracing is not sent to optix's denoiser")
-parser.add_argument('--out',
-                    default='tmp.png',
-                    help = "output filename")
-
-opt = parser.parse_args()
+WIDTH = 500
+HEIGHT = 500
+SPP = 256
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless=True, verbose=True)
 
-if not opt.noise is True: 
-    visii.enable_denoiser()
+visii.enable_denoiser()
 
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
     camera = visii.camera.create(
         name = "camera", 
-        aspect = float(opt.width)/float(opt.height)
+        aspect = float(WIDTH)/float(HEIGHT)
     )
 )
 
@@ -68,6 +46,7 @@ floor_tex = visii.texture.create_hsv("floor", tex,
 # that this has a significant impact on rendering performance,
 # and is disabled by default.
 visii.set_dome_light_texture(dome, enable_cdf = True)
+visii.set_dome_light_rotation(visii.angleAxis(visii.pi() * .1, (0,0,1)))
 
 # Lets set some objects in the scene
 entity = visii.entity.create(
@@ -104,11 +83,11 @@ knot.get_material().set_metallic(1)
 #%%
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.render_to_png(
-    width=int(opt.width), 
-    height=int(opt.height), 
-    samples_per_pixel=int(opt.spp),
-    image_path=f"{opt.out}"
+visii.render_to_file(
+    width=WIDTH, 
+    height=HEIGHT, 
+    samples_per_pixel=SPP,
+    file_path="06_textures.png"
 )
 
 # let's clean up the GPU
