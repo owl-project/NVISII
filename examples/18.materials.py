@@ -1,3 +1,8 @@
+# 18.materials.py
+#
+# This example demonstrates the effects of different material parameters.
+# It also shows how to implement basic camera controls
+
 import visii
 from colorsys import *
 

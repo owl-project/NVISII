@@ -10,8 +10,7 @@ SPP = 512
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless=True, verbose=True)
 
-if not opt.noise is True: 
-    visii.enable_denoiser()
+visii.enable_denoiser()
 
 camera = visii.entity.create(
     name = "camera",
