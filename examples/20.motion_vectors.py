@@ -116,7 +116,8 @@ obj4.get_material().set_sheen(1)
 # MOTION VECTORS section
 
 # need to remove the motion blur that adding previous transform will cause. 
-visii.sample_time_interval((1,1))
+# We also want the motion from frame 0 to 1
+visii.sample_time_interval((0,0))
 
 # make sure that raw sample the middle the of the pixel 
 # without this there will be noise on the motion segmentation
@@ -207,11 +208,14 @@ motion_vectors_array = visii.render_data(
     options="diffuse_motion_vectors"
 )
 
-motion_vectors_array = np.array(motion_vectors_array).reshape(opt.height,opt.width,4)
+motion_vectors_array = np.array(motion_vectors_array).reshape(opt.height,opt.width,4) * -1
 motion_vectors_array = np.flipud(motion_vectors_array)
 image = generate_image_from_motion_vector(motion_vectors_array)
-cv2.imwrite("20.motion.png",image*255)
+cv2.imwrite("20.motion_from_1_to_2.png",image*255)
 
+
+# frame now has to be set at 1 to have the current image, e.g., the transformed one
+visii.sample_time_interval((1,1))
 visii.render_to_file(
     width=int(opt.width), 
     height=int(opt.height), 
