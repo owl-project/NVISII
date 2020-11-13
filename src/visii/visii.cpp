@@ -2145,6 +2145,8 @@ void initializeInteractive(
 
         ImGui::DestroyContext();
         if (glfw->does_window_exist("ViSII")) glfw->destroy_window("ViSII");
+
+        // owlContextDestroy(OptixData.context);
     };
 
     renderThread = thread(loop);
@@ -2196,6 +2198,8 @@ void initializeHeadless(
             processCommandQueue();
             if (stopped) break;
         }
+
+        // owlContextDestroy(OptixData.context);
     };
 
     renderThread = thread(loop);
@@ -2319,8 +2323,6 @@ void deinitialize()
             cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
             glDeleteTextures(1, &OptixData.imageTexID);
         }
-
-        owlContextDestroy(OptixData.context);
     }
     initialized = false;
     // sleeping here. 

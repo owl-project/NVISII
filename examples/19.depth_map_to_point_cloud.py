@@ -10,7 +10,6 @@ import PIL
 from PIL import Image 
 import math 
 
-
 opt = lambda: None
 opt.spp = 1024 
 opt.width = 500
@@ -19,7 +18,7 @@ opt.noise = False
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.initialize(headless=False, verbose=True, lazy_updates = True)
+visii.initialize(headless=True, verbose=True, lazy_updates = True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
@@ -108,8 +107,6 @@ depth_array = np.array(depth_array).reshape(opt.height,opt.width,4)
 depth_array = np.flipud(depth_array)
 # save the segmentation image
 
-
-
 def convert_from_uvd(u, v, d,fx,fy,cx,cy):
     # d *= self.pxToMetre
     x_over_z = (cx - u) / fx
@@ -121,16 +118,26 @@ def convert_from_uvd(u, v, d,fx,fy,cx,cy):
 
 xyz = []
 intrinsics = camera.get_camera().get_intrinsic_matrix(opt.width,opt.height)
-# print(intrinsics)
 
+# Use Open3D to render a point cloud from the distance metadata
 for i in range(opt.height):
     for j in range(opt.width):
-        x,y,z = convert_from_uvd(i,j,depth_array[i,j,0],intrinsics[0][0],intrinsics[1][1],intrinsics[2][0],intrinsics[2][1])
+        x,y,z = convert_from_uvd(i,j, depth_array[i,j,0], 
+            intrinsics[0][0], intrinsics[1][1], intrinsics[2][0],intrinsics[2][1])
         xyz.append([x,y,z])
 import open3d as o3d
 
 pcd = o3d.geometry.PointCloud()
 pcd.points = o3d.utility.Vector3dVector(xyz)
-o3d.visualization.draw_geometries([pcd])
+vis = o3d.visualization.Visualizer()
+vis.create_window()
+vis.add_geometry(pcd)
+view_ctl = vis.get_view_control()
+view_ctl.set_front((1, 1, 0))
+view_ctl.set_up((0, -1, -1))
+view_ctl.set_lookat(pcd.get_center())
+vis.run()
+vis.destroy_window()
+
 # let's clean up the GPU
 visii.deinitialize()
