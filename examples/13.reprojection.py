@@ -1,3 +1,7 @@
+import sys, os, math
+os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
+sys.path.append(os.path.join(os.getcwd(), "..", "install"))
+
 import os
 import math
 import visii
@@ -149,6 +153,15 @@ save_image(t1_base_colors_array, f"{opt.outf}/t1_base_color.png")
 
 # After that, get diffuse motion vectors at T1 to drive the reprojection
 visii.sample_time_interval((1.0, 1.0))
+t1_motion_vectors_array = visii.render_data_to_file(
+    width=opt.width, 
+    height=opt.height, 
+    start_frame=0,
+    frame_count=1,
+    bounce=int(0),
+    options="diffuse_motion_vectors",
+    image_path= f"{opt.outf}/t1_motion_vectors.exr"
+)
 t1_motion_vectors_array = visii.render_data(
     width=opt.width, 
     height=opt.height, 
