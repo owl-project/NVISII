@@ -107,6 +107,10 @@ An example showing the different materials and how they impact the mesh.
 ## 19.depth_map_to_point_cloud.py
 This example shows how you can go from a depth map to a point cloud. Please consult [this](https://dsp.stackexchange.com/questions/26373/what-is-the-difference-between-a-range-image-and-a-depth-map) for more informantion between computer vision and graphics depth map. 
 
+## 20.motion_vectors.py
+An example to show you how to export motion vectors, they are very similar optical flow in computer vision, but it will break with reflective materials. The script outputs frame 0, moves an object, and export frame 1 as well as the motion vector between the two frames. 
+
+
 ## Notes
 All these examples were developed and tested on Ubuntu 18.04 with cuda 11.0, NVIDIA drivers
 450.36.06 and using a NVIDIA TITAN RTX . 
