@@ -3,17 +3,18 @@ import visii
 import noise
 import random
 
-WIDTH = 500
-HEIGHT = 500
-SPP = 512
-OUTF = "09_metadata"
+opt = lambda : None
+opt.spp = 512 
+opt.width = 500
+opt.height = 500 
+opt.outf = "09_metadata"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-if os.path.isdir(OUTF):
-    print(f'folder {OUTF}/ exists')
+if os.path.isdir(opt.outf):
+    print(f'folder {opt.outf}/ exists')
 else:
-    os.mkdir(OUTF)
-    print(f'created folder {OUTF}/')
+    os.mkdir(opt.outf)
+    print(f'created folder {opt.outf}/')
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 visii.initialize(headless=False, verbose=True, lazy_updates = True)
@@ -25,7 +26,7 @@ camera = visii.entity.create(
     transform = visii.transform.create("camera"),
     camera = visii.camera.create(
         name = "camera", 
-        aspect = float(WIDTH)/float(HEIGHT)
+        aspect = float(opt.width)/float(opt.height)
     )
 )
 
@@ -93,33 +94,33 @@ visii.sample_pixel_area(
     y_sample_interval = (.5, .5))
 
 visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
+    width=opt.width, 
+    height=opt.height, 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
     options="depth",
-    file_path = f"{OUTF}/depth.exr"
+    file_path = f"{opt.outf}/depth.exr"
 )
 
 visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
+    width=opt.width, 
+    height=opt.height, 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
     options="normal",
-    file_path = f"{OUTF}/normal.exr"
+    file_path = f"{opt.outf}/normal.exr"
 )
 
 visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
+    width=opt.width, 
+    height=opt.height, 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
     options="texture_coordinates",
-    file_path = f"{OUTF}/texture_coordinates.exr"
+    file_path = f"{opt.outf}/texture_coordinates.exr"
 )
 
 # the entities are stored with an id, 
@@ -129,23 +130,23 @@ visii.render_data_to_file(
 # index = ids.indexof('soup')
 # visii.texture.get('soup').get_id()
 visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
+    width=opt.width, 
+    height=opt.height, 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
     options="entity_id",
-    file_path = f"{OUTF}/entity_id.exr"
+    file_path = f"{opt.outf}/entity_id.exr"
 )
     
 visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
+    width=opt.width, 
+    height=opt.height, 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
     options="position",
-    file_path = f"{OUTF}/position.exr"
+    file_path = f"{opt.outf}/position.exr"
 )
 
 # motion vectors can be useful for reprojection
@@ -154,13 +155,13 @@ visii.render_data_to_file(
 mesh1.get_transform().set_angular_velocity(visii.angleAxis(0.5, (0,0,1)))
 visii.sample_time_interval((1,1))
 visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
+    width=opt.width, 
+    height=opt.height, 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
     options="diffuse_motion_vectors",
-    file_path = f"{OUTF}/diffuse_motion_vectors.exr"
+    file_path = f"{opt.outf}/diffuse_motion_vectors.exr"
 )
 
 # for the final image, sample the entire pixel area to anti-alias the result
@@ -170,24 +171,24 @@ visii.sample_pixel_area(
 )
 
 visii.render_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
-    samples_per_pixel=SPP,
-    file_path=f"{OUTF}/img.png"
+    width=opt.width, 
+    height=opt.height, 
+    samples_per_pixel=opt.spp,
+    file_path=f"{opt.outf}/img.png"
 )
 
 visii.render_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
-    samples_per_pixel=SPP,
-    file_path=f"{OUTF}/img.exr"
+    width=opt.width, 
+    height=opt.height, 
+    samples_per_pixel=opt.spp,
+    file_path=f"{opt.outf}/img.exr"
 )
 
 visii.render_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
-    samples_per_pixel=SPP,
-    file_path=f"{OUTF}/img.hdr"
+    width=opt.width, 
+    height=opt.height, 
+    samples_per_pixel=opt.spp,
+    file_path=f"{opt.outf}/img.hdr"
 )
 
 # let's clean up the GPU

@@ -6,6 +6,12 @@
 
 import visii
 
+opt = lambda: None
+opt.spp = 50 
+opt.width = 512
+opt.height = 512 
+opt.out = '01_simple_scene.png'
+
 # headless - no window
 # verbose - output number of frames rendered, etc..
 visii.initialize(headless = True, verbose = True)
@@ -25,7 +31,7 @@ camera.set_camera(
     visii.camera.create_from_fov(
         name = "camera_camera", 
         field_of_view = 0.785398, # note, this is in radians
-        aspect = 1.0
+        aspect = opt.width / float(opt.height)
     )
 )
 
@@ -73,9 +79,9 @@ sphere.get_material().set_roughness(0.7)
 # Now that we have a simple scene, let's render it 
 print("rendering to", "01_simple_scene.png")
 visii.render_to_file(
-    width = 512, 
-    height = 512, 
-    samples_per_pixel = 50,   
+    width = opt.width, 
+    height = opt.height, 
+    samples_per_pixel = opt.spp,   
     file_path = "01_simple_scene.png"
 )
 

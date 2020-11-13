@@ -1,9 +1,11 @@
 import visii
 import random
 
-WIDTH = 500
-HEIGHT = 500
-SPP = 256
+opt = lambda : None
+opt.spp = 256 
+opt.width = 500
+opt.height = 500 
+opt.out = "06_textures.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless=True, verbose=True)
@@ -15,7 +17,7 @@ camera = visii.entity.create(
     transform = visii.transform.create("camera"),
     camera = visii.camera.create(
         name = "camera", 
-        aspect = float(WIDTH)/float(HEIGHT)
+        aspect = float(opt.width)/float(opt.height)
     )
 )
 
@@ -84,10 +86,10 @@ knot.get_material().set_metallic(1)
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 visii.render_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
-    samples_per_pixel=SPP,
-    file_path="06_textures.png"
+    width=opt.width, 
+    height=opt.height, 
+    samples_per_pixel=opt.spp,
+    file_path=opt.out
 )
 
 # let's clean up the GPU

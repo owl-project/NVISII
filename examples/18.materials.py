@@ -5,6 +5,13 @@
 
 import visii
 from colorsys import *
+import time
+
+opt = lambda: None
+opt.spp = 1024 
+opt.width = 1920
+opt.height = 1080 
+opt.out = '18_materials.png'
 
 visii.initialize(headless = False, verbose = True)
 
@@ -12,10 +19,8 @@ visii.initialize(headless = False, verbose = True)
 visii.enable_denoiser()
 
 # This is new, have the dome light use a texture
-# dome = visii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
-# visii.set_dome_light_texture(dome, enable_cdf=True)
-# visii.set_dome_light_intensity(.001)
-# visii.set_dome_light_exposure(10.)
+dome = visii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
+visii.set_dome_light_texture(dome, enable_cdf=True)
 visii.resize_window(1920, 1080)
 
 # # Make a wall
@@ -52,7 +57,7 @@ for x in range(20):
                 scale = ((y % 2) * .01 + .09, 
                          (y % 2) * .01 + .09, 
                          (y % 2) * .01 + .09),
-                rotation = visii.angleAxis(-.78, (1,1,1))
+                rotation = visii.angleAxis(-.78, (1,0,0))
             ),
             material = visii.material.create(
                 name = name
@@ -62,7 +67,7 @@ for x in range(20):
         
         # The diffuse, metal, or glass surface color
         # mat.set_base_color(...)
-        mat.set_base_color(hsv_to_rgb(y / 20.0, y % 2, 1.0))
+        mat.set_base_color(hsv_to_rgb(y / 60.0, y % 2, 1.0))
 
         # Specifies the microfacet roughness of the surface for diffuse 
         # or specular reflection
@@ -122,67 +127,23 @@ for x in range(20):
         if y == 18 or y == 19: 
             mat.set_alpha(x / 20.0)
         
-            
-
-
-
-
-# %%
-import visii as v
-import time
-
 # Create a camera
 center = visii.get_scene_aabb_center()
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create(name = "camera_transform"),
-    camera = visii.camera.create(name = "camera_camera")
+    camera = visii.camera.create(name = "camera_camera", aspect=opt.width / opt.height)
 )
 camera.get_transform().look_at(at = (center.x, 0, center.z), up = (0, 0, 1), eye = (center.x, -5, center.z))
 visii.set_camera_entity(camera)
 
-# Setup interaction
-speed_camera = .1
-rot = v.vec2(0, 0)
-init_rot = camera.get_transform().get_rotation()
-prev_window_size = v.vec2(0,0)
-def interact():
-    global prev_window_size
-    global speed_camera
-
-    window_size = v.vec2(v.get_window_size().x, v.get_window_size().y)
-    if (v.length(window_size - prev_window_size) > 0):
-        camera.get_camera().set_fov(.78, window_size.x / float(window_size.y))
-
-    prev_window_size = window_size
-
-    # visii camera matrix 
-    cam_matrix = camera.get_transform().get_local_to_world_matrix()
-    dt = v.vec4(0,0,0,0)   
-
-    # translation
-    if v.is_button_held("W"): dt[2] = -speed_camera
-    if v.is_button_held("S"): dt[2] =  speed_camera
-    if v.is_button_held("A"): dt[0] = -speed_camera
-    if v.is_button_held("D"): dt[0] =  speed_camera
-    if v.is_button_held("Q"): dt[1] = -speed_camera
-    if v.is_button_held("E"): dt[1] =  speed_camera 
-
-    # control the camera
-    if v.length(dt) > 0.0:
-        w_dt = cam_matrix * dt
-        camera.get_transform().add_position(v.vec3(w_dt))
-
-v.register_pre_render_callback(interact)
-while not visii.should_window_close(): time.sleep(.1)
-
 # Render out the final image
-print("rendering to", "01.simple_scene.png")
+print("rendering to", opt.out)
 visii.render_to_file(
-    width = 1024, 
-    height = 1024, 
-    samples_per_pixel = 50,   
-    file_path = "18.materials.png"
+    width = opt.width, 
+    height = opt.height, 
+    samples_per_pixel = opt.spp,   
+    file_path = opt.out
 )
 
 visii.deinitialize()

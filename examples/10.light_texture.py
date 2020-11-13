@@ -6,7 +6,7 @@ opt.spp = 400
 opt.width = 500
 opt.height = 500 
 opt.noise = False
-opt.out = '10.light_texture.png'
+opt.out = '10_light_texture.png'
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless = True, verbose = True)

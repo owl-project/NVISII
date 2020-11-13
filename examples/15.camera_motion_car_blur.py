@@ -8,7 +8,7 @@ opt.spp = 400
 opt.width = 1920
 opt.height = 1080 
 opt.noise = False
-opt.out = '15.camera_motion_car_blur.png'
+opt.out = '15_camera_motion_car_blur.png'
 opt.control = True
 
 # # # # # # # # # # # # # # # # # # # # # # # # #

@@ -9,7 +9,7 @@ opt.spp = 100
 opt.width = 500
 opt.height = 500 
 opt.noise = False
-opt.out = '16.create_mesh_from_data.png'
+opt.out = '16_create_mesh_from_data.png'
 opt.path_obj = 'content/dragon/dragon.obj'
 
 # # # # # # # # # # # # # # # # # # # # # # # # #

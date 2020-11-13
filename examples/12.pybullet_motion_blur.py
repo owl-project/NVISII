@@ -14,7 +14,7 @@ opt.height = 500
 opt.noise = False
 opt.frame_freq = 8
 opt.nb_frames = 300
-opt.outf = '12.pybullet_motion_blur/'
+opt.outf = '12_pybullet_motion_blur/'
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # #

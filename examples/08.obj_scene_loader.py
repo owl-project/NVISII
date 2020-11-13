@@ -3,9 +3,11 @@ import noise
 import random
 import numpy as np 
 
-WIDTH = 1024
-HEIGHT = 1024
-SPP = 512
+opt = lambda : None
+opt.spp = 512 
+opt.width = 1024
+opt.height = 1024 
+opt.out = "08_obj_scene_loader.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless=True, verbose=True)
@@ -17,7 +19,7 @@ camera = visii.entity.create(
     transform = visii.transform.create("camera"),
     camera = visii.camera.create(
         name = "camera",  
-        aspect = float(WIDTH)/float(HEIGHT)
+        aspect = float(opt.width)/float(opt.height)
     )
 )
 
@@ -72,11 +74,11 @@ for i_s, s in enumerate(sdb.entities):
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.render_to_png(
-    width=WIDTH, 
-    height=HEIGHT, 
-    samples_per_pixel=SPP,
-    image_path="08_obj_scene_loader.png"
+visii.render_to_file(
+    width=opt.width, 
+    height=opt.height, 
+    samples_per_pixel=opt.spp,
+    file_path=opt.out
 )
 
 # let's clean up the GPU

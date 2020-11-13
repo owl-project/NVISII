@@ -14,7 +14,7 @@ opt.spp = 400
 opt.width = 500
 opt.height = 500 
 opt.noise = False
-opt.outf = '14.normal_map_outf'
+opt.outf = '14_normal_map_outf'
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 if os.path.isdir(opt.outf):

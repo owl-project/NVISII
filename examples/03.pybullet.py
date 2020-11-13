@@ -15,7 +15,7 @@ opt.height = 500
 opt.noise = False
 opt.frame_freq = 8
 opt.nb_frames = 300
-opt.outf = 'outf'
+opt.outf = '03_pybullet'
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # #

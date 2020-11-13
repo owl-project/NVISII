@@ -7,10 +7,12 @@ import visii
 from random import *
 import colorsys
 
-NB_OBJS = 10000
-SAMPLES_PER_PIXEL = 16
-WIDTH = 1920 
-HEIGHT = 1080
+opt = lambda: None
+opt.nb_objs = 10000 
+opt.spp = 16 
+opt.width = 1920
+opt.height = 1080 
+opt.out = '02_random_scene.png'
 
 # visii uses sets of components to represent a scene. 
 # We can increase the max component limit here if necessary.
@@ -20,9 +22,9 @@ visii.initialize(
     headless = True, 
     verbose = True, 
     lazy_updates = True,
-    max_entities = NB_OBJS + 1,
-    max_transforms = NB_OBJS + 1,  
-    max_materials = NB_OBJS,
+    max_entities = opt.nb_objs + 1,
+    max_transforms = opt.nb_objs + 1,  
+    max_materials = opt.nb_objs,
     max_meshes = 16
     # these are also available
     # max_lights, max_textures, & max_cameras
@@ -37,7 +39,7 @@ camera = visii.entity.create(
     transform = visii.transform.create("camera"),
     camera = visii.camera.create(
         name = "camera",  
-        aspect = float(WIDTH)/float(HEIGHT)
+        aspect = float(opt.width)/float(opt.height)
     )
 )
 camera.get_transform().look_at(at = (0,0,0), up = (1,0,0), eye = (0,0,5))
@@ -140,16 +142,16 @@ def add_random_obj(name = "name"):
     # (lots of other material parameters are listed in the docs)
 
 # Now, use the above function to make a bunch of random objects
-for i in range(NB_OBJS):
+for i in range(opt.nb_objs):
     add_random_obj(str(i))
     print("\rcreating random object", i, end="")
 print(" - done!")
 
 visii.render_to_file(
-    width = WIDTH, 
-    height = HEIGHT, 
-    samples_per_pixel = SAMPLES_PER_PIXEL,   
-    file_path = "02_random_scene.png"
+    width = opt.width, 
+    height = opt.height, 
+    samples_per_pixel = opt.spp,   
+    file_path = opt.out
 )
 
 visii.deinitialize()

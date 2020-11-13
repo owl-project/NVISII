@@ -5,11 +5,11 @@ import noise
 import random
 import numpy as np 
 
-# input()
-
-WIDTH = 500
-HEIGHT = 500
-SPP = 256
+opt = lambda : None
+opt.spp = 256 
+opt.width = 500
+opt.height = 500 
+opt.out = "07_procedural_texture.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless=True, verbose=True)
@@ -21,7 +21,7 @@ camera = visii.entity.create(
     transform = visii.transform.create("camera"),
     camera = visii.camera.create(
         name = "camera", 
-        aspect = float(WIDTH)/float(HEIGHT)
+        aspect = float(opt.width)/float(opt.height)
     )
 )
 visii.set_camera_entity(camera)
@@ -99,10 +99,10 @@ camera.get_transform().look_at(
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.render_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
-    samples_per_pixel=SPP,
-    file_path="07_procedural_texture.png"
+    width=opt.width, 
+    height=opt.height, 
+    samples_per_pixel=opt.spp,
+    file_path=opt.out
 )
 
 # let's clean up the GPU

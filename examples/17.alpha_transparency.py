@@ -4,10 +4,6 @@ import PySide2
 from PySide2.QtCore import *
 from PySide2.QtWidgets import *
 
-SAMPLES_PER_PIXEL = 50
-WIDTH = 500 
-HEIGHT = 500 
-
 visii.initialize()
 visii.set_max_bounce_depth(diffuse_depth=2, specular_depth=20)
 visii.enable_denoiser()
@@ -23,7 +19,7 @@ camera = visii.entity.create(
     transform = visii.transform.create(name = "camera_transform"),
     camera = visii.camera.create(
         name = "camera_camera", 
-        aspect = float(WIDTH)/float(HEIGHT)
+        aspect = 1.0
     )
 )
 camera.get_transform().look_at(

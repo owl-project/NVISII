@@ -6,7 +6,7 @@ opt.width = 1280
 opt.height = 720 
 opt.noise = False
 opt.path_obj = 'content/dragon/dragon.obj'
-opt.out = '11.instance_motion_blur.png'
+opt.out = '11_instance_motion_blur.png'
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless=True, verbose=True)

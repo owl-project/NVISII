@@ -16,8 +16,8 @@ opt = lambda: None
 opt.spp = 400 
 opt.width = 500
 opt.height = 500 
-opt.out = '13.reprojection.png'
-opt.outf = '13.reprojection'
+opt.out = '13_reprojection.png'
+opt.outf = '13_reprojection'
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 if os.path.isdir(opt.outf):
