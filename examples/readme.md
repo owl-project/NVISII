@@ -98,8 +98,10 @@ An interactive demo for controlling the camera similar to to a first person shoo
 This example shows how to create a mesh using an external package (in this case, `open3d`) and render it with visii. 
 This is the exact same scene as `4.load_obj_file.py`. 
 
-## 17.alpha_transparency.py
-Although not entirely realistic, alpha transparency is a useful feature for making objects "see-through" without necessarily bending rays due to refraction. This is commonly used to handle alpha cutouts (eg. for leaves) but is also used frequently when "visualizing" scientific data. Here, we use PySide2 to demonstrate the difference between "alpha transparency" and "transmission.
+## 17.materials_visii_interactive.py
+Although not entirely realistic, alpha transparency is a useful feature for making objects "see-through" without necessarily bending rays due to refraction. This is commonly used to handle alpha cutouts (eg. for leaves) but is also used frequently when "visualizing" scientific data. 
+You can also explore the different material propreties in visii and see how they affect the mesh. 
+Here, we use PySide2 to demonstrate the difference between "alpha transparency" and "transmission.
 
 ## 18.materials.py
 An example showing the different materials and how they impact the mesh. 
