@@ -1,35 +1,15 @@
 import visii
 import noise
 import random
-import argparse
 import numpy as np 
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument('--spp', 
-                    default=400,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=1920,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=1080,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--noise',
-                    action='store_true',
-                    default=False,
-                    help = "if added the output of the ray tracing is not sent to optix's denoiser")
-parser.add_argument('--out',
-                    default='tmp.png',
-                    help = "output filename")
-parser.add_argument('--control',
-                    default=False,
-                    help = "output filename")
-
-opt = parser.parse_args()
+opt = lambda: None
+opt.spp = 400 
+opt.width = 1920
+opt.height = 1080 
+opt.noise = False
+opt.out = '15.camera_motion_car_blur.png'
+opt.control = True
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize()
@@ -231,11 +211,11 @@ if opt.control:
     while not visii.should_window_close(): 
         time.sleep(.1)
 
-visii.render_to_png(
+visii.render_to_file(
     width=int(opt.width), 
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
-    image_path=f"{opt.out}"
+    file_path=f"{opt.out}"
 )
 
 # let's clean up the GPU

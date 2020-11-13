@@ -3,33 +3,17 @@ import math
 import visii
 import noise
 import random
-import argparse
 import numpy as np 
 import PIL
 from PIL import Image
 from scipy.ndimage import map_coordinates
-parser = argparse.ArgumentParser()
 
-parser.add_argument('--spp', 
-                    default=400,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=500,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=500,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--out',
-                    default='tmp.png',
-                    help = "output filename")
-parser.add_argument('--outf',
-                    default='reprojection',
-                    help = 'folder to output the images')
-
-opt = parser.parse_args()
+opt = lambda: None
+opt.spp = 400 
+opt.width = 500
+opt.height = 500 
+opt.out = '13.reprojection.png'
+opt.outf = '13.reprojection'
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 if os.path.isdir(opt.outf):

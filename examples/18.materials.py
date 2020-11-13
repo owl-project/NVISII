@@ -1,12 +1,3 @@
-import sys, os, math
-os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
-sys.path.append(os.path.join(os.getcwd(), "..", "install"))
-
-# 02.materials.py
-#
-# This example demonstrates the effects of different material parameters.
-# It also shows how to implement basic camera controls
-
 import visii
 from colorsys import *
 
@@ -186,7 +177,7 @@ visii.render_to_file(
     width = 1024, 
     height = 1024, 
     samples_per_pixel = 50,   
-    image_path = "01.simple_scene.png"
+    file_path = "18.materials.png"
 )
 
 visii.deinitialize()

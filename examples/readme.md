@@ -101,6 +101,12 @@ This is the exact same scene as `4.load_obj_file.py`.
 ## 17.alpha_transparency.py
 Although not entirely realistic, alpha transparency is a useful feature for making objects "see-through" without necessarily bending rays due to refraction. This is commonly used to handle alpha cutouts (eg. for leaves) but is also used frequently when "visualizing" scientific data. Here, we use PySide2 to demonstrate the difference between "alpha transparency" and "transmission.
 
+## 18.materials.py
+An example showing the different materials and how they impact the mesh. 
+
+## 19.depth_map_to_point_cloud.py
+This example shows how you can go from a depth map to a point cloud. Please consult [this](https://dsp.stackexchange.com/questions/26373/what-is-the-difference-between-a-range-image-and-a-depth-map) for more informantion between computer vision and graphics depth map. 
+
 ## Notes
 All these examples were developed and tested on Ubuntu 18.04 with cuda 11.0, NVIDIA drivers
 450.36.06 and using a NVIDIA TITAN RTX . 

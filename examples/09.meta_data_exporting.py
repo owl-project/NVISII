@@ -2,30 +2,37 @@ import os
 import visii
 import noise
 import random
+import numpy as np 
+import PIL
+from PIL import Image 
 
-WIDTH = 500
-HEIGHT = 500
-SPP = 512
-OUTF = "09_metadata"
+opt = lambda: None
+opt.spp = 400 
+opt.width = 500
+opt.height = 500 
+opt.noise = False
+opt.out = 'tmp.png'
+opt.outf = '09.metadata/'
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-if os.path.isdir(OUTF):
-    print(f'folder {OUTF}/ exists')
+if os.path.isdir(opt.outf):
+    print(f'folder {opt.outf}/ exists')
 else:
-    os.mkdir(OUTF)
-    print(f'created folder {OUTF}/')
+    os.mkdir(opt.outf)
+    print(f'created folder {opt.outf}/')
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 visii.initialize(headless=False, verbose=True, lazy_updates = True)
 
-visii.enable_denoiser()
+if not opt.noise is True: 
+    visii.enable_denoiser()
 
 camera = visii.entity.create(
     name = "camera",
     transform = visii.transform.create("camera"),
     camera = visii.camera.create(
         name = "camera", 
-        aspect = float(WIDTH)/float(HEIGHT)
+        aspect = float(opt.width)/float(opt.height)
     )
 )
 
@@ -79,7 +86,6 @@ mesh1.get_transform().set_position((0.0, 0.0, 0))
 mesh1.get_transform().set_scale((0.12, 0.12, 0.12))
 
 visii.set_dome_light_intensity(0)
-
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # visii offers different ways to export meta data
@@ -92,35 +98,53 @@ visii.sample_pixel_area(
     x_sample_interval = (.5,.5), 
     y_sample_interval = (.5, .5))
 
-visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
+depth_array = visii.render_data(
+    width=int(opt.width), 
+    height=int(opt.height), 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
-    options="depth",
-    file_path = f"{OUTF}/depth.exr"
+    options="depth"
+)
+depth_array = np.array(depth_array).reshape(opt.width,opt.height,4)
+depth_array[...,:-1] = depth_array[...,:-1] / np.max(depth_array[...,:-1])
+depth_array[...,:-1] = depth_array[...,:-1] - np.min(depth_array[...,:-1])
+
+# save the segmentation image
+img = Image.fromarray((depth_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save(f"{opt.outf}/depth.png")
+
+
+normals_array = visii.render_data(
+    width=int(opt.width), 
+    height=int(opt.height), 
+    start_frame=0,
+    frame_count=1,
+    bounce=int(0),
+    options="normal"
 )
 
-visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
-    start_frame=0,
-    frame_count=1,
-    bounce=int(0),
-    options="normal",
-    file_path = f"{OUTF}/normal.exr"
-)
+# transform normals to be between 0 and 1
+normals_array = np.array(normals_array).reshape(opt.width, opt.height,4)
+normals_array = (normals_array * .5) + .5
 
-visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
+# save the segmentation image
+img = Image.fromarray((normals_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save(f"{opt.outf}/normals.png")
+
+texture_coords_array = visii.render_data(
+    width=int(opt.width), 
+    height=int(opt.height), 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
-    options="texture_coordinates",
-    file_path = f"{OUTF}/texture_coordinates.exr"
+    options="texture_coordinates"
 )
+# save the segmentation image
+texture_coords_array = np.array(texture_coords_array).reshape(opt.width, opt.height,4)
+img = Image.fromarray((texture_coords_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save(f"{opt.outf}/texture_coordinates.png")
+print("done")
 
 # the entities are stored with an id, 
 # visii.entity.get_id(), this is used to 
@@ -128,40 +152,63 @@ visii.render_data_to_file(
 # ids = visii.texture.get_ids_names()
 # index = ids.indexof('soup')
 # visii.texture.get('soup').get_id()
-visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
+
+segmentation_array = visii.render_data(
+    width=int(opt.width), 
+    height=int(opt.height), 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
-    options="entity_id",
-    file_path = f"{OUTF}/entity_id.exr"
+    options="entity_id"
 )
+segmentation_array = np.array(segmentation_array).reshape(opt.width,opt.height,4)
+
+# set the background as 0. Normalize to make segmentation visible
+segmentation_array[segmentation_array>3.0] = 0 
+segmentation_array /= 3.0
+
+# save the segmentation image
+img = Image.fromarray((segmentation_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save(f"{opt.outf}/segmentation.png")
     
-visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
+position_array = visii.render_data(
+    width=int(opt.width), 
+    height=int(opt.height), 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
-    options="position",
-    file_path = f"{OUTF}/position.exr"
+    options="position"
 )
+position_array = np.array(position_array).reshape(opt.width,opt.height,4)
+position_array[...,:-1] = position_array[...,:-1] / (np.max(position_array[...,:-1]) - np.min(position_array[...,:-1]))
+position_array[...,:-1] = position_array[...,:-1] - np.min(position_array[...,:-1])
+
+# save the segmentation image
+img = Image.fromarray((position_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save(f"{opt.outf}/positions.png")
 
 # motion vectors can be useful for reprojection
 
 # induce motion, sample only at T=1
 mesh1.get_transform().set_angular_velocity(visii.angleAxis(0.5, (0,0,1)))
 visii.sample_time_interval((1,1))
-visii.render_data_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
+motion_vectors_array = visii.render_data(
+    width=int(opt.width), 
+    height=int(opt.height), 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
-    options="diffuse_motion_vectors",
-    file_path = f"{OUTF}/diffuse_motion_vectors.exr"
+    options="diffuse_motion_vectors"
 )
+
+# transform vectors to be between 0 and 1
+motion_vectors_array = np.array(motion_vectors_array).reshape(opt.width,opt.height,4)
+motion_vectors_array[...,:-1] = motion_vectors_array[...,:-1] / (np.max(motion_vectors_array[...,:-1]) - np.min(motion_vectors_array[...,:-1]))
+motion_vectors_array[...,:-1] = motion_vectors_array[...,:-1] - np.min(motion_vectors_array[...,:-1])
+
+# save the segmentation image
+img = Image.fromarray((motion_vectors_array*255).astype(np.uint8)).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+img.save(f"{opt.outf}/diffuse_motion_vectors.png")
 
 # for the final image, sample the entire pixel area to anti-alias the result
 visii.sample_pixel_area(
@@ -169,25 +216,18 @@ visii.sample_pixel_area(
     y_sample_interval = (0.0, 1.0)
 )
 
-visii.render_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
-    samples_per_pixel=SPP,
-    file_path=f"{OUTF}/img.png"
+visii.render_to_png(
+    width=int(opt.width), 
+    height=int(opt.height), 
+    samples_per_pixel=int(opt.spp),
+    image_path=f"{opt.outf}/img.png"
 )
 
-visii.render_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
-    samples_per_pixel=SPP,
-    file_path=f"{OUTF}/img.exr"
-)
-
-visii.render_to_file(
-    width=WIDTH, 
-    height=HEIGHT, 
-    samples_per_pixel=SPP,
-    file_path=f"{OUTF}/img.hdr"
+visii.render_to_hdr(
+    width=int(opt.width), 
+    height=int(opt.height), 
+    samples_per_pixel=int(opt.spp),
+    image_path=f"{opt.outf}/img.hdr"
 )
 
 # let's clean up the GPU
