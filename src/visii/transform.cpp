@@ -42,8 +42,8 @@ void Transform::updateComponents()
 	if (dirtyTransforms.size() == 0) return;
 	for (auto &t : dirtyTransforms) {
 		if (!t->isInitialized()) continue;
-		transformStructs[t->id].worldToLocal = t->getWorldToLocalMatrix();
-		transformStructs[t->id].localToWorld = t->getLocalToWorldMatrix();
+		transformStructs[t->id].localToWorld = t->getLocalToWorldMatrix(false);
+		transformStructs[t->id].localToWorldPrev = t->getLocalToWorldMatrix(true);
 	}
 	dirtyTransforms.clear();
 }
@@ -64,10 +64,10 @@ Transform* Transform::create(std::string name,
 	vec3 scale, quat rotation, vec3 position) 
 {
 	auto createTransform = [scale, rotation, position] (Transform* transform) {
-		dirtyTransforms.insert(transform);
 		transform->setPosition(position);
 		transform->setRotation(rotation);
 		transform->setScale(scale);
+		transform->markDirty();
 	};
 
 	try {
@@ -82,8 +82,8 @@ Transform* Transform::create(std::string name,
 Transform* Transform::createFromMatrix(std::string name, mat4 xfm) 
 {
 	auto createTransform = [xfm] (Transform* transform) {
-		dirtyTransforms.insert(transform);
 		transform->setTransform(xfm);
+		transform->markDirty();
 	};
 
 	try {
@@ -146,6 +146,10 @@ std::map<std::string, uint32_t> Transform::getNameToIdMap()
 }
 
 void Transform::markDirty() {
+	if (getAddress() < 0 || getAddress() >= transforms.size()) {
+        throw std::runtime_error("Error, transform not allocated in list");
+    }
+
 	dirtyTransforms.insert(this);
 	auto entityPointers = Entity::getFront();
 	for (auto &eid : entities) {

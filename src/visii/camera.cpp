@@ -232,6 +232,18 @@ Camera* Camera::createFromFocalLength(std::string name, float focalLength, float
 	}
 }
 
+Camera* Camera::createFromIntrinsics(std::string name, float fx, float fy, float cx, float cy, float width, float height, float near, float far)
+{
+	auto camera = StaticFactory::create(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
+	try {
+        camera->setIntrinsics(fx, fy, cx, cy, width, height, near, far);
+        return camera;
+	} catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Camera", lookupTable, cameras.data(), cameras.size());
+		throw;
+	}
+}
+
 std::shared_ptr<std::recursive_mutex> Camera::getEditMutex()
 {
 	return editMutex;
@@ -407,7 +419,7 @@ void Camera::setApertureDiameter(float diameter)
 // 	return maxRenderOrder;
 // }
 
-glm::mat3 Camera::getIntrinsicMatrix(uint32_t width, uint32_t height) { 
+glm::mat3 Camera::getIntrinsicMatrix(float width, float height) { 
     glm::mat3 intrinsics;
     intrinsics = glm::column(intrinsics, 0, glm::vec3(glm::column(cameraStructs[id].proj, 0)));
     intrinsics = glm::column(intrinsics, 1, glm::vec3(glm::column(cameraStructs[id].proj, 1)));
@@ -432,6 +444,29 @@ glm::mat4 Camera::getProjection() {
 	return cameraStructs[id].proj; 
 };
 
+
+void Camera::setProjection(glm::mat4 projection)
+{
+    cameraStructs[id].proj = projection;
+    markDirty();
+}
+		
+void Camera::setIntrinsics(float fx, float fy, float cx, float cy, float width, float height, float near, float far)
+{
+    auto P = glm::mat4();
+    P[0][0] = 2.0 * fx / width;
+    P[1][1] = 2.0 * fy / height;
+    P[2][0] = 1.0 - 2.0 * cx / (width - 1.0);
+    P[2][1] = 2.0 * cy / (height - 1.0) - 1.0;
+    P[2][3] = -1.0;
+
+    float n = near;
+    float f = far;
+    P[2][2] = (f + n) / (n - f);
+    P[3][2] = (2.f * f * n) / (n - f);
+    cameraStructs[id].proj = P;
+    markDirty();
+}
 
 // Texture* Camera::get_texture()
 // {

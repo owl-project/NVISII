@@ -15,6 +15,8 @@
 #include <cuda.h>
 #include <cuda_gl_interop.h>
 
+#include <glm/gtc/color_space.hpp>
+
 #include <devicecode/launch_params.h>
 #include <devicecode/path_tracer.h>
 
@@ -33,6 +35,15 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image.h>
 #include <stb_image_write.h>
+
+// Assimp already seems to define this
+#ifndef TINYEXR_IMPLEMENTATION
+#define MINIZ_HEADER_FILE_ONLY
+// #define TINYEXR_USE_MINIZ 0
+// #include "zlib.h"
+#define TINYEXR_IMPLEMENTATION
+#endif
+#include <tinyexr.h>
 
 #define USE_OPTIX70
 #undef USE_OPTIX71
@@ -410,6 +421,7 @@ void initializeFrameBuffer(int fbWidth, int fbHeight) {
     auto &OD = OptixData;
     if (OD.imageTexID != -1) {
         cudaGraphicsUnregisterResource(OD.cudaResourceTex);
+        glDeleteTextures(1, &OD.imageTexID);
     }
     
     // Enable Texturing
@@ -555,6 +567,7 @@ void initializeOptix(bool headless)
         { "renderDataBounce",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, renderDataBounce)},
         { "sceneBBMin",              OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, sceneBBMin)},
         { "sceneBBMax",              OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, sceneBBMax)},
+        { "enableDomeSampling", OWL_USER_TYPE(bool),               OWL_OFFSETOF(LaunchParams, enableDomeSampling)},
         { /* sentinel to mark end of list */ }
     };
     OD.launchParams = launchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
@@ -620,7 +633,7 @@ void initializeOptix(bool headless)
     OD.blasList.resize(meshCount);
 
     uint32_t materialCount = Material::getCount();
-    OD.textureObjects.resize(Texture::getCount() + NUM_MAT_PARAMS * materialCount);
+    OD.textureObjects.resize(Texture::getCount() + NUM_MAT_PARAMS * materialCount, nullptr);        
     OD.textureStructs.resize(Texture::getCount() + NUM_MAT_PARAMS * materialCount);
     OD.materialStructs.resize(materialCount);
 
@@ -636,20 +649,22 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "environmentMapWidth", &OD.LP.environmentMapWidth);
     launchParamsSetRaw(OD.launchParams, "environmentMapHeight", &OD.LP.environmentMapHeight);
 
-    OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
-                            OWL_TEXEL_FORMAT_R32F,
-                            GGX_E_avg_size,1,
-                            GGX_E_avg,
-                            OWL_TEXTURE_LINEAR,
-                            OWL_TEXTURE_CLAMP);
-    OWLTexture GGX_E_LOOKUP = owlTexture2DCreate(OD.context,
-                            OWL_TEXEL_FORMAT_R32F,
-                            GGX_E_size[0],GGX_E_size[1],
-                            GGX_E,
-                            OWL_TEXTURE_LINEAR,
-                            OWL_TEXTURE_CLAMP);
-    launchParamsSetTexture(OD.launchParams, "GGX_E_AVG_LOOKUP", GGX_E_AVG_LOOKUP);
-    launchParamsSetTexture(OD.launchParams, "GGX_E_LOOKUP",     GGX_E_LOOKUP);
+    // OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
+    //                         OWL_TEXEL_FORMAT_R32F,
+    //                         GGX_E_avg_size,1,
+    //                         GGX_E_avg,
+    //                         OWL_TEXTURE_LINEAR,
+    //                         OWL_COLOR_SPACE_LINEAR,
+    //                         OWL_TEXTURE_CLAMP);
+    // OWLTexture GGX_E_LOOKUP = owlTexture2DCreate(OD.context,
+    //                         OWL_TEXEL_FORMAT_R32F,
+    //                         GGX_E_size[0],GGX_E_size[1],
+    //                         GGX_E,
+    //                         OWL_TEXTURE_LINEAR,
+    //                         OWL_TEXTURE_CLAMP,
+    //                         OWL_COLOR_SPACE_LINEAR);
+    // launchParamsSetTexture(OD.launchParams, "GGX_E_AVG_LOOKUP", GGX_E_AVG_LOOKUP);
+    // launchParamsSetTexture(OD.launchParams, "GGX_E_LOOKUP",     GGX_E_LOOKUP);
     
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
     launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
@@ -670,22 +685,10 @@ void initializeOptix(bool headless)
     OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
     
     /* Temporary test code */
-    const int NUM_VERTICES = 1;
-    vec3 vertices[NUM_VERTICES] = {{ 0.f, 0.f, 0.f }};
-    const int NUM_INDICES = 1;
-    ivec3 indices[NUM_INDICES] = {{ 0, 0, 0 }};
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
-    
-    OWLBuffer vertexBuffer = deviceBufferCreate(OD.context,OWL_FLOAT4,NUM_VERTICES,vertices);
-    OWLBuffer indexBuffer = deviceBufferCreate(OD.context,OWL_INT3,NUM_INDICES,indices);
-    OWLGeom trianglesGeom = geomCreate(OD.context,OD.trianglesGeomType);
-    trianglesSetVertices(trianglesGeom,vertexBuffer,NUM_VERTICES,sizeof(vec4),0);
-    trianglesSetIndices(trianglesGeom,indexBuffer, NUM_INDICES,sizeof(ivec3),0);
-    OWLGroup trianglesGroup = trianglesGeomGroupCreate(OD.context,1,&trianglesGeom);
-    groupBuildAccel(trianglesGroup);
-    OWLGroup world = instanceGroupCreate(OD.context, 1);
-    instanceGroupSetChild(world, 0, trianglesGroup); 
+        
+    OWLGroup world = instanceGroupCreate(OD.context, 0);
     groupBuildAccel(world);
     launchParamsSetGroup(OD.launchParams, "world", world);
 
@@ -940,7 +943,7 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
     auto func = [texture, enableCDF] () {
         OptixData.LP.environmentMapID = texture->getId();
         if (enableCDF) {
-            std::vector<glm::vec4> texels = texture->getTexels();
+            std::vector<glm::vec4> texels = texture->getFloatTexels();
 
             int width = texture->getWidth();
             int height = texture->getHeight();
@@ -991,6 +994,18 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
 void setDomeLightRotation(glm::quat rotation)
 {
     OptixData.LP.environmentMapRotation = rotation;
+    resetAccumulation();
+}
+
+void enableDomeLightSampling()
+{
+    OptixData.LP.enableDomeSampling = true;
+    resetAccumulation();
+}
+
+void disableDomeLightSampling()
+{
+    OptixData.LP.enableDomeSampling = false;
     resetAccumulation();
 }
 
@@ -1213,20 +1228,37 @@ void updateComponents()
     if (Texture::areAnyDirty() || Material::areAnyDirty()) {
         std::lock_guard<std::recursive_mutex> material_lock(Material::areAnyDirty()   ? *Material::getEditMutex().get() : dummyMutex);
 
-
         // Allocate cuda textures for all texture components
-        Texture* textures = Texture::getFront();
-        for (uint32_t tid = 0; tid < Texture::getCount(); ++tid) {
-            if (!textures[tid].isDirty()) continue;
+        auto dirtyTextures = Texture::getDirtyTextures();
+        for (auto &texture : dirtyTextures) {
+            int tid = texture->getAddress();
             if (OD.textureObjects[tid]) { 
                 owlTexture2DDestroy(OD.textureObjects[tid]); 
                 OD.textureObjects[tid] = 0; 
             }
-            if (!textures[tid].isInitialized()) continue;
+            if (!texture->isInitialized()) continue;
+            bool isHDR = texture->isHDR();
+            bool isLinear = texture->isLinear();
+            uint32_t width = texture->getWidth();
+            uint32_t height = texture->getHeight();
+            void* texels = ((isHDR) ? (void*)texture->getFloatTexels().data() : (void*)texture->getByteTexels().data());
+            OWLTexelFormat format = ((isHDR) ? OWL_TEXEL_FORMAT_RGBA32F : OWL_TEXEL_FORMAT_RGBA8);
+            OWLTextureColorSpace colorSpace = ((isLinear) ? OWL_COLOR_SPACE_LINEAR: OWL_COLOR_SPACE_SRGB);
+            if (width < 1 || height < 1 || 
+                (isHDR && texture->getFloatTexels().size() != width * height) || 
+                (!isHDR && texture->getByteTexels().size() != width * height)) 
+            {
+                std::cout<<"Internal error: corrupt texture. Attempting to recover..." <<std::endl;
+                return; 
+            }
             OD.textureObjects[tid] = owlTexture2DCreate(
-                OD.context, OWL_TEXEL_FORMAT_RGBA32F,
-                textures[tid].getWidth(), textures[tid].getHeight(), textures[tid].getTexels().data(),
-                OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
+                OD.context, 
+                format,
+                width, height, texels,
+                OWL_TEXTURE_LINEAR, 
+                OWL_TEXTURE_WRAP,
+                colorSpace
+                );
         }
 
         // Create additional cuda textures for material constants
@@ -1250,7 +1282,7 @@ void updateComponents()
                     if (glm::all(glm::equal(c, defaultVal))) return;
                     OD.textureObjects[index] = owlTexture2DCreate(
                         OD.context, OWL_TEXEL_FORMAT_RGBA32F,
-                        1,1, &c, OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP);
+                        1,1, &c, OWL_TEXTURE_LINEAR, OWL_TEXTURE_WRAP, OWL_COLOR_SPACE_LINEAR);
                     OptixData.textureStructs[index] = TextureStruct();
                     OptixData.textureStructs[index].width = 1;
                     OptixData.textureStructs[index].height = 1;
@@ -1356,6 +1388,7 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "domeLightColor", &OptixData.LP.domeLightColor);
     launchParamsSetRaw(OptixData.launchParams, "renderDataMode", &OptixData.LP.renderDataMode);
     launchParamsSetRaw(OptixData.launchParams, "renderDataBounce", &OptixData.LP.renderDataBounce);
+    launchParamsSetRaw(OptixData.launchParams, "enableDomeSampling", &OptixData.LP.enableDomeSampling);
     launchParamsSetRaw(OptixData.launchParams, "seed", &OptixData.LP.seed);
     launchParamsSetRaw(OptixData.launchParams, "proj", &OptixData.LP.proj);
     launchParamsSetRaw(OptixData.launchParams, "viewT0", &OptixData.LP.viewT0);
@@ -1468,7 +1501,9 @@ void drawFrameBufferToWindow()
     const void* fbdevptr = bufferGetPointer(OD.frameBuffer,0);
     cudaArray_t array;
     cudaGraphicsSubResourceGetMappedArray(&array, OD.cudaResourceTex, 0, 0);
+    synchronizeDevices();
     cudaMemcpyToArray(array, 0, 0, fbdevptr, OD.LP.frameSize.x *  OD.LP.frameSize.y  * sizeof(glm::vec4), cudaMemcpyDeviceToDevice);
+    synchronizeDevices();
     cudaGraphicsUnmapResources(1, &OD.cudaResourceTex);
 
     
@@ -1595,10 +1630,13 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
 
     auto readFrameBuffer = [&frameBuffer, width, height, samplesPerPixel, seed] () {
         if (!ViSII.headlessMode) {
-            using namespace Libraries;
-            auto glfw = GLFW::Get();
-            glfw->resize_window("ViSII", width, height);
-            initializeFrameBuffer(width, height);
+            if ((width != WindowData.currentSize.x) || (height != WindowData.currentSize.y))
+            {
+                using namespace Libraries;
+                auto glfw = GLFW::Get();
+                glfw->resize_window("ViSII", width, height);
+                initializeFrameBuffer(width, height);
+            }
         }
         
         OptixData.LP.seed = seed;
@@ -1677,16 +1715,18 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
 
     auto readFrameBuffer = [&frameBuffer, width, height, startFrame, frameCount, bounce, _option, seed] () {
         if (!ViSII.headlessMode) {
-            using namespace Libraries;
-            auto glfw = GLFW::Get();
-            glfw->resize_window("ViSII", width, height);
-            initializeFrameBuffer(width, height);
+            if ((width != WindowData.currentSize.x) || (height != WindowData.currentSize.y))
+            {
+                using namespace Libraries;
+                auto glfw = GLFW::Get();
+                glfw->resize_window("ViSII", width, height);
+                initializeFrameBuffer(width, height);
+            }
         }
 
         // remove trailing whitespace from option, convert to lowercase
         std::string option = trim(_option);
-        std::transform(option.begin(), option.end(), option.begin(),
-            [](unsigned char c){ return std::tolower(c); });
+        std::transform(option.data(), option.data() + option.size(), std::addressof(option[0]), [](unsigned char c){ return std::tolower(c); });
 
         if (option == std::string("none")) {
             OptixData.LP.renderDataMode = RenderDataFlags::NONE;
@@ -1808,15 +1848,67 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
     return frameBuffer;
 }
 
-// void renderDataToHDR(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string field, std::string imagePath)
-// {
-//     std::vector<float> fb = renderData(width, height, startFrame, frameCount, bounce, field);
-//     stbi_flip_vertically_on_write(true);
-//     stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
-// }
+std::string getFileExtension(const std::string &filename) {
+  if (filename.find_last_of(".") != std::string::npos)
+    return filename.substr(filename.find_last_of(".") + 1);
+  return "";
+}
 
+void renderDataToFile(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string field, std::string imagePath, uint32_t seed)
+{
+    std::vector<float> fb = renderData(width, height, startFrame, frameCount, bounce, field);
+    std::string extension = getFileExtension(imagePath);
+    if ((extension.compare("exr") == 0) || (extension.compare("EXR") == 0)) {
+        std::vector<float> colors(4 * width * height);
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {     
+                vec4 color = vec4(
+                    fb[(((height - y) - 1) * width + x) * 4 + 0], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 1], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 2], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 3]);
+                colors[(y * width + x) * 4 + 0] = color.r;
+                colors[(y * width + x) * 4 + 1] = color.g;
+                colors[(y * width + x) * 4 + 2] = color.b;
+                colors[(y * width + x) * 4 + 3] = color.a;
+            }
+        }
+
+        const char* err = nullptr;
+        int ret = SaveEXR(colors.data(), width, height, /*components*/4, /*gp16*/0, imagePath.c_str(), &err);
+        if (TINYEXR_SUCCESS != ret) {
+            throw std::runtime_error(std::string("Error saving EXR : \"") + imagePath + std::string("\". ")
+                + std::string(err));
+        }
+    }
+    else if ((extension.compare("hdr") == 0) || (extension.compare("HDR") == 0)) {
+        stbi_flip_vertically_on_write(true);
+        stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
+    }
+    else if ((extension.compare("png") == 0) || (extension.compare("PNG") == 0)) {
+        std::vector<uint8_t> colors(4 * width * height);
+        for (size_t i = 0; i < (width * height); ++i) {     
+            vec3 color = vec3(fb[i * 4 + 0], fb[i * 4 + 1], fb[i * 4 + 2]);
+            float alpha = fb[i * 4 + 3];
+            color = glm::convertLinearToSRGB(color);
+            colors[i * 4 + 0] = uint8_t(glm::clamp(color.r * 255.f, 0.f, 255.f));
+            colors[i * 4 + 1] = uint8_t(glm::clamp(color.g * 255.f, 0.f, 255.f));
+            colors[i * 4 + 2] = uint8_t(glm::clamp(color.b * 255.f, 0.f, 255.f));
+            colors[i * 4 + 3] = uint8_t(glm::clamp(alpha * 255.f, 0.f, 255.f));
+        }
+        stbi_flip_vertically_on_write(true);
+        stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
+    }
+}
+
+static bool renderToHDRDeprecatedShown = false;
 void renderToHDR(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
 {
+    if (renderToHDRDeprecatedShown == false) {
+        std::cout<<"Warning, render_to_hdr is deprecated and will be removed in a subsequent release. Please switch to render_to_file." << std::endl;
+        renderToHDRDeprecatedShown = true;
+    }
+
     std::vector<float> fb = render(width, height, samplesPerPixel, seed);
     stbi_flip_vertically_on_write(true);
     stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
@@ -1850,8 +1942,14 @@ vec3 Uncharted2Tonemap(vec3 x)
 	return max(vec3(0.0f), ((x*(A*x+C*B)+D*E_)/(x*(A*x+B)+D*F))-E_/F);
 }
 
+static bool renderToPNGDeprecatedShown = false;
 void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
 {
+    if (renderToPNGDeprecatedShown == false) {
+        std::cout<<"Warning, render_to_png is deprecated and will be removed in a subsequent release. Please switch to render_to_file." << std::endl;
+        renderToPNGDeprecatedShown = true;
+    }
+
     // float exposure = 2.f; // TODO: expose as a parameter
 
     std::vector<float> fb = render(width, height, samplesPerPixel, seed);
@@ -1863,7 +1961,7 @@ void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std:
         // color = Uncharted2Tonemap(color * exposure);
         // color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
 
-        color = linearToSRGB(color);
+        color = glm::convertLinearToSRGB(color);
 
         colors[i * 4 + 0] = uint8_t(glm::clamp(color.r * 255.f, 0.f, 255.f));
         colors[i * 4 + 1] = uint8_t(glm::clamp(color.g * 255.f, 0.f, 255.f));
@@ -1872,6 +1970,53 @@ void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std:
     }
     stbi_flip_vertically_on_write(true);
     stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
+}
+
+void renderToFile(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
+{
+    std::vector<float> fb = render(width, height, samplesPerPixel, seed);
+    std::string extension = getFileExtension(imagePath);
+    if ((extension.compare("exr") == 0) || (extension.compare("EXR") == 0)) {
+        std::vector<float> colors(4 * width * height);
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {     
+                vec4 color = vec4(
+                    fb[(((height - y) - 1) * width + x) * 4 + 0], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 1], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 2], 
+                    fb[(((height - y) - 1) * width + x) * 4 + 3]);
+                colors[(y * width + x) * 4 + 0] = color.r;
+                colors[(y * width + x) * 4 + 1] = color.g;
+                colors[(y * width + x) * 4 + 2] = color.b;
+                colors[(y * width + x) * 4 + 3] = color.a;
+            }
+        }
+
+        const char* err = nullptr;
+        int ret = SaveEXR(colors.data(), width, height, /*components*/4, /*gp16*/0, imagePath.c_str(), &err);
+        if (TINYEXR_SUCCESS != ret) {
+            throw std::runtime_error(std::string("Error saving EXR : \"") + imagePath + std::string("\". ")
+                + std::string(err));
+        }
+    }
+    else if ((extension.compare("hdr") == 0) || (extension.compare("HDR") == 0)) {
+        stbi_flip_vertically_on_write(true);
+        stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
+    }
+    else if ((extension.compare("png") == 0) || (extension.compare("PNG") == 0)) {
+        std::vector<uint8_t> colors(4 * width * height);
+        for (size_t i = 0; i < (width * height); ++i) {     
+            vec3 color = vec3(fb[i * 4 + 0], fb[i * 4 + 1], fb[i * 4 + 2]);
+            float alpha = fb[i * 4 + 3];
+            color = glm::convertLinearToSRGB(color);
+            colors[i * 4 + 0] = uint8_t(glm::clamp(color.r * 255.f, 0.f, 255.f));
+            colors[i * 4 + 1] = uint8_t(glm::clamp(color.g * 255.f, 0.f, 255.f));
+            colors[i * 4 + 2] = uint8_t(glm::clamp(color.b * 255.f, 0.f, 255.f));
+            colors[i * 4 + 3] = uint8_t(glm::clamp(alpha * 255.f, 0.f, 255.f));
+        }
+        stbi_flip_vertically_on_write(true);
+        stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
+    }
 }
 
 // void renderDataToPNG(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string field, std::string imagePath)
@@ -2000,6 +2145,8 @@ void initializeInteractive(
 
         ImGui::DestroyContext();
         if (glfw->does_window_exist("ViSII")) glfw->destroy_window("ViSII");
+
+        // owlContextDestroy(OptixData.context);
     };
 
     renderThread = thread(loop);
@@ -2051,6 +2198,8 @@ void initializeHeadless(
             processCommandQueue();
             if (stopped) break;
         }
+
+        // owlContextDestroy(OptixData.context);
     };
 
     renderThread = thread(loop);
@@ -2147,6 +2296,11 @@ void disableUpdates()
     if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
 }
 
+bool areUpdatesEnabled()
+{
+    return lazyUpdatesEnabled == false;
+}
+
 #ifdef __unix__
 # include <unistd.h>
 #elif defined _WIN32
@@ -2165,15 +2319,100 @@ void deinitialize()
         if (OptixData.denoiser)
             OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
         clearAll();
+        if (OptixData.imageTexID != -1) {
+            cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
+            glDeleteTextures(1, &OptixData.imageTexID);
+        }
     }
-    // else {
-    //     throw std::runtime_error("Error: already deinitialized!");
-    // }
     initialized = false;
     // sleeping here. 
     // Some strange bug with python where deinitialize immediately before interpreter exit
     // on windows causes lockup. The sleep here fixes that lockup, suggesting some race condition...
-    sleep(1); 
+    sleep(.1); 
+}
+
+bool isButtonPressed(std::string button) {
+    if (ViSII.headlessMode) return false;
+    auto glfw = Libraries::GLFW::Get();
+    std::transform(button.data(), button.data() + button.size(), 
+        std::addressof(button[0]), [](unsigned char c){ return std::toupper(c); });
+    bool pressed, prevPressed;
+    if (button.compare("MOUSE_LEFT") == 0) {
+        pressed = glfw->get_button_action("ViSII", 0) == 1;
+        prevPressed = glfw->get_button_action_prev("ViSII", 0) == 1;
+    }
+    else if (button.compare("MOUSE_RIGHT") == 0) {
+        pressed = glfw->get_button_action("ViSII", 1) == 1;
+        prevPressed = glfw->get_button_action_prev("ViSII", 1) == 1;
+    }
+    else if (button.compare("MOUSE_MIDDLE") == 0) {
+        pressed = glfw->get_button_action("ViSII", 2) == 1;
+        prevPressed = glfw->get_button_action_prev("ViSII", 2) == 1;
+    }
+    else {
+        pressed = glfw->get_key_action("ViSII", glfw->get_key_code(button)) == 1;
+        prevPressed = glfw->get_key_action_prev("ViSII", glfw->get_key_code(button)) == 1;
+    }
+    
+    return pressed && !prevPressed;
+}
+
+bool isButtonHeld(std::string button) {
+    if (ViSII.headlessMode) return false;
+    auto glfw = Libraries::GLFW::Get();
+    std::transform(button.data(), button.data() + button.size(), 
+        std::addressof(button[0]), [](unsigned char c){ return std::toupper(c); });
+    if (button.compare("MOUSE_LEFT") == 0) return glfw->get_button_action("ViSII", 0) >= 1;
+    if (button.compare("MOUSE_RIGHT") == 0) return glfw->get_button_action("ViSII", 1) >= 1;
+    if (button.compare("MOUSE_MIDDLE") == 0) return glfw->get_button_action("ViSII", 2) >= 1;
+    return glfw->get_key_action("ViSII", glfw->get_key_code(button)) >= 1;
+}
+
+vec2 getCursorPos()
+{
+    if (ViSII.headlessMode) return vec2(NAN, NAN);
+    auto glfw = Libraries::GLFW::Get();
+    auto pos = glfw->get_cursor_pos("ViSII");
+    return vec2(pos[0], pos[1]);
+}
+
+void setCursorMode(std::string mode)
+{
+    if (ViSII.headlessMode) return;
+    auto func = [mode] () {
+        std::string mode_ = mode;
+        std::transform(mode_.data(), mode_.data() + mode_.size(), 
+            std::addressof(mode_[0]), [](unsigned char c){ return std::toupper(c); });
+        int value = GLFW_CURSOR_NORMAL;
+        if (mode_.compare("NORMAL") == 0) value = GLFW_CURSOR_NORMAL;
+        if (mode_.compare("HIDDEN") == 0) value = GLFW_CURSOR_HIDDEN;
+        if (mode_.compare("DISABLED") == 0) value = GLFW_CURSOR_DISABLED;
+        glfwSetInputMode(WindowData.window, GLFW_CURSOR, value);
+    };
+    auto future = enqueueCommand(func);
+    if (ViSII.render_thread_id != std::this_thread::get_id()) future.wait();
+}
+
+ivec2 getWindowSize()
+{
+    if (ViSII.headlessMode) return ivec2(NAN, NAN);
+    
+    auto func = [] () {
+        auto glfw = Libraries::GLFW::Get();
+        glfwGetFramebufferSize(WindowData.window, &WindowData.currentSize.x, &WindowData.currentSize.y);
+    };
+    auto future = enqueueCommand(func);
+    if (ViSII.render_thread_id != std::this_thread::get_id()) 
+        future.wait();
+
+    return WindowData.currentSize;
+}
+
+bool shouldWindowClose()
+{
+    if (ViSII.headlessMode) return false;
+    auto glfw = Libraries::GLFW::Get();
+    return glfw->should_close("ViSII");
 }
 
 void __test__(std::vector<std::string> args) {

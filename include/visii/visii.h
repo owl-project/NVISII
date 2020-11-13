@@ -64,20 +64,20 @@ void initialize(
   uint32_t max_textures = 1000);
 
 /**
-  * Cleans up any allocated resources
+  * Removes any allocated components but keeps visii initialized.
+  * Call this if you would like to clear the current scene.
 */
 void clearAll();
 
 /**
-  * closes windows and shuts down any running backend systems.
+  * Closes the interactive window, and shuts down any running backend systems.
+  * Call this function at the end of your script.
 */
 void deinitialize();
 
 /**
  * Registers a callback which is called on the render thread before each frame
- * of rendering. This is a workaround for the memory corruption bugs in ViSII which
- * are sometimes triggered when changing the scene while rendering is occurring.
- * To disable the callback, pass nullptr/None here.
+ * of rendering. To disable the callback, pass nullptr/None here.
  */
 void registerPreRenderCallback(std::function<void()> callback);
 
@@ -154,6 +154,13 @@ void clearDomeLightTexture();
  */ 
 void setDomeLightRotation(glm::quat rotation);
 
+/** If enabled, objects will be lit by the dome light. */
+void enableDomeLightSampling();
+
+/** If disabled, objects will not be lit by the dome light. 
+ * Instead, the dome light will only effect the background color. */
+void disableDomeLightSampling();
+
 /** 
  * Clamps the indirect light intensity during progressive image refinement. 
  * This reduces fireflies from indirect lighting, but also removes energy, and biases the resulting image.
@@ -211,14 +218,6 @@ void samplePixelArea(glm::vec2 x_sample_interval = glm::vec2(0.f, 1.f), glm::vec
  */ 
 void sampleTimeInterval(glm::vec2 time_sample_interval = glm::vec2(0.f, 1.f));
 
-/**
-  * If using interactive mode, resizes the window to the specified dimensions.
-  * 
-  * @param width The width to resize the window to
-  * @param height The height to resize the window to
-*/
-void resizeWindow(uint32_t width, uint32_t height);
-
 /** Enables the Optix denoiser. */
 void enableDenoiser();
 
@@ -236,26 +235,25 @@ void disableDenoiser();
 std::vector<float> render(uint32_t width, uint32_t height, uint32_t samples_per_pixel, uint32_t seed = 0);
 
 /** 
- * Renders the current scene, saving the resulting framebuffer to an HDR image on disk.
- * 
- * @param width The width of the image to render
- * @param height The height of the image to render
- * @param samples_per_pixel The number of rays to trace and accumulate per pixel.
- * @param image_path The path to use to save the HDR file, including the extension.
- * @param seed A seed used to initialize the random number generator.
+ * Deprecated. Please use renderToFile. 
 */
 void renderToHDR(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path, uint32_t seed = 0);
 
 /** 
- * Renders the current scene, saving the resulting framebuffer to a PNG image on disk.
+ * Deprecated. Please use renderToFile. 
+*/
+void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path, uint32_t seed = 0);
+
+/** 
+ * Renders the current scene, saving the resulting framebuffer to an image on disk.
  * 
  * @param width The width of the image to render
  * @param height The height of the image to render
  * @param samples_per_pixel The number of rays to trace and accumulate per pixel.
- * @param image_path The path to use to save the PNG file, including the extension.
+ * @param file_path The path to use to save the file, including the extension. Supported extensions include EXR, HDR, and PNG 
  * @param seed A seed used to initialize the random number generator.
 */
-void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path, uint32_t seed = 0);
+void renderToFile(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string file_path, uint32_t seed = 0);
 
 /** 
  * Renders out metadata used to render the current scene, returning the resulting framebuffer back to the user directly.
@@ -275,6 +273,25 @@ void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, st
 */
 std::vector<float> renderData(
   uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options, uint32_t seed = 0);
+
+/** 
+ * Renders out metadata used to render the current scene, returning the resulting framebuffer back to the user directly.
+ * 
+ * @param width The width of the image to render
+ * @param height The height of the image to render
+ * @param start_frame The start seed to feed into the random number generator
+ * @param frame_count The number of frames to accumulate the resulting framebuffers by. For ID data, this should be set to 0.
+ * @param bounce The number of bounces required to reach the vertex whose metadata result should come from. A value of 0
+ * would save data for objects directly visible to the camera, a value of 1 would save reflections/refractions, etc.
+ * @param options Indicates the data to return. Current possible values include 
+ * "none" for rendering out raw path traced data, "depth" to render the distance between the previous path vertex to the current one,
+ * "position" for rendering out the world space position of the path vertex, "normal" for rendering out the world space normal of the 
+ * path vertex, "entity_id" for rendering out the entity ID whose surface the path vertex hit, "denoise_normal" for rendering out
+ * the normal buffer supplied to the Optix denoiser, and "denoise_albedo" for rendering out the albedo supplied to the Optix denoiser.   
+ * @param file_path The path to use to save the file, including the extension. Supported extensions are EXR, HDR, and PNG
+ * @param seed A seed used to initialize the random number generator.
+*/
+void renderDataToFile(uint32_t width, uint32_t height, uint32_t start_frame, uint32_t frame_count, uint32_t bounce, std::string options, std::string file_path, uint32_t seed = 0);
 
 /**
  * Imports an OBJ containing scene data. 
@@ -296,6 +313,49 @@ std::vector<Entity*> importOBJ(std::string name_prefix, std::string file_path, s
         glm::vec3 position = glm::vec3(0.0f), 
         glm::vec3 scale = glm::vec3(1.0f),
         glm::quat rotation = glm::angleAxis(0.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
+
+/**
+ * An object containing a list of components that together represent a scene
+*/
+struct Scene {
+  std::vector<Entity*> entities;
+  std::vector<Transform*> transforms;
+  std::vector<Texture*> textures;
+  std::vector<Material*> materials;
+  std::vector<Mesh*> meshes;
+  std::vector<Light*> lights;
+  std::vector<Camera*> cameras;
+};
+
+/**
+ * Imports a file containing scene data. 
+ * 
+ * Supported file formats include: AMF 3DS AC ASE ASSBIN B3D BVH COLLADA DXF 
+ * CSM HMP IRRMESH IRR LWO LWS M3D MD2 MD3 MD5 MDC MDL NFF NDO OFF OBJ OGRE 
+ * OPENGEX PLY MS3D COB BLEND IFC XGL FBX Q3D Q3BSP RAW SIB SMD STL 
+ * TERRAGEN 3D X X3D GLTF 3MF MMD
+ * 
+ * First, any materials described by the file are used to generate Material components.
+ * Next, any textures required by those materials will be loaded. 
+ * After that, all shapes will be separated by material.
+ * For each separated shape, an entity is created to attach a transform, mesh, and material component together.
+ * These shapes are then translated so that the transform component is centered at the centroid of the shape.
+ * Finally, any specified position, scale, and/or rotation are applied to the generated transforms.
+ * 
+ * @param filepath The path for the file to load
+ * @param position A change in position to apply to all entities generated by this function
+ * @param position A change in scale to apply to all entities generated by this function
+ * @param position A change in rotation to apply to all entities generated by this function
+ * @param args A list of optional arguments that can effect the importer. 
+ * Possible options include: 
+ * "verbose" - print out information related to loading the scene.
+*/
+Scene importScene(
+        std::string file_path,
+        glm::vec3 position = glm::vec3(0.0f), 
+        glm::vec3 scale = glm::vec3(1.0f),
+        glm::quat rotation = glm::angleAxis(0.0f, glm::vec3(1.0f, 0.0f, 0.0f)),
+        std::vector<std::string> args = std::vector<std::string>());
 
 /** @returns the minimum axis aligned bounding box position for the axis aligned bounding box containing all scene geometry*/
 glm::vec3 getSceneMinAabbCorner();
@@ -323,6 +383,60 @@ void enableUpdates();
  */
 void disableUpdates();
 
+/*** If in interactive mode, returns true if updates are enabled, and false otherwise */
+bool areUpdatesEnabled();
+
+/**
+  * If using interactive mode, resizes the window to the specified dimensions.
+  * 
+  * @param width The width to resize the window to
+  * @param height The height to resize the window to
+*/
+void resizeWindow(uint32_t width, uint32_t height);
+
+/** 
+ * If in interactive mode, returns True if the specified button is pressed but not held.
+ * @param The button to check. Not case sensitive. Possible options include:
+ * SPACE, APOSTROPHE, COMMA, MINUS, PERIOD, SLASH, SEMICOLON, EQUAL, UP, DOWN, LEFT, RIGHT
+ * 0-9, A->Z, [, ], \\, `, ESCAPE, ENTER, TAB, BACKSPACE, INSERT, DELETE, PAGE_UP, PAGE_DOWN, HOME, 
+ * CAPS_LOCK, SCROLL_LOCK, NUM_LOCK, PRINT_SCREEN, PAUSE, F1 -> F25, KP_0 -> KP_9,
+ * KP_DECIMAL, KP_DIVIDE, KP_MULTIPLY, KP_SUBTRACT, KP_ADD, KP_ENTER, KP_EQUAL, 
+ * LEFT_SHIFT, LEFT_CONTROL, LEFT_ALT, LEFT_SUPER, RIGHT_SHIFT, RIGHT_CONTROL, RIGHT_ALT, RIGHT_SUPER,
+ * MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT
+*/
+bool isButtonPressed(std::string button);
+
+/** 
+ * If in interactive mode, returns True if the specified button is held down.
+ * @param The button to check. Not case sensitive. Possible options include:
+ * SPACE, APOSTROPHE, COMMA, MINUS, PERIOD, SLASH, SEMICOLON, EQUAL, UP, DOWN, LEFT, RIGHT
+ * 0-9, A->Z, [, ], \\, `, ESCAPE, ENTER, TAB, BACKSPACE, INSERT, DELETE, PAGE_UP, PAGE_DOWN, HOME, 
+ * CAPS_LOCK, SCROLL_LOCK, NUM_LOCK, PRINT_SCREEN, PAUSE, F1 -> F25, KP_0 -> KP_9,
+ * KP_DECIMAL, KP_DIVIDE, KP_MULTIPLY, KP_SUBTRACT, KP_ADD, KP_ENTER, KP_EQUAL, 
+ * LEFT_SHIFT, LEFT_CONTROL, LEFT_ALT, LEFT_SUPER, RIGHT_SHIFT, RIGHT_CONTROL, RIGHT_ALT, RIGHT_SUPER,
+ * MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT
+*/
+bool isButtonHeld(std::string button);
+
+/** If in interactive mode, returns the position of the cursor relative to the window. */
+glm::vec2 getCursorPos();
+
+/** 
+ * If in interactive mode, sets the mode of the cursor.
+ * @param mode Can be one of the following:
+ * NORMAL - makes the cursor visible and beaving normally
+ * HIDDEN makes the cursor invisible when it is over the content area of the window, 
+ * but does not restrict the cursor from leaving.
+ * DISABLED - hides and grabs the cursor, providing virtual and unlimited cursor movement. 
+ * This is useful for implementing for example 3D camera controls.
+ */
+void setCursorMode(std::string mode);
+
+/** If in interactive mode, returns size of the window */
+glm::ivec2 getWindowSize();
+
+/** If in interactive mode, returns true if the close button on the window was clicked. */
+bool shouldWindowClose();
 
 // This is for internal testing purposes. Don't call this unless you know what you're doing.
 void __test__(std::vector<std::string> args);

@@ -135,6 +135,19 @@ float Light::getExposure()
     return light.exposure;
 }
 
+void Light::setFalloff(float falloff)
+{
+    auto &light = getStruct();
+    light.falloff = falloff;
+    markDirty();
+}
+
+float Light::getFalloff()
+{
+    auto &light = getStruct();
+    return light.falloff;
+}
+
 void Light::useSurfaceArea(bool use) 
 {
     auto &light = getStruct();

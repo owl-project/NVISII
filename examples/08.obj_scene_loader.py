@@ -1,38 +1,18 @@
 import visii
 import noise
 import random
-import argparse
 import numpy as np 
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument('--spp', 
-                    default=512,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=500,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=500,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--noise',
-                    action='store_true',
-                    default=False,
-                    help = "if added the output of the ray tracing is not sent to optix's denoiser")
-parser.add_argument('--out',
-                    default='tmp.png',
-                    help = "output filename")
-
-opt = parser.parse_args()
+opt = lambda : None
+opt.spp = 512 
+opt.width = 1024
+opt.height = 1024 
+opt.out = "08_obj_scene_loader.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless=True, verbose=True)
 
-if not opt.noise is True: 
-    visii.enable_denoiser()
+visii.enable_denoiser()
 
 camera = visii.entity.create(
     name = "camera",
@@ -44,24 +24,22 @@ camera = visii.entity.create(
 )
 
 camera.get_transform().look_at(
-    at = (0,0,1.2), # look at (world coordinate)
+    at = (-5,0,12), # look at (world coordinate)
     up = (0,0,1), # up vector
-    eye = (1,-1.5,1.8)
+    eye = (5,-15,18)
 )
 visii.set_camera_entity(camera)
 
-visii.set_dome_light_intensity(6)
-visii.set_dome_light_sky(sun_position=[1,1,.1])
+visii.disable_dome_light_sampling()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-sdb = visii.import_obj(
-    "sdb", # prefix name
-    'content/salle_de_bain_separated/salle_de_bain_separated.obj', #obj path
-    'content/salle_de_bain_separated/', # mtl folder 
-    position = (1,0,0), # translation 
-    scale = (0.1, 0.1, 0.1), # scale here
-    rotation = visii.angleAxis(3.14 * .5, (1,0,0)) #rotation here
+sdb = visii.import_scene(
+    file_path = 'content/salle_de_bain_separated/salle_de_bain_separated.obj',
+    position = (1,0,0),
+    scale = (1.0, 1.0, 1.0),
+    rotation = visii.angleAxis(3.14 * .5, (1,0,0)),
+    args = ["verbose"] # list assets as they are loaded
 )
 
 # Using the above function, 
@@ -74,7 +52,7 @@ sdb = visii.import_obj(
 
 # since obj/mtl do not have definition for metallic properties 
 # lets add them manually to the material
-mirror = visii.material.get('sdbMirror')
+mirror = visii.material.get('Mirror')
 
 mirror.set_roughness(0)
 mirror.set_metallic(1)
@@ -86,20 +64,21 @@ mirror.set_base_color((1,1,1))
 
 # Since obj/mtl do not define lights, lets add one to the mesh 
 # named light
-for i_s, s in enumerate(sdb):
+for i_s, s in enumerate(sdb.entities):
     if "light" in s.get_name().lower():
         s.set_light(visii.light.create('light'))
-        s.get_light().set_intensity(100)
+        s.get_light().set_intensity(10)
+        s.get_light().set_exposure(18)
         s.get_light().set_temperature(5000)
         s.clear_material()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.render_to_png(
-    width=int(opt.width), 
-    height=int(opt.height), 
-    samples_per_pixel=int(opt.spp),
-    image_path=f"{opt.out}"
+visii.render_to_file(
+    width=opt.width, 
+    height=opt.height, 
+    samples_per_pixel=opt.spp,
+    file_path=opt.out
 )
 
 # let's clean up the GPU

@@ -1,38 +1,20 @@
+import visii as v
+
 import visii
 import noise
 import random
-import argparse
 import numpy as np 
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument('--spp', 
-                    default=100,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=500,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=500,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--noise',
-                    action='store_true',
-                    default=False,
-                    help = "if added the output of the ray tracing is not sent to optix's denoiser")
-parser.add_argument('--out',
-                    default='tmp.png',
-                    help = "output filename")
-
-opt = parser.parse_args()
+opt = lambda : None
+opt.spp = 256 
+opt.width = 500
+opt.height = 500 
+opt.out = "07_procedural_texture.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless=True, verbose=True)
 
-if not opt.noise is True: 
-    visii.enable_denoiser()
+visii.enable_denoiser()
 
 camera = visii.entity.create(
     name = "camera",
@@ -116,17 +98,11 @@ camera.get_transform().look_at(
 )
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.render_to_png(
-    width=int(opt.width), 
-    height=int(opt.height), 
-    samples_per_pixel=int(opt.spp),
-    image_path=f"{opt.out}"
-)
-visii.render_to_hdr(
-    width=int(opt.width), 
-    height=int(opt.height), 
-    samples_per_pixel=int(opt.spp),
-    image_path=f"{(opt.out).replace('png', 'hdr')}"
+visii.render_to_file(
+    width=opt.width, 
+    height=opt.height, 
+    samples_per_pixel=opt.spp,
+    file_path=opt.out
 )
 
 # let's clean up the GPU

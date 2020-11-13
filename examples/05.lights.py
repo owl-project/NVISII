@@ -1,36 +1,16 @@
 import visii
 import random
-import argparse
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument('--spp', 
-                    default=256,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=500,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=500,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--noise',
-                    action='store_true',
-                    default=False,
-                    help = "if added the output of the ray tracing is not sent to optix's denoiser")
-parser.add_argument('--out',
-                    default='tmp.png',
-                    help = "output filename")
-
-opt = parser.parse_args()
+opt = lambda : None
+opt.spp = 256 
+opt.width = 500
+opt.height = 500 
+opt.out = "05_lights.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless=True, verbose=True)
 
-if not opt.noise is True: 
-    visii.enable_denoiser()
+visii.enable_denoiser()
 
 camera = visii.entity.create(
     name = "camera",
@@ -224,11 +204,11 @@ box1.get_material().set_metallic(1)
 #%%
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.render_to_png(
-    width=int(opt.width), 
-    height=int(opt.height), 
-    samples_per_pixel=int(opt.spp),
-    image_path=f"{opt.out}"
+visii.render_to_file(
+    width=opt.width, 
+    height=opt.height, 
+    samples_per_pixel=opt.spp,
+    file_path=opt.out
 )
 
 # let's clean up the GPU

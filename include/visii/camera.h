@@ -95,6 +95,23 @@ private:
 		static Camera *createFromFocalLength(std::string name, float focal_length, float sensor_width, float sensor_height);
 
 		/** 
+		 * Constructs a camera component from a set of intrinsic properties. 
+		 * These properties are common in computer-vision setups. 
+		 * 
+		 * @param name A unique name for this camera.
+		 * @param fx X-axis focal length in meters.
+		 * @param fy Y-axis focal length in meters.
+		 * @param cx X-axis optical center in pixels.
+		 * @param cy Y-axis optical center in pixels.
+		 * @param width Width of the current viewport, in pixels.
+		 * @param height Height of the current viewport, in pixels.
+		 * @param znear The floating-point distance to the near clipping plane. If not specified, defaults to 0.05.
+		 * @param zfar The floating-point distance to the far clipping plane. zfar must be greater than znear. If not specified, defaults to 100.0.
+		 * @returns a reference to a camera component
+		*/
+		static Camera *createFromIntrinsics(std::string name, float fx, float fy, float cx, float cy, float width, float height, float near = 0.05f, float far = 100.f);
+
+		/** 
 		 * @param name The name of the camera to get
 			 * @returns a Camera who's name matches the given name 
 		*/
@@ -139,17 +156,17 @@ private:
 		/** Indicates whether or not any cameras are "out of date" and need to be updated through the "update components" function*/
 		static bool areAnyDirty();
 
-    /** @returns True if the camera has been modified since the previous frame, and False otherwise */
-    bool isDirty() { return dirty; }
+		/** @returns True if the camera has been modified since the previous frame, and False otherwise */
+		bool isDirty() { return dirty; }
 
-    /** @returns True if the camera has not been modified since the previous frame, and False otherwise */
-    bool isClean() { return !dirty; }
+		/** @returns True if the camera has not been modified since the previous frame, and False otherwise */
+		bool isClean() { return !dirty; }
 
-    /** Tags the current component as being modified since the previous frame. */
-    void markDirty();
+		/** Tags the current component as being modified since the previous frame. */
+		void markDirty();
 
-    /** Tags the current component as being unmodified since the previous frame. */
-    void markClean() { dirty = false; }
+		/** Tags the current component as being unmodified since the previous frame. */
+		void markClean() { dirty = false; }
 
 		/** Returns the simplified struct used to represent the current component */
 		CameraStruct getStruct();
@@ -206,6 +223,10 @@ private:
 			an orthographic view. */
 		glm::mat4 getProjection();
 
+		/** Sets the projection matrix used to achieve a perspective (eg a vanishing point), or for scaling 
+		 * an orthographic view */
+		void setProjection(glm::mat4 projection);
+		
 		/**
 		 * The intrinsic matrix is a 3x3 matrix that transforms 3D (non-homogeneous) cooordinates in camera space into 2D (homogeneous) image coordinates. 
 		 * These types of matrices are commonly used for computer vision applications, but are less common in computer graphics.
@@ -213,7 +234,19 @@ private:
 		 * @param height The height of the image (not tracked internally by the camera)
 		 * @returns An intrinsic matrix representation of the camera's perspective.
 		*/
-		glm::mat3 getIntrinsicMatrix(uint32_t width, uint32_t height);
+		glm::mat3 getIntrinsicMatrix(float width, float height);
+
+		/** Constructs a projection matrix using custom intrinsics.
+		 * @param fx X-axis focal length in meters.
+		 * @param fy Y-axis focal length in meters.
+		 * @param cx X-axis optical center in pixels.
+		 * @param cy Y-axis optical center in pixels.
+		 * @param width Width of the current viewport, in pixels.
+		 * @param height Height of the current viewport, in pixels.
+		 * @param znear The floating-point distance to the near clipping plane. If not specified, defaults to 0.05.
+		 * @param zfar The floating-point distance to the far clipping plane. zfar must be greater than znear. If not specified, defaults to 100.0.
+		 */
+		void setIntrinsics(float fx, float fy, float cx, float cy, float width, float height, float near = 0.05f, float far = 100.f);
 
 		/** For internal use. Returns the mutex used to lock cameras for processing by the renderer. */
 		static std::shared_ptr<std::recursive_mutex> getEditMutex();

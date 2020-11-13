@@ -15,6 +15,9 @@
 #include <visii/light_struct.h>
 #include <visii/texture_struct.h>
 
+// doesn't seem to have a significant impact on framerate
+#define CHECK_ACCESSES 
+
 template<class T>
 class Buffer : public owl::device::Buffer
 {
@@ -22,8 +25,10 @@ class Buffer : public owl::device::Buffer
   __both__
   T get(size_t address, uint32_t line) {
     #if defined(__CUDACC__)
+    #ifdef CHECK_ACCESSES
     if (data == nullptr) {::printf("Device Side Error on Line %d: buffer was nullptr.\n", line); asm("trap;");}
     if (address >= count) {::printf("Device Side Error on Line %d: out of bounds access (address: %d, size %d).\n", line, uint32_t(address), uint32_t(count)); asm("trap;");}
+    #endif
     #endif
     return ((T*)data)[address];
   }
@@ -63,8 +68,8 @@ struct LaunchParams {
     Buffer<MeshStruct> meshes;
     Buffer<LightStruct> lights;
     Buffer<TextureStruct> textures;
-    owl::device::Buffer lightEntities;
-    owl::device::Buffer instanceToEntityMap;
+    Buffer<uint32_t> lightEntities;
+    Buffer<uint32_t> instanceToEntityMap;
     uint32_t         numInstances = 0;
     uint32_t         numLightEntities = 0;
 
@@ -91,6 +96,8 @@ struct LaunchParams {
 
     glm::vec3 sceneBBMin = glm::vec3(0.f);
     glm::vec3 sceneBBMax = glm::vec3(0.f);
+
+    bool enableDomeSampling = true;
 };
 
 enum RenderDataFlags : uint32_t { 

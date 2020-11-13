@@ -1166,7 +1166,7 @@ Mesh* Mesh::createFromFile(std::string name, std::string path)
 				+ std::string(extension) + std::string("\" is currently unsupported."));
 
 		auto scene = aiImportFile(path.c_str(), 
-			aiProcessPreset_TargetRealtime_MaxQuality | 
+			aiProcessPreset_TargetRealtime_Fast | 
 			aiProcess_Triangulate |
 			aiProcess_PreTransformVertices );
 		
