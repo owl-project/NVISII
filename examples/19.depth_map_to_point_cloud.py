@@ -115,14 +115,14 @@ def convert_from_uvd(u, v, d,fx,fy,cx,cy):
     x_over_z = (cx - u) / fx
     y_over_z = (cy - v) / fy
     z = d / np.sqrt(1. + x_over_z**2 + y_over_z**2)
-    z = d 
     x = x_over_z * z
     y = y_over_z * z
     return x, y, z
 
 xyz = []
 intrinsics = camera.get_camera().get_intrinsic_matrix(opt.width,opt.height)
-print(intrinsics)
+# print(intrinsics)
+
 for i in range(opt.height):
     for j in range(opt.width):
         x,y,z = convert_from_uvd(i,j,depth_array[i,j,0],intrinsics[0][0],intrinsics[1][1],intrinsics[2][0],intrinsics[2][1])
