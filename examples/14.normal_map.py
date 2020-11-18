@@ -1,9 +1,3 @@
-import sys, os, math, colorsys
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-import sys, os, math, colorsys
-# os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
-sys.path.append(os.path.join(os.getcwd(), "..", "install"))
-
 import visii
 import noise
 import random
@@ -14,29 +8,13 @@ import time
 import subprocess
 import os
 
-parser = argparse.ArgumentParser()
 
-parser.add_argument('--spp', 
-                    default=400,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=500,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=500,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--noise',
-                    action='store_true',
-                    default=False,
-                    help = "if added the output of the ray tracing is not sent to optix's denoiser")
-parser.add_argument('--outf',
-                    default='normal_map_outf',
-                    help = 'folder to output the images')
-
-opt = parser.parse_args()
+opt = lambda: None
+opt.spp = 400 
+opt.width = 500
+opt.height = 500 
+opt.noise = False
+opt.outf = '14_normal_map_outf'
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 if os.path.isdir(opt.outf):
@@ -124,11 +102,11 @@ for i in range(20):
     obj_entity.get_transform().look_at(at = (0,0,0), up = (0,0,1), eye = (math.sin(math.pi * 2.0 * (i / 20.0)), math.cos(math.pi * 2.0 * (i / 20.0)),1))
     entity.get_transform().set_rotation(visii.angleAxis(math.pi * 2.0 * (i / 20.0), (0,0,1)))
     # time.sleep(.1)
-    visii.render_to_png(
+    visii.render_to_file(
         width=int(opt.width), 
         height=int(opt.height), 
         samples_per_pixel=int(opt.spp),
-        image_path=f"{opt.outf}/{str(i).zfill(5)}.png"
+        file_path=f"{opt.outf}/{str(i).zfill(5)}.png"
     )
 
 # let's clean up the GPU

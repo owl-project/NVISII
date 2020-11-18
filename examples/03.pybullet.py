@@ -1,45 +1,22 @@
 import os 
 import visii
 import random
-import argparse
 import colorsys
 import subprocess 
 import math
 import pybullet as p 
 import numpy as np
 
-parser = argparse.ArgumentParser()
+opt = lambda : None
+opt.nb_objects = 50
+opt.spp = 64 
+opt.width = 500
+opt.height = 500 
+opt.noise = False
+opt.frame_freq = 8
+opt.nb_frames = 300
+opt.outf = '03_pybullet'
 
-parser.add_argument('--nb_objects', 
-                    default=50,
-                    type=int,
-                    help = "number of objects to simulate")   
-parser.add_argument('--spp', 
-                    default=64,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=500,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=500,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--noise',
-                    action='store_true',
-                    default=False,
-                    help = "if added the output of the ray tracing is not sent to optix's denoiser")
-parser.add_argument('--frame_freq',
-                    default=8,
-                    help = "what is the output frame frequency")
-parser.add_argument('--nb_frames',
-                    default=300,
-                    help = "how many simulation steps")
-parser.add_argument('--outf',
-                    default='outf',
-                    help = 'folder to output the images')
-opt = parser.parse_args()
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 if os.path.isdir(opt.outf):
@@ -257,11 +234,11 @@ for i in range (int(opt.nb_frames)):
         # visii quat expects w as the first argument
         obj_entity.get_transform().set_rotation(rot)
     print(f'rendering frame {str(i).zfill(5)}/{str(opt.nb_frames).zfill(5)}')
-    visii.render_to_png(
+    visii.render_to_file(
         width=int(opt.width), 
         height=int(opt.height), 
         samples_per_pixel=int(opt.spp),
-        image_path=f"{opt.outf}/{str(i).zfill(5)}.png"
+        file_path=f"{opt.outf}/{str(i).zfill(5)}.png"
     )
 
 p.disconnect()

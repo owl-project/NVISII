@@ -16,6 +16,7 @@ data
 *.jpg
 *.mtl
 *.zip
+*.exr
 *__pycache__
 examples/content
 examples\content

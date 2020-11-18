@@ -1,35 +1,23 @@
+import sys, os, math
+os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
+sys.path.append(os.path.join(os.getcwd(), "..", "install"))
+
 import os
 import math
 import visii
 import noise
 import random
-import argparse
 import numpy as np 
 import PIL
 from PIL import Image
 from scipy.ndimage import map_coordinates
-parser = argparse.ArgumentParser()
 
-parser.add_argument('--spp', 
-                    default=400,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=500,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=500,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--out',
-                    default='tmp.png',
-                    help = "output filename")
-parser.add_argument('--outf',
-                    default='reprojection',
-                    help = 'folder to output the images')
-
-opt = parser.parse_args()
+opt = lambda: None
+opt.spp = 400 
+opt.width = 500
+opt.height = 500 
+opt.out = '13_reprojection.png'
+opt.outf = '13_reprojection'
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 if os.path.isdir(opt.outf):
@@ -165,6 +153,15 @@ save_image(t1_base_colors_array, f"{opt.outf}/t1_base_color.png")
 
 # After that, get diffuse motion vectors at T1 to drive the reprojection
 visii.sample_time_interval((1.0, 1.0))
+t1_motion_vectors_array = visii.render_data_to_file(
+    width=opt.width, 
+    height=opt.height, 
+    start_frame=0,
+    frame_count=1,
+    bounce=int(0),
+    options="diffuse_motion_vectors",
+    image_path= f"{opt.outf}/t1_motion_vectors.exr"
+)
 t1_motion_vectors_array = visii.render_data(
     width=opt.width, 
     height=opt.height, 

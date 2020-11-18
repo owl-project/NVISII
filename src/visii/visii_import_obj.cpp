@@ -31,8 +31,13 @@ struct OBJTextureInfoCompare {
 };
 
 
+static bool importOBJDeprecatedShown = false;
 std::vector<Entity*> importOBJ(std::string name_prefix, std::string filepath, std::string mtl_base_dir, glm::vec3 position, glm::vec3 scale, glm::quat rotation)
 {
+    if (!importOBJDeprecatedShown) {
+        std::cout<<"Warning, import_obj is deprecated and will be removed in a subsequent release. Please switch to import_scene." << std::endl;
+        importOBJDeprecatedShown = true;
+    }
     struct stat st;
     if (stat(filepath.c_str(), &st) != 0)
         throw std::runtime_error( std::string(filepath + " does not exist!"));

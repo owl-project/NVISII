@@ -1,32 +1,12 @@
 import visii
-import argparse
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument('--spp', 
-                    default=100,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=1280,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=720,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--noise',
-                    action='store_true',
-                    default=False,
-                    help = "if added the output of the ray tracing is not sent to optix's denoiser")
-parser.add_argument('--path_obj',
-                    default='content/dragon/dragon.obj',
-                    help = "path to the obj mesh you want to load")
-parser.add_argument('--out',
-                    default='tmp.png',
-                    help = "output filename")
-
-opt = parser.parse_args()
+opt = lambda: None
+opt.spp = 100 
+opt.width = 1280
+opt.height = 720 
+opt.noise = False
+opt.path_obj = 'content/dragon/dragon.obj'
+opt.out = '11_instance_motion_blur.png'
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless=True, verbose=True)

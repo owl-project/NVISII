@@ -1,43 +1,21 @@
 import os 
 import visii
 import random
-import argparse
 import colorsys
 import subprocess 
 import pybullet as p 
 
-parser = argparse.ArgumentParser()
 
-parser.add_argument('--nb_objects', 
-                    default=50,
-                    type=int,
-                    help = "number of objects to simulate")   
-parser.add_argument('--spp', 
-                    default=128,
-                    type=int,
-                    help = "number of sample per pixel, higher the more costly")
-parser.add_argument('--width', 
-                    default=500,
-                    type=int,
-                    help = 'image output width')
-parser.add_argument('--height', 
-                    default=500,
-                    type=int,
-                    help = 'image output height')
-parser.add_argument('--noise',
-                    action='store_true',
-                    default=False,
-                    help = "if added the output of the ray tracing is not sent to optix's denoiser")
-parser.add_argument('--frame_freq',
-                    default=8,
-                    help = "what is the output frame frequency")
-parser.add_argument('--nb_frames',
-                    default=300,
-                    help = "how many simulation steps")
-parser.add_argument('--outf',
-                    default='outf',
-                    help = 'folder to output the images')
-opt = parser.parse_args()
+opt = lambda: None
+opt.nb_objects = 50
+opt.spp = 128
+opt.width = 500
+opt.height = 500 
+opt.noise = False
+opt.frame_freq = 8
+opt.nb_frames = 300
+opt.outf = '12_pybullet_motion_blur/'
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 if os.path.isdir(opt.outf):
@@ -277,14 +255,14 @@ for i in range (int(opt.nb_frames)):
         obj_entity.get_transform().set_angular_velocity(visii.quat(1.0, drot), frames_per_second, mix = .7)
 
     print(f'rendering frame {str(i).zfill(5)}/{str(opt.nb_frames).zfill(5)}')
-    visii.render_to_png(
+    visii.render_to_file(
         width=int(opt.width), 
         height=int(opt.height), 
         samples_per_pixel=int(opt.spp),
-        image_path=f"{opt.outf}/{str(i).zfill(5)}.png"
+        file_path=f"{opt.outf}/{str(i).zfill(5)}.png"
     )
 
 p.disconnect()
 visii.deinitialize()
 
-subprocess.call(['ffmpeg', '-y', '-framerate', '30', '-i', r"%05d.png",  '-vcodec', 'libx264', '-pix_fmt', 'yuv420p', '../output.mp4'], cwd=os.path.realpath(opt.outf))
+subprocess.call(['ffmpeg', '-y', '-framerate', '30', '-i', r"%05d.png",  '-vcodec', 'libx264', '-pix_fmt', 'yuv420p', '../pybullet_motion_blur.mp4'], cwd=os.path.realpath(opt.outf))

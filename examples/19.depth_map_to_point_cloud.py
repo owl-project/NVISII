@@ -1,25 +1,27 @@
+# For more information please read: 
+# https://dsp.stackexchange.com/questions/26373/what-is-the-difference-between-a-range-image-and-a-depth-map
+
 import os
 import visii
 import noise
 import random
+import numpy as np 
+import PIL
+from PIL import Image 
+import math 
 
-opt = lambda : None
-opt.spp = 512 
+opt = lambda: None
+opt.spp = 1024 
 opt.width = 500
 opt.height = 500 
-opt.outf = "09_metadata"
+opt.noise = False
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-if os.path.isdir(opt.outf):
-    print(f'folder {opt.outf}/ exists')
-else:
-    os.mkdir(opt.outf)
-    print(f'created folder {opt.outf}/')
-# # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.initialize(headless=False, verbose=True, lazy_updates = True)
+visii.initialize(headless=True, verbose=True, lazy_updates = True)
 
-visii.enable_denoiser()
+if not opt.noise is True: 
+    visii.enable_denoiser()
 
 camera = visii.entity.create(
     name = "camera",
@@ -80,7 +82,6 @@ mesh1.get_transform().set_position((0.0, 0.0, 0))
 mesh1.get_transform().set_scale((0.12, 0.12, 0.12))
 
 visii.set_dome_light_intensity(0)
-
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # visii offers different ways to export meta data
@@ -91,105 +92,52 @@ visii.set_dome_light_intensity(0)
 # to do so, call this function
 visii.sample_pixel_area(
     x_sample_interval = (.5,.5), 
-    y_sample_interval = (.5, .5))
+    y_sample_interval = (.5, .5)
+)
 
-visii.render_data_to_file(
-    width=opt.width, 
-    height=opt.height, 
+depth_array = visii.render_data(
+    width=int(opt.width), 
+    height=int(opt.height), 
     start_frame=0,
     frame_count=1,
     bounce=int(0),
-    options="depth",
-    file_path = f"{opt.outf}/depth.exr"
+    options="depth"
 )
+depth_array = np.array(depth_array).reshape(opt.height,opt.width,4)
+depth_array = np.flipud(depth_array)
+# save the segmentation image
 
-visii.render_data_to_file(
-    width=opt.width, 
-    height=opt.height, 
-    start_frame=0,
-    frame_count=1,
-    bounce=int(0),
-    options="normal",
-    file_path = f"{opt.outf}/normal.exr"
-)
+def convert_from_uvd(u, v, d,fx,fy,cx,cy):
+    # d *= self.pxToMetre
+    x_over_z = (cx - u) / fx
+    y_over_z = (cy - v) / fy
+    z = d / np.sqrt(1. + x_over_z**2 + y_over_z**2)
+    x = x_over_z * z
+    y = y_over_z * z
+    return x, y, z
 
-visii.render_data_to_file(
-    width=opt.width, 
-    height=opt.height, 
-    start_frame=0,
-    frame_count=1,
-    bounce=int(0),
-    options="texture_coordinates",
-    file_path = f"{opt.outf}/texture_coordinates.exr"
-)
+xyz = []
+intrinsics = camera.get_camera().get_intrinsic_matrix(opt.width,opt.height)
 
-# the entities are stored with an id, 
-# visii.entity.get_id(), this is used to 
-# do the segmentation. 
-# ids = visii.texture.get_ids_names()
-# index = ids.indexof('soup')
-# visii.texture.get('soup').get_id()
-visii.render_data_to_file(
-    width=opt.width, 
-    height=opt.height, 
-    start_frame=0,
-    frame_count=1,
-    bounce=int(0),
-    options="entity_id",
-    file_path = f"{opt.outf}/entity_id.exr"
-)
-    
-visii.render_data_to_file(
-    width=opt.width, 
-    height=opt.height, 
-    start_frame=0,
-    frame_count=1,
-    bounce=int(0),
-    options="position",
-    file_path = f"{opt.outf}/position.exr"
-)
+# Use Open3D to render a point cloud from the distance metadata
+for i in range(opt.height):
+    for j in range(opt.width):
+        x,y,z = convert_from_uvd(i,j, depth_array[i,j,0], 
+            intrinsics[0][0], intrinsics[1][1], intrinsics[2][0],intrinsics[2][1])
+        xyz.append([x,y,z])
+import open3d as o3d
 
-# motion vectors can be useful for reprojection
-
-# induce motion, sample only at T=1
-mesh1.get_transform().set_angular_velocity(visii.angleAxis(0.5, (0,0,1)))
-visii.sample_time_interval((1,1))
-visii.render_data_to_file(
-    width=opt.width, 
-    height=opt.height, 
-    start_frame=0,
-    frame_count=1,
-    bounce=int(0),
-    options="diffuse_motion_vectors",
-    file_path = f"{opt.outf}/diffuse_motion_vectors.exr"
-)
-
-# for the final image, sample the entire pixel area to anti-alias the result
-visii.sample_pixel_area(
-    x_sample_interval = (0.0, 1.0), 
-    y_sample_interval = (0.0, 1.0)
-)
-
-visii.render_to_file(
-    width=opt.width, 
-    height=opt.height, 
-    samples_per_pixel=opt.spp,
-    file_path=f"{opt.outf}/img.png"
-)
-
-visii.render_to_file(
-    width=opt.width, 
-    height=opt.height, 
-    samples_per_pixel=opt.spp,
-    file_path=f"{opt.outf}/img.exr"
-)
-
-visii.render_to_file(
-    width=opt.width, 
-    height=opt.height, 
-    samples_per_pixel=opt.spp,
-    file_path=f"{opt.outf}/img.hdr"
-)
+pcd = o3d.geometry.PointCloud()
+pcd.points = o3d.utility.Vector3dVector(xyz)
+vis = o3d.visualization.Visualizer()
+vis.create_window()
+vis.add_geometry(pcd)
+view_ctl = vis.get_view_control()
+view_ctl.set_front((1, 1, 0))
+view_ctl.set_up((0, -1, -1))
+view_ctl.set_lookat(pcd.get_center())
+vis.run()
+vis.destroy_window()
 
 # let's clean up the GPU
 visii.deinitialize()
