@@ -687,8 +687,23 @@ void initializeOptix(bool headless)
     /* Temporary test code */
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
-        
-    OWLGroup world = instanceGroupCreate(OD.context, 0);
+    
+    /* Temporary test code */
+    const int NUM_VERTICES = 1;
+    vec3 vertices[NUM_VERTICES] = {{ 0.f, 0.f, 0.f }};
+    const int NUM_INDICES = 1;
+    ivec3 indices[NUM_INDICES] = {{ 0, 0, 0 }};    
+    OWLBuffer vertexBuffer = deviceBufferCreate(OD.context,OWL_FLOAT4,NUM_VERTICES,vertices);
+    OWLBuffer indexBuffer = deviceBufferCreate(OD.context,OWL_INT3,NUM_INDICES,indices);
+    OWLGeom trianglesGeom = geomCreate(OD.context,OD.trianglesGeomType);
+    trianglesSetVertices(trianglesGeom,vertexBuffer,NUM_VERTICES,sizeof(vec4),0);
+    trianglesSetIndices(trianglesGeom,indexBuffer, NUM_INDICES,sizeof(ivec3),0);
+    OWLGroup trianglesGroup = trianglesGeomGroupCreate(OD.context,1,&trianglesGeom);
+    groupBuildAccel(trianglesGroup);
+
+    // build IAS with a single placeholder instance
+    OWLGroup world = instanceGroupCreate(OD.context, 1);
+    instanceGroupSetChild(world, 0, trianglesGroup); 
     groupBuildAccel(world);
     launchParamsSetGroup(OD.launchParams, "world", world);
 
