@@ -1752,11 +1752,8 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         else if (option == std::string("texture_coordinates")) {
             OptixData.LP.renderDataMode = RenderDataFlags::TEXTURE_COORDINATES;
         }
-        else if (option == std::string("denoise_normal")) {
-            OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_NORMAL;
-        }
-        else if (option == std::string("denoise_albedo")) {
-            OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_ALBEDO;
+        else if (option == std::string("screen_space_normal")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::SCREEN_SPACE_NORMAL;
         }
         else if (option == std::string("diffuse_color")) {
             OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_COLOR;
@@ -2444,11 +2441,8 @@ void __test__(std::vector<std::string> args) {
     else if (option == std::string("texture_coordinates")) {
         OptixData.LP.renderDataMode = RenderDataFlags::TEXTURE_COORDINATES;
     }
-    else if (option == std::string("denoise_normal")) {
-        OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_NORMAL;
-    }
-    else if (option == std::string("denoise_albedo")) {
-        OptixData.LP.renderDataMode = RenderDataFlags::DENOISE_ALBEDO;
+    else if (option == std::string("screen_space_normal")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::SCREEN_SPACE_NORMAL;
     }
     else if (option == std::string("diffuse_color")) {
         OptixData.LP.renderDataMode = RenderDataFlags::DIFFUSE_COLOR;

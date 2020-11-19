@@ -362,6 +362,9 @@ void initializeRenderData(float3 &renderData)
     else if (LP.renderDataMode == RenderDataFlags::NORMAL) {
         renderData = make_float3(FLT_MAX);
     }
+    else if (LP.renderDataMode == RenderDataFlags::SCREEN_SPACE_NORMAL) {
+        renderData = make_float3(0.0f);
+    }
     else if (LP.renderDataMode == RenderDataFlags::ENTITY_ID) {
         renderData = make_float3(FLT_MAX);
     }
@@ -456,7 +459,7 @@ void saveGeometricRenderData(
     float3 &renderData, 
     int bounce, float depth, 
     float3 w_p, float3 w_n, float3 w_o, float2 uv, 
-    int entity_id, float3 diffuse_mvec,
+    int entity_id, float3 diffuse_mvec, float time,
     DisneyMaterial &mat)
 {
     auto &LP = optixLaunchParams;
@@ -471,6 +474,16 @@ void saveGeometricRenderData(
     }
     else if (LP.renderDataMode == RenderDataFlags::NORMAL) {
         renderData = w_n;
+    }
+    else if (LP.renderDataMode == RenderDataFlags::SCREEN_SPACE_NORMAL) {
+        glm::quat r0 = glm::quat_cast(LP.viewT0);
+        glm::quat r1 = glm::quat_cast(LP.viewT1);
+        glm::quat rot = (glm::all(glm::equal(r0, r1))) ? r0 : glm::slerp(r0, r1, time);
+        vec3 tmp = normalize(glm::mat3_cast(rot) * make_vec3(w_n));
+        tmp = normalize(vec3(LP.proj * vec4(tmp, 0.f)));
+        renderData.x = tmp.x;
+        renderData.y = tmp.y;
+        renderData.z = tmp.z;
     }
     else if (LP.renderDataMode == RenderDataFlags::ENTITY_ID) {
         renderData = make_float3(float(entity_id));
@@ -753,7 +766,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
 
         // For segmentations, save geometric metadata
-        saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, uv, entityID, diffuseMotion, mat);
+        saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, uv, entityID, diffuseMotion, time, mat);
 
         // If the entity we hit is a light, terminate the path.
         // Note that NEE/MIS will also potentially terminate the path, preventing double-counting.
