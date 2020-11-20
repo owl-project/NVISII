@@ -594,6 +594,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     float3 accum_illum = make_float3(0.f);
     float3 pathThroughput = make_float3(1.f);
     float3 renderData = make_float3(0.f);
+    float3 primaryAlbedo = make_float3(0.f);
+    float3 primaryNormal = make_float3(0.f);
     initializeRenderData(renderData);
 
     uint8_t bounce = 0;
@@ -621,8 +623,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (payload.tHit <= 0.f) {
             // Compute lighting from environment
             if (bounce == 0) {
-                illum = illum + pathThroughput * (missColor(ray, envTex) * LP.domeLightIntensity);
+                float3 col = missColor(ray, envTex);
+                illum = illum + pathThroughput * (col * LP.domeLightIntensity);
                 directIllum = illum;
+                primaryAlbedo = col;
             }
             else if (enableDomeSampling)
                 illum = illum + pathThroughput * (missColor(ray, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
@@ -767,6 +771,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // For segmentations, save geometric metadata
         saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, uv, entityID, diffuseMotion, time, mat);
+        if (bounce == 0) {
+            primaryAlbedo = mat.base_color;
+            primaryNormal = v_z;
+        }
 
         // If the entity we hit is a light, terminate the path.
         // Note that NEE/MIS will also potentially terminate the path, preventing double-counting.
@@ -1053,8 +1061,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
     float4* accumPtr = (float4*) LP.accumPtr;
     float4* fbPtr = (float4*) LP.frameBuffer;
+    float4* normalPtr = (float4*) LP.normalBuffer;
+    float4* albedoPtr = (float4*) LP.albedoBuffer;
 
     float4 prev_color = accumPtr[fbOfs];
+    float4 prev_normal = normalPtr[fbOfs];
+    float4 prev_albedo = albedoPtr[fbOfs];
     float4 accum_color;
 
     if (LP.renderDataMode == RenderDataFlags::NONE) 
@@ -1067,19 +1079,28 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         accum_color = make_float4((accum_illum + float(LP.frameID) * make_float3(prev_color)) / float(LP.frameID + 1), 1.0f);
     }
     
-    // uncoalesced writes here are expensive...
-    // perhaps swap this out for a texture?
+    
+    // compute screen space normal / albedo
+    vec4 oldAlbedo = make_vec4(prev_albedo);
+    vec4 oldNormal = make_vec4(prev_normal);
+    if (any(isnan(oldAlbedo))) oldAlbedo = vec4(0.f);
+    if (any(isnan(oldNormal))) oldNormal = vec4(0.f);
+    vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
+    vec4 accumAlbedo = (newAlbedo + float(LP.frameID) * oldAlbedo) / float(LP.frameID + 1);
+    vec4 newNormal = vec4(make_vec3(primaryNormal), 1.f);
+    if (!all(equal(make_vec3(primaryNormal), vec3(0.f, 0.f, 0.f)))) {
+        glm::quat r0 = glm::quat_cast(LP.viewT0);
+        glm::quat r1 = glm::quat_cast(LP.viewT1);
+        glm::quat rot = (glm::all(glm::equal(r0, r1))) ? r0 : glm::slerp(r0, r1, time);
+        vec3 tmp = normalize(glm::mat3_cast(rot) * make_vec3(primaryNormal));
+        tmp = normalize(vec3(LP.proj * vec4(tmp, 0.f)));
+        newNormal = vec4(tmp, 1.f);
+    }
+    vec4 accumNormal = (newNormal + float(LP.frameID) * oldNormal) / float(LP.frameID + 1);
+
+    // save data to frame buffers
     accumPtr[fbOfs] = accum_color;
     fbPtr[fbOfs] = accum_color;
-    // vec4 oldAlbedo = LP.albedoBuffer[fbOfs];
-    // vec4 oldNormal = LP.normalBuffer[fbOfs];
-    // if (any(isnan(oldAlbedo))) oldAlbedo = vec4(1.f);
-    // if (any(isnan(oldNormal))) oldNormal = vec4(1.f);
-    // vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
-    // vec4 newNormal = normalize(VP * vec4(primaryNormal.x, primaryNormal.y, primaryNormal.z, 0.f));
-    // newNormal.a = 1.f;
-    // vec4 accumAlbedo = (newAlbedo + float(LP.frameID) * oldAlbedo) / float(LP.frameID + 1);
-    // vec4 accumNormal = (newNormal + float(LP.frameID) * oldNormal) / float(LP.frameID + 1);
-    // LP.albedoBuffer[fbOfs] = accumAlbedo;
-    // LP.normalBuffer[fbOfs] = accumNormal;    
+    albedoPtr[fbOfs] = make_float4(accumAlbedo);
+    normalPtr[fbOfs] = make_float4(accumNormal);    
 }
