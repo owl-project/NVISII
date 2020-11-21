@@ -506,6 +506,12 @@ void initializeOptix(bool headless)
     using namespace glm;
     auto &OD = OptixData;
     OD.context = owlContextCreate(/*requested Device IDs*/ nullptr, /* Num Devices */  0);
+
+    int numGPUsFound = owlGetDeviceCount(OD.context);
+    if (verbose) {
+        std::cout<<"Found " << numGPUsFound << " GPUs available for rendering."<<std::endl;
+    }
+
     owlEnableMotionBlur(OD.context);
     owlContextSetRayTypeCount(OD.context, 2);
     cudaSetDevice(0); // OWL leaves the device as num_devices - 1 after the context is created. set it back to 0.
@@ -578,11 +584,11 @@ void initializeOptix(bool headless)
     }
 
     OD.frameBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.accumBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.normalBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.albedoBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.scratchBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.mvecBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.accumBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.normalBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.albedoBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.scratchBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.mvecBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
     OD.LP.frameSize = glm::ivec2(512, 512);
     launchParamsSetBuffer(OD.launchParams, "frameBuffer", OD.frameBuffer);
     launchParamsSetBuffer(OD.launchParams, "normalBuffer", OD.normalBuffer);
@@ -697,8 +703,12 @@ void initializeOptix(bool headless)
     OD.missProg = missProgCreate(OD.context,OD.module,"miss",sizeof(MissProgData),missProgVars,-1);
     
     // Setup ray gen program
-    OWLVarDecl rayGenVars[] = {{ /* sentinel to mark end of list */ }};
+    OWLVarDecl rayGenVars[] = {
+        { "deviceIndex",   OWL_DEVICE, OWL_OFFSETOF(RayGenData, deviceIndex)}, // this var is automatically set
+        { "deviceCount",   OWL_INT,    OWL_OFFSETOF(RayGenData, deviceCount)},
+        { /* sentinel to mark end of list */ }};
     OD.rayGen = rayGenCreate(OD.context,OD.module,"rayGen", sizeof(RayGenData), rayGenVars,-1);
+    owlRayGenSet1i(OD.rayGen, "deviceCount",  numGPUsFound);
 
     // Build *SBT* required to trace the groups   
     buildPrograms(OD.context);

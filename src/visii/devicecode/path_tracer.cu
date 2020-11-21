@@ -560,10 +560,27 @@ glm::mat4 test_interpolate(glm::mat4& _mat1, glm::mat4& _mat2, float _time)
 
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
+    const RayGenData &self = owl::getProgramData<RayGenData>();
+    
     auto &LP = optixLaunchParams;
     auto launchIndex = optixGetLaunchIndex().x;
     auto launchDim = optixGetLaunchDimensions().x;
     auto pixelID = ivec2(launchIndex % LP.frameSize.x, launchIndex / LP.frameSize.x);
+
+    /* compute who is repsonible for a given group of pixels */
+    /* and if it's not us, just return. */
+    /* (some other device will compute these pixels) */
+    // int deviceThatIsResponsible = (pixelID.x>>5) % self.deviceCount;
+    int deviceThatIsResponsible = (pixelID.x>>5) % self.deviceCount;
+    if (self.deviceIndex != deviceThatIsResponsible) {
+        // auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
+        // float4* accumPtr = (float4*) LP.accumPtr;
+        // float4* fbPtr = (float4*) LP.frameBuffer;
+        // accumPtr[fbOfs] = make_float4(0.f);
+        // fbPtr[fbOfs] = make_float4(0.f);
+        return;
+    }
+
     auto dims = ivec2(LP.frameSize.x, LP.frameSize.x);
     uint64_t start_clock = clock();
     int numLights = LP.numLightEntities;
