@@ -583,12 +583,21 @@ void initializeOptix(bool headless)
         initializeFrameBuffer(512, 512);        
     }
 
-    OD.frameBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.accumBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.normalBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.albedoBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.scratchBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.mvecBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    if (numGPUsFound > 1) {
+        OD.frameBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.accumBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.normalBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.albedoBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.scratchBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.mvecBuffer = managedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    } else {
+        OD.frameBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.accumBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.normalBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.albedoBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.scratchBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.mvecBuffer = deviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    }
     OD.LP.frameSize = glm::ivec2(512, 512);
     launchParamsSetBuffer(OD.launchParams, "frameBuffer", OD.frameBuffer);
     launchParamsSetBuffer(OD.launchParams, "normalBuffer", OD.normalBuffer);
