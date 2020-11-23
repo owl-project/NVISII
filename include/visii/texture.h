@@ -69,7 +69,7 @@ class Texture : public StaticFactory
 	 * @param hdr If true, represents the channels of the texture using 32 bit floats. Otherwise, textures are stored natively using 8 bits per channel.
      * @returns a Texture allocated by the renderer. 
 	*/
-	static Texture *createMix(std::string name, Texture* a, Texture* b, float mix, bool hdr = false);
+	static Texture *createMix(std::string name, Texture* a, Texture* b, float mix = 1.0, bool hdr = false);
 
 	/** 
 	 * Constructs a Texture with the given name that adds two different textures together.
@@ -104,7 +104,7 @@ class Texture : public StaticFactory
 	 * @param hdr If true, represents the channels of the texture using 32 bit floats. Otherwise, textures are stored natively using 8 bits per channel. 
      * @returns a Texture allocated by the renderer. 
 	*/
-	static Texture* createHSV(std::string name, Texture* tex, float hue, float saturation, float value, float mix, bool hdr = false);
+	static Texture* createHSV(std::string name, Texture* tex, float hue, float saturation, float value, float mix = 1.0, bool hdr = false);
 
     /**
      * @param name The name of the Texture to get

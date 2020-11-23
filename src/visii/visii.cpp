@@ -1704,12 +1704,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
         synchronizeDevices();
 
         const glm::vec4 *fb = (const glm::vec4*) bufferGetPointer(OptixData.frameBuffer,0);
-        for (uint32_t test = 0; test < frameBuffer.size(); test += 4) {
-            frameBuffer[test + 0] = fb[test / 4].r;
-            frameBuffer[test + 1] = fb[test / 4].g;
-            frameBuffer[test + 2] = fb[test / 4].b;
-            frameBuffer[test + 3] = fb[test / 4].a;
-        }
+        cudaMemcpyAsync(frameBuffer.data(), fb, width * height * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
 
         synchronizeDevices();
     };
