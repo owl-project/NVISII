@@ -45,8 +45,9 @@
 #endif
 #include <tinyexr.h>
 
-#define USE_OPTIX70
-#undef USE_OPTIX71
+#define USE_AOV
+#define USE_OPTIX72
+// #undef USE_OPTIX71
 
 // #define __optix_optix_function_table_h__
 #include <optix_stubs.h>
@@ -138,6 +139,7 @@ static struct OptixData {
     OWLBuffer denoiserScratchBuffer;
     OWLBuffer denoiserStateBuffer;
     OWLBuffer hdrIntensityBuffer;
+    OWLBuffer colorAvgBuffer;
 
     Texture* domeLightTexture = nullptr;
 
@@ -727,11 +729,17 @@ void initializeOptix(bool headless)
     // Setup denoiser
     OptixDenoiserOptions options;
     options.inputKind = OPTIX_DENOISER_INPUT_RGB_ALBEDO_NORMAL;
+    #ifndef USE_OPTIX72
     options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
+    #endif
     auto optixContext = getOptixContext(OD.context, 0);
     auto cudaStream = getStream(OD.context, 0);
     OPTIX_CHECK(optixDenoiserCreate(optixContext, &options, &OD.denoiser));
+    #ifndef USE_AOV
     OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_HDR;
+    #else
+    OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_AOV;
+    #endif
     
     OPTIX_CHECK(optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0));
 
@@ -749,6 +757,9 @@ void initializeOptix(bool headless)
         OD.denoiserSizes.stateSizeInBytes, nullptr);
     OD.hdrIntensityBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(float),
         1, nullptr);
+    OD.colorAvgBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(float),
+        4, nullptr);
+        
 
     OPTIX_CHECK(optixDenoiserSetup (
         OD.denoiser, 
@@ -1479,7 +1490,10 @@ void denoiseImage() {
     scratchSizeInBytes = OD.denoiserSizes.withOverlapScratchSizeInBytes;
     #endif
 
+    OptixDenoiserParams params;
+
     // compute average pixel intensity for hdr denoising
+    // just for simplicity, I'm calling both of these for now
     OPTIX_CHECK(optixDenoiserComputeIntensity(
         OD.denoiser, 
         cudaStream, 
@@ -1487,11 +1501,20 @@ void denoiseImage() {
         (CUdeviceptr) bufferGetPointer(OD.hdrIntensityBuffer, 0),
         (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0),
         scratchSizeInBytes));
+    OPTIX_CHECK(optixDenoiserComputeAverageColor(
+        OD.denoiser, 
+        cudaStream, 
+        &inputLayers[0], 
+        (CUdeviceptr) bufferGetPointer(OD.colorAvgBuffer, 0),
+        (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0),
+        scratchSizeInBytes));
 
-    OptixDenoiserParams params;
     params.denoiseAlpha = 0;    // Don't touch alpha.
     params.blendFactor  = 0.0f; // Show the denoised image only.
     params.hdrIntensity = (CUdeviceptr) bufferGetPointer(OD.hdrIntensityBuffer, 0);
+    #ifdef USE_OPTIX72
+    params.hdrAverageColor = (CUdeviceptr) bufferGetPointer(OD.colorAvgBuffer, 0);
+    #endif
     
     OPTIX_CHECK(optixDenoiserInvoke(
         OD.denoiser,

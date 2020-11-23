@@ -293,8 +293,8 @@ find_program(BIN2C bin2c
   /usr/local/cuda/bin)
 
 # optix 7
-set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
-find_package(OptiX REQUIRED VERSION 7.0)
+set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.2.0/)
+find_package(OptiX REQUIRED VERSION 7.2)
 #include_directories(${OptiX_INCLUDE})
 
 
