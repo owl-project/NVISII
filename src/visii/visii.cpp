@@ -134,6 +134,9 @@ static struct OptixData {
     std::vector<uint32_t> lightEntities;
 
     bool enableDenoiser = false;
+    bool enableKernelPrediction = true;
+    bool enableAlbedoGuide = true;
+    bool enableNormalGuide = true;
     OptixDenoiserSizes denoiserSizes;
     OptixDenoiser denoiser;
     OWLBuffer denoiserScratchBuffer;
@@ -735,12 +738,8 @@ void initializeOptix(bool headless)
     auto optixContext = getOptixContext(OD.context, 0);
     auto cudaStream = getStream(OD.context, 0);
     OPTIX_CHECK(optixDenoiserCreate(optixContext, &options, &OD.denoiser));
-    #ifndef USE_AOV
-    OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_HDR;
-    #else
-    OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_AOV;
-    #endif
     
+    OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_AOV;
     OPTIX_CHECK(optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0));
 
     OPTIX_CHECK(optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes));
@@ -1470,7 +1469,7 @@ void denoiseImage() {
     albedoLayer.pixelStrideInBytes = 4 * sizeof(float);
     albedoLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
     albedoLayer.data   = (CUdeviceptr) bufferGetPointer(OD.albedoBuffer, 0);
-    inputLayers.push_back(albedoLayer);
+    if (OD.enableAlbedoGuide) inputLayers.push_back(albedoLayer);
 
     OptixImage2D normalLayer;
     normalLayer.width = OD.LP.frameSize.x;
@@ -1479,7 +1478,7 @@ void denoiseImage() {
     normalLayer.pixelStrideInBytes = 4 * sizeof(float);
     normalLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
     normalLayer.data   = (CUdeviceptr) bufferGetPointer(OD.normalBuffer, 0);
-    inputLayers.push_back(normalLayer);
+    if (OD.enableNormalGuide) inputLayers.push_back(normalLayer);
 
     OptixImage2D outputLayer = colorLayer; // can I get away with this?
 
@@ -1492,22 +1491,25 @@ void denoiseImage() {
 
     OptixDenoiserParams params;
 
-    // compute average pixel intensity for hdr denoising
-    // just for simplicity, I'm calling both of these for now
-    OPTIX_CHECK(optixDenoiserComputeIntensity(
-        OD.denoiser, 
-        cudaStream, 
-        &inputLayers[0], 
-        (CUdeviceptr) bufferGetPointer(OD.hdrIntensityBuffer, 0),
-        (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0),
-        scratchSizeInBytes));
-    OPTIX_CHECK(optixDenoiserComputeAverageColor(
-        OD.denoiser, 
-        cudaStream, 
-        &inputLayers[0], 
-        (CUdeviceptr) bufferGetPointer(OD.colorAvgBuffer, 0),
-        (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0),
-        scratchSizeInBytes));
+    if (!OD.enableKernelPrediction) {
+        OPTIX_CHECK(optixDenoiserComputeIntensity(
+            OD.denoiser, 
+            cudaStream, 
+            &inputLayers[0], 
+            (CUdeviceptr) bufferGetPointer(OD.hdrIntensityBuffer, 0),
+            (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0),
+            scratchSizeInBytes));
+    }
+
+    if (!OD.enableKernelPrediction) {
+        OPTIX_CHECK(optixDenoiserComputeAverageColor(
+            OD.denoiser, 
+            cudaStream, 
+            &inputLayers[0], 
+            (CUdeviceptr) bufferGetPointer(OD.colorAvgBuffer, 0),
+            (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0),
+            scratchSizeInBytes));
+    }
 
     params.denoiseAlpha = 0;    // Don't touch alpha.
     params.blendFactor  = 0.0f; // Show the denoised image only.
@@ -1640,6 +1642,72 @@ void disableDenoiser()
     auto disableDenoiser = [] () { OptixData.enableDenoiser = false; };
     auto f = enqueueCommand(disableDenoiser);
     if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
+}
+
+void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelPrediction)
+{
+    if (useNormalGuide && (!useAlbedoGuide)) {
+        throw std::runtime_error("Error, unsupported denoiser configuration."
+            "If normal guide is enabled, albedo guide must also be enabled.");
+    }
+
+    auto func = [useAlbedoGuide, useNormalGuide, useKernelPrediction](){
+        OptixData.enableAlbedoGuide = useAlbedoGuide;
+        OptixData.enableNormalGuide = useNormalGuide;
+        OptixData.enableKernelPrediction = useKernelPrediction;
+
+        // Reconfigure denoiser
+
+        // Setup denoiser
+        OptixDenoiserOptions options;
+        if ((!useAlbedoGuide) && (!useNormalGuide)) options.inputKind = OPTIX_DENOISER_INPUT_RGB;
+        else if (!useNormalGuide) options.inputKind = OPTIX_DENOISER_INPUT_RGB_ALBEDO;
+        else options.inputKind = OPTIX_DENOISER_INPUT_RGB_ALBEDO_NORMAL;
+
+        #ifndef USE_OPTIX72
+        options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
+        #endif
+
+        if (OptixData.denoiser) optixDenoiserDestroy(OptixData.denoiser);
+        
+        auto optixContext = getOptixContext(OptixData.context, 0);
+        auto cudaStream = getStream(OptixData.context, 0);
+        OPTIX_CHECK(optixDenoiserCreate(optixContext, &options, &OptixData.denoiser));
+
+        OptixDenoiserModelKind kind;
+        if (OptixData.enableKernelPrediction) kind = OPTIX_DENOISER_MODEL_KIND_AOV;
+        else kind = OPTIX_DENOISER_MODEL_KIND_HDR;
+        
+        OPTIX_CHECK(
+            optixDenoiserSetModel(OptixData.denoiser, kind, 
+            /*data*/ nullptr, /*sizeInBytes*/ 0));
+
+        optixDenoiserComputeMemoryResources(OptixData.denoiser, 
+            OptixData.LP.frameSize.x, OptixData.LP.frameSize.y, 
+            &OptixData.denoiserSizes);
+
+        uint64_t scratchSizeInBytes;
+        #ifdef USE_OPTIX70
+        scratchSizeInBytes = OptixData.denoiserSizes.recommendedScratchSizeInBytes;
+        #else
+        scratchSizeInBytes = OptixData.denoiserSizes.withOverlapScratchSizeInBytes;
+        #endif
+        bufferResize(OptixData.denoiserScratchBuffer, scratchSizeInBytes);
+        bufferResize(OptixData.denoiserStateBuffer, OptixData.denoiserSizes.stateSizeInBytes);
+        
+        optixDenoiserSetup (
+            OptixData.denoiser, 
+            (cudaStream_t) cudaStream, 
+            (unsigned int) OptixData.LP.frameSize.x, 
+            (unsigned int) OptixData.LP.frameSize.y, 
+            (CUdeviceptr) bufferGetPointer(OptixData.denoiserStateBuffer, 0), 
+            OptixData.denoiserSizes.stateSizeInBytes,
+            (CUdeviceptr) bufferGetPointer(OptixData.denoiserScratchBuffer, 0), 
+            scratchSizeInBytes
+        );
+    };
+    auto future = enqueueCommand(func);
+    future.wait();
 }
 
 std::vector<float> readFrameBuffer() {

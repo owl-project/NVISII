@@ -224,6 +224,17 @@ void enableDenoiser();
 /** Disables the Optix denoiser. */
 void disableDenoiser();
 
+/**
+ * Controls what guides and modes are used to denoise the image.
+ * @param use_albedo_guide If True, uses albedo to guide the denoiser. Useful for scenes with 
+ * textures or large uniformly colored sections. Can cause issues when denoising motion blur.
+ * @param use_normal_guide If True, uses surface normals to guide the denoiser. Useful for 
+ * scenes where geometrically complex objects do not have distinct albedo (eg walls, uniformly colored objects, etc)
+ * @param use_kernel_prediction If True, uses the OptiX kernel prediction model for denoising, which avoids intensity 
+ * shifts and false color prediction by instead predicting a normalized kernel. 
+*/
+void configureDenoiser(bool use_albedo_guide = true, bool use_normal_guide = true, bool use_kernel_prediction = true);
+
 /** 
  * Renders the current scene, returning the resulting framebuffer back to the user directly.
  * 
