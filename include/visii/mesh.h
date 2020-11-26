@@ -19,9 +19,45 @@
 // #include "Foton/Tools/Options.hxx"
 #include <visii/utilities/static_factory.h>
 #include <visii/mesh_struct.h>
+#include <visii/utilities/hash_combiner.h>
 
 /* Forward declarations */
-class Vertex;
+class Vertex
+{
+  public:
+	glm::vec4 point = glm::vec4(0.0);
+	glm::vec4 color = glm::vec4(1, 0, 1, 1);
+	glm::vec4 normal = glm::vec4(0.0);
+	glm::vec4 tangent = glm::vec4(0.0);
+	glm::vec2 texcoord = glm::vec2(0.0);
+
+	std::vector<glm::vec4> wnormals = {}; // For computing normals
+
+	bool operator==(const Vertex &other) const
+	{
+		bool result =
+			(point == other.point && color == other.color && normal == other.normal && texcoord == other.texcoord);
+		return result;
+	}
+};
+
+namespace std
+{
+template <>
+struct hash<Vertex>
+{
+	size_t operator()(const Vertex &k) const
+	{
+		std::size_t h = 0;
+		hash_combine(h, k.point.x, k.point.y, k.point.z,
+					 k.color.x, k.color.y, k.color.z, k.color.a,
+					 k.normal.x, k.normal.y, k.normal.z,
+					 k.tangent.x, k.tangent.y, k.tangent.z,
+					 k.texcoord.x, k.texcoord.y);
+		return h;
+	}
+};
+} // namespace std
 
 /* Class declaration */
 class Mesh : public StaticFactory
@@ -745,6 +781,9 @@ class Mesh : public StaticFactory
         /** @returns a list of per vertex normals */
         std::vector<glm::vec4> getNormals();
 
+        /** @returns a list of per vertex tangents */
+        std::vector<glm::vec4> getTangents();
+
         /** @returns a list of per vertex texture coordinates */
         std::vector<glm::vec2> getTexCoords();
 
@@ -830,6 +869,9 @@ class Mesh : public StaticFactory
         */
         void generateSmoothNormals();
 
+        // experimental
+        void generateSmoothTangents();
+
         // /* If mesh editing is enabled, replaces the vertex color at the given index with a new vertex color */
         // void edit_vertex_color(uint32_t index, glm::vec4 new_color);
 
@@ -881,6 +923,7 @@ class Mesh : public StaticFactory
         // /* Lists of per vertex data. These might not match GPU memory if editing is disabled. */
         std::vector<std::array<float, 3>> positions;
         std::vector<glm::vec4> normals;
+        std::vector<glm::vec4> tangents;
         std::vector<glm::vec4> colors;
         std::vector<glm::vec2> texCoords;
         // std::vector<uint32_t> tetrahedra_indices;
@@ -972,22 +1015,28 @@ class Mesh : public StaticFactory
         template <class Generator>
         void generateProcedural(Generator &mesh, bool flip_z)
         {
-            std::vector<Vertex> vertices;
-
             auto genVerts = mesh.vertices();
             while (!genVerts.done()) {
                 auto vertex = genVerts.generate();
-                std::array<float, 3> p = {vertex.position.x, vertex.position.y, vertex.position.z};
-                positions.push_back(p);
+                Vertex v = Vertex();
+                v.point = glm::vec4(vertex.position, 1.f);
+                
                 if (flip_z)
-                    normals.push_back(glm::vec4(-vertex.normal.x, -vertex.normal.y, -vertex.normal.z, 0.0f));
+                    v.normal = glm::vec4(-vertex.normal.x, -vertex.normal.y, -vertex.normal.z, 0.0f);
                 else
-                    normals.push_back(glm::vec4(vertex.normal.x, vertex.normal.y, vertex.normal.z, 0.0f));
-                texCoords.push_back(vertex.texCoord);
-                colors.push_back(glm::vec4(0.0, 0.0, 0.0, 0.0));
+                    v.normal = glm::vec4(vertex.normal.x, vertex.normal.y, vertex.normal.z, 0.0f);
+                v.texcoord = vertex.texCoord;
+                
+                this->positions.push_back({v.point.x, v.point.y, v.point.z});
+                this->colors.push_back(v.color);
+                this->normals.push_back(v.normal);
+                this->tangents.push_back(v.tangent);
+                this->texCoords.push_back(v.texcoord);
+
                 genVerts.next();
             }
 
+            // Flatten out index indirection, compute tangents
             auto genTriangles = mesh.triangles();
             while (!genTriangles.done()) {
                 auto triangle = genTriangles.generate();
@@ -995,8 +1044,39 @@ class Mesh : public StaticFactory
                 triangleIndices.push_back(triangle.vertices[1]);
                 triangleIndices.push_back(triangle.vertices[2]);
                 genTriangles.next();
-            }
+            }           
 
+            /* Eliminate duplicate vertices */
+            // std::unordered_map<Vertex, uint32_t> uniqueVertexMap = {};
+            // std::vector<Vertex> uniqueVertices;
+            // for (int i = 0; i < vertices.size(); ++i)
+            // {
+            //     Vertex vertex = vertices[i];
+            //     if (uniqueVertexMap.count(vertex) == 0)
+            //     {
+            //         uniqueVertexMap[vertex] = static_cast<uint32_t>(uniqueVertices.size());
+            //         uniqueVertices.push_back(vertex);
+            //     }
+            //     this->triangleIndices.push_back(uniqueVertexMap[vertex]);
+            // }
+
+            /* Map vertices to buffers */
+            // this->positions.resize(triangleIndices.size());
+            // this->colors.resize(triangleIndices.size());
+            // this->normals.resize(triangleIndices.size());
+            // this->texCoords.resize(triangleIndices.size());
+            // this->tangents.resize(triangleIndices.size());
+            // for (int i = 0; i < uniqueVertices.size(); ++i)
+            // {
+            //     Vertex v = uniqueVertices[i];
+            //     this->positions[i] = {v.point.x, v.point.y, v.point.z};
+            //     this->colors[i] = v.color;
+            //     this->normals[i] = v.normal;
+            //     this->tangents[i] = v.tangent;
+            //     this->texCoords[i] = v.texcoord;
+            // }
+
+            generateSmoothTangents();
             computeMetadata();
         }
 };

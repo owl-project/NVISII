@@ -109,6 +109,7 @@ static struct OptixData {
     OWLBuffer instanceToEntityMapBuffer;
     OWLBuffer vertexListsBuffer;
     OWLBuffer normalListsBuffer;
+    OWLBuffer tangentListsBuffer;
     OWLBuffer texCoordListsBuffer;
     OWLBuffer indexListsBuffer;
     OWLBuffer textureObjectsBuffer;
@@ -124,6 +125,7 @@ static struct OptixData {
 
     std::vector<OWLBuffer> vertexLists;
     std::vector<OWLBuffer> normalLists;
+    std::vector<OWLBuffer> tangentLists;
     std::vector<OWLBuffer> texCoordLists;
     std::vector<OWLBuffer> indexLists;
     std::vector<OWLGeom> geomList;
@@ -544,6 +546,7 @@ void initializeOptix(bool headless)
         { "lightEntities",           OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
         { "vertexLists",             OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
         { "normalLists",             OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, normalLists)},
+        { "tangentLists",            OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, tangentLists)},
         { "texCoordLists",           OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, texCoordLists)},
         { "indexLists",              OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, indexLists)},
         { "numLightEntities",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
@@ -625,6 +628,7 @@ void initializeOptix(bool headless)
     OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
+    OD.tangentListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        Texture::getCount() + NUM_MAT_PARAMS * Material::getCount(),   nullptr);
@@ -640,6 +644,7 @@ void initializeOptix(bool headless)
     launchParamsSetBuffer(OD.launchParams, "instanceToEntityMap",  OD.instanceToEntityMapBuffer);
     launchParamsSetBuffer(OD.launchParams, "vertexLists",          OD.vertexListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "normalLists",          OD.normalListsBuffer);
+    launchParamsSetBuffer(OD.launchParams, "tangentLists",          OD.tangentListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "texCoordLists",        OD.texCoordListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "indexLists",           OD.indexListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "textureObjects",       OD.textureObjectsBuffer);
@@ -647,6 +652,7 @@ void initializeOptix(bool headless)
     uint32_t meshCount = Mesh::getCount();
     OD.vertexLists.resize(meshCount);
     OD.normalLists.resize(meshCount);
+    OD.tangentLists.resize(meshCount);
     OD.texCoordLists.resize(meshCount);
     OD.indexLists.resize(meshCount);
     OD.geomList.resize(meshCount);
@@ -1136,6 +1142,7 @@ void updateComponents()
                 OD.vertexLists[m->getAddress()] = nullptr; 
             }
             if (OD.normalLists[m->getAddress()]) { owlBufferRelease(OD.normalLists[m->getAddress()]); OD.normalLists[m->getAddress()] = nullptr; }
+            if (OD.tangentLists[m->getAddress()]) { owlBufferRelease(OD.tangentLists[m->getAddress()]); OD.tangentLists[m->getAddress()] = nullptr; }
             if (OD.texCoordLists[m->getAddress()]) { owlBufferRelease(OD.texCoordLists[m->getAddress()]); OD.texCoordLists[m->getAddress()] = nullptr; }
             if (OD.indexLists[m->getAddress()]) { owlBufferRelease(OD.indexLists[m->getAddress()]); OD.indexLists[m->getAddress()] = nullptr; }
             if (OD.geomList[m->getAddress()]) { owlGeomRelease(OD.geomList[m->getAddress()]); OD.geomList[m->getAddress()] = nullptr; }
@@ -1147,6 +1154,7 @@ void updateComponents()
 
             OD.vertexLists[m->getAddress()]  = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec3), m->getVertices().size(), m->getVertices().data());
             OD.normalLists[m->getAddress()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getNormals().size(), m->getNormals().data());
+            OD.tangentLists[m->getAddress()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getTangents().size(), m->getTangents().data());
             OD.texCoordLists[m->getAddress()] = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2), m->getTexCoords().size(), m->getTexCoords().data());
             OD.indexLists[m->getAddress()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t), m->getTriangleIndices().size(), m->getTriangleIndices().data());
             OD.geomList[m->getAddress()]      = geomCreate(OD.context, OD.trianglesGeomType);
@@ -1160,6 +1168,7 @@ void updateComponents()
         bufferUpload(OD.texCoordListsBuffer, OD.texCoordLists.data());
         bufferUpload(OD.indexListsBuffer, OD.indexLists.data());
         bufferUpload(OD.normalListsBuffer, OD.normalLists.data());
+        bufferUpload(OD.tangentListsBuffer, OD.tangentLists.data());
         Mesh::updateComponents();
         bufferUpload(OptixData.meshBuffer, Mesh::getFrontStruct());
     }    

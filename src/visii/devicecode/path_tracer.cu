@@ -247,7 +247,7 @@ void loadMeshUVData(int meshID, int numTexCoords, int3 indices, float2 barycentr
 }
 
 __device__
-void loadMeshNormalData(int meshID, int numNormals, int3 indices, float2 barycentrics, float2 uv, float3 &normal)
+void loadMeshNormalData(int meshID, int numNormals, int3 indices, float2 barycentrics, float3 &normal)
 {
     auto &LP = optixLaunchParams;
     auto normals = LP.normalLists.get(meshID, __LINE__);
@@ -255,6 +255,17 @@ void loadMeshNormalData(int meshID, int numNormals, int3 indices, float2 barycen
     const float3 &B = make_float3(normals.get(indices.y, __LINE__));
     const float3 &C = make_float3(normals.get(indices.z, __LINE__));
     normal = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
+}
+
+__device__
+void loadMeshTangentData(int meshID, int numTangents, int3 indices, float2 barycentrics, float3 &tangent)
+{
+    auto &LP = optixLaunchParams;
+    auto tangents = LP.tangentLists.get(meshID, __LINE__);
+    const float3 &A = make_float3(tangents.get(indices.x, __LINE__));
+    const float3 &B = make_float3(tangents.get(indices.y, __LINE__));
+    const float3 &C = make_float3(tangents.get(indices.z, __LINE__));
+    tangent = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
 }
 
 __device__ 
@@ -523,10 +534,10 @@ __device__
 float3 faceNormalForward(const float3 &w_o, const float3 &gn, const float3 &n)
 {
     float3 new_n = n;
-    if (dot(w_o, new_n) < 0.f) {
-        // prevents differences from geometric and shading normal from creating black artifacts
-        new_n = reflect(-new_n, gn); 
-    }
+    // if (dot(w_o, new_n) < 0.f) {
+    //     // prevents differences from geometric and shading normal from creating black artifacts
+    //     new_n = reflect(-new_n, gn); 
+    // }
     if (dot(w_o, new_n) < 0.f) {
         new_n = -new_n;
     }
@@ -690,9 +701,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         int3 indices;
         float3 diffuseMotion;
         loadMeshTriIndices(entity.mesh_id, mesh.numTris, payload.primitiveID, indices);
-        loadMeshVertexData(entity.mesh_id, mesh.numVerts, indices, payload.barycentrics, mp, v_gz, p_e1, p_e2);
-        loadMeshUVData(entity.mesh_id, mesh.numVerts, indices, payload.barycentrics, uv, uv_e1, uv_e2);
-        loadMeshNormalData(entity.mesh_id, mesh.numVerts, indices, payload.barycentrics, uv, v_z);
+        loadMeshVertexData(entity.mesh_id, mesh.numVerts, indices, payload.barycentrics, mp, v_gz, p_e1, p_e2); // todo, remomve pe1,pe2
+        loadMeshUVData(entity.mesh_id, mesh.numVerts, indices, payload.barycentrics, uv, uv_e1, uv_e2); // todo, remove e1, e2
+        loadMeshNormalData(entity.mesh_id, mesh.numVerts, indices, payload.barycentrics, v_z);
+        loadMeshTangentData(entity.mesh_id, mesh.numVerts, indices, payload.barycentrics, v_x);
 
         // Load material data for the hit object
         DisneyMaterial mat; MaterialStruct entityMaterial;
@@ -702,12 +714,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
        
         // Compute tangent and bitangent based on UVs
-        {
-            float f = 1.0f / (uv_e1.x * uv_e2.y - uv_e2.x * uv_e1.y);
-            v_x.x = f * (uv_e2.y * p_e1.x - uv_e1.y * p_e2.x);
-            v_x.y = f * (uv_e2.y * p_e1.y - uv_e1.y * p_e2.y);
-            v_x.z = f * (uv_e2.y * p_e1.z - uv_e1.y * p_e2.z);
-        }
+        // {
+        //     float f = 1.0f / (uv_e1.x * uv_e2.y - uv_e2.x * uv_e1.y);
+        //     v_x.x = f * (uv_e2.y * p_e1.x - uv_e1.y * p_e2.x);
+        //     v_x.y = f * (uv_e2.y * p_e1.y - uv_e1.y * p_e2.y);
+        //     v_x.z = f * (uv_e2.y * p_e1.z - uv_e1.y * p_e2.z);
+        // }
             
         // Transform geometry data into world space
         {
@@ -721,6 +733,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_gz = make_float3(normalize(nxfm * make_vec3(v_gz)));
             v_z = make_float3(normalize(nxfm * make_vec3(v_z)));
             v_x = make_float3(normalize(nxfm * make_vec3(v_x)));
+
+            
             v_y = -cross(v_z, v_x);
             v_x = -cross(v_y, v_z);
 
@@ -745,8 +759,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             all(lessThan(abs(make_vec3(v_y)), vec3(EPSILON))) ||
             any(isnan(make_vec3(v_x))) || 
             any(isnan(make_vec3(v_y)))
-        ) 
-        {
+        ) {
             ortho_basis(v_x, v_y, v_z);
         }
 
@@ -761,9 +774,27 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 dN = make_float3(0.5f, .5f, 1.f);
             } else {
                 dN = sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float3(0.5f, .5f, 1.f));
-            }            
+            }
+
             dN = normalize( (dN * make_float3(2.0f)) - make_float3(1.f) );   
             v_z = make_float3(tbn * make_vec3(dN));
+        }
+
+        // // TEMP CODE
+        // auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
+        // LP.frameBuffer[fbOfs] = make_vec4(v_z, 1.f);
+        // return;
+
+        // If we didn't hit glass, flip the surface normal to face forward.
+        if ((mat.specular_transmission == 0.f) && (entity.light_id == -1)) {
+            v_z = faceNormalForward(w_o, v_gz, v_z);
+        }
+
+        // For segmentations, save geometric metadata
+        saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, uv, entityID, diffuseMotion, time, mat);
+        if (bounce == 0) {
+            primaryAlbedo = mat.base_color;
+            primaryNormal = v_z;
         }
 
         // Potentially skip forward if the hit object is transparent 
@@ -779,18 +810,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 specularBounce++; // counting transparency as a specular bounce for now
                 continue;
             }
-        }
-
-        // If we didn't hit glass, flip the surface normal to face forward.
-        if ((mat.specular_transmission == 0.f) && (entity.light_id == -1)) {
-            v_z = faceNormalForward(w_o, v_gz, v_z);
-        }
-
-        // For segmentations, save geometric metadata
-        saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, uv, entityID, diffuseMotion, time, mat);
-        if (bounce == 0) {
-            primaryAlbedo = mat.base_color;
-            primaryNormal = v_z;
         }
 
         // If the entity we hit is a light, terminate the path.

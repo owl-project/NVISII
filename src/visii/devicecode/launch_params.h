@@ -75,6 +75,7 @@ struct LaunchParams {
 
     Buffer<Buffer<float3>> vertexLists;
     Buffer<Buffer<float4>> normalLists;
+    Buffer<Buffer<float4>> tangentLists;
     Buffer<Buffer<float2>> texCoordLists;
     Buffer<Buffer<int3>> indexLists;
 

@@ -17,7 +17,6 @@
 
 #include <visii/mesh.h>
 #include <visii/entity.h>
-#include <visii/utilities/hash_combiner.h>
 
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -32,24 +31,6 @@ std::shared_ptr<std::recursive_mutex> Mesh::editMutex;
 bool Mesh::factoryInitialized = false;
 std::set<Mesh*> Mesh::dirtyMeshes;
 
-class Vertex
-{
-  public:
-	glm::vec4 point = glm::vec4(0.0);
-	glm::vec4 color = glm::vec4(1, 0, 1, 1);
-	glm::vec4 normal = glm::vec4(0.0);
-	glm::vec2 texcoord = glm::vec2(0.0);
-
-	std::vector<glm::vec4> wnormals = {}; // For computing normals
-
-	bool operator==(const Vertex &other) const
-	{
-		bool result =
-			(point == other.point && color == other.color && normal == other.normal && texcoord == other.texcoord);
-		return result;
-	}
-};
-
 void buildOrthonormalBasis(glm::vec3 n, glm::vec3 &b1, glm::vec3 &b2)
 {
     if (n.z < -0.9999999)
@@ -63,23 +44,6 @@ void buildOrthonormalBasis(glm::vec3 n, glm::vec3 &b1, glm::vec3 &b2)
     b1 = glm::vec3(1.0 - n.x*n.x*a, b, -n.x);
     b2 = glm::vec3(b, 1.0 - n.y*n.y*a, -n.y);
 }
-
-namespace std
-{
-template <>
-struct hash<Vertex>
-{
-	size_t operator()(const Vertex &k) const
-	{
-		std::size_t h = 0;
-		hash_combine(h, k.point.x, k.point.y, k.point.z,
-					 k.color.x, k.color.y, k.color.z, k.color.a,
-					 k.normal.x, k.normal.y, k.normal.z,
-					 k.texcoord.x, k.texcoord.y);
-		return h;
-	}
-};
-} // namespace std
 
 Mesh::Mesh() {
 	this->initialized = false;
@@ -131,6 +95,10 @@ std::vector<glm::vec4> Mesh::getColors() {
 
 std::vector<glm::vec4> Mesh::getNormals() {
 	return normals;
+}
+
+std::vector<glm::vec4> Mesh::getTangents() {
+	return tangents;
 }
 
 std::vector<glm::vec2> Mesh::getTexCoords() {
@@ -415,6 +383,110 @@ void Mesh::generateSmoothNormals()
 
 		// normalize the final normal
 		normals[v] = glm::normalize(glm::vec4(N.x, N.y, N.z, 0.0f));
+	}
+
+	markDirty();
+}
+
+void Mesh::generateSmoothTangents()
+{
+	tangents.resize(positions.size());
+	std::vector<std::vector<glm::vec4>> w_tangents(positions.size());
+
+	for (uint32_t f = 0; f < triangleIndices.size(); f += 3)
+	{
+		uint32_t i1 = triangleIndices[f + 0];
+		uint32_t i2 = triangleIndices[f + 1];
+		uint32_t i3 = triangleIndices[f + 2];
+
+		// p1, p2 and p3 are the positions in the face (f)
+		auto p1 = glm::vec3(positions[i1][0], positions[i1][1], positions[i1][2]);
+		auto p2 = glm::vec3(positions[i2][0], positions[i2][1], positions[i2][2]);
+		auto p3 = glm::vec3(positions[i3][0], positions[i3][1], positions[i3][2]);
+
+		auto uv1 = texCoords[i1];
+		auto uv2 = texCoords[i2];
+		auto uv3 = texCoords[i3];
+
+		// calculate facet normal of the triangle  using cross product;
+		// both components are "normalized" against a common point chosen as the base
+		// auto n = glm::cross((p2 - p1), (p3 - p1));    // p1 is the 'base' here
+
+
+		// std::vector<Vertex> tangentVertices;
+		// Vertex v1 = vertices[triangle.vertices[0]];
+		// Vertex v2 = vertices[triangle.vertices[1]];
+		// Vertex v3 = vertices[triangle.vertices[2]];
+		
+		// Compute tangents for normal mapping and anisotropy
+		auto compute_tangent = [] (
+		    glm::vec3 A, glm::vec3 B, glm::vec3 C, 
+		    glm::vec2 H, glm::vec2 K, glm::vec2 L) -> glm::vec3
+		{
+		    glm::vec3 D = B-A;
+		    glm::vec3 E = C-A;
+		    glm::vec2 F = K-H;
+		    glm::vec2 G = L-H;
+		    float f = 1.0f / (F.s * G.t - G.s * F.t);
+		    glm::vec3 T;
+		    T.x = f * (D.x * G.t - F.t * E.x);
+		    T.y = f * (D.y * G.t - F.t * E.y);
+		    T.z = f * (D.z * G.t - F.t * E.z);
+		    return glm::normalize(T);
+		};
+		
+		auto n = compute_tangent(p1, p2, p3, uv1, uv2, uv3);
+		// std::cout<<n.x << " " << n.y << " " << n.z << " " << std::endl;
+
+		// glm::vec3 A = glm::vec3(v1.point);            
+		// glm::vec3 B = glm::vec3(v2.point);
+		// glm::vec3 C = glm::vec3(v3.point);
+		// glm::vec2 H = v1.texcoord;
+		// glm::vec2 K = v2.texcoord;
+		// glm::vec2 L = v3.texcoord;
+
+		// v1.tangent = glm::vec4(compute_tangent(A, B, C, H, K, L), 0.f);
+		// v2.tangent = glm::vec4(compute_tangent(C, A, B, L, H, K), 0.f);
+		// v3.tangent = glm::vec4(compute_tangent(B, C, A, K, L, H), 0.f);
+		// tangentVertices.push_back(v1);
+		// tangentVertices.push_back(v2);
+		// tangentVertices.push_back(v3);
+
+
+
+		// get the angle between the two other positions for each point;
+		// the starting point will be the 'base' and the two adjacent positions will be normalized against it
+		auto a1 = glm::angle(glm::normalize(p2 - p1), glm::normalize(p3 - p1));    // p1 is the 'base' here
+		auto a2 = glm::angle(glm::normalize(p3 - p2), glm::normalize(p1 - p2));    // p2 is the 'base' here
+		auto a3 = glm::angle(glm::normalize(p1 - p3), glm::normalize(p2 - p3));    // p3 is the 'base' here
+
+		// normalize the initial facet tangents if you want to ignore surface area
+		// if (!area_weighting)
+		// {
+		//    n = glm::normalize(n);
+		// }
+
+		// store the weighted normal in an structured array
+		auto wn1 = n * a1;
+		auto wn2 = n * a2;
+		auto wn3 = n * a3;
+		w_tangents[i1].push_back(glm::vec4(wn1.x, wn1.y, wn1.z, 0.f));
+		w_tangents[i2].push_back(glm::vec4(wn2.x, wn2.y, wn2.z, 0.f));
+		w_tangents[i3].push_back(glm::vec4(wn3.x, wn3.y, wn3.z, 0.f));
+	}
+	for (uint32_t v = 0; v < w_tangents.size(); v++)
+	{
+		glm::vec4 N = glm::vec4(0.0);
+
+		// run through the tangents in each vertex's array and interpolate them
+		// vertex(v) here fetches the data of the vertex at index 'v'
+		for (uint32_t n = 0; n < w_tangents[v].size(); n++)
+		{
+			N += w_tangents[v][n];
+		}
+
+		// normalize the final normal
+		tangents[v] = glm::normalize(glm::vec4(N.x, N.y, N.z, 0.0f));
 	}
 
 	markDirty();
@@ -1243,6 +1315,7 @@ Mesh* Mesh::createFromFile(std::string name, std::string path)
 			off += aiMesh->mNumVertices;
 		}
 
+		mesh->generateSmoothTangents();
 		mesh->computeMetadata();
 
 		aiReleaseImport(scene);
@@ -1275,6 +1348,7 @@ Mesh* Mesh::createFromData(
 	{
 		mesh->loadData(positions_, position_dimensions, normals_, normal_dimensions, 
 			colors_, color_dimensions, texcoords_, texcoord_dimensions, indices_);
+		mesh->generateSmoothTangents();
 		dirtyMeshes.insert(mesh);
 	};
 	
