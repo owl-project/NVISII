@@ -1,9 +1,7 @@
 /* File shared by both host and device */
 #pragma once
 
-#define MAX_MATERIALS 100000
 #define NUM_MAT_PARAMS 19
-
 #include <stdint.h>
 #include <glm/glm.hpp>
 using namespace glm;

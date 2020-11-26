@@ -94,9 +94,24 @@ A simple script that loads a texture, normal and roughness map and apply them to
 ## 15.camera_motion_car_blur.py
 An interactive demo for controlling the camera similar to to a first person shooter control using `w,a,s,d` and `q` and `e` for up and down. Using the left click on the mouse you can rotate the camera. Here is an [example](https://imgur.com/VYda2UF) of the sort of motion you can generate.
 
-## 16.load_stl.py
-This example shows how to use `open3d` to load a 3d `stl` object and render it with visii. 
+## 16.create_mesh_from_data.py
+This example shows how to create a mesh using an external package (in this case, `open3d`) and render it with visii. 
 This is the exact same scene as `4.load_obj_file.py`. 
+
+## 17.materials_visii_interactive.py
+Although not entirely realistic, alpha transparency is a useful feature for making objects "see-through" without necessarily bending rays due to refraction. This is commonly used to handle alpha cutouts (eg. for leaves) but is also used frequently when "visualizing" scientific data. 
+You can also explore the different material propreties in visii and see how they affect the mesh. 
+Here, we use PySide2 to demonstrate the difference between "alpha transparency" and "transmission.
+
+## 18.materials.py
+An example showing the different materials and how they impact the mesh. 
+
+## 19.depth_map_to_point_cloud.py
+This example shows how you can go from a depth map to a point cloud. Please consult [this](https://dsp.stackexchange.com/questions/26373/what-is-the-difference-between-a-range-image-and-a-depth-map) for more informantion between computer vision and graphics depth map. 
+
+## 20.motion_vectors.py
+An example to show you how to export motion vectors, they are very similar optical flow in computer vision, but it will break with reflective materials. The script outputs frame 0, moves an object, and export frame 1 as well as the motion vector between the two frames. 
+
 
 ## Notes
 All these examples were developed and tested on Ubuntu 18.04 with cuda 11.0, NVIDIA drivers

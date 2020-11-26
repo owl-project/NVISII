@@ -50,11 +50,8 @@ __device__ float lcg_randomf(LCGRand &rng)
     return ldexp((float)lcg_random(rng), -32);
 }
 
-__device__ LCGRand get_rng(int frame_id)
+__device__ LCGRand get_rng(int frame_id, uint2 pixel, uint2 dims)
 {
-    const uint2 pixel = make_uint2(optixGetLaunchIndex().x, optixGetLaunchIndex().y);
-    const uint2 dims = make_uint2(optixGetLaunchDimensions().x, optixGetLaunchDimensions().y);
-
     LCGRand rng;
     rng.state = murmur_hash3_mix(0, pixel.x + pixel.y * dims.x);
     rng.state = murmur_hash3_mix(rng.state, frame_id);

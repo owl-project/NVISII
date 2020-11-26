@@ -1,12 +1,19 @@
+#define GLM_FORCE_CUDA
+#define PMEVENT( x ) asm volatile("pmevent " #x ";")
+
+#include <stdint.h>
+#include "launch_params.h"
+#include "types.h"
 #include "path_tracer.h"
 #include "disney_bsdf.h"
 #include "lights.h"
-#include "launch_params.h"
-#include "types.h"
+#include "math.h"
 #include <optix_device.h>
 #include <owl/common/math/random.h>
 
 #include "visii/utilities/procedural_sky.h"
+
+#include <glm/gtx/matrix_interpolation.hpp>
 
 typedef owl::common::LCG<4> Random;
 
@@ -40,10 +47,10 @@ vec2 toUV(vec3 n)
     n.x = -n.x;
     vec2 uv;
 
-    uv.x = atan(-n.x, n.y);
-    uv.x = (uv.x + M_PI / 2.0) / (M_PI * 2.0) + M_PI * (28.670 / 360.0);
+    uv.x = approx_atan2f(float(-n.x), float(n.y));
+    uv.x = (uv.x + M_PI / 2.0f) / (M_PI * 2.0f) + M_PI * (28.670f / 360.0f);
 
-    uv.y = acos(n.z) / M_PI;
+    uv.y = ::clamp(float(acosf(n.z) / M_PI), .001f, .999f);
 
     return uv;
 }
@@ -60,75 +67,46 @@ vec3 toPolar(vec2 uv)
     n.y = __sinf(theta) * __sinf(phi);
     n.z = __cosf(phi);
 
-    //n = normalize(n);
     n.z = -n.z;
     n.x = -n.x;
     return n;
 }
 
-// inline __device__
-// vec2 toSpherical(vec3 dir) {
-//     dir = normalize(dir);
-//     float u = atan(dir.z, dir.x) / (2.0f * 3.1415926535897932384626433832795f) + .5f;
-//     float v = asin(dir.y) / 3.1415926535897932384626433832795f + .5f;
-//     return vec2(u, (1.0f - v));
-// }
-
-// inline __device__
-// vec3 toDirectional(vec2 coords) {
-//     dir = normalize(dir);
-//     float u = atan(dir.z, dir.x) / (2.0f * 3.1415926535897932384626433832795f) + .5f;
-//     float v = asin(dir.y) / 3.1415926535897932384626433832795f + .5f;
-//     return vec2(u, (1.0f - v));
-// }
-
-// Dual2<Vec3> map(float x, float y) const {
-//     // pixel coordinates of entry (x,y)
-//     Dual2<float> u = Dual2<float>(x, 1, 0) * invres;
-//     Dual2<float> v = Dual2<float>(y, 0, 1) * invres;
-//     Dual2<float> theta   = u * float(2 * M_PI);
-//     Dual2<float> st, ct;
-//     fast_sincos(theta, &st, &ct);
-//     Dual2<float> cos_phi = 1.0f - 2.0f * v;
-//     Dual2<float> sin_phi = sqrt(1.0f - cos_phi * cos_phi);
-//     return make_Vec3(sin_phi * ct,
-//                      sin_phi * st,
-//                      cos_phi);
-// }
+__device__
+cudaTextureObject_t getEnvironmentTexture()
+{
+    auto &LP = optixLaunchParams;
+    cudaTextureObject_t tex = 0;
+    if (LP.environmentMapID >= 0) {
+        return LP.textureObjects.get(LP.environmentMapID, __LINE__);
+    } else if ((LP.environmentMapID == -2) && (LP.proceduralSkyTexture != 0)) {
+        return LP.proceduralSkyTexture;
+    }
+    return tex;    
+}
 
 inline __device__
-float3 missColor(const float3 dir)
+float3 missColor(const float3 n_dir, cudaTextureObject_t &tex)
 {
-    vec3 rayDir = optixLaunchParams.environmentMapRotation * make_vec3(normalize(dir));
-    if (optixLaunchParams.environmentMapID >= 0) 
+    auto &LP = optixLaunchParams;
+    vec3 rayDir = LP.environmentMapRotation * make_vec3(n_dir);
+    if (tex)
     {
         vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
-        cudaTextureObject_t tex = optixLaunchParams.textureObjects[optixLaunchParams.environmentMapID];
-        if (!tex) return make_float3(1.f, 0.f, 1.f);
-
-        float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
-        return make_float3(texColor);
-    }
-    if ((optixLaunchParams.environmentMapID == -2) && (optixLaunchParams.proceduralSkyTexture != 0)) {
-        vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
-        cudaTextureObject_t tex = optixLaunchParams.proceduralSkyTexture;
-        if (!tex) return make_float3(1.f, 0.f, 1.f);
-
         float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
         return make_float3(texColor);
     }
     
-    if (glm::any(glm::greaterThanEqual(optixLaunchParams.domeLightColor, glm::vec3(0.f)))) return make_float3(optixLaunchParams.domeLightColor);
-
+    if (glm::any(glm::greaterThanEqual(LP.domeLightColor, glm::vec3(0.f)))) return make_float3(LP.domeLightColor);
     float t = 0.5f*(rayDir.z + 1.0f);
     float3 c = (1.0f - t) * make_float3(pow(vec3(1.0f), vec3(2.2f))) + t * make_float3( pow(vec3(0.5f, 0.7f, 1.0f), vec3(2.2f)) );
     return c;
 }
 
 inline __device__
-float3 missColor(const owl::Ray &ray)
+float3 missColor(const owl::Ray &ray, cudaTextureObject_t &tex)
 {
-    return missColor(ray.direction);
+    return missColor(ray.direction, tex);
 }
 
 
@@ -138,19 +116,54 @@ OPTIX_MISS_PROGRAM(miss)()
 
 OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 {
+    auto &LP = optixLaunchParams;
     RayPayload &prd = owl::getPRD<RayPayload>();
-    bool shadowray = prd.instanceID == -2;
     prd.instanceID = optixGetInstanceIndex();
     prd.tHit = optixGetRayTmax();
-    if (shadowray) return;
-
     prd.barycentrics = optixGetTriangleBarycentrics();
     prd.primitiveID = optixGetPrimitiveIndex();
+
+    // const OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
+    // const OptixTransformType type = optixGetTransformTypeFromHandle( handle );
+    // if (type == OPTIX_TRANSFORM_TYPE_MATRIX_MOTION_TRANSFORM) {
+    //     const OptixMatrixMotionTransform* transformData = optixGetMatrixMotionTransformFromHandle( handle );
+    //     memcpy(prd.localToWorld, &transformData->transform[0][0], 12 * sizeof(float));
+    // }
+    // else if (type == OPTIX_TRANSFORM_TYPE_SRT_MOTION_TRANSFORM) {
+    //     const OptixSRTMotionTransform* transformData = optixGetMatrixMotionTransformFromHandle( handle );
+    //     memcpy(prd.localToWorld, &transformData->transform[0][0], 12 * sizeof(float));
+    // }
+    // optixGetInterpolatedTransformation( trf0, trf1, trf2, transformData, time );
+    // const float4* transform = (const float4*)( &transformData->transform[key][0] );
+    // const float4* transform = (const float4*)( &transformData->transform[key][0] );
+
+    // This seems to cause most of the stalls in san miguel scene.
     optixGetObjectToWorldTransformMatrix(prd.localToWorld);
+    // const int entityID = LP.instanceToEntityMap.get(prd.instanceID, __LINE__);
+    // EntityStruct entity = LP.entities.get(entityID, __LINE__);
+    // TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
+    // prd.localToWorld[0]  = glm::row(transform.localToWorld, 0).x;
+    // prd.localToWorld[1]  = glm::row(transform.localToWorld, 0).y;
+    // prd.localToWorld[2]  = glm::row(transform.localToWorld, 0).z;
+    // prd.localToWorld[3]  = glm::row(transform.localToWorld, 0).w;
+    // prd.localToWorld[4]  = glm::row(transform.localToWorld, 1).x;
+    // prd.localToWorld[5]  = glm::row(transform.localToWorld, 1).y;
+    // prd.localToWorld[6]  = glm::row(transform.localToWorld, 1).z;
+    // prd.localToWorld[7]  = glm::row(transform.localToWorld, 1).w;
+    // prd.localToWorld[8]  = glm::row(transform.localToWorld, 2).x;
+    // prd.localToWorld[9]  = glm::row(transform.localToWorld, 2).y;
+    // prd.localToWorld[10] = glm::row(transform.localToWorld, 2).z;
+    // prd.localToWorld[11] = glm::row(transform.localToWorld, 2).w;
+    // to_optix_tfm(transform.localToWorld, prd.localToWorld);
     
+    // If we don't need motion vectors, (or in the future if an object 
+    // doesn't have motion blur) then return.
+    if (LP.renderDataMode == RenderDataFlags::NONE) return;
+   
     OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
     float4 trf00, trf01, trf02;
     float4 trf10, trf11, trf12;
+    
     optix_impl::optixGetInterpolatedTransformationFromHandle( trf00, trf01, trf02, handle, /* time */ 0.f, true );
     optix_impl::optixGetInterpolatedTransformationFromHandle( trf10, trf11, trf12, handle, /* time */ 1.f, true );
     memcpy(&prd.localToWorldT0[0], &trf00, sizeof(trf00));
@@ -161,50 +174,70 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     memcpy(&prd.localToWorldT1[8], &trf12, sizeof(trf12));
 }
 
+OPTIX_CLOSEST_HIT_PROGRAM(ShadowRay)()
+{
+    RayPayload &prd = owl::getPRD<RayPayload>();
+    prd.instanceID = optixGetInstanceIndex();
+    prd.tHit = optixGetRayTmax();
+}
+
 inline __device__
 bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruct &transform)
 {
-    cameraEntity = optixLaunchParams.cameraEntity;
+    auto &LP = optixLaunchParams;
+    cameraEntity = LP.cameraEntity;
     if (!cameraEntity.initialized) return false;
-    if ((cameraEntity.transform_id < 0) || (cameraEntity.transform_id >= MAX_TRANSFORMS)) return false;
-    if ((cameraEntity.camera_id < 0) || (cameraEntity.camera_id >= MAX_CAMERAS)) return false;
-    camera = optixLaunchParams.cameras[cameraEntity.camera_id];
-    transform = optixLaunchParams.transforms[cameraEntity.transform_id];
+    if ((cameraEntity.transform_id < 0) || (cameraEntity.transform_id >= LP.transforms.count)) return false;
+    if ((cameraEntity.camera_id < 0) || (cameraEntity.camera_id >= LP.cameras.count)) return false;
+    camera = LP.cameras.get(cameraEntity.camera_id, __LINE__);
+    transform = LP.transforms.get(cameraEntity.transform_id, __LINE__);
     return true;
 }
 
 inline __device__ 
-float3 sampleTexture(int32_t textureId, float2 texCoord) {
-    if (textureId < 0 || textureId >= (MAX_TEXTURES + MAX_MATERIALS * NUM_MAT_PARAMS)) return make_float3(0.f,0.f,0.f);
-    cudaTextureObject_t tex = optixLaunchParams.textureObjects[textureId];
-    if (!tex) return make_float3(0.f,0.f,0.f);
+float3 sampleTexture(int32_t textureId, float2 texCoord, float3 defaultVal) {
+    auto &LP = optixLaunchParams;
+    if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
+    cudaTextureObject_t tex = LP.textureObjects.get(textureId, __LINE__);
+    if (!tex) return defaultVal;
+    TextureStruct texInfo = LP.textures.get(textureId, __LINE__);
+    texCoord.x = texCoord.x / texInfo.scale.x;
+    texCoord.y = texCoord.y / texInfo.scale.y;
     return make_float3(tex2D<float4>(tex, texCoord.x, texCoord.y));
 }
 
 inline __device__ 
-float sampleTexture(int32_t textureId, float2 texCoord, int8_t channel) {
-    if (textureId < 0 || textureId >= (MAX_TEXTURES + MAX_MATERIALS * NUM_MAT_PARAMS)) return 0.f;
-    cudaTextureObject_t tex = optixLaunchParams.textureObjects[textureId];
-    if (!tex) return 0.f;
-    return make_vec4(tex2D<float4>(tex, texCoord.x, texCoord.y))[channel];
+float sampleTexture(int32_t textureId, float2 texCoord, int8_t channel, float defaultVal) {
+    auto &LP = optixLaunchParams;
+    if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
+    cudaTextureObject_t tex = LP.textureObjects.get(textureId, __LINE__);
+    if (!tex) return defaultVal;
+    TextureStruct texInfo = LP.textures.get(textureId, __LINE__);
+    texCoord.x = texCoord.x / texInfo.scale.x;
+    texCoord.y = texCoord.y / texInfo.scale.y;
+    if (channel == 0) return tex2D<float4>(tex, texCoord.x, texCoord.y).x;
+    if (channel == 1) return tex2D<float4>(tex, texCoord.x, texCoord.y).y;
+    if (channel == 2) return tex2D<float4>(tex, texCoord.x, texCoord.y).z;
+    if (channel == 3) return tex2D<float4>(tex, texCoord.x, texCoord.y).w;
+    return defaultVal;
 }
 
 __device__
-void loadMeshTriIndices(int meshID, int primitiveID, int3 &triIndices)
+void loadMeshTriIndices(int meshID, int numIndices, int primitiveID, int3 &triIndices)
 {
-    owl::device::Buffer *indexLists = (owl::device::Buffer *)optixLaunchParams.indexLists.data;
-    int3 *indices = (int3*) indexLists[meshID].data;
-    triIndices = indices[primitiveID];   
+    auto &LP = optixLaunchParams;
+    auto indices = LP.indexLists.get(meshID, __LINE__);
+    triIndices = indices.get(primitiveID, __LINE__);   
 }
 
 __device__
-void loadMeshVertexData(int meshID, int3 indices, float2 barycentrics, float3 &position, float3 &geometricNormal, float3 &edge1, float3 &edge2)
+void loadMeshVertexData(int meshID, int numVertices, int3 indices, float2 barycentrics, float3 &position, float3 &geometricNormal, float3 &edge1, float3 &edge2)
 {
-    owl::device::Buffer *vertexLists = (owl::device::Buffer *)optixLaunchParams.vertexLists.data;
-    float4 *vertices = (float4*) vertexLists[meshID].data;
-    const float3 A = make_float3(vertices[indices.x]);
-    const float3 B = make_float3(vertices[indices.y]);
-    const float3 C = make_float3(vertices[indices.z]);
+    auto &LP = optixLaunchParams;
+    auto vertices = LP.vertexLists.get(meshID, __LINE__);
+    const float3 A = vertices.get(indices.x, __LINE__);
+    const float3 B = vertices.get(indices.y, __LINE__);
+    const float3 C = vertices.get(indices.z, __LINE__);
     edge1 = B - A;
     edge2 = C - A;
     position = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
@@ -212,78 +245,96 @@ void loadMeshVertexData(int meshID, int3 indices, float2 barycentrics, float3 &p
 }
 
 __device__
-void loadMeshUVData(int meshID, int3 indices, float2 barycentrics, float2 &uv, float2 &edge1, float2 &edge2)
+void loadMeshUVData(int meshID, int numTexCoords, int3 indices, float2 barycentrics, float2 &uv, float2 &edge1, float2 &edge2)
 {
-    owl::device::Buffer *texCoordLists = (owl::device::Buffer *)optixLaunchParams.texCoordLists.data;
-    float2 *texCoords = (float2*) texCoordLists[meshID].data;
-    const float2 &A = texCoords[indices.x];
-    const float2 &B = texCoords[indices.y];
-    const float2 &C = texCoords[indices.z];
+    auto &LP = optixLaunchParams;
+    auto texCoords = LP.texCoordLists.get(meshID, __LINE__);
+    const float2 &A = texCoords.get(indices.x, __LINE__);
+    const float2 &B = texCoords.get(indices.y, __LINE__);
+    const float2 &C = texCoords.get(indices.z, __LINE__);
     edge1 = B - A;
     edge2 = C - A;
     uv = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
 }
 
 __device__
-void loadMeshNormalData(int meshID, int3 indices, float2 barycentrics, float2 uv, float3 &normal)
+void loadMeshNormalData(int meshID, int numNormals, int3 indices, float2 barycentrics, float3 &normal)
 {
-    owl::device::Buffer *normalLists = (owl::device::Buffer *)optixLaunchParams.normalLists.data;
-    float4 *normals = (float4*) normalLists[meshID].data;
-    const float3 &A = make_float3(normals[indices.x]);
-    const float3 &B = make_float3(normals[indices.y]);
-    const float3 &C = make_float3(normals[indices.z]);
+    auto &LP = optixLaunchParams;
+    auto normals = LP.normalLists.get(meshID, __LINE__);
+    const float3 &A = make_float3(normals.get(indices.x, __LINE__));
+    const float3 &B = make_float3(normals.get(indices.y, __LINE__));
+    const float3 &C = make_float3(normals.get(indices.z, __LINE__));
     normal = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
+}
+
+__device__
+void loadMeshTangentData(int meshID, int numTangents, int3 indices, float2 barycentrics, float3 &tangent)
+{
+    auto &LP = optixLaunchParams;
+    auto tangents = LP.tangentLists.get(meshID, __LINE__);
+    const float3 &A = make_float3(tangents.get(indices.x, __LINE__));
+    const float3 &B = make_float3(tangents.get(indices.y, __LINE__));
+    const float3 &C = make_float3(tangents.get(indices.z, __LINE__));
+    tangent = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
 }
 
 __device__ 
 void loadDisneyMaterial(const MaterialStruct &p, float2 uv, DisneyMaterial &mat, float roughnessMinimum) {
-    mat.base_color = sampleTexture(p.base_color_texture_id, uv);
-    mat.metallic = sampleTexture(p.metallic_texture_id, uv, p.metallic_texture_channel);
-    mat.specular = sampleTexture(p.specular_texture_id, uv, p.specular_texture_channel);
-    mat.roughness = max(max(sampleTexture(p.roughness_texture_id, uv, p.roughness_texture_channel), MIN_ROUGHNESS), roughnessMinimum);
-    mat.specular_tint = sampleTexture(p.specular_tint_texture_id, uv, p.specular_tint_texture_channel);
-    mat.anisotropy = sampleTexture(p.anisotropic_texture_id, uv, p.anisotropic_texture_channel);
-    mat.sheen = sampleTexture(p.sheen_texture_id, uv, p.sheen_texture_channel);
-    mat.sheen_tint = sampleTexture(p.sheen_tint_texture_id, uv, p.sheen_tint_texture_channel);
-    mat.clearcoat = sampleTexture(p.clearcoat_texture_id, uv, p.clearcoat_texture_channel);
-    float clearcoat_roughness = max(sampleTexture(p.clearcoat_roughness_texture_id, uv, p.clearcoat_roughness_texture_channel), roughnessMinimum);
+    mat.base_color = sampleTexture(p.base_color_texture_id, uv, make_float3(.8f, .8f, .8f));
+    mat.metallic = sampleTexture(p.metallic_texture_id, uv, p.metallic_texture_channel, .0f);
+    mat.specular = sampleTexture(p.specular_texture_id, uv, p.specular_texture_channel, .5f);
+    mat.roughness = sampleTexture(p.roughness_texture_id, uv, p.roughness_texture_channel, .5f);
+    mat.specular_tint = sampleTexture(p.specular_tint_texture_id, uv, p.specular_tint_texture_channel, 0.f);
+    mat.anisotropy = sampleTexture(p.anisotropic_texture_id, uv, p.anisotropic_texture_channel, 0.f);
+    mat.sheen = sampleTexture(p.sheen_texture_id, uv, p.sheen_texture_channel, 0.f);
+    mat.sheen_tint = sampleTexture(p.sheen_tint_texture_id, uv, p.sheen_tint_texture_channel, 0.5f);
+    mat.clearcoat = sampleTexture(p.clearcoat_texture_id, uv, p.clearcoat_texture_channel, 0.f);
+    float clearcoat_roughness = sampleTexture(p.clearcoat_roughness_texture_id, uv, p.clearcoat_roughness_texture_channel, 0.3f);
+    mat.ior = sampleTexture(p.ior_texture_id, uv, p.ior_texture_channel, 1.45f);
+    mat.specular_transmission = sampleTexture(p.transmission_texture_id, uv, p.transmission_texture_channel, 0.f);
+    mat.flatness = sampleTexture(p.subsurface_texture_id, uv, p.subsurface_texture_channel, 0.f);
+    mat.subsurface_color = sampleTexture(p.subsurface_color_texture_id, uv, make_float3(0.8f, 0.8f, 0.8f));
+    mat.transmission_roughness = sampleTexture(p.transmission_roughness_texture_id, uv, p.transmission_roughness_texture_channel, 0.f);
+    mat.alpha = sampleTexture(p.alpha_texture_id, uv, p.alpha_texture_channel, 1.f);
+    
+    mat.transmission_roughness = max(max(mat.transmission_roughness, MIN_ROUGHNESS), roughnessMinimum);
+    mat.roughness = max(max(mat.roughness, MIN_ROUGHNESS), roughnessMinimum);
+    clearcoat_roughness = max(clearcoat_roughness, roughnessMinimum);
     mat.clearcoat_gloss = 1.0 - clearcoat_roughness * clearcoat_roughness;
-    mat.ior = sampleTexture(p.ior_texture_id, uv, p.ior_texture_channel);
-    mat.specular_transmission = sampleTexture(p.transmission_texture_id, uv, p.transmission_texture_channel);
-    mat.flatness = sampleTexture(p.subsurface_texture_id, uv, p.subsurface_texture_channel);
-    mat.subsurface_color = sampleTexture(p.subsurface_color_texture_id, uv);
-    mat.transmission_roughness = max(max(sampleTexture(p.transmission_roughness_texture_id, uv, p.transmission_roughness_texture_channel), MIN_ROUGHNESS), roughnessMinimum);
 }
 
 __device__
 float sampleTime(float xi) {
-    return  optixLaunchParams.timeSamplingInterval[0] + 
-           (optixLaunchParams.timeSamplingInterval[1] - 
-            optixLaunchParams.timeSamplingInterval[0]) * xi;
+    auto &LP = optixLaunchParams;
+    return  LP.timeSamplingInterval[0] + 
+           (LP.timeSamplingInterval[1] - 
+            LP.timeSamplingInterval[0]) * xi;
 }
 
 inline __device__
 owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transform, ivec2 pixelID, ivec2 frameSize, LCGRand &rng, float time)
 {
+    auto &LP = optixLaunchParams;
     /* Generate camera rays */    
-    glm::quat r0 = glm::quat_cast(optixLaunchParams.viewT0);
-    glm::quat r1 = glm::quat_cast(optixLaunchParams.viewT1);
-    glm::vec4 p0 = glm::column(optixLaunchParams.viewT0, 3);
-    glm::vec4 p1 = glm::column(optixLaunchParams.viewT1, 3);
+    glm::quat r0 = glm::quat_cast(LP.viewT0);
+    glm::quat r1 = glm::quat_cast(LP.viewT1);
+    glm::vec4 p0 = glm::column(LP.viewT0, 3);
+    glm::vec4 p1 = glm::column(LP.viewT1, 3);
 
     glm::vec4 pos = glm::mix(p0, p1, time);
-    glm::quat rot = glm::slerp(r0, r1, time);
+    glm::quat rot = (glm::all(glm::equal(r0, r1))) ? r0 : glm::slerp(r0, r1, time);
     glm::mat4 camLocalToWorld = glm::mat4_cast(rot);
     camLocalToWorld = glm::column(camLocalToWorld, 3, pos);
 
-    mat4 projinv = glm::inverse(optixLaunchParams.proj);
+    mat4 projinv = glm::inverse(LP.proj);
     mat4 viewinv = glm::inverse(camLocalToWorld);
-    vec2 aa =  vec2(optixLaunchParams.xPixelSamplingInterval[0], optixLaunchParams.yPixelSamplingInterval[0])
-            + (vec2(optixLaunchParams.xPixelSamplingInterval[1], optixLaunchParams.yPixelSamplingInterval[1]) 
-            -  vec2(optixLaunchParams.xPixelSamplingInterval[0], optixLaunchParams.yPixelSamplingInterval[0])
+    vec2 aa =  vec2(LP.xPixelSamplingInterval[0], LP.yPixelSamplingInterval[0])
+            + (vec2(LP.xPixelSamplingInterval[1], LP.yPixelSamplingInterval[1]) 
+            -  vec2(LP.xPixelSamplingInterval[0], LP.yPixelSamplingInterval[0])
             ) * vec2(lcg_randomf(rng),lcg_randomf(rng));
 
-    vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(optixLaunchParams.frameSize);
+    vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(frameSize);
     vec3 right = normalize(glm::column(viewinv, 0));
     vec3 up = normalize(glm::column(viewinv, 1));
     vec3 origin = glm::column(viewinv, 3);
@@ -310,9 +361,8 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
     owl::Ray ray;
     ray.tmin = .001f;
     ray.tmax = 1e20f;//10000.0f;
-    ray.origin = owl::vec3f(origin.x, origin.y, origin.z) ;
-    ray.direction = owl::vec3f(direction.x, direction.y, direction.z);
-    ray.direction = normalize(owl::vec3f(direction.x, direction.y, direction.z));
+    ray.origin = make_float3(origin) ;
+    ray.direction = make_float3(direction);
     
     return ray;
 }
@@ -320,27 +370,37 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
 __device__
 void initializeRenderData(float3 &renderData)
 {
+    auto &LP = optixLaunchParams;
     // these might change in the future...
-    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) {
+    if (LP.renderDataMode == RenderDataFlags::NONE) {
         renderData = make_float3(FLT_MAX);
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::DEPTH) {
+    else if (LP.renderDataMode == RenderDataFlags::DEPTH) {
         renderData = make_float3(FLT_MAX);
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::POSITION) {
+    else if (LP.renderDataMode == RenderDataFlags::POSITION) {
         renderData = make_float3(FLT_MAX);
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::NORMAL) {
+    else if (LP.renderDataMode == RenderDataFlags::NORMAL) {
         renderData = make_float3(FLT_MAX);
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::ENTITY_ID) {
+    else if (LP.renderDataMode == RenderDataFlags::SCREEN_SPACE_NORMAL) {
+        renderData = make_float3(0.0f);
+    }
+    else if (LP.renderDataMode == RenderDataFlags::ENTITY_ID) {
         renderData = make_float3(FLT_MAX);
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::BASE_COLOR) {
+    else if (LP.renderDataMode == RenderDataFlags::BASE_COLOR) {
         renderData = make_float3(0.0, 0.0, 0.0);
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
+    else if (LP.renderDataMode == RenderDataFlags::TEXTURE_COORDINATES) {
+        renderData = make_float3(0.0, 0.0, 0.0);
+    }
+    else if (LP.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
         renderData = make_float3(0.0, 0.0, -1.0);
+    }
+    else if (LP.renderDataMode == RenderDataFlags::HEATMAP) {
+        renderData = make_float3(0.0, 0.0, 0.0);
     }
 }
 
@@ -351,19 +411,20 @@ void saveLightingColorRenderData (
     DisneyMaterial &mat
 )
 {
-    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
-    if (bounce != optixLaunchParams.renderDataBounce) return;
+    auto &LP = optixLaunchParams;
+    if (LP.renderDataMode == RenderDataFlags::NONE) return;
+    if (bounce != LP.renderDataBounce) return;
     
     // Note, dillum and iillum are expected to change outside this function depending on the 
     // render data flags.
-    if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_COLOR) {
-        renderData = disney_diffuse_color(mat, w_n, w_o, w_i); 
+    if (LP.renderDataMode == RenderDataFlags::DIFFUSE_COLOR) {
+        renderData = disney_diffuse_color(mat, w_n, w_o, w_i, normalize(w_o + w_i));  
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_COLOR) {
-        renderData = disney_microfacet_reflection_color(mat, w_n, w_o, w_i);
+    else if (LP.renderDataMode == RenderDataFlags::GLOSSY_COLOR) {
+        renderData = disney_microfacet_reflection_color(mat, w_n, w_o, w_i, normalize(w_o + w_i));
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_COLOR) {
-        renderData = disney_microfacet_transmission_color(mat, w_n, w_o, w_i);
+    else if (LP.renderDataMode == RenderDataFlags::TRANSMISSION_COLOR) {
+        renderData = disney_microfacet_transmission_color(mat, w_n, w_o, w_i, normalize(w_o + w_i));
     }
 }
 
@@ -373,27 +434,28 @@ void saveLightingIrradianceRenderData(
     float3 dillum, float3 iillum,
     int sampledBsdf)
 {
-    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
-    if (bounce != optixLaunchParams.renderDataBounce) return;
+    auto &LP = optixLaunchParams;
+    if (LP.renderDataMode == RenderDataFlags::NONE) return;
+    if (bounce != LP.renderDataBounce) return;
     
     // Note, dillum and iillum are expected to change outside this function depending on the 
     // render data flags.
-    if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_DIRECT_LIGHTING) {
+    if (LP.renderDataMode == RenderDataFlags::DIFFUSE_DIRECT_LIGHTING) {
         renderData = dillum;
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_INDIRECT_LIGHTING) {
+    else if (LP.renderDataMode == RenderDataFlags::DIFFUSE_INDIRECT_LIGHTING) {
         renderData = iillum;
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_DIRECT_LIGHTING) {
+    else if (LP.renderDataMode == RenderDataFlags::GLOSSY_DIRECT_LIGHTING) {
         renderData = dillum;
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::GLOSSY_INDIRECT_LIGHTING) {
+    else if (LP.renderDataMode == RenderDataFlags::GLOSSY_INDIRECT_LIGHTING) {
         renderData = iillum;
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING) {
+    else if (LP.renderDataMode == RenderDataFlags::TRANSMISSION_DIRECT_LIGHTING) {
         renderData = dillum;
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::TRANSMISSION_INDIRECT_LIGHTING) {
+    else if (LP.renderDataMode == RenderDataFlags::TRANSMISSION_INDIRECT_LIGHTING) {
         renderData = iillum;
     }
 }
@@ -404,10 +466,11 @@ void saveMissRenderData(
     int bounce,
     float3 mvec)
 {
-    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
-    if (bounce != optixLaunchParams.renderDataBounce) return;
+    auto &LP = optixLaunchParams;
+    if (LP.renderDataMode == RenderDataFlags::NONE) return;
+    if (bounce != LP.renderDataBounce) return;
 
-    if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
+    if (LP.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
         renderData = mvec;
     }
 }
@@ -417,44 +480,75 @@ __device__
 void saveGeometricRenderData(
     float3 &renderData, 
     int bounce, float depth, 
-    float3 w_p, float3 w_n, float3 w_o,
-    int entity_id, float3 diffuse_mvec,
+    float3 w_p, float3 w_n, float3 w_o, float2 uv, 
+    int entity_id, float3 diffuse_mvec, float time,
     DisneyMaterial &mat)
 {
-    if (optixLaunchParams.renderDataMode == RenderDataFlags::NONE) return;
-    if (bounce != optixLaunchParams.renderDataBounce) return;
+    auto &LP = optixLaunchParams;
+    if (LP.renderDataMode == RenderDataFlags::NONE) return;
+    if (bounce != LP.renderDataBounce) return;
 
-    if (optixLaunchParams.renderDataMode == RenderDataFlags::DEPTH) {
+    if (LP.renderDataMode == RenderDataFlags::DEPTH) {
         renderData = make_float3(depth);
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::POSITION) {
+    else if (LP.renderDataMode == RenderDataFlags::POSITION) {
         renderData = w_p;
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::NORMAL) {
+    else if (LP.renderDataMode == RenderDataFlags::NORMAL) {
         renderData = w_n;
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::ENTITY_ID) {
+    else if (LP.renderDataMode == RenderDataFlags::SCREEN_SPACE_NORMAL) {
+        glm::quat r0 = glm::quat_cast(LP.viewT0);
+        glm::quat r1 = glm::quat_cast(LP.viewT1);
+        glm::quat rot = (glm::all(glm::equal(r0, r1))) ? r0 : glm::slerp(r0, r1, time);
+        vec3 tmp = normalize(glm::mat3_cast(rot) * make_vec3(w_n));
+        tmp = normalize(vec3(LP.proj * vec4(tmp, 0.f)));
+        renderData.x = tmp.x;
+        renderData.y = tmp.y;
+        renderData.z = tmp.z;
+    }
+    else if (LP.renderDataMode == RenderDataFlags::ENTITY_ID) {
         renderData = make_float3(float(entity_id));
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
+    else if (LP.renderDataMode == RenderDataFlags::DIFFUSE_MOTION_VECTORS) {
         renderData = diffuse_mvec;
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::BASE_COLOR) {
+    else if (LP.renderDataMode == RenderDataFlags::BASE_COLOR) {
         renderData = mat.base_color;
     }
-    else if (optixLaunchParams.renderDataMode == RenderDataFlags::RAY_DIRECTION) {
+    else if (LP.renderDataMode == RenderDataFlags::TEXTURE_COORDINATES) {
+        renderData = make_float3(uv.x, uv.y, 0.0);
+    }
+    else if (LP.renderDataMode == RenderDataFlags::RAY_DIRECTION) {
         renderData = -w_o;
     }
+}
+
+__device__
+void saveHeatmapRenderData(
+    float3 &renderData, 
+    int bounce,
+    uint64_t start_clock
+)
+{
+    auto &LP = optixLaunchParams;
+    if (LP.renderDataMode != RenderDataFlags::HEATMAP) return;
+    // if (bounce < LP.renderDataBounce) return;
+
+    uint64_t absClock = clock()-start_clock;
+    float relClock = /*global.clockScale **/ absClock / 10000000.f;
+    relClock = min(relClock, 1.f);
+    renderData = make_float3(relClock);
 }
 
 __device__
 float3 faceNormalForward(const float3 &w_o, const float3 &gn, const float3 &n)
 {
     float3 new_n = n;
-    if (dot(w_o, new_n) < 0.f) {
-        // prevents differences from geometric and shading normal from creating black artifacts
-        new_n = reflect(-new_n, gn); 
-    }
+    // if (dot(w_o, new_n) < 0.f) {
+    //     // prevents differences from geometric and shading normal from creating black artifacts
+    //     new_n = reflect(-new_n, gn); 
+    // }
     if (dot(w_o, new_n) < 0.f) {
         new_n = -new_n;
     }
@@ -466,18 +560,57 @@ bool debugging() {
     #ifndef DEBUGGING
     return false;
     #endif
+    auto &LP = optixLaunchParams;
     auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
-    return glm::all(glm::equal(pixelID, ivec2(optixLaunchParams.frameSize.x / 2, optixLaunchParams.frameSize.y / 2)));
+    return glm::all(glm::equal(pixelID, ivec2(LP.frameSize.x / 2, LP.frameSize.y / 2)));
+}
+
+__device__
+glm::mat4 test_interpolate(glm::mat4& _mat1, glm::mat4& _mat2, float _time)
+{
+    glm::quat rot0 = glm::quat_cast(_mat1);
+    glm::quat rot1= glm::quat_cast(_mat2);
+
+    glm::quat finalRot = glm::slerp(rot0, rot1, _time);
+
+    glm::mat4 finalMat = glm::mat4_cast(finalRot);
+
+    finalMat[3] = _mat1[3] * (1 - _time) + _mat2[3] * _time;
+    
+    return finalMat;
 }
 
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
-    auto pixelID = ivec2(owl::getLaunchIndex()[0], owl::getLaunchIndex()[1]);
-    auto fbOfs = pixelID.x+optixLaunchParams.frameSize.x * ((optixLaunchParams.frameSize.y - 1) -  pixelID.y);
-    float start_clock, stop_clock;
-    start_clock = clock();
+    const RayGenData &self = owl::getProgramData<RayGenData>();
     
-    LCGRand rng = get_rng(optixLaunchParams.frameID + optixLaunchParams.seed * 10007);
+    auto &LP = optixLaunchParams;
+    auto launchIndex = optixGetLaunchIndex().x;
+    auto launchDim = optixGetLaunchDimensions().x;
+    auto pixelID = ivec2(launchIndex % LP.frameSize.x, launchIndex / LP.frameSize.x);
+    auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
+
+    /* compute who is repsonible for a given group of pixels */
+    /* and if it's not us, just return. */
+    /* (some other device will compute these pixels) */
+    // int deviceThatIsResponsible = (pixelID.x>>5) % self.deviceCount;
+    int deviceThatIsResponsible = (pixelID.x>>5) % self.deviceCount;
+    if (self.deviceIndex != deviceThatIsResponsible) {
+        // auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
+        // float4* accumPtr = (float4*) LP.accumPtr;
+        // float4* fbPtr = (float4*) LP.frameBuffer;
+        // accumPtr[fbOfs] = make_float4(0.f);
+        // fbPtr[fbOfs] = make_float4(0.f);
+        return;
+    }
+
+    auto dims = ivec2(LP.frameSize.x, LP.frameSize.x);
+    uint64_t start_clock = clock();
+    int numLights = LP.numLightEntities;
+    int numLightSamples = LP.numLightSamples;
+    bool enableDomeSampling = LP.enableDomeSampling;
+    
+    LCGRand rng = get_rng(LP.frameID + LP.seed * 10007, make_uint2(pixelID.x, pixelID.y), make_uint2(dims.x, dims.y));
     float time = sampleTime(lcg_randomf(rng));
 
     // If no camera is in use, just display some random noise...
@@ -487,17 +620,21 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         TransformStruct camera_transform;
         CameraStruct    camera;
         if (!loadCamera(camera_entity, camera, camera_transform)) {
-            optixLaunchParams.frameBuffer[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
+            LP.frameBuffer[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
             return;
         }
         
         // Trace an initial ray through the scene
-        ray = generateRay(camera, camera_transform, pixelID, optixLaunchParams.frameSize, rng, time);
+        ray = generateRay(camera, camera_transform, pixelID, LP.frameSize, rng, time);
     }
+
+    cudaTextureObject_t envTex = getEnvironmentTexture();
 
     float3 accum_illum = make_float3(0.f);
     float3 pathThroughput = make_float3(1.f);
     float3 renderData = make_float3(0.f);
+    float3 primaryAlbedo = make_float3(0.f);
+    float3 primaryNormal = make_float3(0.f);
     initializeRenderData(renderData);
 
     uint8_t bounce = 0;
@@ -512,30 +649,31 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     RayPayload payload;
     payload.tHit = -1.f;
     ray.time = time;
-    owl::traceRay(  /*accel to trace against*/ optixLaunchParams.world,
+    owl::traceRay(  /*accel to trace against*/ LP.world,
                     /*the ray to trace*/ ray,
                     /*prd*/ payload,
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
-    stop_clock = clock();
-    if (debugging()) {
-        printf("dClock : %f\n", stop_clock - start_clock);
-    }
-
-    OnlineReservoir reservoir = optixLaunchParams.reservoirBuffer[fbOfs];
-    float reservoir_w;
-    if (optixLaunchParams.frameID == 0) { reservoir.reset(); }
+    
+    OnlineReservoir reservoir = optixLaunchParams.reservoirBuffer.get(fbOfs, __LINE__);
+    float reservoir_w = 1.f;
+    // if (optixLaunchParams.frameID == 0) { reservoir.reset(); }
 
     // Shade each hit point on a path using NEE with MIS
     do {     
-        // If ray misses
+        float alpha = 0.f;
+
+        // If ray misses, terminate the ray
         if (payload.tHit <= 0.f) {
-            illum = illum + pathThroughput * (missColor(ray) * optixLaunchParams.domeLightIntensity);
+            // Compute lighting from environment
             if (bounce == 0) {
-                // primaryNormal = make_float3(0.f, 0.f, 1.f);
-                // primaryAlbedo = illum;
+                float3 col = missColor(ray, envTex);
+                illum = illum + pathThroughput * (col * LP.domeLightIntensity);
                 directIllum = illum;
+                primaryAlbedo = col;
             }
+            else if (enableDomeSampling)
+                illum = illum + pathThroughput * (missColor(ray, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
             
             const float envDist = 10000.0f; // large value
             /* Compute miss motion vector */
@@ -543,162 +681,199 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // Point far away
             float3 pFar = ray.origin + ray.direction * envDist;
             // TODO: account for motion from rotating dome light
-            vec4 tmp1 = optixLaunchParams.proj * optixLaunchParams.viewT0 * /*xfmt0 **/ make_vec4(pFar, 1.0f);
+            vec4 tmp1 = LP.proj * LP.viewT0 * /*xfmt0 **/ make_vec4(pFar, 1.0f);
             float3 pt0 = make_float3(tmp1 / tmp1.w) * .5f;
-            vec4 tmp2 = optixLaunchParams.proj * optixLaunchParams.viewT1 * /*xfmt1 **/ make_vec4(pFar, 1.0f);
+            vec4 tmp2 = LP.proj * LP.viewT1 * /*xfmt1 **/ make_vec4(pFar, 1.0f);
             float3 pt1 = make_float3(tmp2 / tmp2.w) * .5f;
             mvec = pt1 - pt0;
             saveMissRenderData(renderData, bounce, mvec);
             break;
         }
 
-        // Otherwise, load common position, vectors, and material data used for shading...
-        const int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
-        EntityStruct entity = optixLaunchParams.entities[entityID];
+        // Otherwise, load the object we hit.
+        const int entityID = LP.instanceToEntityMap.get(payload.instanceID, __LINE__);
+        EntityStruct entity = LP.entities.get(entityID, __LINE__);
+        MeshStruct mesh = LP.meshes.get(entity.mesh_id, __LINE__);
+        TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
 
-        // Skip forward if the hit object is invisible for this ray type
-        if ((bounce == 0) && ((entity.visibilityFlags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
+        // Skip forward if the hit object is invisible for this ray type, skip it.
+        if (((entity.flags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
             ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
             payload.tHit = -1.f;
             ray.time = time;
-            owl::traceRay( optixLaunchParams.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+            owl::traceRay( LP.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
             visibilitySkips++;
             if (visibilitySkips > 10) break; // avoid locking up.
-
-            // If ray misses
-            if (payload.tHit <= 0.f) {
-                illum = missColor(ray) * optixLaunchParams.domeLightIntensity;
-                // primaryNormal = make_float3(0.f, 0.f, 1.f);
-                // primaryAlbedo = illum;
-                directIllum = illum;
-            }
             continue;
         }
 
-        DisneyMaterial mat; MaterialStruct entityMaterial; LightStruct entityLight;
-        if (entity.material_id >= 0 && entity.material_id < MAX_MATERIALS) {
-            entityMaterial = optixLaunchParams.materials[entity.material_id];
-        }
-        
+        // Set new outgoing light direction and hit position.
         const float3 w_o = -ray.direction;
         float3 hit_p = ray.origin + payload.tHit * ray.direction;
+
+        // Load geometry data for the hit object
         float3 mp, p, v_x, v_y, v_z, v_gz, p_e1, p_e2; 
         float2 uv, uv_e1, uv_e2; 
         int3 indices;
         float3 diffuseMotion;
-        
-        loadMeshTriIndices(entity.mesh_id, payload.primitiveID, indices);
-        loadMeshVertexData(entity.mesh_id, indices, payload.barycentrics, mp, v_gz, p_e1, p_e2);
-        loadMeshUVData(entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
-        loadMeshNormalData(entity.mesh_id, indices, payload.barycentrics, uv, v_z);
-        loadDisneyMaterial(entityMaterial, uv, mat, MIN_ROUGHNESS);
-        
-        bool shouldNormalFaceForward = (mat.specular_transmission == 0.f);
-        {
-            float f = 1.0f / (uv_e1.x * uv_e2.y - uv_e2.x * uv_e1.y);
-            v_x.x = f * (uv_e2.y * p_e1.x - uv_e1.y * p_e2.x);
-            v_x.y = f * (uv_e2.y * p_e1.y - uv_e1.y * p_e2.y);
-            v_x.z = f * (uv_e2.y * p_e1.z - uv_e1.y * p_e2.z);
-            v_x = normalize(v_x);
-            v_z = normalize(v_z);            
+        loadMeshTriIndices(entity.mesh_id, mesh.numTris, payload.primitiveID, indices);
+        loadMeshVertexData(entity.mesh_id, mesh.numVerts, indices, payload.barycentrics, mp, v_gz, p_e1, p_e2); // todo, remomve pe1,pe2
+        loadMeshUVData(entity.mesh_id, mesh.numVerts, indices, payload.barycentrics, uv, uv_e1, uv_e2); // todo, remove e1, e2
+        loadMeshNormalData(entity.mesh_id, mesh.numVerts, indices, payload.barycentrics, v_z);
+        loadMeshTangentData(entity.mesh_id, mesh.numVerts, indices, payload.barycentrics, v_x);
+
+        // Load material data for the hit object
+        DisneyMaterial mat; MaterialStruct entityMaterial;
+        if (entity.material_id >= 0 && entity.material_id < LP.materials.count) {
+            entityMaterial = LP.materials.get(entity.material_id, __LINE__);
+            loadDisneyMaterial(entityMaterial, uv, mat, MIN_ROUGHNESS);
         }
+       
+        // Compute tangent and bitangent based on UVs
+        // {
+        //     float f = 1.0f / (uv_e1.x * uv_e2.y - uv_e2.x * uv_e1.y);
+        //     v_x.x = f * (uv_e2.y * p_e1.x - uv_e1.y * p_e2.x);
+        //     v_x.y = f * (uv_e2.y * p_e1.y - uv_e1.y * p_e2.y);
+        //     v_x.z = f * (uv_e2.y * p_e1.z - uv_e1.y * p_e2.z);
+        // }
             
-        // Transform data into world space
+        // Transform geometry data into world space
         {
+            // both glm::interpolate and my own interpolation functions cause artifacts... 
+            // optix transform seems to work though
+            // glm::mat4 xfm = test_interpolate(transform.localToWorld, transform.localToWorld, time);
             glm::mat4 xfm = to_mat4(payload.localToWorld);
-            glm::mat4 xfmt0 = to_mat4(payload.localToWorldT0);
-            glm::mat4 xfmt1 = to_mat4(payload.localToWorldT1);
-            glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
             p = make_float3(xfm * make_vec4(mp, 1.0f));
-            vec4 tmp1 = optixLaunchParams.proj * optixLaunchParams.viewT0 * xfmt0 * make_vec4(mp, 1.0f);
-            float3 pt0 = make_float3(tmp1 / tmp1.w) * .5f;
-            vec4 tmp2 = optixLaunchParams.proj * optixLaunchParams.viewT1 * xfmt1 * make_vec4(mp, 1.0f);
-            float3 pt1 = make_float3(tmp2 / tmp2.w) * .5f;
-            diffuseMotion = pt1 - pt0;
             hit_p = p;
+            glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
             v_gz = make_float3(normalize(nxfm * make_vec3(v_gz)));
             v_z = make_float3(normalize(nxfm * make_vec3(v_z)));
             v_x = make_float3(normalize(nxfm * make_vec3(v_x)));
-            v_y = cross(v_z, v_x);
-            v_x = cross(v_y, v_z);
-        }       
 
+            
+            v_y = -cross(v_z, v_x);
+            v_x = -cross(v_y, v_z);
+
+            if (LP.renderDataMode != RenderDataFlags::NONE) {
+                // glm::mat4 xfmt0 = transform.localToWorldPrev;
+                // glm::mat4 xfmt1 = transform.localToWorld;
+                glm::mat4 xfmt0 = to_mat4(payload.localToWorldT0);
+                glm::mat4 xfmt1 = to_mat4(payload.localToWorldT1);
+                vec4 tmp1 = LP.proj * LP.viewT0 * xfmt0 * make_vec4(mp, 1.0f);
+                vec4 tmp2 = LP.proj * LP.viewT1 * xfmt1 * make_vec4(mp, 1.0f);
+                float3 pt0 = make_float3(tmp1 / tmp1.w) * .5f;
+                float3 pt1 = make_float3(tmp2 / tmp2.w) * .5f;
+                diffuseMotion = pt1 - pt0;
+            } else {
+                diffuseMotion = make_float3(0.f, 0.f, 0.f);
+            }
+        }    
+        
+        // Fallback for tangent and bitangent if UVs result in degenerate vectors.
         if (
             all(lessThan(abs(make_vec3(v_x)), vec3(EPSILON))) || 
             all(lessThan(abs(make_vec3(v_y)), vec3(EPSILON))) ||
             any(isnan(make_vec3(v_x))) || 
             any(isnan(make_vec3(v_y)))
-        ) 
-        {
+        ) {
             ortho_basis(v_x, v_y, v_z);
         }
 
+        // Construct TBN matrix, sample normal map
         {
             glm::mat3 tbn;
             tbn = glm::column(tbn, 0, make_vec3(v_x) );
             tbn = glm::column(tbn, 1, make_vec3(v_y) );
             tbn = glm::column(tbn, 2, make_vec3(v_z) );   
-            float3 dN = sampleTexture(entityMaterial.normal_map_texture_id, uv); //vec4(0.5f, .5f, 1.f, 0.f)
-            dN = (dN * make_float3(2.0f)) - make_float3(1.f);   
-            v_z = make_float3(normalize(tbn * normalize(make_vec3(dN))) );
+            float3 dN;
+            if (entity.light_id >= 0 && entity.light_id < LP.lights.count) {
+                dN = make_float3(0.5f, .5f, 1.f);
+            } else {
+                dN = sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float3(0.5f, .5f, 1.f));
+            }
+
+            dN = normalize( (dN * make_float3(2.0f)) - make_float3(1.f) );   
+            v_z = make_float3(tbn * make_vec3(dN));
         }
 
-        if (shouldNormalFaceForward) {
+        // // TEMP CODE
+        // auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
+        // LP.frameBuffer[fbOfs] = make_vec4(v_z, 1.f);
+        // return;
+
+        // If we didn't hit glass, flip the surface normal to face forward.
+        if ((mat.specular_transmission == 0.f) && (entity.light_id == -1)) {
             v_z = faceNormalForward(w_o, v_gz, v_z);
         }
 
-        // For segmentations, geometric metadata extraction dependent on the hit object
-        saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, entityID, diffuseMotion, mat);
-                    
-        // If this is the first hit, keep track of primary albedo and normal for denoising.
-        // if (bounce == 0) {
-            // primaryNormal = v_z;
-            // primaryAlbedo = mat.base_color;
-        // }
+        // For segmentations, save geometric metadata
+        saveGeometricRenderData(renderData, bounce, payload.tHit, hit_p, v_z, w_o, uv, entityID, diffuseMotion, time, mat);
+        if (bounce == 0) {
+            primaryAlbedo = mat.base_color;
+            primaryNormal = v_z;
+        }
+
+        // Potentially skip forward if the hit object is transparent 
+        if ((entity.light_id == -1) && (mat.alpha < 1.f)) {
+            float alpha_rnd = lcg_randomf(rng);
+
+            if (alpha_rnd > mat.alpha) {
+                ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
+                payload.tHit = -1.f;
+                ray.time = time;
+                owl::traceRay( LP.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+                ++bounce;     
+                specularBounce++; // counting transparency as a specular bounce for now
+                continue;
+            }
+        }
 
         // If the entity we hit is a light, terminate the path.
-        // First hits are colored by the light. All other light hits are handled by NEE/MIS 
-        if (entity.light_id >= 0 && entity.light_id < MAX_LIGHTS) {
-            if (bounce == 0) 
-            {
-                entityLight = optixLaunchParams.lights[entity.light_id];
-                float3 light_emission;
-                if (entityLight.color_texture_id == -1) light_emission = make_float3(entityLight.r, entityLight.g, entityLight.b) * entityLight.intensity;
-                else light_emission = sampleTexture(entityLight.color_texture_id, uv); // * intensity; temporarily commenting out to show texture for bright lights in LDR
-                illum = light_emission; 
-                directIllum = illum;
-            }
+        // Note that NEE/MIS will also potentially terminate the path, preventing double-counting.
+        if (entity.light_id >= 0 && entity.light_id < LP.lights.count) {
+            float dotNWi = max(dot(ray.direction, v_z), 0.f);
+            if ((dotNWi > EPSILON) && (bounce != 0)) break;
+
+            LightStruct entityLight = LP.lights.get(entity.light_id, __LINE__);
+            float3 lightEmission;
+            if (entityLight.color_texture_id == -1) lightEmission = make_float3(entityLight.r, entityLight.g, entityLight.b);
+            else lightEmission = sampleTexture(entityLight.color_texture_id, uv, make_float3(0.f, 0.f, 0.f));
+            float dist = payload.tHit;
+            lightEmission = (lightEmission * entityLight.intensity);
+            if (bounce != 0) lightEmission = (lightEmission * pow(2.f, entityLight.exposure)) / (dist * dist);
+            float3 contribution = pathThroughput * lightEmission;
+            illum = illum + contribution;
+            if (bounce == 0) directIllum = illum;
             break;
         }
-                    
-        // Sample a light source
+
+        // Next, we'll be sampling direct light sources
         int32_t sampledLightIDs[MAX_LIGHT_SAMPLES] = {-2};
         float lightPDFs[MAX_LIGHT_SAMPLES] = {0.f};
-        
-        int numLights = optixLaunchParams.numLightEntities;
         float3 irradiance = make_float3(0.f);
 
         // note, rdForcedBsdf is -1 by default
-        int forcedBsdf = -1;//rdForcedBsdf;//(bounce == optixLaunchParams.renderDataBounce) ? rdForcedBsdf : -1; 
+        int forcedBsdf = -1;
 
-        // first, sample the BRDF so that we can use the sampled direction for MIS
+        // First, sample the BRDF so that we can use the sampled direction for MIS
         float3 w_i;
         float bsdfPDF;
         int sampledBsdf = -1;
         float3 bsdf, bsdfColor;
         sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
 
-        // next, sample the light source by importance sampling the light
-        owl::device::Buffer *vertexLists = (owl::device::Buffer *)optixLaunchParams.vertexLists.data;
-        owl::device::Buffer *normalLists = (owl::device::Buffer *)optixLaunchParams.normalLists.data;
-        owl::device::Buffer *texCoordLists = (owl::device::Buffer *)optixLaunchParams.texCoordLists.data;
-        auto &i2e = optixLaunchParams.instanceToEntityMap;
+        // Next, sample the light source by importance sampling the light
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
-        // for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid) 
+        uint32_t state = rng.state;
+        
+        // for (uint32_t lid = 0; lid < numLightSamples; ++lid) 
         {
+            LCGRand diRnd;
+            diRnd.state = state;
             uint32_t lid = 0;
             // reservoir doesn't work with numLightSamples above...
-            float rnd = lcg_randomf(rng);
+            // float rnd = lcg_randomf(diRnd);
+            uint32_t randmax = (enableDomeSampling) ? numLights + 1 : numLights;
             
             float dotNWi;
             float dist;
@@ -709,32 +884,41 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             int numTris;
             uint32_t randomID;
             bool visible;
-
+            
+            reservoir_w = 1.f;
             for (uint32_t resTry = 0; resTry <= 1; ++resTry) 
             {
-                float rnd1 = floor(rnd * (numLights+1));
-                float rnd2 = (rnd * (numLights+1)) - rnd1;
-                randomID = uint32_t(min(rnd1, float(numLights)));
-                reservoir_w = 1.f;
+                randomID = uint32_t(min(lcg_randomf(diRnd) * randmax, float(randmax-1)));
+
+                // float rnd1 = floor(rnd * randmax);
+                // float rnd2 = (rnd * randmax) - rnd1;
+                // float rnd3 = (rnd * randmax) - rnd1;
+                // float rnd4 = (rnd * randmax) - rnd1;
+                // randomID = uint32_t(min(rnd, float(randmax) - 1));
                 
+                float lightDistance = 1e20f;
+                float falloff = 2.0f;
+                int numTris;
+
                 // sample background
-                if (randomID == numLights)
-                {
+                if (randomID == numLights) 
+                {    
                     sampledLightIDs[lid] = -1;
 
                     if (
-                        (optixLaunchParams.environmentMapWidth != 0) && (optixLaunchParams.environmentMapHeight != 0) &&
-                        (optixLaunchParams.environmentMapRows != nullptr) && (optixLaunchParams.environmentMapCols != nullptr)
+                        (LP.environmentMapWidth != 0) && (LP.environmentMapHeight != 0) &&
+                        (LP.environmentMapRows != nullptr) && (LP.environmentMapCols != nullptr) 
                     ) 
                     {
-                        // significant bottleneck here
-                        // Vec3fa color = m_background->sample(dg, wi, tMax, RandomSampler_get2D(sampler));
-                        float rx = lcg_randomf(rng);
-                        float ry = lcg_randomf(rng);
-                        float* rows = optixLaunchParams.environmentMapRows;
-                        float* cols = optixLaunchParams.environmentMapCols;
-                        int width = optixLaunchParams.environmentMapWidth;
-                        int height = optixLaunchParams.environmentMapHeight;
+                        // Reduces noise for strangely noisy dome light textures, but at the expense 
+                        // of a highly uncoalesced binary search through a 2D CDF.
+                        // disabled by default to avoid the hit to performance
+                        float rx = lcg_randomf(diRnd);
+                        float ry = lcg_randomf(diRnd);
+                        float* rows = LP.environmentMapRows;
+                        float* cols = LP.environmentMapCols;
+                        int width = LP.environmentMapWidth;
+                        int height = LP.environmentMapHeight;
                         float invjacobian = width * height / float(4 * M_PI);
                         float row_pdf, col_pdf;
                         unsigned x, y;
@@ -742,6 +926,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         y = max(min(y, height - 1), 0);
                         rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
                         lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
+                        lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
                         lightPDFs[lid] = row_pdf * col_pdf * invjacobian;
                     } 
                     else 
@@ -750,66 +935,79 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         tbn = glm::column(tbn, 0, make_vec3(v_x) );
                         tbn = glm::column(tbn, 1, make_vec3(v_y) );
                         tbn = glm::column(tbn, 2, make_vec3(v_z) );            
-                        const float3 hemi_dir = normalize(cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
-                        lightDir = make_float3(normalize(tbn * normalize(make_vec3(hemi_dir))) );
-                        lightPDFs[lid] = 1.f;
+                        const float3 hemi_dir = (cos_sample_hemisphere(make_float2(lcg_randomf(diRnd), lcg_randomf(diRnd))));
+                        lightDir = make_float3(tbn * make_vec3(hemi_dir));
+                        lightPDFs[lid] = 1.f / float(2.0 * M_PI);
                     }
 
                     numTris = 1.f;
                     dist = 1.f;
-                    dotNWi = fabs(dot(lightDir, v_z)); // for now, making all lights double sided.
-                    lightEmission = (missColor(ray) * optixLaunchParams.domeLightIntensity);
-                    disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
+                    lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
                 }
+                
                 // sample light sources
                 else 
                 {
                     if (numLights == 0) continue;
-                    sampledLightIDs[lid] = optixLaunchParams.lightEntities[randomID];
-                    EntityStruct light_entity = optixLaunchParams.entities[sampledLightIDs[lid]];
-                    LightStruct light_light = optixLaunchParams.lights[light_entity.light_id];
-                    TransformStruct transform = optixLaunchParams.transforms[light_entity.transform_id];
-                    MeshStruct mesh = optixLaunchParams.meshes[light_entity.mesh_id];
-
-                    uint32_t random_tri_id = uint32_t(min(rnd2 * mesh.numTris, float(mesh.numTris - 1)));
-                    owl::device::Buffer *indexLists = (owl::device::Buffer *)optixLaunchParams.indexLists.data;
-                    ivec3 *indices = (ivec3*) indexLists[light_entity.mesh_id].data;
-                    vec4 *vertices = (vec4*) vertexLists[light_entity.mesh_id].data;
-                    vec4 *normals = (vec4*) normalLists[light_entity.mesh_id].data;
-                    vec2 *texCoords = (vec2*) texCoordLists[light_entity.mesh_id].data;
-                    ivec3 triIndex = indices[random_tri_id];   
+                    sampledLightIDs[lid] = LP.lightEntities.get(randomID, __LINE__);
+                    EntityStruct light_entity = LP.entities.get(sampledLightIDs[lid], __LINE__);
+                    LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
+                    TransformStruct transform = LP.transforms.get(light_entity.transform_id, __LINE__);
+                    MeshStruct mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
+                    uint32_t random_tri_id = uint32_t(min(lcg_randomf(diRnd) * mesh.numTris, float(mesh.numTris - 1)));
+                    auto indices = LP.indexLists.get(light_entity.mesh_id, __LINE__);
+                    auto vertices = LP.vertexLists.get(light_entity.mesh_id, __LINE__);
+                    auto normals = LP.normalLists.get(light_entity.mesh_id, __LINE__);
+                    auto texCoords = LP.texCoordLists.get(light_entity.mesh_id, __LINE__);
+                    int3 triIndex = indices.get(random_tri_id, __LINE__);
                     
                     // Sample the light to compute an incident light ray to this point
                     auto &ltw = transform.localToWorld;
-                    vec3 dir; vec2 uv;
-                    vec3 pos = vec3(hit_p.x, hit_p.y, hit_p.z);
-                    sampleTriangle(pos, 
-                        ltw * normals[triIndex.x], ltw * normals[triIndex.y], ltw * normals[triIndex.z], 
-                        ltw * vertices[triIndex.x], ltw * vertices[triIndex.y], ltw * vertices[triIndex.z], // Might be a bug here with normal transform...
-                        texCoords[triIndex.x], texCoords[triIndex.y], texCoords[triIndex.z], 
-                        lcg_randomf(rng), lcg_randomf(rng), dir, lightPDFs[lid], uv, /*double_sided*/ false);
-                    vec3 normal = glm::vec3(v_z.x, v_z.y, v_z.z);
+                    float3 dir; float2 uv;
+                    float3 pos = hit_p;
+                    // Might be a bug here with normal transform...
+                    float3 n1 = make_float3(ltw * normals.get(triIndex.x, __LINE__));
+                    float3 n2 = make_float3(ltw * normals.get(triIndex.y, __LINE__));
+                    float3 n3 = make_float3(ltw * normals.get(triIndex.z, __LINE__));
+                    float3 v1 = make_float3(ltw * make_float4(vertices.get(triIndex.x, __LINE__), 1.0f));
+                    float3 v2 = make_float3(ltw * make_float4(vertices.get(triIndex.y, __LINE__), 1.0f));
+                    float3 v3 = make_float3(ltw * make_float4(vertices.get(triIndex.z, __LINE__), 1.0f));
+                    float2 uv1 = texCoords.get(triIndex.x, __LINE__);
+                    float2 uv2 = texCoords.get(triIndex.y, __LINE__);
+                    float2 uv3 = texCoords.get(triIndex.z, __LINE__);
+                    sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
+                        lcg_randomf(diRnd), lcg_randomf(diRnd), dir, lightDistance, lightPDFs[lid], uv, 
+                        /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
                     
-                    dotNWi = abs(dot(dir, normal));
+                    falloff = light_light.falloff;
                     numTris = mesh.numTris;
                     lightDir = make_float3(dir.x, dir.y, dir.z);
-                    if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
-                    else lightEmission = sampleTexture(light_light.color_texture_id, make_float2(uv)) * light_light.intensity;
-                    disney_brdf(mat, v_z, w_o, lightDir, v_x, v_y, bsdf, bsdfColor, forcedBsdf);
+                    if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
+                    else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
                 }
+                if (randomID != numLights) lightEmission = lightEmission / pow(payload.tHit, falloff);
 
                 // compute visibility
                 RayPayload payload; payload.instanceID = -2;
-                owl::Ray ray;
-                ray.tmin = EPSILON * 10.f; ray.tmax = 1e20f;
+                owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
+                ray.tmin = EPSILON * 10.f; ray.tmax = lightDistance + EPSILON; // needs to be distance to light, else anyhit logic breaks.
                 ray.origin = hit_p; ray.direction = lightDir;
                 ray.time = time;
-                owl::traceRay( optixLaunchParams.world, ray, payload, occlusion_flags);
+                owl::traceRay( LP.world, ray, payload, occlusion_flags);
                 visible = (randomID == numLights) ?
-                    (payload.instanceID == -2) : (payload.instanceID >= 0 && i2e[payload.instanceID] == sampledLightIDs[lid]);
+                    (payload.instanceID == -2) : 
+                    ((payload.instanceID == -2) || (LP.instanceToEntityMap.get(payload.instanceID, __LINE__) == sampledLightIDs[lid]));
                 if (visible && randomID != numLights) dist = payload.tHit;
-                
-                lightPDFs[lid] = lightPDFs[lid] * (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
+
+                // geometry term
+                dotNWi = max(dot(lightDir, v_z), 0.f);
+
+                // make pdf relative to all lights
+                // lightPDFs[lid] *= (1.f / float(randmax)) * (1.f / float(numTris));
+
+                // evaluate bsdf
+                disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, bsdf, bsdfColor, forcedBsdf);
+                lightPDFs[lid] = lightPDFs[lid] * (1.f / float(randmax)) * (1.f / float(numTris));
                 Li = (visible && lightPDFs[lid] > 0.0 && dotNWi > EPSILON) ? 
                     (bsdf * bsdfColor * (lightEmission / (dist * dist))) / lightPDFs[lid] 
                     : make_float3(0.f);
@@ -817,118 +1015,135 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if (all(lessThanEqual(make_vec3(Li), vec3(0.f)))) continue;
 
                 // update reservoir
-                float p = (1.f / float(numLights + 1.f));// * (1.f / float(numTris));
+                float p = lightPDFs[lid];//lightPDFs[lid];//(1.f / float(randmax));//lightPDFs[lid];//1.0f;//(1.f / float(randmax));//lightPDFs[lid];//(1.f / float(randmax));// * (1.f / float(numTris));
                 float p_hat = max(max(Li.x, max(Li.y, Li.z)), .001);
                 reservoir_w = reservoir.getWeight(p_hat);
                 if (resTry == 0) {
-                    reservoir.update(rnd, p_hat / p, lcg_randomf(rng), lcg_randomf(rng));
-                    if (reservoir.sample == rnd) break;
+                    reservoir.update(state, p_hat / p, lcg_randomf(rng), lcg_randomf(rng));
+                    if (reservoir.sample != state) break;
+                    state = reservoir.sample;
                 }
-                rnd = reservoir.sample;
             }
+                //     owl::traceRay( LP.world, ray, payload, occlusion_flags);
+                // //     bool visible = (randomID == numLights) ?
+                // //     (payload.instanceID == -2) : 
+                // //     ((payload.instanceID == -2) || (LP.instanceToEntityMap.get(payload.instanceID, __LINE__) == sampledLightIDs[lid]));
+                // // if (visible) {
+                // //     if (randomID != numLights) lightEmission = lightEmission / pow(payload.tHit, falloff);
+                // //     float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
+                // //     float3 Li = (lightEmission * w) / lightPDFs[lid];
+                // //     irradiance = irradiance + (bsdf * bsdfColor * Li);
+                // // }
+                // }
 
+                
+            float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
+            irradiance = irradiance + Li * w * reservoir_w;//w;//(bsdf * bsdfColor * Li);
+
+    //         // if (visible && lightPDFs[lid] > 0.0 && dotNWi > EPSILON) {
+    //         //     lightEmission = lightEmission / (dist * dist);
+    //         //     lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
+    //         //     // float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
+    //         //     // float3 Li = (lightEmission * w * reservoir_w) / lightPDFs[lid];
+    //         //     irradiance = irradiance + Li * reservoir_w;//(bsdf * bsdfColor * Li);
+    //         // }
+
+    //         // if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
+    //         // }
             // testing
             // {
-            //     optixLaunchParams.reservoirBuffer[fbOfs] = reservoir;
-            //     vec3 c = make_vec3(Li);//randomColor(randomID);
+            //     optixLaunchParams.reservoirBuffer.set(fbOfs, reservoir, __LINE__);
+            //     // vec3 c = make_vec3(Li);//randomColor(randomID);
+            //     // vec3 c = make_vec3(irradiance);
+            //     vec3 c = randomColor(randomID);
+            //     // vec3 c = make_vec3(pathThroughput * Li);
             //     optixLaunchParams.frameBuffer[fbOfs] = vec4(c.r, c.g, c.b, 1.0);
             //     return;
             // }
-
-            float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
-            irradiance = irradiance + Li * reservoir_w * w;//(bsdf * bsdfColor * Li);
-
-            // if (visible && lightPDFs[lid] > 0.0 && dotNWi > EPSILON) {
-            //     lightEmission = lightEmission / (dist * dist);
-            //     lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
-            //     // float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
-            //     // float3 Li = (lightEmission * w * reservoir_w) / lightPDFs[lid];
-            //     irradiance = irradiance + Li * reservoir_w;//(bsdf * bsdfColor * Li);
-            // }
-
-            // if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
-            // }
         }
+        
 
-        // For segmentations, lighting metadata extraction dependent on sampling the BSDF
+        // For segmentations, save lighting metadata
         saveLightingColorRenderData(renderData, bounce, v_z, w_o, w_i, mat);
 
-        // terminate if the bsdf probability is impossible, or if the bsdf filters out all light
+        // Terminate the path if the bsdf probability is impossible, or if the bsdf filters out all light
         if (bsdfPDF < EPSILON || all_zero(bsdf) || all_zero(bsdfColor)) {
             float3 contribution = pathThroughput * irradiance;
             illum = illum + contribution;
             break;
         }
 
-        // sample a light source by importance sampling the BDRF
-        // trace the next ray along that sampled BRDF direction
+        // Next, sample a light source using the importance sampled BDRF direction.
         ray.origin = hit_p;
         ray.direction = w_i;
-        ray.tmin = EPSILON * 100.f;
+        ray.tmin = EPSILON;//* 100.f;
         payload.instanceID = -1;
         payload.tHit = -1.f;
         ray.time = sampleTime(lcg_randomf(rng));
-        owl::traceRay(optixLaunchParams.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+        owl::traceRay(LP.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
-        // for (uint32_t lid = 0; lid < optixLaunchParams.numLightSamples; ++lid)
+        // Check if we hit any of the previously sampled lights
+        bool hitLight = false;
+        // for (uint32_t lid = 0; lid < numLightSamples; ++lid)
         {
-            uint32_t lid = 0;
+            uint32_t lid = 0; // can't use multiple light samples with restir
             if (lightPDFs[lid] > EPSILON) 
             {
-                // if by sampling the brdf we also hit the light source...
-                if ((payload.instanceID == -1) && (sampledLightIDs[lid] == -1)) {
+                // if by sampling the brdf we also hit the dome light...
+                if ((payload.instanceID == -1) && (sampledLightIDs[lid] == -1) && enableDomeSampling) {
                     // Case where we hit the background, and also previously sampled the background   
                     float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
-                    float3 lightEmission = missColor(ray) * optixLaunchParams.domeLightIntensity;
+                    float3 lightEmission = missColor(ray, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure);
                     float3 Li = (lightEmission * w) / bsdfPDF;
-                    float dotNWi = dot(v_gz, ray.direction);  // geometry term
+                    float dotNWi = max(dot(ray.direction, v_gz), 0.f);  // geometry term
                     if (dotNWi > 0.f) {
                         irradiance = irradiance + (bsdf * bsdfColor * Li);
                     }
+                    hitLight = true;
                 }
+                // else if by sampling the brdf we also hit an area light
                 else if (payload.instanceID != -1) {
-                    // Case where we hit the light, and also previously sampled the same light
-                    int entityID = optixLaunchParams.instanceToEntityMap[payload.instanceID];
+                    int entityID = LP.instanceToEntityMap.get(payload.instanceID, __LINE__);
                     bool visible = (entityID == sampledLightIDs[lid]);
                     // We hit the light we sampled previously
                     if (visible) {
                         int3 indices; float3 p, p_e1, p_e2; float3 lv_gz; 
                         float2 uv, uv_e1, uv_e2;
-                        EntityStruct light_entity = optixLaunchParams.entities[sampledLightIDs[lid]];
-                        LightStruct light_light = optixLaunchParams.lights[light_entity.light_id];
-                        loadMeshTriIndices(light_entity.mesh_id, payload.primitiveID, indices);
-                        // loadMeshVertexData(light_entity.mesh_id, indices, payload.barycentrics, p, lv_gz, p_e1, p_e2);
-                        loadMeshUVData(light_entity.mesh_id, indices, payload.barycentrics, uv, uv_e1, uv_e2);
+                        EntityStruct light_entity = LP.entities.get(sampledLightIDs[lid], __LINE__);
+                        MeshStruct light_mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
+                        LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
+                        loadMeshTriIndices(light_entity.mesh_id, light_mesh.numTris, payload.primitiveID, indices);
+                        loadMeshUVData(light_entity.mesh_id, light_mesh.numVerts, indices, payload.barycentrics, uv, uv_e1, uv_e2);
 
-                        float dist = payload.tHit;// distance(vec3(p.x, p.y, p.z), vec3(ray.origin.x, ray.origin.y, ray.origin.z)); // should I be using this?
-                        float dotNWi = dot(v_gz, ray.direction); // geometry term
+                        float dist = payload.tHit;
+                        float dotNWi = max(dot(ray.direction, v_gz), 0.f); // geometry term
 
                         float3 lightEmission;
-                        if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * light_light.intensity;
-                        else lightEmission = sampleTexture(light_light.color_texture_id, uv) * light_light.intensity;
-                        lightEmission = lightEmission / (dist * dist);
+                        if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
+                        else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
+                        lightEmission = lightEmission / pow(dist, light_light.falloff);
 
-                        if ((dotNWi > 0.f) /*&& (dotWiN > 0.f)*/) 
+                        if (dotNWi > EPSILON) 
                         {
                             float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
                             float3 Li = (lightEmission * w) / bsdfPDF;
                             irradiance = irradiance + (bsdf * bsdfColor * Li);
                         }
+                        hitLight = true;
                     }
                 }
             }
         }
+        // irradiance = irradiance / float(numLightSamples);
 
-        // irradiance = irradiance / float(optixLaunchParams.numLightSamples);
-
-        // accumulate any radiance (ie pathThroughput * irradiance), and update the path throughput using the sampled BRDF
+        // Accumulate radiance (ie pathThroughput * irradiance), and update the path throughput using the sampled BRDF
         float3 contribution = pathThroughput * irradiance;
         illum = illum + contribution;
         pathThroughput = (pathThroughput * bsdf * bsdfColor) / bsdfPDF;
+        if (bounce == 0) directIllum = illum;
 
-        if (bounce == 0) {
-            directIllum = illum;
-        }
+        // Avoid double counting light sources by terminating here if we hit a light sampled thorugh NEE/MIS
+        if (hitLight) break;
 
         // Russian Roulette
         // Randomly terminate a path with a probability inversely equal to the throughput
@@ -948,7 +1163,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         ++bounce;     
         if (sampledBsdf == 0) diffuseBounce++;
         else specularBounce++;
-    } while (diffuseBounce < optixLaunchParams.maxDiffuseBounceDepth && specularBounce < optixLaunchParams.maxSpecularBounceDepth);
+    } while (diffuseBounce < LP.maxDiffuseBounceDepth && specularBounce < LP.maxSpecularBounceDepth);   
+
+    // For segmentations, save heatmap metadata
+    saveHeatmapRenderData(renderData, bounce, start_clock);
 
     // clamp out any extreme fireflies
     glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
@@ -960,10 +1178,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     // aovIndirectIllum = aovGIllum - aovDirectIllum;
     // saveLightingIrradianceRenderData(renderData, bounce, aovDirectIllum, aovIndirectIllum, rdSampledBsdf);
 
-    if (optixLaunchParams.indirectClamp > 0.f)
-        iillum = clamp(iillum, vec3(0.f), vec3(optixLaunchParams.indirectClamp));
-    if (optixLaunchParams.directClamp > 0.f)
-        dillum = clamp(dillum, vec3(0.f), vec3(optixLaunchParams.directClamp));
+    if (LP.indirectClamp > 0.f)
+        iillum = clamp(iillum, vec3(0.f), vec3(LP.indirectClamp));
+    if (LP.directClamp > 0.f)
+        dillum = clamp(dillum, vec3(0.f), vec3(LP.directClamp));
 
     gillum = dillum + iillum;
 
@@ -976,60 +1194,49 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     accum_illum = illum;
 
     /* Write to AOVs, progressively refining results */
-    float4 &prev_color = (float4&) optixLaunchParams.accumPtr[fbOfs];
-    float4 accum_color = make_float4((accum_illum + float(optixLaunchParams.frameID) * make_float3(prev_color)) / float(optixLaunchParams.frameID + 1), 1.0f);
-    optixLaunchParams.accumPtr[fbOfs] = vec4(
-        accum_color.x, 
-        accum_color.y, 
-        accum_color.z, 
-        accum_color.w
-    );
+    float4* accumPtr = (float4*) LP.accumPtr;
+    float4* fbPtr = (float4*) LP.frameBuffer;
+    float4* normalPtr = (float4*) LP.normalBuffer;
+    float4* albedoPtr = (float4*) LP.albedoBuffer;
 
-    float3 color = make_float3(accum_color);
-    optixLaunchParams.frameBuffer[fbOfs] = vec4(
-        color.x,
-        color.y,
-        color.z,
-        // accum_illum.x, // testing
-        // accum_illum.y, // testing
-        // accum_illum.z, // testing
-        1.0f
-    );
+    float4 prev_color = accumPtr[fbOfs];
+    float4 prev_normal = normalPtr[fbOfs];
+    float4 prev_albedo = albedoPtr[fbOfs];
+    float4 accum_color;
 
-
-    
-    // vec4 oldAlbedo = optixLaunchParams.albedoBuffer[fbOfs];
-    // vec4 oldNormal = optixLaunchParams.normalBuffer[fbOfs];
-    // if (any(isnan(oldAlbedo))) oldAlbedo = vec4(1.f);
-    // if (any(isnan(oldNormal))) oldNormal = vec4(1.f);
-    // vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
-    // vec4 newNormal = normalize(VP * vec4(primaryNormal.x, primaryNormal.y, primaryNormal.z, 0.f));
-    // newNormal.a = 1.f;
-    // vec4 accumAlbedo = (newAlbedo + float(optixLaunchParams.frameID) * oldAlbedo) / float(optixLaunchParams.frameID + 1);
-    // vec4 accumNormal = (newNormal + float(optixLaunchParams.frameID) * oldNormal) / float(optixLaunchParams.frameID + 1);
-    // optixLaunchParams.albedoBuffer[fbOfs] = accumAlbedo;
-    // optixLaunchParams.normalBuffer[fbOfs] = accumNormal;
-
-    // Override framebuffer output if user requested to render metadata
-    if (optixLaunchParams.renderDataMode != RenderDataFlags::NONE) {
-
-        // temporary for debugging
-        if (optixLaunchParams.renderDataMode == RenderDataFlags::RESERVOIR) {
-            float rnd = reservoir.sample;
-            int numLights = optixLaunchParams.numLightEntities;
-
-            rnd *= (numLights+1);
-            float rnd1 = floor(rnd);
-            float rnd2 = rnd - rnd1;
-            uint32_t randomID = uint32_t(min(rnd1, float(numLights)));
-
-            vec3 c = randomColor(randomID);
-            optixLaunchParams.frameBuffer[fbOfs] = vec4( c.r, c.g, c.b, 1.0f);
-        }
-        else {
-            optixLaunchParams.frameBuffer[fbOfs] = vec4( renderData.x, renderData.y, renderData.z, 1.0f);
-        }
+    if (LP.renderDataMode == RenderDataFlags::NONE) 
+    {
+        accum_color = make_float4((accum_illum + float(LP.frameID) * make_float3(prev_color)) / float(LP.frameID + 1), 1.0f);
     }
+    else {
+        // Override framebuffer output if user requested to render metadata
+        accum_illum = make_float3(renderData.x, renderData.y, renderData.z);
+        accum_color = make_float4((accum_illum + float(LP.frameID) * make_float3(prev_color)) / float(LP.frameID + 1), 1.0f);
+    }
+    
+    
+    // compute screen space normal / albedo
+    vec4 oldAlbedo = make_vec4(prev_albedo);
+    vec4 oldNormal = make_vec4(prev_normal);
+    if (any(isnan(oldAlbedo))) oldAlbedo = vec4(0.f);
+    if (any(isnan(oldNormal))) oldNormal = vec4(0.f);
+    vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
+    vec4 accumAlbedo = (newAlbedo + float(LP.frameID) * oldAlbedo) / float(LP.frameID + 1);
+    vec4 newNormal = vec4(make_vec3(primaryNormal), 1.f);
+    if (!all(equal(make_vec3(primaryNormal), vec3(0.f, 0.f, 0.f)))) {
+        glm::quat r0 = glm::quat_cast(LP.viewT0);
+        glm::quat r1 = glm::quat_cast(LP.viewT1);
+        glm::quat rot = (glm::all(glm::equal(r0, r1))) ? r0 : glm::slerp(r0, r1, time);
+        vec3 tmp = normalize(glm::mat3_cast(rot) * make_vec3(primaryNormal));
+        tmp = normalize(vec3(LP.proj * vec4(tmp, 0.f)));
+        newNormal = vec4(tmp, 1.f);
+    }
+    vec4 accumNormal = (newNormal + float(LP.frameID) * oldNormal) / float(LP.frameID + 1);
 
-    optixLaunchParams.reservoirBuffer[fbOfs] = reservoir;
+    // save data to frame buffers
+    accumPtr[fbOfs] = accum_color;
+    fbPtr[fbOfs] = accum_color;
+    albedoPtr[fbOfs] = make_float4(accumAlbedo);
+    normalPtr[fbOfs] = make_float4(accumNormal);    
+    optixLaunchParams.reservoirBuffer.set(fbOfs, reservoir, __LINE__);
 }

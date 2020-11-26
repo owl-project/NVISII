@@ -31,21 +31,25 @@ private:
 	bool active = true;
 
 	/** Prevents multiple components from simultaneously being added and/or removed from the component list */
-	static std::shared_ptr<std::mutex> editMutex;
+	static std::shared_ptr<std::recursive_mutex> editMutex;
 	
     /** Marks that the StaticFactory has allocated the table of components */
 	static bool factoryInitialized;
 	
     /** The table of Entity components */
-	static Entity entities[MAX_ENTITIES];
+	static std::vector<Entity> entities;
 
     /** The table of Entity structs */
-	static EntityStruct entityStructs[MAX_ENTITIES];
+	static std::vector<EntityStruct> entityStructs;
 
     /** A lookup table where, given the name of a component, returns the primary key of that component */
 	static std::map<std::string, uint32_t> lookupTable;
+	
+	static std::set<Entity*> dirtyEntities;
+	static std::set<Entity*> renderableEntities;
 
-    /**
+public:
+	/**
 	 * Instantiates a null Entity. Used to mark a row in the table as null. 
      * Note: for internal use only. 
 	 */
@@ -57,13 +61,6 @@ private:
 	 */
 	Entity(std::string name, uint32_t id);
 
-	/** Indicates that one of the components has been edited */
-    static bool anyDirty;
-
-    /** Indicates this component has been edited */
-    bool dirty = true;
-
-public:
     /**
 	 * Constructs an Entity with the given name.
 	 * 
@@ -100,6 +97,9 @@ public:
 	/** @returns the name of this component */
 	std::string getName();
 
+	/** @returns the unique integer ID for this component */
+	int32_t getId();
+
 	/** @returns A map whose key is an entity name and whose value is the ID for that entity */
 	static std::map<std::string, uint32_t> getNameToIdMap();
 
@@ -107,7 +107,7 @@ public:
 	static void remove(std::string name);
 	
     /** Allocates the tables used to store all Entity components */
-    static void initializeFactory();
+    static void initializeFactory(uint32_t max_components);
 
     /** @returns True if the tables used to store all Entity components have been allocated, and False otherwise */
 	static bool isFactoryInitialized();
@@ -124,20 +124,17 @@ public:
     /** @returns a string representation of the current component */
 	std::string toString();
 
-	/** Indicates whether or not any entities are "out of date" and need to be updated through the "update components" function */
+	/** @return True if any the entities has been modified since the previous frame, and False otherwise */
 	static bool areAnyDirty();
 
-    /** @returns True if the Entity has been modified since the previous frame, and False otherwise */
-	bool isDirty() { return dirty; }
+    /** @returns a list of entities that have been modified since the previous frame */
+    static std::set<Entity*> getDirtyEntities();
 
-    /** @returns True if the Entity has not been modified since the previous frame, and False otherwise */
-	bool isClean() { return !dirty; }
+	/** @returns a list of entities that are renderable (ie, can be seen) by the camera. (note, currently ignores visibility) */
+    static std::set<Entity*> getRenderableEntities();
 
-    /** Tags the current component as being modified, and in need of updating. */
+    /** Tags the current component as being modified since the previous frame. */
 	void markDirty();
-
-    /** Tags the current component as being unmodified, or updated. */
-	void markClean() { dirty = false; }
 
     /** Returns the simplified struct used to represent the current component */
 	EntityStruct &getStruct();
@@ -193,6 +190,21 @@ public:
 	*/
 	void setVisibility(bool camera = true);
 
+	/** @returns the minimum axis aligned bounding box position. Requires a transform and mesh component to be attached. */
+	glm::vec3 getMinAabbCorner();
+	
+	/** @returns the maximum axis aligned bounding box position. Requires a transform and mesh component to be attached. */
+	glm::vec3 getMaxAabbCorner();
+
+	/** @returns the center of the aligned bounding box. Requires a transform and mesh component to be attached. */
+	glm::vec3 getAabbCenter();
+
 	/** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
-	static std::shared_ptr<std::mutex> getEditMutex();
+	static std::shared_ptr<std::recursive_mutex> getEditMutex();
+
+	/** For internal use. */
+	void computeAabb();
+
+	/** For internal use. */
+	void updateRenderables();
 };

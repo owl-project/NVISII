@@ -2,19 +2,19 @@
 #include <visii/entity.h>
 #include <glm/gtx/matrix_decompose.hpp>
 
-Transform Transform::transforms[MAX_TRANSFORMS];
-TransformStruct Transform::transformStructs[MAX_TRANSFORMS];
+std::vector<Transform> Transform::transforms;
+std::vector<TransformStruct> Transform::transformStructs;
 std::map<std::string, uint32_t> Transform::lookupTable;
-
-std::shared_ptr<std::mutex> Transform::editMutex;
+std::shared_ptr<std::recursive_mutex> Transform::editMutex;
 bool Transform::factoryInitialized = false;
 std::set<Transform*> Transform::dirtyTransforms;
-static bool mutexAcquired = false;
 
-void Transform::initializeFactory()
+void Transform::initializeFactory(uint32_t max_components)
 {
 	if (isFactoryInitialized()) return;
-	editMutex = std::make_shared<std::mutex>();
+	transforms.resize(max_components);
+	transformStructs.resize(max_components);
+	editMutex = std::make_shared<std::recursive_mutex>();
 	factoryInitialized = true;
 }
 
@@ -29,7 +29,7 @@ bool Transform::isInitialized()
 }
 
 bool Transform::areAnyDirty() {
-	return dirtyTransforms.size();
+	return dirtyTransforms.size() > 0;
 };
 
 std::set<Transform*> Transform::getDirtyTransforms()
@@ -42,8 +42,8 @@ void Transform::updateComponents()
 	if (dirtyTransforms.size() == 0) return;
 	for (auto &t : dirtyTransforms) {
 		if (!t->isInitialized()) continue;
-		transformStructs[t->id].worldToLocal = t->getWorldToLocalMatrix();
-		transformStructs[t->id].localToWorld = t->getLocalToWorldMatrix();
+		transformStructs[t->id].localToWorld = t->getLocalToWorldMatrix(false);
+		transformStructs[t->id].localToWorldPrev = t->getLocalToWorldMatrix(true);
 	}
 	dirtyTransforms.clear();
 }
@@ -64,17 +64,17 @@ Transform* Transform::create(std::string name,
 	vec3 scale, quat rotation, vec3 position) 
 {
 	auto createTransform = [scale, rotation, position] (Transform* transform) {
-		dirtyTransforms.insert(transform);
 		transform->setPosition(position);
 		transform->setRotation(rotation);
 		transform->setScale(scale);
+		transform->markDirty();
 	};
 
 	try {
-		return StaticFactory::create<Transform>(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS, createTransform);
+		return StaticFactory::create<Transform>(editMutex, name, "Transform", lookupTable, transforms.data(), transforms.size(), createTransform);
 	}
 	catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+		StaticFactory::removeIfExists(editMutex, name, "Transform", lookupTable, transforms.data(), transforms.size());
 		throw;
 	}
 }
@@ -82,45 +82,47 @@ Transform* Transform::create(std::string name,
 Transform* Transform::createFromMatrix(std::string name, mat4 xfm) 
 {
 	auto createTransform = [xfm] (Transform* transform) {
-		dirtyTransforms.insert(transform);
 		transform->setTransform(xfm);
+		transform->markDirty();
 	};
 
 	try {
-		return StaticFactory::create<Transform>(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS, createTransform);
+		return StaticFactory::create<Transform>(editMutex, name, "Transform", lookupTable, transforms.data(), transforms.size(), createTransform);
 	}
 	catch (...) {
-		StaticFactory::removeIfExists(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+		StaticFactory::removeIfExists(editMutex, name, "Transform", lookupTable, transforms.data(), transforms.size());
 		throw;
 	}
 }
 
-std::shared_ptr<std::mutex> Transform::getEditMutex()
+std::shared_ptr<std::recursive_mutex> Transform::getEditMutex()
 {
 	return editMutex;
 }
 
 Transform* Transform::get(std::string name) {
-	return StaticFactory::get(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+	return StaticFactory::get(editMutex, name, "Transform", lookupTable, transforms.data(), transforms.size());
 }
 
 void Transform::remove(std::string name) {
-	int32_t oldID = transforms->getId();
-	StaticFactory::remove(editMutex, name, "Transform", lookupTable, transforms, MAX_TRANSFORMS);
+	auto t = get(name);
+	if (!t) return;
+	int32_t oldID = t->getId();
+	StaticFactory::remove(editMutex, name, "Transform", lookupTable, transforms.data(), transforms.size());
 	dirtyTransforms.insert(&transforms[oldID]);
 }
 
 TransformStruct* Transform::getFrontStruct()
 {
-	return transformStructs;
+	return transformStructs.data();
 }
 
 Transform* Transform::getFront() {
-	return transforms;
+	return transforms.data();
 }
 
 uint32_t Transform::getCount() {
-	return MAX_TRANSFORMS;
+	return transforms.size();
 }
 
 std::string Transform::getName()
@@ -133,12 +135,21 @@ int32_t Transform::getId()
     return id;
 }
 
+int32_t Transform::getAddress()
+{
+	return (this - transforms.data());
+}
+
 std::map<std::string, uint32_t> Transform::getNameToIdMap()
 {
 	return lookupTable;
 }
 
 void Transform::markDirty() {
+	if (getAddress() < 0 || getAddress() >= transforms.size()) {
+        throw std::runtime_error("Error, transform not allocated in list");
+    }
+
 	dirtyTransforms.insert(this);
 	auto entityPointers = Entity::getFront();
 	for (auto &eid : entities) {
@@ -231,9 +242,6 @@ glm::quat safeQuatLookAt(
 
 void Transform::lookAt(vec3 at, vec3 up, vec3 eye, bool previous)
 {
-	// if (!mutexAcquired) {
-	// 	std::lock_guard<std::mutex>lock(*editMutex.get());
-	// }
 	if (previous) {
 		useRelativeAngularMotionBlur = false;
 	}
@@ -789,7 +797,7 @@ glm::mat4 Transform::getParentToLocalRotationMatrix(bool previous)
 }
 
 Transform* Transform::getParent() {
-	if ((this->parent < 0) || (this->parent >= MAX_TRANSFORMS)) return nullptr;
+	if ((this->parent < 0) || (this->parent >= transforms.size())) return nullptr;
 	return &transforms[this->parent];
 }
 
@@ -797,7 +805,7 @@ std::vector<Transform*> Transform::getChildren() {
 	std::vector<Transform*> children_list;
 	for (auto &cid : this->children){
 		// in theory I don't need to do this, but better safe than sorry.
-		if ((cid < 0) || (cid >= MAX_TRANSFORMS)) continue;
+		if ((cid < 0) || (cid >= transforms.size())) continue;
 		children_list.push_back(&transforms[cid]);
 	}
 	return children_list;
@@ -830,7 +838,7 @@ void Transform::setParent(Transform *parent) {
 
 void Transform::clearParent()
 {
-	if ((parent < 0) || (parent >= MAX_TRANSFORMS)){
+	if ((parent < 0) || (parent >= transforms.size())){
 		parent = -1;
 		return;
 	}

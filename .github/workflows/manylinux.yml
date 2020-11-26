@@ -31,7 +31,7 @@ jobs:
       - name: Download Dependencies
         run: |
             # Add directory containing cmake
-            export PATH=$PATH:/opt/_internal/cpython-3.8.5/bin/
+            export PATH=$PATH:/opt/_internal/cpython-3.8.6/bin/
             
             # list contents of python folder
             #ls -R /opt/python/${{ matrix.python-version }}
@@ -52,7 +52,7 @@ jobs:
             /opt/python/cp38-cp38/bin/pip install cmake
             find / -iname "cmake"
             
-            /opt/_internal/cpython-3.8.5/bin/cmake --version
+            /opt/_internal/cpython-3.8.6/bin/cmake --version
             
             # Setuptools scm
             /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm
@@ -87,16 +87,18 @@ jobs:
             
       - name: Configure and install cmake project
         run: |
-          export PATH=$PATH:/opt/_internal/cpython-3.8.5/bin/
+          export PATH=$PATH:/opt/_internal/cpython-3.8.6/bin/
           source /opt/rh/devtoolset-8/enable
           
           PY=${{ matrix.python-version }}
           PYVER=${PY:2:1}.${PY:3:1}
           PYTHONXDOTYMU=python${PY:2:1}.${PY:8:3}
+          PYTHONXDOTY=python${PY:2:1}.${PY:3:1}
           echo $PYTHONXDOTYMU
           PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
           echo $PYTHONXDOTYMU
 
+          $PYEXEC -m pip install numpy
           $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
           $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
          
@@ -113,6 +115,7 @@ jobs:
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
           -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYMU/ \
+          -DPython_NumPy_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/lib/$PYTHONXDOTY/site-packages/numpy/core/include/ \
           -DPython_VERSION_MAJOR=${PY:2:1} \
           -DPython_VERSION_MINOR=${PY:3:1} \
           -DCMAKE_BUILD_TYPE=Release \
@@ -123,7 +126,6 @@ jobs:
           
           # need to temporarily remove libcuda.so.1 from library
           cd visii
-          patchelf --remove-needed libcuda.so.1 libvisii_lib.so
           patchelf --remove-needed libcuda.so.1 _visii.so
           cd ../
           
@@ -140,7 +142,6 @@ jobs:
           unar -d *.whl
           cd visii*
           cd visii
-          patchelf --add-needed libcuda.so.1 libvisii_lib.so
           patchelf --add-needed libcuda.so.1 _visii.so
           cd ..
           cd ..
