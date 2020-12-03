@@ -1199,6 +1199,7 @@ Mesh* Mesh::createWireframeBoundingBox(
 			mesh->texCoords.push_back(v.texcoord);
 		}
 		mesh->triangleIndices = indices;
+		mesh->generateSmoothTangents();
 		mesh->computeMetadata();
 	};
 	
