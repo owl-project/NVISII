@@ -167,10 +167,10 @@ class Texture : public StaticFactory
     std::string toString();
 
     /** @returns a flattened list of 32-bit float texels */
-    std::vector<vec4> &getFloatTexels();
+    std::vector<vec4> getFloatTexels();
 
     /** @returns a flattened list of 8-bit texels */
-	std::vector<u8vec4> &getByteTexels();
+	std::vector<u8vec4> getByteTexels();
 
 	/**
 	 * Sample the texture at the given texture coordinates
@@ -214,11 +214,11 @@ class Texture : public StaticFactory
 	/* TODO */
 	static bool factoryInitialized;
 	
-    /** A list of the camera components, allocated statically */
+    /** A list of the texture components, allocated statically */
 	static std::vector<Texture> textures;
 	static std::vector<TextureStruct> textureStructs;
 	
-	/** A lookup table of name to camera id */
+	/** A lookup table of name to texture id */
 	static std::map<std::string, uint32_t> lookupTable;
 
 	static std::set<Texture*> dirtyTextures;

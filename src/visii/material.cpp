@@ -200,7 +200,7 @@ Material* Material::getFront() {
 }
 
 uint32_t Material::getCount() {
-	return materials.size();
+	return uint32_t(materials.size());
 }
 
 std::string Material::getName()

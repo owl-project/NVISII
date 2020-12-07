@@ -251,7 +251,7 @@ LightStruct* Light::getFrontStruct() {
 }
 
 uint32_t Light::getCount() {
-    return lights.size();
+    return uint32_t(lights.size());
 }
 
 std::string Light::getName()
