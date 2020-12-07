@@ -16,5 +16,7 @@ set(HDR
     ${CMAKE_CURRENT_SOURCE_DIR}/texture.h
     ${CMAKE_CURRENT_SOURCE_DIR}/transform_struct.h
     ${CMAKE_CURRENT_SOURCE_DIR}/transform.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/volume_struct.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/volume.h
     ${CMAKE_CURRENT_SOURCE_DIR}/visii.h
     PARENT_SCOPE) 

@@ -6,6 +6,7 @@
 #include <visii/camera.h>
 #include <visii/light.h>
 #include <visii/texture.h>
+#include <visii/volume.h>
 
 /**
   * Deprecated. Please use initialize() instead.
@@ -19,7 +20,8 @@ void initializeInteractive(
   uint32_t max_meshes = 10000,
   uint32_t max_materials = 10000,
   uint32_t max_lights = 100,
-  uint32_t max_textures = 1000);
+  uint32_t max_textures = 1000,
+  uint32_t max_volumes = 1000);
 
 /**
   * Deprecated. Please use initialize(headless = True) instead.
@@ -32,7 +34,8 @@ void initializeHeadless(
   uint32_t max_meshes = 10000,
   uint32_t max_materials = 10000,
   uint32_t max_lights = 100,
-  uint32_t max_textures = 1000);
+  uint32_t max_textures = 1000,
+  uint32_t max_volumes = 1000);
 
 /**
   * Initializes various backend systems required to render scene data.
@@ -61,7 +64,8 @@ void initialize(
   uint32_t max_meshes = 10000,
   uint32_t max_materials = 10000,
   uint32_t max_lights = 100,
-  uint32_t max_textures = 1000);
+  uint32_t max_textures = 1000,
+  uint32_t max_volumes = 1000);
 
 /**
   * Removes any allocated components but keeps visii initialized.

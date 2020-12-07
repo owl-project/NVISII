@@ -2144,8 +2144,9 @@ void initializeComponentFactories(
     uint32_t maxMeshes, 
     uint32_t maxMaterials, 
     uint32_t maxLights,
-    uint32_t maxTextures)
-{
+    uint32_t maxTextures,
+    uint32_t maxVolumes
+) {
     Entity::initializeFactory(maxEntities);
     Camera::initializeFactory(maxCameras);
     Transform::initializeFactory(maxTransforms);
@@ -2153,6 +2154,7 @@ void initializeComponentFactories(
     Material::initializeFactory(maxMaterials);
     Light::initializeFactory(maxLights);
     Texture::initializeFactory(maxTextures);
+    Volume::initializeFactory(maxVolumes);
 }
 
 void reproject(glm::vec4 *samplesBuffer, glm::vec4 *t0AlbedoBuffer, glm::vec4 *t1AlbedoBuffer, glm::vec4 *mvecBuffer, glm::vec4 *scratchBuffer, glm::vec4 *imageBuffer, int width, int height);
@@ -2169,7 +2171,8 @@ void initializeInteractive(
     uint32_t maxMeshes,
     uint32_t maxMaterials,
     uint32_t maxLights,
-    uint32_t maxTextures)
+    uint32_t maxTextures,
+    uint32_t maxVolumes)
 {
     if (initializeInteractiveDeprecatedShown == false) {
         std::cout<<"Warning, initialize_interactive is deprecated and will be removed in a subsequent release. Please switch to initialize." << std::endl;
@@ -2186,7 +2189,7 @@ void initializeInteractive(
     verbose = _verbose;
     ViSII.preRenderCallback = nullptr;
 
-    initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures);
+    initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures, maxVolumes);
 
     auto loop = [windowOnTop]() {
         ViSII.render_thread_id = std::this_thread::get_id();
@@ -2269,7 +2272,8 @@ void initializeHeadless(
     uint32_t maxMeshes,
     uint32_t maxMaterials,
     uint32_t maxLights,
-    uint32_t maxTextures)
+    uint32_t maxTextures,
+    uint32_t maxVolumes)
 {
     if (initializeHeadlessDeprecatedShown == false) {
         std::cout<<"Warning, initialize_headless is deprecated and will be removed in a subsequent release. Please switch to initialize(headless = True)." << std::endl;
@@ -2286,7 +2290,7 @@ void initializeHeadless(
     verbose = _verbose;
     ViSII.preRenderCallback = nullptr;
 
-    initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures);
+    initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures, maxVolumes);
 
     auto loop = []() {
         ViSII.render_thread_id = std::this_thread::get_id();
@@ -2325,7 +2329,8 @@ void initialize(
     uint32_t maxMeshes,
     uint32_t maxMaterials,
     uint32_t maxLights,
-    uint32_t maxTextures) 
+    uint32_t maxTextures,
+    uint32_t maxVolumes) 
 {
     lazyUpdatesEnabled = _lazyUpdatesEnabled;
     // prevents deprecated warning from showing
@@ -2333,8 +2338,14 @@ void initialize(
     initializeHeadlessDeprecatedShown = true;
 
     lazyUpdatesEnabled = _lazyUpdatesEnabled;
-    if (headless) initializeHeadless(verbose, maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures);
-    else initializeInteractive(windowOnTop, verbose, maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures);
+    if (headless) 
+        initializeHeadless(
+            verbose, maxEntities, maxCameras, maxTransforms, maxMeshes, 
+            maxMaterials, maxLights, maxTextures, maxVolumes);
+    else 
+        initializeInteractive(
+            windowOnTop, verbose, maxEntities, maxCameras, maxTransforms, 
+            maxMeshes, maxMaterials, maxLights, maxTextures, maxVolumes);
 }
 
 void registerPreRenderCallback(std::function<void()> callback){
@@ -2351,6 +2362,7 @@ void clearAll()
     Mesh::clearAll();
     Camera::clearAll();
     Light::clearAll();
+    Volume::clearAll();
 }
 
 glm::vec3 getSceneMinAabbCorner() {

@@ -7,6 +7,7 @@ set (
     ${CMAKE_CURRENT_SOURCE_DIR}/mesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/texture.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/transform.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/volume.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/visii.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/visii.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/visii_import_scene.cpp
