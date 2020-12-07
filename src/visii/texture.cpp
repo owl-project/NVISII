@@ -52,7 +52,7 @@ std::string Texture::toString() {
     return output;
 }
 
-std::vector<vec4> &Texture::getFloatTexels() {
+std::vector<vec4> Texture::getFloatTexels() {
     // If natively represented as 32f, return that. 
     // otherwise, cast 8uc to 32f.
     if (floatTexels.size() > 0) return floatTexels;
@@ -63,7 +63,7 @@ std::vector<vec4> &Texture::getFloatTexels() {
     return floatTexels;
 }
 
-std::vector<u8vec4> &Texture::getByteTexels() {
+std::vector<u8vec4> Texture::getByteTexels() {
     // If natively represented as 8uc, return that. 
     // otherwise, cast 32f to 8uc.
     if (byteTexels.size() > 0) return byteTexels;
@@ -651,7 +651,7 @@ TextureStruct* Texture::getFrontStruct() {
 }
 
 uint32_t Texture::getCount() {
-    return textures.size();
+    return uint32_t(textures.size());
 }
 
 std::string Texture::getName()
@@ -666,7 +666,7 @@ int32_t Texture::getId()
 
 int32_t Texture::getAddress()
 {
-	return (this - textures.data());
+	return int32_t(this - textures.data());
 }
 
 std::map<std::string, uint32_t> Texture::getNameToIdMap()

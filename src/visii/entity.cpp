@@ -78,7 +78,7 @@ void Entity::clearTransform()
 Transform* Entity::getTransform()
 {
 	auto &entity = getStruct();
-	if ((entity.transform_id < 0) || (entity.transform_id >= Transform::getCount())) return nullptr;
+	if ((entity.transform_id < 0) || (entity.transform_id >= int32_t(Transform::getCount()))) return nullptr;
 	auto transforms = Transform::getFront(); 
 	if (!transforms[entity.transform_id].isInitialized()) return nullptr;
 	return &transforms[entity.transform_id];
@@ -110,7 +110,7 @@ void Entity::clearCamera()
 Camera* Entity::getCamera()
 {
 	auto &entity = getStruct();
-	if ((entity.camera_id < 0) || (entity.camera_id >= Camera::getCount())) return nullptr;
+	if ((entity.camera_id < 0) || (entity.camera_id >= int32_t(Camera::getCount()))) return nullptr;
 	auto cameras = Camera::getFront(); 
 	if (!cameras[entity.camera_id].isInitialized()) return nullptr;
 	return &cameras[entity.camera_id];
@@ -142,7 +142,7 @@ void Entity::clearMaterial()
 Material* Entity::getMaterial()
 {
 	auto &entity = getStruct();
-	if ((entity.material_id < 0) || (entity.material_id >= Material::getCount())) return nullptr;
+	if ((entity.material_id < 0) || (entity.material_id >= int32_t(Material::getCount()))) return nullptr;
 	auto &material = Material::getFront()[entity.material_id];
 	if (!material.isInitialized()) return nullptr;
 	return &material;
@@ -174,7 +174,7 @@ void Entity::clearLight()
 Light* Entity::getLight()
 {
 	auto &entity = getStruct();
-	if ((entity.light_id < 0) || (entity.light_id >= Light::getCount())) return nullptr;
+	if ((entity.light_id < 0) || (entity.light_id >= int32_t(Light::getCount()))) return nullptr;
 	auto &light = Light::getFront()[entity.light_id];
 	if (!light.isInitialized()) return nullptr;
 	return &light;
@@ -206,7 +206,7 @@ void Entity::clearMesh()
 Mesh* Entity::getMesh()
 {
 	auto &entity = getStruct();
-	if ((entity.mesh_id < 0) || (entity.mesh_id >= Mesh::getCount()))  return nullptr;
+	if ((entity.mesh_id < 0) || (entity.mesh_id >= int32_t(Mesh::getCount())))  return nullptr;
 	auto &mesh = Mesh::getFront()[entity.mesh_id];
 	if (!mesh.isInitialized()) return nullptr;
 	return &mesh;
@@ -401,7 +401,7 @@ Entity* Entity::getFront() {
 }
 
 uint32_t Entity::getCount() {
-	return entities.size();
+	return uint32_t(entities.size());
 }
 
 std::string Entity::getName()
