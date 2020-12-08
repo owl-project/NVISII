@@ -5,6 +5,8 @@
 
 #include <glm/gtc/color_space.hpp>
 
+#include <nanovdb/util/GridChecksum.h>
+
 std::vector<Volume> Volume::volumes;
 std::vector<VolumeStruct> Volume::volumeStructs;
 std::map<std::string, uint32_t> Volume::lookupTable;
@@ -92,13 +94,59 @@ void Volume::clearAll()
 	}
 }
 
+/**
+ * Check if a file exists
+ * @return true if and only if the file exists, false else
+ */
+bool fileExists(const char* file) {
+    struct stat buf;
+    return (stat(file, &buf) == 0);
+}
+
 /* Static Factory Implementations */
 Volume* Volume::createFromFile(std::string name, std::string path) {
     auto create = [path] (Volume* v) {
+        if (!fileExists(path.c_str())) {
+            throw std::runtime_error(std::string("Error: file does not exist ") + path);
+        }
+
+        // first, check the extension
+        std::string extension = std::string(strrchr(path.c_str(), '.'));
+        std::transform(extension.data(), extension.data() + extension.size(), 
+        std::addressof(extension[0]), [](unsigned char c){ return std::tolower(c); });
+
+        if (extension.compare(".nvdb") == 0) {
+            auto list = nanovdb::io::readGridMetaData(path);
+            std::cerr << "Opened file " << path << std::endl;
+            std::cerr << "    grids:" << std::endl;
+            for (auto& m : list) {
+                std::cerr << "        " << m.gridName << std::endl;
+            }
+            assert( list.size() > 0 );
+
+            nanovdb::GridHandle<> gridHdl;
+            if (list[0].gridName.length() > 0)
+                gridHdl = nanovdb::io::readGrid<>(path, list[0].gridName);
+            else
+                gridHdl = nanovdb::io::readGrid<>(path);
+            
+            if (!gridHdl) {
+                throw std::runtime_error("Error: unable to read nvdb grid!");
+            }
+
+            v->gridMetaData = list[0];
+            v->gridHdlPtr = std::make_shared<nanovdb::GridHandle<>>(std::move(gridHdl));
+            //v->gridHdl = std::move(gridHdl);
+        }
+        else {
+            throw std::runtime_error(std::string("Error: unsupported format ") + 
+                extension);
+        }
         v->markDirty();
     };
 
     try {
+
         return StaticFactory::create<Volume>(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size(), create);
     } catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size());
@@ -153,4 +201,118 @@ int32_t Volume::getAddress()
 std::map<std::string, uint32_t> Volume::getNameToIdMap()
 {
 	return lookupTable;
+}
+
+glm::vec3 Volume::getMinAabbCorner()
+{
+    auto minimum = gridMetaData.worldBBox.min();
+    return glm::vec3(minimum[0], minimum[1], minimum[2]);
+}
+
+glm::vec3 Volume::getMaxAabbCorner()
+{
+    auto maximum = gridMetaData.worldBBox.max();
+    return glm::vec3(maximum[0], maximum[1], maximum[2]);
+}
+
+glm::vec3 Volume::getAabbCenter()
+{
+    return getMinAabbCorner() + (getMaxAabbCorner() - getMinAabbCorner()) * .5f;
+}
+
+std::string Volume::getGridType()
+{
+    const nanovdb::GridMetaData* metadata = gridHdlPtr.get()->gridMetaData();
+    auto type = metadata->gridType();
+    switch(type) {
+        case nanovdb::GridType::Float : return "float";
+        case nanovdb::GridType::Double : return "double";
+        case nanovdb::GridType::Int16 : return "int16";
+        case nanovdb::GridType::Int32 : return "int32";
+        case nanovdb::GridType::Int64 : return "int64";
+        case nanovdb::GridType::Vec3f : return "vec3f";
+        case nanovdb::GridType::Vec3d : return "vec3d";
+        case nanovdb::GridType::Mask : return "mask";
+        case nanovdb::GridType::FP16 : return "fp16";
+        case nanovdb::GridType::UInt32 : return "uint32";
+        default : return "unknown";
+    };
+}
+ 
+uint32_t Volume::getNodeCount(uint32_t level)
+{
+    const nanovdb::GridMetaData* metadata = gridHdlPtr.get()->gridMetaData();
+    if (metadata->gridType() != nanovdb::GridType::Float) 
+        throw std::runtime_error("Error, unsupported grid format!");
+    nanovdb::FloatGrid* gridPtr = reinterpret_cast<nanovdb::FloatGrid*>(gridHdlPtr.get()->data());
+    return gridPtr->tree().nodeCount(level);
+}
+
+glm::vec3 Volume::getNodeMinAabbCorner(uint32_t level, uint32_t node_idx)
+{
+    const nanovdb::GridMetaData* metadata = gridHdlPtr.get()->gridMetaData();
+    if (metadata->gridType() != nanovdb::GridType::Float) 
+        throw std::runtime_error("Error, unsupported grid format!");
+    nanovdb::FloatGrid* gridPtr = 
+        reinterpret_cast<nanovdb::FloatGrid*>(gridHdlPtr.get()->data());
+    auto &tree = gridPtr->tree();
+    if (level == 0) {
+        auto node = tree.getNode<0>(node_idx);
+        auto m = node->bbox().min();
+        return glm::vec3(m[0], m[1], m[2]);
+    }
+    if (level == 1) {
+        auto node = tree.getNode<1>(node_idx);
+        auto m = node->bbox().min();
+        return glm::vec3(m[0], m[1], m[2]);
+    }
+    if (level == 2) {
+        auto node = tree.getNode<2>(node_idx);
+        auto m = node->bbox().min();
+        return glm::vec3(m[0], m[1], m[2]);
+    }
+    if (level == 3) {
+        auto node = tree.getNode<3>(node_idx);
+        auto m = node->bbox().min();
+        return glm::vec3(m[0], m[1], m[2]);
+    }    
+    return glm::vec3(NAN);
+}
+
+glm::vec3 Volume::getNodeMaxAabbCorner(uint32_t level, uint32_t node_idx)
+{
+    const nanovdb::GridMetaData* metadata = gridHdlPtr.get()->gridMetaData();
+    if (metadata->gridType() != nanovdb::GridType::Float) 
+        throw std::runtime_error("Error, unsupported grid format!");
+    nanovdb::FloatGrid* gridPtr = 
+        reinterpret_cast<nanovdb::FloatGrid*>(gridHdlPtr.get()->data());
+    auto &tree = gridPtr->tree();
+    if (level == 0) {
+        auto node = tree.getNode<0>(node_idx);
+        auto m = node->bbox().max();
+        return glm::vec3(m[0], m[1], m[2]);
+    }
+    if (level == 1) {
+        auto node = tree.getNode<1>(node_idx);
+        auto m = node->bbox().max();
+        return glm::vec3(m[0], m[1], m[2]);
+    }
+    if (level == 2) {
+        auto node = tree.getNode<2>(node_idx);
+        auto m = node->bbox().max();
+        return glm::vec3(m[0], m[1], m[2]);
+    }
+    if (level == 3) {
+        auto node = tree.getNode<3>(node_idx);
+        auto m = node->bbox().max();
+        return glm::vec3(m[0], m[1], m[2]);
+    }    
+    return glm::vec3(NAN);
+}
+
+glm::vec3 Volume::getNodeAabbCenter(uint32_t level, uint32_t node_idx)
+{
+    return getNodeMinAabbCorner(level, node_idx) + 
+        (getNodeMaxAabbCorner(level, node_idx) - 
+        getNodeMinAabbCorner(level, node_idx)) * .5f;
 }

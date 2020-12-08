@@ -104,6 +104,7 @@ import_array();
 #include "visii/entity.h"
 #include "visii/light.h"
 #include "visii/texture.h"
+#include "visii/volume.h"
 #include "visii/transform.h"
 #include "visii/material.h"
 #include "visii/mesh.h"
@@ -128,6 +129,7 @@ namespace std {
   %template(TextureVector) vector<Texture*>;
   %template(LightVector) vector<Light*>;
   %template(MaterialVector) vector<Material*>;
+  %template(VolumeVector) vector<Volume*>;
 }
 
 /* STD Maps */
@@ -191,6 +193,10 @@ namespace std {
 %ignore Texture::Texture();
 %ignore Texture::Texture(std::string name, uint32_t id);
 %ignore Texture::~Texture();
+
+%ignore Volume::Volume();
+%ignore Volume::Volume(std::string name, uint32_t id);
+%ignore Volume::~Volume();
 
 /* -------- Renames --------------*/
 %rename("%(undercase)s",%$isfunction) "";
@@ -260,6 +266,7 @@ namespace std {
 %include "visii/entity.h"
 %include "visii/light.h"
 %include "visii/texture.h"
+%include "visii/volume.h"
 %include "visii/transform.h"
 %include "visii/material.h"
 %include "visii/mesh.h"

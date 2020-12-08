@@ -6,6 +6,10 @@
 #include <visii/utilities/static_factory.h>
 #include <visii/volume_struct.h>
 
+#include <nanovdb/NanoVDB.h>
+#include <nanovdb/util/GridHandle.h>
+#include <nanovdb/util/IO.h>
+
 /**
  * The "Volume" component is essentially the dual of a mesh component. 
  * As a result, entities can have a mesh component or a volume component attached,
@@ -130,6 +134,46 @@ class Volume : public StaticFactory
     /** @returns a json string representation of the current component */
     std::string toString();
 
+	/** @returns the minimum axis aligned bounding box position */
+	glm::vec3 getMinAabbCorner();
+
+	/** @returns the maximum axis aligned bounding box position */
+	glm::vec3 getMaxAabbCorner();
+
+	/** @returns the center of the aligned bounding box */
+	glm::vec3 getAabbCenter();
+
+	/** @returns the type of the volume's scalar field */
+	std::string getGridType();
+
+	/** 
+	 * @param level The level of nodes being referenced (0->3 = leaf -> root)
+	 * @returns the number of nodes, or subvolumes, used to store a volume.
+	 * (See the illustration of the NanoVDB data structure for more details)
+	 */
+	uint32_t getNodeCount(uint32_t level);
+
+	/**
+	 * @param level The level of nodes being referenced (0->3 = leaf -> root).
+	 * @param node_idx The index of the node within the selected level. 
+	 * @returns the minimum node axis aligned bounding box position 
+	 */
+	glm::vec3 getNodeMinAabbCorner(uint32_t level, uint32_t node_idx);
+
+	/** 
+	 * @param level The level of nodes being referenced (0->3 = leaf -> root).
+	 * @param node_idx The index of the node within the selected level.
+	 * @returns the maximum node axis aligned bounding box position 
+	 */
+	glm::vec3 getNodeMaxAabbCorner(uint32_t level, uint32_t node_idx);
+
+	/** 
+	 * @param level The level of nodes being referenced (0->3 = leaf -> root).
+	 * @param node_idx The index of the node within the selected level.
+	 * @returns the center of the aligned bounding box for a node 
+	 */
+	glm::vec3 getNodeAabbCenter(uint32_t level, uint32_t node_idx);
+
   private:
 
   	/* TODO */
@@ -148,5 +192,6 @@ class Volume : public StaticFactory
 	static std::set<Volume*> dirtyVolumes;
 
     /** Private volume data here... */
-    
+	nanovdb::io::GridMetaData gridMetaData;
+    std::shared_ptr<nanovdb::GridHandle<>> gridHdlPtr;
 };

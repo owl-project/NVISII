@@ -200,6 +200,8 @@ endif()
 # gli
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/gli)
 
+# nanovdb
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/externals/nanovdb)
 
 # glm
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/glm)

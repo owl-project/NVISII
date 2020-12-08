@@ -3232,7 +3232,7 @@ public:
     __hostdev__ NodeInfo getNodeInfo(const CoordType& ijk) const
     {
         if (this->isCached(ijk)) {
-            return mNode->getNodeInfoAndCache(ijk, *this);
+            return mNode->InfoAndCache(ijk, *this);
         }
         return mRoot->getNodeInfoAndCache(ijk, *this);
     }
