@@ -7,6 +7,8 @@
 #define GLM_FORCE_RIGHT_HANDED
 #include <stdint.h>
 #include <glm/glm.hpp>
+#include <nanovdb/NanoVDB.h>
+#include <nanovdb/util/GridHandle.h>
 
 struct VolumeStruct
 {

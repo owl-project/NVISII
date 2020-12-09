@@ -14,6 +14,7 @@
 #include <visii/mesh_struct.h>
 #include <visii/light_struct.h>
 #include <visii/texture_struct.h>
+#include <visii/volume_struct.h>
 
 // doesn't seem to have a significant impact on framerate
 #define CHECK_ACCESSES 
@@ -68,6 +69,7 @@ struct LaunchParams {
     Buffer<MeshStruct> meshes;
     Buffer<LightStruct> lights;
     Buffer<TextureStruct> textures;
+    Buffer<VolumeStruct> volumes;
     Buffer<uint32_t> lightEntities;
     Buffer<uint32_t> instanceToEntityMap;
     uint32_t         numInstances = 0;
@@ -87,6 +89,7 @@ struct LaunchParams {
     int environmentMapHeight = 0;
     cudaTextureObject_t proceduralSkyTexture = 0;
     Buffer<cudaTextureObject_t> textureObjects; //cudaTextureObject_t
+    Buffer<nanovdb::GridHandle<>> volumeHandles; //cudaTextureObject_t
 
     cudaTextureObject_t GGX_E_AVG_LOOKUP;
     cudaTextureObject_t GGX_E_LOOKUP;

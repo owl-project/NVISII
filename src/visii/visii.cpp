@@ -105,6 +105,7 @@ static struct OptixData {
     OWLBuffer meshBuffer;
     OWLBuffer lightBuffer;
     OWLBuffer textureBuffer;
+    OWLBuffer volumeBuffer;
     OWLBuffer lightEntitiesBuffer;
     OWLBuffer instanceToEntityMapBuffer;
     OWLBuffer vertexListsBuffer;
@@ -543,6 +544,7 @@ void initializeOptix(bool headless)
         { "meshes",                  OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, meshes)},
         { "lights",                  OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, lights)},
         { "textures",                OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, textures)},
+        { "volumes",                 OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, volumes)},
         { "lightEntities",           OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, lightEntities)},
         { "vertexLists",             OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, vertexLists)},
         { "normalLists",             OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, normalLists)},
@@ -624,11 +626,12 @@ void initializeOptix(bool headless)
     OD.meshBuffer                = deviceBufferCreate(OD.context, OWL_USER_TYPE(MeshStruct),          Mesh::getCount(),     nullptr);
     OD.lightBuffer               = deviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),         Light::getCount(),     nullptr);
     OD.textureBuffer             = deviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       Texture::getCount() + NUM_MAT_PARAMS * Material::getCount(),   nullptr);
+    OD.volumeBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(VolumeStruct),        Volume::getCount(),   nullptr);
     OD.lightEntitiesBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
-    OD.tangentListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
+    OD.tangentListsBuffer        = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.texCoordListsBuffer       = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.indexListsBuffer          = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.textureObjectsBuffer      = deviceBufferCreate(OD.context, OWL_TEXTURE,                        Texture::getCount() + NUM_MAT_PARAMS * Material::getCount(),   nullptr);
@@ -640,6 +643,7 @@ void initializeOptix(bool headless)
     launchParamsSetBuffer(OD.launchParams, "meshes",               OD.meshBuffer);
     launchParamsSetBuffer(OD.launchParams, "lights",               OD.lightBuffer);
     launchParamsSetBuffer(OD.launchParams, "textures",             OD.textureBuffer);
+    launchParamsSetBuffer(OD.launchParams, "volumes",              OD.volumeBuffer);
     launchParamsSetBuffer(OD.launchParams, "lightEntities",        OD.lightEntitiesBuffer);
     launchParamsSetBuffer(OD.launchParams, "instanceToEntityMap",  OD.instanceToEntityMapBuffer);
     launchParamsSetBuffer(OD.launchParams, "vertexLists",          OD.vertexListsBuffer);
@@ -1121,6 +1125,7 @@ void updateComponents()
     anyUpdated |= Light::areAnyDirty();
     anyUpdated |= Texture::areAnyDirty();
     anyUpdated |= Entity::areAnyDirty();
+    anyUpdated |= Volume::areAnyDirty();
 
     if (!anyUpdated) return;
     resetAccumulation();
@@ -1132,6 +1137,7 @@ void updateComponents()
     std::lock_guard<std::recursive_mutex> entity_lock(Entity::areAnyDirty()       ? *Entity::getEditMutex().get() : dummyMutex);
     std::lock_guard<std::recursive_mutex> light_lock(Light::areAnyDirty()         ? *Light::getEditMutex().get() : dummyMutex);
     std::lock_guard<std::recursive_mutex> texture_lock(Texture::areAnyDirty()     ? *Texture::getEditMutex().get() : dummyMutex);
+    std::lock_guard<std::recursive_mutex> volume_lock(Volume::areAnyDirty()       ? *Volume::getEditMutex().get() : dummyMutex);
 
     // Manage Meshes: Build / Rebuild BLAS
     auto dirtyMeshes = Mesh::getDirtyMeshes();
@@ -1413,6 +1419,18 @@ void updateComponents()
     if (Light::areAnyDirty()) {
         Light::updateComponents();
         bufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());
+    }
+
+    // Manage volumes
+    auto dirtyVolumes = Volume::getDirtyVolumes();
+    if (dirtyVolumes.size() > 0) {
+        Volume::updateComponents();
+        bufferUpload(OptixData.volumeBuffer, Volume::getFrontStruct());
+
+        for (auto &volume : dirtyVolumes) {
+            auto gridHdl = volume->getNanoVDBGridHandle();
+
+        }
     }
 }
 

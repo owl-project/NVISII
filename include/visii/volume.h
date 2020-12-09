@@ -134,15 +134,6 @@ class Volume : public StaticFactory
     /** @returns a json string representation of the current component */
     std::string toString();
 
-	/** @returns the minimum axis aligned bounding box position */
-	glm::vec3 getMinAabbCorner();
-
-	/** @returns the maximum axis aligned bounding box position */
-	glm::vec3 getMaxAabbCorner();
-
-	/** @returns the center of the aligned bounding box */
-	glm::vec3 getAabbCenter();
-
 	/** @returns the type of the volume's scalar field */
 	std::string getGridType();
 
@@ -158,21 +149,24 @@ class Volume : public StaticFactory
 	 * @param node_idx The index of the node within the selected level. 
 	 * @returns the minimum node axis aligned bounding box position 
 	 */
-	glm::vec3 getNodeMinAabbCorner(uint32_t level, uint32_t node_idx);
+	glm::vec3 getMinAabbCorner(uint32_t level, uint32_t node_idx);
 
 	/** 
 	 * @param level The level of nodes being referenced (0->3 = leaf -> root).
 	 * @param node_idx The index of the node within the selected level.
 	 * @returns the maximum node axis aligned bounding box position 
 	 */
-	glm::vec3 getNodeMaxAabbCorner(uint32_t level, uint32_t node_idx);
+	glm::vec3 getMaxAabbCorner(uint32_t level, uint32_t node_idx);
 
 	/** 
 	 * @param level The level of nodes being referenced (0->3 = leaf -> root).
 	 * @param node_idx The index of the node within the selected level.
 	 * @returns the center of the aligned bounding box for a node 
 	 */
-	glm::vec3 getNodeAabbCenter(uint32_t level, uint32_t node_idx);
+	glm::vec3 getAabbCenter(uint32_t level, uint32_t node_idx);
+
+	/** @returns the handle to the nanovdb grid. For internal purposes. */
+	std::shared_ptr<nanovdb::GridHandle<>> getNanoVDBGridHandle();
 
   private:
 

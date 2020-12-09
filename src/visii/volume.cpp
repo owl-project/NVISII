@@ -203,23 +203,6 @@ std::map<std::string, uint32_t> Volume::getNameToIdMap()
 	return lookupTable;
 }
 
-glm::vec3 Volume::getMinAabbCorner()
-{
-    auto minimum = gridMetaData.worldBBox.min();
-    return glm::vec3(minimum[0], minimum[1], minimum[2]);
-}
-
-glm::vec3 Volume::getMaxAabbCorner()
-{
-    auto maximum = gridMetaData.worldBBox.max();
-    return glm::vec3(maximum[0], maximum[1], maximum[2]);
-}
-
-glm::vec3 Volume::getAabbCenter()
-{
-    return getMinAabbCorner() + (getMaxAabbCorner() - getMinAabbCorner()) * .5f;
-}
-
 std::string Volume::getGridType()
 {
     const nanovdb::GridMetaData* metadata = gridHdlPtr.get()->gridMetaData();
@@ -248,7 +231,7 @@ uint32_t Volume::getNodeCount(uint32_t level)
     return gridPtr->tree().nodeCount(level);
 }
 
-glm::vec3 Volume::getNodeMinAabbCorner(uint32_t level, uint32_t node_idx)
+glm::vec3 Volume::getMinAabbCorner(uint32_t level, uint32_t node_idx)
 {
     const nanovdb::GridMetaData* metadata = gridHdlPtr.get()->gridMetaData();
     if (metadata->gridType() != nanovdb::GridType::Float) 
@@ -279,7 +262,7 @@ glm::vec3 Volume::getNodeMinAabbCorner(uint32_t level, uint32_t node_idx)
     return glm::vec3(NAN);
 }
 
-glm::vec3 Volume::getNodeMaxAabbCorner(uint32_t level, uint32_t node_idx)
+glm::vec3 Volume::getMaxAabbCorner(uint32_t level, uint32_t node_idx)
 {
     const nanovdb::GridMetaData* metadata = gridHdlPtr.get()->gridMetaData();
     if (metadata->gridType() != nanovdb::GridType::Float) 
@@ -310,9 +293,14 @@ glm::vec3 Volume::getNodeMaxAabbCorner(uint32_t level, uint32_t node_idx)
     return glm::vec3(NAN);
 }
 
-glm::vec3 Volume::getNodeAabbCenter(uint32_t level, uint32_t node_idx)
+glm::vec3 Volume::getAabbCenter(uint32_t level, uint32_t node_idx)
 {
-    return getNodeMinAabbCorner(level, node_idx) + 
-        (getNodeMaxAabbCorner(level, node_idx) - 
-        getNodeMinAabbCorner(level, node_idx)) * .5f;
+    return getMinAabbCorner(level, node_idx) + 
+        (getMaxAabbCorner(level, node_idx) - 
+        getMinAabbCorner(level, node_idx)) * .5f;
+}
+
+std::shared_ptr<nanovdb::GridHandle<>> Volume::getNanoVDBGridHandle()
+{
+    return gridHdlPtr;
 }
