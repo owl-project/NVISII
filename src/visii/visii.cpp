@@ -155,6 +155,7 @@ static struct OptixData {
     std::vector<MaterialStruct> materialStructs;
 
     OWLBuffer placeholder;
+    OWLGroup placeholderGroup;
 
 } OptixData;
 
@@ -709,12 +710,25 @@ void initializeOptix(bool headless)
 
     OWLVarDecl trianglesGeomVars[] = {{/* sentinel to mark end of list */}};
     OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
-    
-    /* Temporary test code */
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
-        
-    OWLGroup world = instanceGroupCreate(OD.context, 0);
+    
+    /* Temporary triangle. Required for certain older driver versions. */
+    const int NUM_VERTICES = 1;
+    vec3 vertices[NUM_VERTICES] = {{ 0.f, 0.f, 0.f }};
+    const int NUM_INDICES = 1;
+    ivec3 indices[NUM_INDICES] = {{ 0, 0, 0 }};    
+    OWLBuffer vertexBuffer = deviceBufferCreate(OD.context,OWL_FLOAT4,NUM_VERTICES,vertices);
+    OWLBuffer indexBuffer = deviceBufferCreate(OD.context,OWL_INT3,NUM_INDICES,indices);
+    OWLGeom trianglesGeom = geomCreate(OD.context,OD.trianglesGeomType);
+    trianglesSetVertices(trianglesGeom,vertexBuffer,NUM_VERTICES,sizeof(vec4),0);
+    trianglesSetIndices(trianglesGeom,indexBuffer, NUM_INDICES,sizeof(ivec3),0);
+    OD.placeholderGroup = trianglesGeomGroupCreate(OD.context,1,&trianglesGeom);
+    groupBuildAccel(OD.placeholderGroup);
+
+    // build IAS
+    OWLGroup world = instanceGroupCreate(OD.context, 1);
+    instanceGroupSetChild(world, 0, OD.placeholderGroup); 
     groupBuildAccel(world);
     launchParamsSetGroup(OD.launchParams, "world", world);
 
@@ -1212,33 +1226,42 @@ void updateComponents()
         // python3d: /home/runner/work/ViSII/ViSII/externals/owl/owl/ObjectRegistry.cpp:83: 
         //   owl::RegisteredObject* owl::ObjectRegistry::getPtr(int): Assertion `objects[ID]' failed.
         //TODO: This should be fixed with Ingo's change.
-        OD.tlas = instanceGroupCreate(OD.context, instances.size());
-        for (uint32_t iid = 0; iid < instances.size(); ++iid) {
-            instanceGroupSetChild(OD.tlas, iid, instances[iid]); 
-            glm::mat4 xfm0 = t0InstanceTransforms[iid];
-            glm::mat4 xfm1 = t1InstanceTransforms[iid];
-            
-            owl4x3f oxfm0 = {
-                {xfm0[0][0], xfm0[0][1], xfm0[0][2]}, 
-                {xfm0[1][0], xfm0[1][1], xfm0[1][2]}, 
-                {xfm0[2][0], xfm0[2][1], xfm0[2][2]},
-                {xfm0[3][0], xfm0[3][1], xfm0[3][2]}};
-            t0Transforms.push_back(oxfm0);
-
-            owl4x3f oxfm1 = {
-                {xfm1[0][0], xfm1[0][1], xfm1[0][2]}, 
-                {xfm1[1][0], xfm1[1][1], xfm1[1][2]}, 
-                {xfm1[2][0], xfm1[2][1], xfm1[2][2]},
-                {xfm1[3][0], xfm1[3][1], xfm1[3][2]}};
-            t1Transforms.push_back(oxfm1);
+        if (instances.size() == 0) {
+            // required for certain older driver versions
+            OD.tlas = instanceGroupCreate(OD.context, 1);
+            instanceGroupSetChild(OD.tlas, 0, OD.placeholderGroup); 
+            groupBuildAccel(OD.tlas);
+            OD.LP.numInstances = 0;
         }
-        
-        owlInstanceGroupSetTransforms(OD.tlas,0,(const float*)t0Transforms.data());
-        owlInstanceGroupSetTransforms(OD.tlas,1,(const float*)t1Transforms.data());
+        else {
+            OD.tlas = instanceGroupCreate(OD.context, instances.size());
+            for (uint32_t iid = 0; iid < instances.size(); ++iid) {
+                instanceGroupSetChild(OD.tlas, iid, instances[iid]); 
+                glm::mat4 xfm0 = t0InstanceTransforms[iid];
+                glm::mat4 xfm1 = t1InstanceTransforms[iid];
+                
+                owl4x3f oxfm0 = {
+                    {xfm0[0][0], xfm0[0][1], xfm0[0][2]}, 
+                    {xfm0[1][0], xfm0[1][1], xfm0[1][2]}, 
+                    {xfm0[2][0], xfm0[2][1], xfm0[2][2]},
+                    {xfm0[3][0], xfm0[3][1], xfm0[3][2]}};
+                t0Transforms.push_back(oxfm0);
 
-        bufferResize(OD.instanceToEntityMapBuffer, instanceToEntityMap.size());
-        bufferUpload(OD.instanceToEntityMapBuffer, instanceToEntityMap.data());
-        OD.LP.numInstances = instanceToEntityMap.size();
+                owl4x3f oxfm1 = {
+                    {xfm1[0][0], xfm1[0][1], xfm1[0][2]}, 
+                    {xfm1[1][0], xfm1[1][1], xfm1[1][2]}, 
+                    {xfm1[2][0], xfm1[2][1], xfm1[2][2]},
+                    {xfm1[3][0], xfm1[3][1], xfm1[3][2]}};
+                t1Transforms.push_back(oxfm1);
+            }
+            
+            owlInstanceGroupSetTransforms(OD.tlas,0,(const float*)t0Transforms.data());
+            owlInstanceGroupSetTransforms(OD.tlas,1,(const float*)t1Transforms.data());
+
+            bufferResize(OD.instanceToEntityMapBuffer, instanceToEntityMap.size());
+            bufferUpload(OD.instanceToEntityMapBuffer, instanceToEntityMap.data());
+            OD.LP.numInstances = instanceToEntityMap.size();
+        }
         groupBuildAccel(OD.tlas);
         launchParamsSetGroup(OD.launchParams, "world", OD.tlas);
         buildSBT(OD.context);

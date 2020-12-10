@@ -20,7 +20,7 @@ b) a interface (available in both python and C) for declaring a scene, doing bas
  The two primary goals of this lirary are
 a) ease of use (in particular, for non-expert users, and from languages like python), and
 b) ease of deployment (ie, allowing headless rendering, minimal dependenies, etc).
-To be clear: There will be more sophisitcated renderers out there, as well as faster ones, better ones, etc;
+To be clear: This is an academic and research renderer. There will be more sophisticated renderers out there, as well as faster ones, better ones, etc;
 the goal of _this_ project is to offer something that's easy to get started with.
  -->
 ## Installing
