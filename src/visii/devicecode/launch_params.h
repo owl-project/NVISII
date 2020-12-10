@@ -89,7 +89,7 @@ struct LaunchParams {
     int environmentMapHeight = 0;
     cudaTextureObject_t proceduralSkyTexture = 0;
     Buffer<cudaTextureObject_t> textureObjects; //cudaTextureObject_t
-    Buffer<nanovdb::GridHandle<>> volumeHandles; //cudaTextureObject_t
+    Buffer<nanovdb::GridHandle<>> volumeHandles;
 
     cudaTextureObject_t GGX_E_AVG_LOOKUP;
     cudaTextureObject_t GGX_E_LOOKUP;

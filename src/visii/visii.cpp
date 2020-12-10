@@ -114,9 +114,12 @@ static struct OptixData {
     OWLBuffer texCoordListsBuffer;
     OWLBuffer indexListsBuffer;
     OWLBuffer textureObjectsBuffer;
+    OWLBuffer volumeHandlesBuffer;
 
     std::vector<OWLTexture> textureObjects;
     std::vector<TextureStruct> textureStructs;
+
+    std::vector<OWLBuffer> volumeHandles;
 
     uint32_t numLightEntities;
 
@@ -627,6 +630,7 @@ void initializeOptix(bool headless)
     OD.lightBuffer               = deviceBufferCreate(OD.context, OWL_USER_TYPE(LightStruct),         Light::getCount(),     nullptr);
     OD.textureBuffer             = deviceBufferCreate(OD.context, OWL_USER_TYPE(TextureStruct),       Texture::getCount() + NUM_MAT_PARAMS * Material::getCount(),   nullptr);
     OD.volumeBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(VolumeStruct),        Volume::getCount(),   nullptr);
+    OD.volumeHandlesBuffer       = deviceBufferCreate(OD.context, OWL_BUFFER,                         Volume::getCount(),   nullptr);
     OD.lightEntitiesBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
@@ -666,6 +670,8 @@ void initializeOptix(bool headless)
     OD.textureObjects.resize(Texture::getCount() + NUM_MAT_PARAMS * materialCount, nullptr);        
     OD.textureStructs.resize(Texture::getCount() + NUM_MAT_PARAMS * materialCount);
     OD.materialStructs.resize(materialCount);
+
+    OD.volumeHandles.resize(Volume::getCount());
 
     OD.LP.environmentMapID = -1;
     OD.LP.environmentMapRotation = glm::quat(1,0,0,0);
@@ -1425,12 +1431,14 @@ void updateComponents()
     auto dirtyVolumes = Volume::getDirtyVolumes();
     if (dirtyVolumes.size() > 0) {
         Volume::updateComponents();
-        bufferUpload(OptixData.volumeBuffer, Volume::getFrontStruct());
-
+        owlBufferUpload(OptixData.volumeBuffer, Volume::getFrontStruct());
         for (auto &volume : dirtyVolumes) {
+            if (OD.volumeHandles[volume->getAddress()]) owlBufferDestroy(OD.volumeHandles[volume->getAddress()]);
             auto gridHdl = volume->getNanoVDBGridHandle();
-
+            OD.volumeHandles[volume->getAddress()] = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint8_t), gridHdl->size(), nullptr);
+            owlBufferUpload(OD.volumeHandles[volume->getAddress()], gridHdl->data());
         }
+        owlBufferUpload(OD.volumeHandlesBuffer, OD.volumeHandles.data());
     }
 }
 
