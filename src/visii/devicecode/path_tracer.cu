@@ -10,6 +10,7 @@
 #include "math.h"
 #include <optix_device.h>
 #include <owl/common/math/random.h>
+#include <owl/common/math/box.h>
 
 #include "visii/utilities/procedural_sky.h"
 
@@ -168,6 +169,20 @@ OPTIX_CLOSEST_HIT_PROGRAM(ShadowRay)()
     RayPayload &prd = owl::getPRD<RayPayload>();
     prd.instanceID = optixGetInstanceIndex();
     prd.tHit = optixGetRayTmax();
+}
+
+OPTIX_BOUNDS_PROGRAM(VolumeBounds)(
+    const void  *geomData,
+    owl::common::box3f       &primBounds,
+    const int    primID)
+{
+    primBounds = owl::common::box3f();
+    primBounds.lower.x = -1.f;
+    primBounds.lower.y = -1.f;
+    primBounds.lower.z = -1.f;
+    primBounds.upper.x = 1.f;
+    primBounds.upper.y = 1.f;
+    primBounds.upper.z = 1.f;
 }
 
 inline __device__
