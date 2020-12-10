@@ -4,6 +4,7 @@
 #include <visii/transform.h>
 #include <visii/material.h>
 #include <visii/mesh.h>
+#include <visii/volume.h>
 #include <visii/visii.h>
 
 std::vector<Entity> Entity::entities;
@@ -180,12 +181,50 @@ Light* Entity::getLight()
 	return &light;
 }
 
+void Entity::setVolume(Volume* volume) 
+{
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
+
+	auto &entity = getStruct();
+	if (!volume) throw std::runtime_error( std::string("Invalid volume handle."));
+	if (entity.mesh_id != -1) throw std::runtime_error( 
+		std::string("Error: a conflicting mesh component is attached to the current entity.")
+	);
+	if (!volume->isInitialized()) throw std::runtime_error("Error, volume not initialized");
+	entity.volume_id = volume->getId();
+	volume->entities.insert(id);
+	markDirty();
+}
+
+void Entity::clearVolume()
+{
+	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
+	
+	auto &entity = getStruct();
+	auto volumees = Volume::getFront();
+	if (entity.volume_id != -1) volumees[entity.volume_id].entities.erase(id);
+	entity.volume_id = -1;
+	markDirty();
+}
+
+Volume* Entity::getVolume()
+{
+	auto &entity = getStruct();
+	if ((entity.volume_id < 0) || (entity.volume_id >= int32_t(Volume::getCount())))  return nullptr;
+	auto &volume = Volume::getFront()[entity.volume_id];
+	if (!volume.isInitialized()) return nullptr;
+	return &volume;
+}
+
 void Entity::setMesh(Mesh* mesh) 
 {
 	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 
 	auto &entity = getStruct();
 	if (!mesh) throw std::runtime_error( std::string("Invalid mesh handle."));
+	if (entity.volume_id != -1) throw std::runtime_error( 
+		std::string("Error: a conflicting volume component is attached to the current entity.")
+	);
 	if (!mesh->isInitialized()) throw std::runtime_error("Error, mesh not initialized");
 	entity.mesh_id = mesh->getId();
 	mesh->entities.insert(id);
@@ -350,16 +389,20 @@ Entity* Entity::create(
 	Material* material, 
 	Mesh* mesh, 
 	Light* light, 
-	Camera* camera
-    )
-{
-	auto createEntity = [transform, material, mesh, light, camera] (Entity* entity) {
+	Camera* camera,
+	Volume* volume
+) {
+	auto createEntity = [transform, material, mesh, light, camera, volume] (Entity* entity) {
 		entity->setVisibility(true);
+		if ((volume != nullptr) && (mesh != nullptr)) throw std::runtime_error(
+			"Error, mesh and volume components cannot be simultaneously attached to an entity."
+		);
 		if (transform) entity->setTransform(transform);
 		if (material) entity->setMaterial(material);
 		if (camera) entity->setCamera(camera);
 		if (mesh) entity->setMesh(mesh);
 		if (light) entity->setLight(light);
+		if (volume) entity->setVolume(volume);
 		dirtyEntities.insert(entity);
 	};
 	try {

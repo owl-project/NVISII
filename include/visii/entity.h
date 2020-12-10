@@ -8,6 +8,7 @@ class Light;
 class Transform;
 class Material;
 class Mesh;
+class Volume;
 
 /**
  * An "Entity" is a component that is used to connect other component types together. 
@@ -64,11 +65,17 @@ public:
     /**
 	 * Constructs an Entity with the given name.
 	 * 
-	 * @param transform (optional) A transform component places the entity into the scene
+	 * @param transform (optional) A transform component places the entity into the scene.
 	 * @param material (optional) A material component describes how an entity should look when rendered.
-	 * @param mesh (optional) A mesh component describes the geometry of the entity to be rendered. 
+	 * @param mesh (optional) A mesh component describes a surface to be rendered. 
+	 * Volume separating the inside and outside portion of the surface are implicitly represented using 
+	 * clockwise and counterclockwise triangles and corresponding surface normal. 
+	 * Note: Cannot be assigned if a "volume" component is also assigned.
 	 * @param light (optional) A light component indicates that any connected geometry should act like a light source.
 	 * @param camera (optional) A camera component indicates that the current entity can be used to view into the scene.
+	 * @param volume (optional) A volume component describes the volumetric particles 
+	 * to be rendered. Surfaces within the volume are implicitly defined using extinction.
+	 * Note: Cannot be assigned if a "mesh" component is also assigned.
      * @returns a reference to an Entity
 	 */
 	static Entity* create(std::string name, 
@@ -76,7 +83,8 @@ public:
 		Material* material = nullptr,
 		Mesh* mesh = nullptr,
 		Light* light = nullptr,
-		Camera* camera = nullptr
+		Camera* camera = nullptr,
+		Volume* volume = nullptr
 	);
 
 	/**
@@ -175,7 +183,10 @@ public:
 	/** @returns a reference to the connected light component, or None/nullptr if no component is connected. */
 	Light* getLight();
 	
-	/** Connects a mesh component to the current entity */
+	/** 
+	 * Connects a mesh component to the current entity. 
+	 * Note: a mesh component cannot be attached if a volume component is currently attached.
+	 */
 	void setMesh(Mesh* mesh);
 	
 	/** Disconnects any mesh component from the current entity */
@@ -183,6 +194,18 @@ public:
 	
 	/** @returns a reference to the connected mesh component, or None/nullptr if no component is connected. */
 	Mesh* getMesh();
+
+	/** 
+	 * Connects a volume component to the current entity. 
+	 * Note: a volume component cannot be attached if a mesh component is currently attached.
+	 */
+	void setVolume(Volume* volume);
+	
+	/** Disconnects any volume component from the current entity */
+	void clearVolume();
+	
+	/** @returns a reference to the connected volume component, or None/nullptr if no component is connected. */
+	Volume* getVolume();
 
 	/**
 	 * Objects can be set to be invisible to particular ray types:

@@ -24,6 +24,7 @@
 class Volume : public StaticFactory
 {
 	friend class StaticFactory;
+	friend class Entity;
   public:
 	/**
       * Instantiates a null Volume. Used to mark a row in the table as null. 

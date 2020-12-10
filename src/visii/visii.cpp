@@ -126,6 +126,7 @@ static struct OptixData {
     OWLRayGen rayGen;
     OWLMissProg missProg;
     OWLGeomType trianglesGeomType;
+    OWLGeomType volumeGeomType;
 
     std::vector<OWLBuffer> vertexLists;
     std::vector<OWLBuffer> normalLists;
@@ -161,6 +162,7 @@ static struct OptixData {
 
     OWLBuffer placeholder;
     OWLGroup placeholderGroup;
+    OWLGroup placeholderUserGroup;
 
 } OptixData;
 
@@ -722,8 +724,29 @@ void initializeOptix(bool headless)
 
     OWLVarDecl trianglesGeomVars[] = {{/* sentinel to mark end of list */}};
     OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
+    OWLVarDecl volumeGeomVars[] = {{/* sentinel to mark end of list */}};
+    OD.volumeGeomType = owlGeomTypeCreate(OD.context, OWL_GEOM_USER, sizeof(VolumeGeomData), volumeGeomVars, -1);
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
+    owlGeomTypeSetClosestHit(OD.volumeGeomType, /*ray type */ 0, OD.module,"VolumeMesh");
+    owlGeomTypeSetClosestHit(OD.volumeGeomType, /*ray type */ 1, OD.module,"VolumeShadowRay");
+    owlGeomTypeSetIntersectProg(OD.volumeGeomType, /*ray type */ 0, OD.module,"VolumeIntersection");
+    owlGeomTypeSetIntersectProg(OD.volumeGeomType, /*ray type */ 1, OD.module,"VolumeIntersection");
+    owlGeomTypeSetBoundsProg(OD.volumeGeomType, OD.module, "VolumeBounds");
+
+    // Setup miss prog 
+    OWLVarDecl missProgVars[] = {{ /* sentinel to mark end of list */ }};
+    OD.missProg = missProgCreate(OD.context,OD.module,"miss",sizeof(MissProgData),missProgVars,-1);
+    
+    // Setup ray gen program
+    OWLVarDecl rayGenVars[] = {
+        { "deviceIndex",   OWL_DEVICE, OWL_OFFSETOF(RayGenData, deviceIndex)}, // this var is automatically set
+        { "deviceCount",   OWL_INT,    OWL_OFFSETOF(RayGenData, deviceCount)},
+        { /* sentinel to mark end of list */ }};
+    OD.rayGen = rayGenCreate(OD.context,OD.module,"rayGen", sizeof(RayGenData), rayGenVars,-1);
+    owlRayGenSet1i(OD.rayGen, "deviceCount",  numGPUsFound);
+
+    buildPrograms(OD.context);
     
     /* Temporary GAS. Required for certain older driver versions. */
     const int NUM_VERTICES = 1;
@@ -739,30 +762,22 @@ void initializeOptix(bool headless)
     groupBuildAccel(OD.placeholderGroup);
 
     // build IAS
-    OWLGroup surfacesIAS = instanceGroupCreate(OD.context, 0);
+    OWLGroup surfacesIAS = instanceGroupCreate(OD.context, 1);
     instanceGroupSetChild(surfacesIAS, 0, OD.placeholderGroup); 
     groupBuildAccel(surfacesIAS);
     launchParamsSetGroup(OD.launchParams, "surfacesIAS", surfacesIAS);
 
-    OWLGroup volumesIAS = instanceGroupCreate(OD.context, 0);
-    instanceGroupSetChild(volumesIAS, 0, OD.placeholderGroup); 
+    OWLGeom userGeom = owlGeomCreate(OD.context, OD.volumeGeomType);
+    owlGeomSetPrimCount(userGeom, 1);
+    OD.placeholderUserGroup = owlUserGeomGroupCreate(OD.context, 1, &userGeom);
+    groupBuildAccel(OD.placeholderUserGroup);
+
+    OWLGroup volumesIAS = instanceGroupCreate(OD.context, 1);
+    instanceGroupSetChild(volumesIAS, 0, OD.placeholderUserGroup); 
     groupBuildAccel(volumesIAS);
     launchParamsSetGroup(OD.launchParams, "volumesIAS", volumesIAS);
 
-    // Setup miss prog 
-    OWLVarDecl missProgVars[] = {{ /* sentinel to mark end of list */ }};
-    OD.missProg = missProgCreate(OD.context,OD.module,"miss",sizeof(MissProgData),missProgVars,-1);
-    
-    // Setup ray gen program
-    OWLVarDecl rayGenVars[] = {
-        { "deviceIndex",   OWL_DEVICE, OWL_OFFSETOF(RayGenData, deviceIndex)}, // this var is automatically set
-        { "deviceCount",   OWL_INT,    OWL_OFFSETOF(RayGenData, deviceCount)},
-        { /* sentinel to mark end of list */ }};
-    OD.rayGen = rayGenCreate(OD.context,OD.module,"rayGen", sizeof(RayGenData), rayGenVars,-1);
-    owlRayGenSet1i(OD.rayGen, "deviceCount",  numGPUsFound);
-
     // Build *SBT* required to trace the groups   
-    buildPrograms(OD.context);
     buildPipeline(OD.context);
     buildSBT(OD.context);
 

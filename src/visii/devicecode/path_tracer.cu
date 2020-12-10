@@ -171,9 +171,27 @@ OPTIX_CLOSEST_HIT_PROGRAM(ShadowRay)()
     prd.tHit = optixGetRayTmax();
 }
 
+OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
+{   
+    RayPayload &prd = owl::getPRD<RayPayload>();
+    prd.tHit = 1.0f;//optixGetRayTmax();
+}
+
+OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
+{
+    RayPayload &prd = owl::getPRD<RayPayload>();
+    prd.tHit = 1.0f;//optixGetRayTmax();
+}
+
+OPTIX_INTERSECT_PROGRAM(VolumeIntersection)()
+{
+    float tmax      = optixGetRayTmax();
+    optixReportIntersection(tmax, 0);
+}
+
 OPTIX_BOUNDS_PROGRAM(VolumeBounds)(
     const void  *geomData,
-    owl::common::box3f       &primBounds,
+    owl::common::box3f &primBounds,
     const int    primID)
 {
     primBounds = owl::common::box3f();
@@ -653,10 +671,36 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     RayPayload payload;
     payload.tHit = -1.f;
     ray.time = time;
+    
+    // temporary volume rendering test code
+    RayPayload volPayload;
+    volPayload.tHit = -1.f;
+    owl::Ray volRay = ray;
+
     owl::traceRay(  /*accel to trace against*/ LP.surfacesIAS,
                     /*the ray to trace*/ ray,
                     /*prd*/ payload,
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+
+    owl::traceRay(  /*accel to trace against*/ LP.volumesIAS,
+                    /*the ray to trace*/ volRay,
+                    /*prd*/ volPayload,
+                    OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+    
+    if (volPayload.tHit != -1.f) {
+        auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
+        float4* accumPtr = (float4*) LP.accumPtr;
+        float4* fbPtr = (float4*) LP.frameBuffer;
+        float4* normalPtr = (float4*) LP.normalBuffer;
+        float4* albedoPtr = (float4*) LP.albedoBuffer;
+
+        float4 color = make_float4(.0f, .0f, .0f, 1.f);
+        accumPtr[fbOfs] = color;
+        fbPtr[fbOfs] = color;
+        albedoPtr[fbOfs] = color;
+        normalPtr[fbOfs] = color;
+        return;
+    }
 
     // Shade each hit point on a path using NEE with MIS
     do {     

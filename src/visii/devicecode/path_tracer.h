@@ -3,11 +3,19 @@
 #include <owl/owl.h>
 #include <glm/glm.hpp>
 
+#include <visii/volume_struct.h>
+#include "./buffer.h"
+
 using namespace glm;
 
 /* variables for the triangle mesh geometry */
 struct TrianglesGeomData
 {int placeholder;};
+
+/* variables for the volume user geometry */
+struct VolumeGeomData {
+    Buffer<nanovdb::GridHandle<>> volumeHandles;
+};
 
 /* variables for the ray generation program */
 struct RayGenData
