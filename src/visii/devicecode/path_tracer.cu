@@ -638,7 +638,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     RayPayload payload;
     payload.tHit = -1.f;
     ray.time = time;
-    owl::traceRay(  /*accel to trace against*/ LP.world,
+    owl::traceRay(  /*accel to trace against*/ LP.surfacesIAS,
                     /*the ray to trace*/ ray,
                     /*prd*/ payload,
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
@@ -685,7 +685,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
             payload.tHit = -1.f;
             ray.time = time;
-            owl::traceRay( LP.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+            owl::traceRay( LP.surfacesIAS, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
             visibilitySkips++;
             if (visibilitySkips > 10) break; // avoid locking up.
             continue;
@@ -805,7 +805,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
                 payload.tHit = -1.f;
                 ray.time = time;
-                owl::traceRay( LP.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+                owl::traceRay( LP.surfacesIAS, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
                 ++bounce;     
                 specularBounce++; // counting transparency as a specular bounce for now
                 continue;
@@ -951,7 +951,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 ray.tmin = EPSILON * 10.f; ray.tmax = lightDistance + EPSILON; // needs to be distance to light, else anyhit logic breaks.
                 ray.origin = hit_p; ray.direction = lightDir;
                 ray.time = time;
-                owl::traceRay( LP.world, ray, payload, occlusion_flags);
+                owl::traceRay( LP.surfacesIAS, ray, payload, occlusion_flags);
                 bool visible = (randomID == numLights) ?
                     (payload.instanceID == -2) : 
                     ((payload.instanceID == -2) || (LP.instanceToEntityMap.get(payload.instanceID, __LINE__) == sampledLightIDs[lid]));
@@ -981,7 +981,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         payload.instanceID = -1;
         payload.tHit = -1.f;
         ray.time = sampleTime(lcg_randomf(rng));
-        owl::traceRay(LP.world, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+        owl::traceRay(LP.surfacesIAS, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
         // Check if we hit any of the previously sampled lights
         bool hitLight = false;

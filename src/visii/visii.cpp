@@ -135,7 +135,8 @@ static struct OptixData {
     std::vector<OWLGeom> geomList;
     std::vector<OWLGroup> blasList;
 
-    OWLGroup tlas = nullptr;
+    OWLGroup surfacesIAS = nullptr;
+    OWLGroup volumesIAS = nullptr;
 
     std::vector<uint32_t> lightEntities;
 
@@ -539,7 +540,8 @@ void initializeOptix(bool headless)
         { "scratchBuffer",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, scratchBuffer)},
         { "mvecBuffer",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, mvecBuffer)},
         { "accumPtr",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
-        { "world",                   OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, world)},
+        { "surfacesIAS",             OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, surfacesIAS)},
+        { "volumesIAS",              OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, volumesIAS)},
         { "cameraEntity",            OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
         { "entities",                OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, entities)},
         { "transforms",              OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, transforms)},
@@ -723,7 +725,7 @@ void initializeOptix(bool headless)
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
     
-    /* Temporary triangle. Required for certain older driver versions. */
+    /* Temporary GAS. Required for certain older driver versions. */
     const int NUM_VERTICES = 1;
     vec3 vertices[NUM_VERTICES] = {{ 0.f, 0.f, 0.f }};
     const int NUM_INDICES = 1;
@@ -737,10 +739,15 @@ void initializeOptix(bool headless)
     groupBuildAccel(OD.placeholderGroup);
 
     // build IAS
-    OWLGroup world = instanceGroupCreate(OD.context, 1);
-    instanceGroupSetChild(world, 0, OD.placeholderGroup); 
-    groupBuildAccel(world);
-    launchParamsSetGroup(OD.launchParams, "world", world);
+    OWLGroup surfacesIAS = instanceGroupCreate(OD.context, 0);
+    instanceGroupSetChild(surfacesIAS, 0, OD.placeholderGroup); 
+    groupBuildAccel(surfacesIAS);
+    launchParamsSetGroup(OD.launchParams, "surfacesIAS", surfacesIAS);
+
+    OWLGroup volumesIAS = instanceGroupCreate(OD.context, 0);
+    instanceGroupSetChild(volumesIAS, 0, OD.placeholderGroup); 
+    groupBuildAccel(volumesIAS);
+    launchParamsSetGroup(OD.launchParams, "volumesIAS", volumesIAS);
 
     // Setup miss prog 
     OWLVarDecl missProgVars[] = {{ /* sentinel to mark end of list */ }};
@@ -1233,22 +1240,22 @@ void updateComponents()
 
         std::vector<owl4x3f>     t0Transforms;
         std::vector<owl4x3f>     t1Transforms;
-        auto oldTLAS = OD.tlas;
+        auto oldTLAS = OD.surfacesIAS;
         // not sure why, but if I release this TLAS, I get the following error
         // python3d: /home/runner/work/ViSII/ViSII/externals/owl/owl/ObjectRegistry.cpp:83: 
         //   owl::RegisteredObject* owl::ObjectRegistry::getPtr(int): Assertion `objects[ID]' failed.
         //TODO: This should be fixed with Ingo's change.
         if (instances.size() == 0) {
             // required for certain older driver versions
-            OD.tlas = instanceGroupCreate(OD.context, 1);
-            instanceGroupSetChild(OD.tlas, 0, OD.placeholderGroup); 
-            groupBuildAccel(OD.tlas);
+            OD.surfacesIAS = instanceGroupCreate(OD.context, 1);
+            instanceGroupSetChild(OD.surfacesIAS, 0, OD.placeholderGroup); 
+            groupBuildAccel(OD.surfacesIAS);
             OD.LP.numInstances = 0;
         }
         else {
-            OD.tlas = instanceGroupCreate(OD.context, instances.size());
+            OD.surfacesIAS = instanceGroupCreate(OD.context, instances.size());
             for (uint32_t iid = 0; iid < instances.size(); ++iid) {
-                instanceGroupSetChild(OD.tlas, iid, instances[iid]); 
+                instanceGroupSetChild(OD.surfacesIAS, iid, instances[iid]); 
                 glm::mat4 xfm0 = t0InstanceTransforms[iid];
                 glm::mat4 xfm1 = t1InstanceTransforms[iid];
                 
@@ -1267,15 +1274,16 @@ void updateComponents()
                 t1Transforms.push_back(oxfm1);
             }
             
-            owlInstanceGroupSetTransforms(OD.tlas,0,(const float*)t0Transforms.data());
-            owlInstanceGroupSetTransforms(OD.tlas,1,(const float*)t1Transforms.data());
+            owlInstanceGroupSetTransforms(OD.surfacesIAS,0,(const float*)t0Transforms.data());
+            owlInstanceGroupSetTransforms(OD.surfacesIAS,1,(const float*)t1Transforms.data());
 
             bufferResize(OD.instanceToEntityMapBuffer, instanceToEntityMap.size());
             bufferUpload(OD.instanceToEntityMapBuffer, instanceToEntityMap.data());
             OD.LP.numInstances = instanceToEntityMap.size();
         }
-        groupBuildAccel(OD.tlas);
-        launchParamsSetGroup(OD.launchParams, "world", OD.tlas);
+        groupBuildAccel(OD.surfacesIAS);
+        launchParamsSetGroup(OD.launchParams, "surfacesIAS", OD.surfacesIAS);
+
         buildSBT(OD.context);
 
         if (oldTLAS) {owlGroupRelease(oldTLAS);}

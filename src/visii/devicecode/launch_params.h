@@ -44,7 +44,8 @@ struct LaunchParams {
     glm::vec4 *scratchBuffer;
     glm::vec4 *mvecBuffer;
     glm::vec4 *accumPtr;
-    OptixTraversableHandle world;
+    OptixTraversableHandle surfacesIAS;
+    OptixTraversableHandle volumesIAS;
     float domeLightIntensity = 1.f;
     float domeLightExposure = 0.f;
     glm::vec3 domeLightColor = glm::vec3(-1.f);
