@@ -55,8 +55,8 @@ struct LaunchParams {
     Buffer<TextureStruct> textures;
     Buffer<VolumeStruct> volumes;
     Buffer<uint32_t> lightEntities;
-    Buffer<uint32_t> instanceToEntityMap;
-    uint32_t         numInstances = 0;
+    Buffer<uint32_t> surfaceInstanceToEntity;
+    Buffer<uint32_t> volumeInstanceToEntity;
     uint32_t         numLightEntities = 0;
 
     Buffer<Buffer<float3>> vertexLists;

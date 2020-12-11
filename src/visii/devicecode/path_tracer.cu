@@ -129,7 +129,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 
     // This seems to cause most of the stalls in san miguel scene.
     optixGetObjectToWorldTransformMatrix(prd.localToWorld);
-    // const int entityID = LP.instanceToEntityMap.get(prd.instanceID, __LINE__);
+    // const int entityID = LP.surfaceInstanceToEntity.get(prd.instanceID, __LINE__);
     // EntityStruct entity = LP.entities.get(entityID, __LINE__);
     // TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
     // prd.localToWorld[0]  = glm::row(transform.localToWorld, 0).x;
@@ -734,7 +734,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
 
         // Otherwise, load the object we hit.
-        const int entityID = LP.instanceToEntityMap.get(payload.instanceID, __LINE__);
+        const int entityID = LP.surfaceInstanceToEntity.get(payload.instanceID, __LINE__);
         EntityStruct entity = LP.entities.get(entityID, __LINE__);
         MeshStruct mesh = LP.meshes.get(entity.mesh_id, __LINE__);
         TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
@@ -1013,7 +1013,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 owl::traceRay( LP.surfacesIAS, ray, payload, occlusion_flags);
                 bool visible = (randomID == numLights) ?
                     (payload.instanceID == -2) : 
-                    ((payload.instanceID == -2) || (LP.instanceToEntityMap.get(payload.instanceID, __LINE__) == sampledLightIDs[lid]));
+                    ((payload.instanceID == -2) || (LP.surfaceInstanceToEntity.get(payload.instanceID, __LINE__) == sampledLightIDs[lid]));
                 if (visible) {
                     if (randomID != numLights) lightEmission = lightEmission / pow(payload.tHit, falloff);
                     float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
@@ -1062,7 +1062,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 }
                 // else if by sampling the brdf we also hit an area light
                 else if (payload.instanceID != -1) {
-                    int entityID = LP.instanceToEntityMap.get(payload.instanceID, __LINE__);
+                    int entityID = LP.surfaceInstanceToEntity.get(payload.instanceID, __LINE__);
                     bool visible = (entityID == sampledLightIDs[lid]);
                     // We hit the light we sampled previously
                     if (visible) {

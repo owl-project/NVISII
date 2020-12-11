@@ -107,7 +107,8 @@ static struct OptixData {
     OWLBuffer textureBuffer;
     OWLBuffer volumeBuffer;
     OWLBuffer lightEntitiesBuffer;
-    OWLBuffer instanceToEntityMapBuffer;
+    OWLBuffer surfaceInstanceToEntityBuffer;
+    OWLBuffer volumeInstanceToEntityBuffer;
     OWLBuffer vertexListsBuffer;
     OWLBuffer normalListsBuffer;
     OWLBuffer tangentListsBuffer;
@@ -560,8 +561,8 @@ void initializeOptix(bool headless)
         { "texCoordLists",           OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, texCoordLists)},
         { "indexLists",              OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, indexLists)},
         { "numLightEntities",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
-        { "instanceToEntityMap",     OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, instanceToEntityMap)},
-        { "numInstances",            OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numInstances)},
+        { "surfaceInstanceToEntity", OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, surfaceInstanceToEntity)},
+        { "volumeInstanceToEntity",  OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, volumeInstanceToEntity)},
         { "domeLightIntensity",      OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
         { "domeLightExposure",       OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightExposure)},
         { "domeLightColor",          OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, domeLightColor)},
@@ -637,7 +638,8 @@ void initializeOptix(bool headless)
     OD.volumeBuffer              = deviceBufferCreate(OD.context, OWL_USER_TYPE(VolumeStruct),        Volume::getCount(),   nullptr);
     OD.volumeHandlesBuffer       = deviceBufferCreate(OD.context, OWL_BUFFER,                         Volume::getCount(),   nullptr);
     OD.lightEntitiesBuffer       = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
-    OD.instanceToEntityMapBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
+    OD.surfaceInstanceToEntityBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
+    OD.volumeInstanceToEntityBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.vertexListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.normalListsBuffer         = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.tangentListsBuffer        = deviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
@@ -654,7 +656,8 @@ void initializeOptix(bool headless)
     launchParamsSetBuffer(OD.launchParams, "textures",             OD.textureBuffer);
     launchParamsSetBuffer(OD.launchParams, "volumes",              OD.volumeBuffer);
     launchParamsSetBuffer(OD.launchParams, "lightEntities",        OD.lightEntitiesBuffer);
-    launchParamsSetBuffer(OD.launchParams, "instanceToEntityMap",  OD.instanceToEntityMapBuffer);
+    launchParamsSetBuffer(OD.launchParams, "surfaceInstanceToEntity",  OD.surfaceInstanceToEntityBuffer);
+    launchParamsSetBuffer(OD.launchParams, "volumeInstanceToEntity",  OD.volumeInstanceToEntityBuffer);
     launchParamsSetBuffer(OD.launchParams, "vertexLists",          OD.vertexListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "normalLists",          OD.normalListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "tangentLists",          OD.tangentListsBuffer);
@@ -680,8 +683,6 @@ void initializeOptix(bool headless)
 
     OD.LP.environmentMapID = -1;
     OD.LP.environmentMapRotation = glm::quat(1,0,0,0);
-    OD.LP.numInstances = 1;
-    launchParamsSetRaw(OD.launchParams, "numInstances",  &OD.LP.numInstances);
     launchParamsSetRaw(OD.launchParams, "environmentMapID", &OD.LP.environmentMapID);
     launchParamsSetRaw(OD.launchParams, "environmentMapRotation", &OD.LP.environmentMapRotation);
 
@@ -1227,7 +1228,7 @@ void updateComponents()
         std::vector<OWLGroup> instances;
         std::vector<glm::mat4> t0InstanceTransforms;
         std::vector<glm::mat4> t1InstanceTransforms;
-        std::vector<uint32_t> instanceToEntityMap;
+        std::vector<uint32_t> surfaceInstanceToEntity;
         Entity* entities = Entity::getFront();
         for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
             // if (!entities[eid].isDirty()) continue; // if any entities are dirty, need to rebuild entire TLAS
@@ -1250,7 +1251,7 @@ void updateComponents()
             t0InstanceTransforms.push_back(prevLocalToWorld);            
             t1InstanceTransforms.push_back(localToWorld);            
             instances.push_back(blas);
-            instanceToEntityMap.push_back(eid);
+            surfaceInstanceToEntity.push_back(eid);
         }
 
         std::vector<owl4x3f>     t0Transforms;
@@ -1265,7 +1266,6 @@ void updateComponents()
             OD.surfacesIAS = instanceGroupCreate(OD.context, 1);
             instanceGroupSetChild(OD.surfacesIAS, 0, OD.placeholderGroup); 
             groupBuildAccel(OD.surfacesIAS);
-            OD.LP.numInstances = 0;
         }
         else {
             OD.surfacesIAS = instanceGroupCreate(OD.context, instances.size());
@@ -1292,9 +1292,8 @@ void updateComponents()
             owlInstanceGroupSetTransforms(OD.surfacesIAS,0,(const float*)t0Transforms.data());
             owlInstanceGroupSetTransforms(OD.surfacesIAS,1,(const float*)t1Transforms.data());
 
-            bufferResize(OD.instanceToEntityMapBuffer, instanceToEntityMap.size());
-            bufferUpload(OD.instanceToEntityMapBuffer, instanceToEntityMap.data());
-            OD.LP.numInstances = instanceToEntityMap.size();
+            bufferResize(OD.surfaceInstanceToEntityBuffer, surfaceInstanceToEntity.size());
+            bufferUpload(OD.surfaceInstanceToEntityBuffer, surfaceInstanceToEntity.data());
         }
         groupBuildAccel(OD.surfacesIAS);
         launchParamsSetGroup(OD.launchParams, "surfacesIAS", OD.surfacesIAS);
@@ -1512,7 +1511,6 @@ void updateLaunchParams()
     launchParamsSetRaw(OptixData.launchParams, "environmentMapHeight", &OptixData.LP.environmentMapHeight);
     launchParamsSetRaw(OptixData.launchParams, "sceneBBMin", &OptixData.LP.sceneBBMin);
     launchParamsSetRaw(OptixData.launchParams, "sceneBBMax", &OptixData.LP.sceneBBMax);
-    launchParamsSetRaw(OptixData.launchParams, "numInstances",  &OptixData.LP.numInstances);
 
     OptixData.LP.frameID ++;
 }
