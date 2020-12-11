@@ -421,6 +421,17 @@ void synchronizeDevices()
     cudaSetDevice(0);
 }
 
+void checkForErrors()
+{
+    // check for error
+    cudaError_t error = cudaGetLastError();
+    if(error != cudaSuccess)
+    {
+        // print the CUDA error message and exit
+        printf("CUDA error: %s\n", cudaGetErrorString(error));
+    }    
+}
+
 void initializeFrameBuffer(int fbWidth, int fbHeight) {
     fbWidth = glm::max(fbWidth, 1);
     fbHeight = glm::max(fbHeight, 1);
@@ -1570,18 +1581,16 @@ void denoiseImage() {
 
 void drawFrameBufferToWindow()
 {
-    auto &OD = OptixData;
     synchronizeDevices();
+    glFlush();
 
+    auto &OD = OptixData;
     cudaGraphicsMapResources(1, &OD.cudaResourceTex);
     const void* fbdevptr = bufferGetPointer(OD.frameBuffer,0);
     cudaArray_t array;
     cudaGraphicsSubResourceGetMappedArray(&array, OD.cudaResourceTex, 0, 0);
-    synchronizeDevices();
     cudaMemcpyToArray(array, 0, 0, fbdevptr, OD.LP.frameSize.x *  OD.LP.frameSize.y  * sizeof(glm::vec4), cudaMemcpyDeviceToDevice);
-    synchronizeDevices();
     cudaGraphicsUnmapResources(1, &OD.cudaResourceTex);
-
     
     // Draw pixels from optix frame buffer
     glEnable(GL_FRAMEBUFFER_SRGB); 
@@ -2267,13 +2276,22 @@ void initializeInteractive(
             drawGUI();
 
             processCommandQueue();
+            checkForErrors();
             if (stopped) break;
+        }
+
+        if (OptixData.denoiser)
+            OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
+
+        if (OptixData.imageTexID != -1) {
+            cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
+            glDeleteTextures(1, &OptixData.imageTexID);
         }
 
         ImGui::DestroyContext();
         if (glfw->does_window_exist("ViSII")) glfw->destroy_window("ViSII");
 
-        // owlContextDestroy(OptixData.context);
+        owlContextDestroy(OptixData.context);
     };
 
     renderThread = thread(loop);
@@ -2326,7 +2344,10 @@ void initializeHeadless(
             if (stopped) break;
         }
 
-        // owlContextDestroy(OptixData.context);
+        if (OptixData.denoiser)
+            OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
+        
+        owlContextDestroy(OptixData.context);
     };
 
     renderThread = thread(loop);
@@ -2443,19 +2464,10 @@ void deinitialize()
             stopped = true;
             renderThread.join();
         }
-        if (OptixData.denoiser)
-            OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
         clearAll();
-        if (OptixData.imageTexID != -1) {
-            cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
-            glDeleteTextures(1, &OptixData.imageTexID);
-        }
     }
     initialized = false;
-    // sleeping here. 
-    // Some strange bug with python where deinitialize immediately before interpreter exit
-    // on windows causes lockup. The sleep here fixes that lockup, suggesting some race condition...
-    sleep(.1); 
+    checkForErrors();
 }
 
 bool isButtonPressed(std::string button) {
