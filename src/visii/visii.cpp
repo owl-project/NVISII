@@ -402,11 +402,6 @@ void launchParamsSetGroup(OWLLaunchParams params, const char *varName, OWLGroup 
     owlParamsSetGroup(params, varName, group);
 }
 
-void paramsLaunch2D(OWLRayGen rayGen, int dims_x, int dims_y, OWLLaunchParams launchParams)
-{
-    owlLaunch2D(rayGen, dims_x * dims_y, 1, launchParams);
-}
-
 void synchronizeDevices()
 {
     for (int i = 0; i < getDeviceCount(); i++) {
@@ -1479,14 +1474,6 @@ void updateLaunchParams()
     OptixData.LP.frameID ++;
 }
 
-void traceRays()
-{
-    auto &OD = OptixData;
-    
-    /* Trace Rays */
-    paramsLaunch2D(OD.rayGen, OD.LP.frameSize.x, OD.LP.frameSize.y, OD.launchParams);
-}
-
 void denoiseImage() {
     synchronizeDevices();
 
@@ -1807,7 +1794,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
             }
 
             updateLaunchParams();
-            traceRays();
+            owlLaunch2D(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, OptixData.launchParams);
             if (OptixData.enableDenoiser)
             {
                 denoiseImage();
@@ -1956,7 +1943,7 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
             }
 
             updateLaunchParams();
-            traceRays();
+            owlLaunch2D(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, OptixData.launchParams);
             // Dont run denoiser to raw data rendering
             // if (OptixData.enableDenoiser)
             // {
@@ -2254,7 +2241,7 @@ void initializeInteractive(
                 updateFrameBuffer();
                 updateComponents();
                 updateLaunchParams();
-                traceRays();   
+                owlLaunch2D(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, OptixData.launchParams);
                 if (OptixData.enableDenoiser)
                 {
                     denoiseImage();
