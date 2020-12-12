@@ -173,8 +173,12 @@ OPTIX_CLOSEST_HIT_PROGRAM(ShadowRay)()
 
 OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
 {   
+    auto &LP = optixLaunchParams;
     RayPayload &prd = owl::getPRD<RayPayload>();
-    prd.tHit = 1.0f;//optixGetRayTmax();
+    prd.instanceID = optixGetInstanceIndex();
+    prd.tHit = optixGetRayTmax();
+    prd.barycentrics = optixGetTriangleBarycentrics();
+    prd.primitiveID = optixGetPrimitiveIndex();
 }
 
 OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
@@ -194,13 +198,14 @@ OPTIX_BOUNDS_PROGRAM(VolumeBounds)(
     owl::common::box3f &primBounds,
     const int    primID)
 {
+    const VolumeGeomData &self = *(const VolumeGeomData*)geomData;
     primBounds = owl::common::box3f();
-    primBounds.lower.x = -1.f;
-    primBounds.lower.y = -1.f;
-    primBounds.lower.z = -1.f;
-    primBounds.upper.x = 1.f;
-    primBounds.upper.y = 1.f;
-    primBounds.upper.z = 1.f;
+    primBounds.lower.x = self.bbmin.x;
+    primBounds.lower.y = self.bbmin.y;
+    primBounds.lower.z = self.bbmin.z;
+    primBounds.upper.x = self.bbmax.x;
+    primBounds.upper.y = self.bbmax.y;
+    primBounds.upper.z = self.bbmax.z;
 }
 
 inline __device__
@@ -683,11 +688,16 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
     owl::traceRay(  /*accel to trace against*/ LP.volumesIAS,
-                    /*the ray to trace*/ volRay,
+                /*the ray to trace*/ volRay,
                     /*prd*/ volPayload,
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
     
     if (volPayload.tHit != -1.f) {
+        // const int entityID = LP.volumeInstanceToEntity.get(payload.instanceID, __LINE__);
+        // EntityStruct entity = LP.entities.get(entityID, __LINE__);
+        // VolumeStruct volume = LP.volumes.get(entity.volume_id, __LINE__);
+        // TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
+
         auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
         float4* accumPtr = (float4*) LP.accumPtr;
         float4* fbPtr = (float4*) LP.frameBuffer;

@@ -14,7 +14,8 @@ struct TrianglesGeomData
 
 /* variables for the volume user geometry */
 struct VolumeGeomData {
-    Buffer<nanovdb::GridHandle<>> volumeHandles;
+    float4 bbmin;
+    float4 bbmax;
 };
 
 /* variables for the ray generation program */

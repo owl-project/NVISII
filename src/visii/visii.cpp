@@ -134,8 +134,10 @@ static struct OptixData {
     std::vector<OWLBuffer> tangentLists;
     std::vector<OWLBuffer> texCoordLists;
     std::vector<OWLBuffer> indexLists;
-    std::vector<OWLGeom> geomList;
-    std::vector<OWLGroup> blasList;
+    std::vector<OWLGeom> surfaceGeomList;
+    std::vector<OWLGroup> surfaceBlasList;
+    std::vector<OWLGeom> volumeGeomList;
+    std::vector<OWLGroup> volumeBlasList;
 
     OWLGroup surfacesIAS = nullptr;
     OWLGroup volumesIAS = nullptr;
@@ -385,6 +387,14 @@ void instanceGroupSetTransform(OWLGroup group, size_t childID, glm::mat4 m44xfm)
     owlInstanceGroupSetTransform(group, childID, xfm);
 }
 
+owl4x3f glmToOWL(glm::mat4 &xfm){
+    owl4x3f oxfm = {
+        {xfm[0][0], xfm[0][1], xfm[0][2]}, 
+        {xfm[1][0], xfm[1][1], xfm[1][2]}, 
+        {xfm[2][0], xfm[2][1], xfm[2][2]},
+        {xfm[3][0], xfm[3][1], xfm[3][2]}};
+    return oxfm;
+}
 
 OWLLaunchParams launchParamsCreate(OWLContext context, size_t size, OWLVarDecl *vars, size_t numVars)
 {
@@ -677,8 +687,12 @@ void initializeOptix(bool headless)
     OD.tangentLists.resize(meshCount);
     OD.texCoordLists.resize(meshCount);
     OD.indexLists.resize(meshCount);
-    OD.geomList.resize(meshCount);
-    OD.blasList.resize(meshCount);
+    OD.surfaceGeomList.resize(meshCount);
+    OD.surfaceBlasList.resize(meshCount);
+    
+    uint32_t volumeCount = Volume::getCount();
+    OD.volumeGeomList.resize(volumeCount);
+    OD.volumeBlasList.resize(volumeCount);
 
     uint32_t materialCount = Material::getCount();
     OD.textureObjects.resize(Texture::getCount() + NUM_MAT_PARAMS * materialCount, nullptr);        
@@ -731,7 +745,11 @@ void initializeOptix(bool headless)
 
     OWLVarDecl trianglesGeomVars[] = {{/* sentinel to mark end of list */}};
     OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
-    OWLVarDecl volumeGeomVars[] = {{/* sentinel to mark end of list */}};
+    OWLVarDecl volumeGeomVars[] = {
+        { "bbmin", OWL_USER_TYPE(glm::vec4), OWL_OFFSETOF(VolumeGeomData, bbmin)},
+        { "bbmax", OWL_USER_TYPE(glm::vec4), OWL_OFFSETOF(VolumeGeomData, bbmax)},
+        {/* sentinel to mark end of list */}
+    };
     OD.volumeGeomType = owlGeomTypeCreate(OD.context, OWL_GEOM_USER, sizeof(VolumeGeomData), volumeGeomVars, -1);
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
@@ -776,6 +794,9 @@ void initializeOptix(bool headless)
 
     OWLGeom userGeom = owlGeomCreate(OD.context, OD.volumeGeomType);
     owlGeomSetPrimCount(userGeom, 1);
+    glm::vec4 tmpbbmin(1.f), tmpbbmax(-1.f); // unhittable
+    owlGeomSetRaw(userGeom, "bbmin", &tmpbbmin);
+    owlGeomSetRaw(userGeom, "bbmax", &tmpbbmax);
     OD.placeholderUserGroup = owlUserGeomGroupCreate(OD.context, 1, &userGeom);
     groupBuildAccel(OD.placeholderUserGroup);
 
@@ -1192,6 +1213,7 @@ void updateComponents()
     auto dirtyMeshes = Mesh::getDirtyMeshes();
     if (dirtyMeshes.size() > 0) {
         for (auto &m : dirtyMeshes) {
+            // First, release any resources from a previous, stale mesh.
             if (OD.vertexLists[m->getAddress()]) { 
                 owlBufferRelease(OD.vertexLists[m->getAddress()]); 
                 OD.vertexLists[m->getAddress()] = nullptr; 
@@ -1200,23 +1222,26 @@ void updateComponents()
             if (OD.tangentLists[m->getAddress()]) { owlBufferRelease(OD.tangentLists[m->getAddress()]); OD.tangentLists[m->getAddress()] = nullptr; }
             if (OD.texCoordLists[m->getAddress()]) { owlBufferRelease(OD.texCoordLists[m->getAddress()]); OD.texCoordLists[m->getAddress()] = nullptr; }
             if (OD.indexLists[m->getAddress()]) { owlBufferRelease(OD.indexLists[m->getAddress()]); OD.indexLists[m->getAddress()] = nullptr; }
-            if (OD.geomList[m->getAddress()]) { owlGeomRelease(OD.geomList[m->getAddress()]); OD.geomList[m->getAddress()] = nullptr; }
-            if (OD.blasList[m->getAddress()]) { owlGroupRelease(OD.blasList[m->getAddress()]); OD.blasList[m->getAddress()] = nullptr; }
+            if (OD.surfaceGeomList[m->getAddress()]) { owlGeomRelease(OD.surfaceGeomList[m->getAddress()]); OD.surfaceGeomList[m->getAddress()] = nullptr; }
+            if (OD.surfaceBlasList[m->getAddress()]) { owlGroupRelease(OD.surfaceBlasList[m->getAddress()]); OD.surfaceBlasList[m->getAddress()] = nullptr; }
+            
+            // At this point, if the mesh no longer exists, move to the next dirty mesh.
             if (!m->isInitialized()) continue;
-            if (m->getTriangleIndices().size() == 0) {
-                throw std::runtime_error("ERROR: indices is 0");
-            }
+            if (m->getTriangleIndices().size() == 0) throw std::runtime_error("ERROR: indices is 0");
 
+            // Next, allocate resources for the new mesh.
             OD.vertexLists[m->getAddress()]  = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec3), m->getVertices().size(), m->getVertices().data());
             OD.normalLists[m->getAddress()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getNormals().size(), m->getNormals().data());
             OD.tangentLists[m->getAddress()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec4), m->getTangents().size(), m->getTangents().data());
             OD.texCoordLists[m->getAddress()] = deviceBufferCreate(OD.context, OWL_USER_TYPE(vec2), m->getTexCoords().size(), m->getTexCoords().data());
             OD.indexLists[m->getAddress()]   = deviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t), m->getTriangleIndices().size(), m->getTriangleIndices().data());
-            OD.geomList[m->getAddress()]      = geomCreate(OD.context, OD.trianglesGeomType);
-            trianglesSetVertices(OD.geomList[m->getAddress()], OD.vertexLists[m->getAddress()], m->getVertices().size(), sizeof(std::array<float, 3>), 0);
-            trianglesSetIndices(OD.geomList[m->getAddress()], OD.indexLists[m->getAddress()], m->getTriangleIndices().size() / 3, sizeof(ivec3), 0);
-            OD.blasList[m->getAddress()] = trianglesGeomGroupCreate(OD.context, 1, &OD.geomList[m->getAddress()]);
-            groupBuildAccel(OD.blasList[m->getAddress()]);          
+            
+            // Create geometry and build BLAS
+            OD.surfaceGeomList[m->getAddress()] = geomCreate(OD.context, OD.trianglesGeomType);
+            trianglesSetVertices(OD.surfaceGeomList[m->getAddress()], OD.vertexLists[m->getAddress()], m->getVertices().size(), sizeof(std::array<float, 3>), 0);
+            trianglesSetIndices(OD.surfaceGeomList[m->getAddress()], OD.indexLists[m->getAddress()], m->getTriangleIndices().size() / 3, sizeof(ivec3), 0);
+            OD.surfaceBlasList[m->getAddress()] = trianglesGeomGroupCreate(OD.context, 1, &OD.surfaceGeomList[m->getAddress()]);
+            groupBuildAccel(OD.surfaceBlasList[m->getAddress()]);          
         }
 
         bufferUpload(OD.vertexListsBuffer, OD.vertexLists.data());
@@ -1228,86 +1253,166 @@ void updateComponents()
         bufferUpload(OptixData.meshBuffer, Mesh::getFrontStruct());
     }    
 
+    // Manage Volumes: Build / Rebuild BLAS
+    auto dirtyVolumes = Volume::getDirtyVolumes();
+    if (dirtyVolumes.size() > 0) {
+        for (auto &v : dirtyVolumes) {
+            // First, release any resources from a previous, stale volume
+            if (OD.volumeHandles[v->getAddress()]) owlBufferDestroy(OD.volumeHandles[v->getAddress()]);
+            if (OD.volumeGeomList[v->getAddress()]) { owlGeomRelease(OD.volumeGeomList[v->getAddress()]); OD.volumeGeomList[v->getAddress()] = nullptr; }
+            if (OD.volumeBlasList[v->getAddress()]) { owlGroupRelease(OD.volumeBlasList[v->getAddress()]); OD.volumeBlasList[v->getAddress()] = nullptr; }
+
+            // At this point, if the volume no longer exists, move to the next dirty volume.
+            if (!v->isInitialized()) continue;
+            
+            // Next, allocate resources for the new volume.
+            auto gridHdl = v->getNanoVDBGridHandle();
+            OD.volumeHandles[v->getAddress()] = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint8_t), gridHdl->size(), nullptr);
+            owlBufferUpload(OD.volumeHandles[v->getAddress()], gridHdl->data());
+
+            // Create geometry and build BLAS
+            OD.volumeGeomList[v->getAddress()] = geomCreate(OD.context, OD.volumeGeomType);
+            owlGeomSetPrimCount(OD.volumeGeomList[v->getAddress()], 1); // for now, only one prim per volume. This might change...
+            glm::vec4 tmpbbmin = glm::vec4(v->getMinAabbCorner(3, 0), 1.f);
+            glm::vec4 tmpbbmax = glm::vec4(v->getMaxAabbCorner(3, 0), 1.f);
+            owlGeomSetRaw(OD.volumeGeomList[v->getAddress()], "bbmin", &tmpbbmin);
+            owlGeomSetRaw(OD.volumeGeomList[v->getAddress()], "bbmax", &tmpbbmax);
+            OD.volumeBlasList[v->getAddress()] = owlUserGeomGroupCreate(OD.context, 1, &OD.volumeGeomList[v->getAddress()]);
+            groupBuildAccel(OD.volumeBlasList[v->getAddress()]);    
+        }
+        Volume::updateComponents();
+        owlBufferUpload(OptixData.volumeBuffer, Volume::getFrontStruct());
+        owlBufferUpload(OD.volumeHandlesBuffer, OD.volumeHandles.data());
+    }
+
     // Manage Entities: Build / Rebuild TLAS
     auto dirtyEntities = Entity::getDirtyEntities();
     if (dirtyEntities.size() > 0) {
-        std::vector<OWLGroup> instances;
-        std::vector<glm::mat4> t0InstanceTransforms;
-        std::vector<glm::mat4> t1InstanceTransforms;
+        // Surface instances
+        std::vector<OWLGroup> surfaceInstances;
+        std::vector<glm::mat4> t0SurfaceTransforms;
+        std::vector<glm::mat4> t1SurfaceTransforms;
         std::vector<uint32_t> surfaceInstanceToEntity;
+        
+        // Volume instances
+        std::vector<OWLGroup> volumeInstances;
+        std::vector<glm::mat4> t0VolumeTransforms;
+        std::vector<glm::mat4> t1VolumeTransforms;
+        std::vector<uint32_t> volumeInstanceToEntity;
+
+        // Todo: curves...
+
+        // Aggregate instanced geometry and transformations 
         Entity* entities = Entity::getFront();
         for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
-            // if (!entities[eid].isDirty()) continue; // if any entities are dirty, need to rebuild entire TLAS
+            // if (!entities[eid].isDirty()) continue; // if any entities are dirty, need to rebuild entire TLAS 
+
+            // For an entity to go into a TLAS, it needs:
+            // 1. a transform, to place it into the TLAS.
+            // 2. geometry, either a mesh or a volume.
+            // 3. a material or a light, to control surface appearance
             if (!entities[eid].isInitialized()) continue;
             if (!entities[eid].getTransform()) continue;
-            if (!entities[eid].getMesh()) continue;
+            if (!(entities[eid].getMesh() || entities[eid].getVolume())) continue;
             if (!entities[eid].getMaterial() && !entities[eid].getLight()) continue;
 
-            uint32_t address = entities[eid].getMesh()->getAddress();
-            OWLGroup blas = OD.blasList[address];
-            if (!blas) {
-                // Not sure why, but the mesh this entity references hasn't been constructed yet.
-                // Mark it as dirty. It should be available in a subsequent frame
-                entities[eid].getMesh()->markDirty();
-                return; 
-                // throw std::runtime_error("ERROR: entity missing BLAS");
-            }
+            // Get instance transformation
             glm::mat4 prevLocalToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */true);
             glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */false);
-            t0InstanceTransforms.push_back(prevLocalToWorld);            
-            t1InstanceTransforms.push_back(localToWorld);            
-            instances.push_back(blas);
-            surfaceInstanceToEntity.push_back(eid);
+
+            // Add any instanced mesh geometry to the list
+            if (entities[eid].getMesh()) {
+                uint32_t address = entities[eid].getMesh()->getAddress();
+                OWLGroup blas = OD.surfaceBlasList[address];
+                if (!blas) {
+                    // Not sure why, but the mesh this entity references hasn't been constructed yet.
+                    // Mark it as dirty. It should be available in a subsequent frame
+                    entities[eid].getMesh()->markDirty(); return; 
+                }
+                surfaceInstances.push_back(blas);
+                surfaceInstanceToEntity.push_back(eid);
+                t0SurfaceTransforms.push_back(prevLocalToWorld);
+                t1SurfaceTransforms.push_back(localToWorld);
+            }
+            
+            // Add any instanced volume geometry to the list
+            if (entities[eid].getVolume()) {
+                uint32_t address = entities[eid].getVolume()->getAddress();
+                OWLGroup blas = OD.volumeBlasList[address];
+                if (!blas) {
+                    // Same as meshes, if BLAS doesn't exist, force BLAS build and try again.
+                    entities[eid].getMesh()->markDirty(); return; 
+                }
+                volumeInstances.push_back(blas);
+                volumeInstanceToEntity.push_back(eid);
+                t0VolumeTransforms.push_back(prevLocalToWorld);
+                t1VolumeTransforms.push_back(localToWorld);
+            }     
         }
 
         std::vector<owl4x3f>     t0Transforms;
         std::vector<owl4x3f>     t1Transforms;
-        auto oldTLAS = OD.surfacesIAS;
-        // not sure why, but if I release this TLAS, I get the following error
-        // python3d: /home/runner/work/ViSII/ViSII/externals/owl/owl/ObjectRegistry.cpp:83: 
-        //   owl::RegisteredObject* owl::ObjectRegistry::getPtr(int): Assertion `objects[ID]' failed.
-        //TODO: This should be fixed with Ingo's change.
-        if (instances.size() == 0) {
-            // required for certain older driver versions
+        auto oldSurfaceIAS = OD.surfacesIAS;
+        auto oldVolumeIAS = OD.volumesIAS;
+        
+        // If no surfaces instanced, insert an unhittable placeholder.
+        // (required for certain older driver versions)
+        if (surfaceInstances.size() == 0) {
             OD.surfacesIAS = instanceGroupCreate(OD.context, 1);
             instanceGroupSetChild(OD.surfacesIAS, 0, OD.placeholderGroup); 
             groupBuildAccel(OD.surfacesIAS);
         }
-        else {
-            OD.surfacesIAS = instanceGroupCreate(OD.context, instances.size());
-            for (uint32_t iid = 0; iid < instances.size(); ++iid) {
-                instanceGroupSetChild(OD.surfacesIAS, iid, instances[iid]); 
-                glm::mat4 xfm0 = t0InstanceTransforms[iid];
-                glm::mat4 xfm1 = t1InstanceTransforms[iid];
-                
-                owl4x3f oxfm0 = {
-                    {xfm0[0][0], xfm0[0][1], xfm0[0][2]}, 
-                    {xfm0[1][0], xfm0[1][1], xfm0[1][2]}, 
-                    {xfm0[2][0], xfm0[2][1], xfm0[2][2]},
-                    {xfm0[3][0], xfm0[3][1], xfm0[3][2]}};
-                t0Transforms.push_back(oxfm0);
 
-                owl4x3f oxfm1 = {
-                    {xfm1[0][0], xfm1[0][1], xfm1[0][2]}, 
-                    {xfm1[1][0], xfm1[1][1], xfm1[1][2]}, 
-                    {xfm1[2][0], xfm1[2][1], xfm1[2][2]},
-                    {xfm1[3][0], xfm1[3][1], xfm1[3][2]}};
-                t1Transforms.push_back(oxfm1);
-            }
-            
+        // If no volumes instanced, insert an unhittable placeholder.
+        // (required for certain older driver versions)
+        if (surfaceInstances.size() == 0) {
+            OD.volumesIAS = instanceGroupCreate(OD.context, 1);
+            instanceGroupSetChild(OD.volumesIAS, 0, OD.placeholderUserGroup); 
+            groupBuildAccel(OD.volumesIAS);
+        }
+
+        // Set surface transforms to IAS, upload surface instance to entity map
+        if (surfaceInstances.size() > 0) {
+            OD.surfacesIAS = instanceGroupCreate(OD.context, surfaceInstances.size());
+            for (uint32_t iid = 0; iid < surfaceInstances.size(); ++iid) {
+                instanceGroupSetChild(OD.surfacesIAS, iid, surfaceInstances[iid]);                 
+                t0Transforms.push_back(glmToOWL(t0SurfaceTransforms[iid]));
+                t1Transforms.push_back(glmToOWL(t1SurfaceTransforms[iid]));
+            }            
             owlInstanceGroupSetTransforms(OD.surfacesIAS,0,(const float*)t0Transforms.data());
             owlInstanceGroupSetTransforms(OD.surfacesIAS,1,(const float*)t1Transforms.data());
-
             bufferResize(OD.surfaceInstanceToEntityBuffer, surfaceInstanceToEntity.size());
             bufferUpload(OD.surfaceInstanceToEntityBuffer, surfaceInstanceToEntity.data());
+        }       
+
+        // Set volume transforms to IAS, upload volume instance to entity map
+        if (volumeInstances.size() > 0) {
+            OD.volumesIAS = instanceGroupCreate(OD.context, volumeInstances.size());
+            for (uint32_t iid = 0; iid < volumeInstances.size(); ++iid) {
+                instanceGroupSetChild(OD.volumesIAS, iid, volumeInstances[iid]);                 
+                t0Transforms.push_back(glmToOWL(t0VolumeTransforms[iid]));
+                t1Transforms.push_back(glmToOWL(t1VolumeTransforms[iid]));
+            }            
+            owlInstanceGroupSetTransforms(OD.volumesIAS,0,(const float*)t0Transforms.data());
+            owlInstanceGroupSetTransforms(OD.volumesIAS,1,(const float*)t1Transforms.data());
+            bufferResize(OD.volumeInstanceToEntityBuffer, volumeInstanceToEntity.size());
+            bufferUpload(OD.volumeInstanceToEntityBuffer, volumeInstanceToEntity.data());
         }
+
+        // Build IAS
+        groupBuildAccel(OD.volumesIAS);
+        launchParamsSetGroup(OD.launchParams, "volumesIAS", OD.volumesIAS);
         groupBuildAccel(OD.surfacesIAS);
         launchParamsSetGroup(OD.launchParams, "surfacesIAS", OD.surfacesIAS);
 
+        // Now that IAS have changed, we need to rebuild SBT
         buildSBT(OD.context);
 
-        if (oldTLAS) {owlGroupRelease(oldTLAS);}
+        // Release any old IAS (TODO, don't rebuild if entity edit doesn't effect IAS...)
+        if (oldSurfaceIAS) {owlGroupRelease(oldSurfaceIAS);}
+        if (oldVolumeIAS) {owlGroupRelease(oldVolumeIAS);}
     
+        // Aggregate entities that are light sources (todo: consider emissive volumes...)
         OD.lightEntities.resize(0);
         for (uint32_t eid = 0; eid < Entity::getCount(); ++eid) {
             if (!entities[eid].isInitialized()) continue;
@@ -1321,6 +1426,7 @@ void updateComponents()
         OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
         launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
 
+        // Finally, upload entity structs to the GPU.
         Entity::updateComponents();
         bufferUpload(OptixData.entityBuffer,    Entity::getFrontStruct());
     }
@@ -1476,20 +1582,6 @@ void updateComponents()
     if (Light::areAnyDirty()) {
         Light::updateComponents();
         bufferUpload(OptixData.lightBuffer,     Light::getFrontStruct());
-    }
-
-    // Manage volumes
-    auto dirtyVolumes = Volume::getDirtyVolumes();
-    if (dirtyVolumes.size() > 0) {
-        Volume::updateComponents();
-        owlBufferUpload(OptixData.volumeBuffer, Volume::getFrontStruct());
-        for (auto &volume : dirtyVolumes) {
-            if (OD.volumeHandles[volume->getAddress()]) owlBufferDestroy(OD.volumeHandles[volume->getAddress()]);
-            auto gridHdl = volume->getNanoVDBGridHandle();
-            OD.volumeHandles[volume->getAddress()] = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint8_t), gridHdl->size(), nullptr);
-            owlBufferUpload(OD.volumeHandles[volume->getAddress()], gridHdl->data());
-        }
-        owlBufferUpload(OD.volumeHandlesBuffer, OD.volumeHandles.data());
     }
 }
 
