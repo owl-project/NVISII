@@ -9,6 +9,7 @@
 #include <nanovdb/NanoVDB.h>
 #include <nanovdb/util/GridHandle.h>
 #include <nanovdb/util/IO.h>
+#include <nanovdb/util/GridValidator.h>
 
 /**
  * The "Volume" component is essentially the dual of a mesh component. 

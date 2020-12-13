@@ -601,6 +601,7 @@ void initializeOptix(bool headless)
         { "environmentMapWidth",     OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapWidth)},
         { "environmentMapHeight",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapHeight)},
         { "textureObjects",          OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, textureObjects)},
+        { "volumeHandles",           OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, volumeHandles)},
         { "proceduralSkyTexture",    OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, proceduralSkyTexture)},
         { "GGX_E_AVG_LOOKUP",        OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_AVG_LOOKUP)},
         { "GGX_E_LOOKUP",            OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, GGX_E_LOOKUP)},
@@ -680,6 +681,7 @@ void initializeOptix(bool headless)
     launchParamsSetBuffer(OD.launchParams, "texCoordLists",        OD.texCoordListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "indexLists",           OD.indexListsBuffer);
     launchParamsSetBuffer(OD.launchParams, "textureObjects",       OD.textureObjectsBuffer);
+    launchParamsSetBuffer(OD.launchParams, "volumeHandles",       OD.volumeHandlesBuffer);
 
     uint32_t meshCount = Mesh::getCount();
     OD.vertexLists.resize(meshCount);
@@ -1266,9 +1268,26 @@ void updateComponents()
             if (!v->isInitialized()) continue;
             
             // Next, allocate resources for the new volume.
-            auto gridHdl = v->getNanoVDBGridHandle();
-            OD.volumeHandles[v->getAddress()] = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint8_t), gridHdl->size(), nullptr);
-            owlBufferUpload(OD.volumeHandles[v->getAddress()], gridHdl->data());
+            auto gridHdlPtr = v->getNanoVDBGridHandle();
+            const nanovdb::FloatGrid* grid = reinterpret_cast<nanovdb::FloatGrid*>(gridHdlPtr.get()->data());
+            std::cout<<grid->checksum()<<std::endl;
+            nanovdb::isValid(*grid, true, true);
+
+            // auto acc = grid->tree().getAccessor();
+            // auto bbox = tree.root().bbox();
+            auto bbox = grid->tree().bbox().asReal<float>();
+            // int nodecount = grid->tree().nodeCount(3);
+            // std::cout<<nodecount<<std::endl;
+            std::cout<<bbox.min()[0]<<bbox.min()[1]<<bbox.min()[2]<<bbox.max()[0]<<bbox.max()[1]<<bbox.max()[2]<<std::endl;
+
+            OD.volumeHandles[v->getAddress()] = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint8_t), gridHdlPtr.get()->size(), nullptr);
+            owlBufferUpload(OD.volumeHandles[v->getAddress()], gridHdlPtr.get()->data());
+            printf("%hhx\n",gridHdlPtr.get()->data()[0]);
+            const void* d_gridData = owlBufferGetPointer(OD.volumeHandles[v->getAddress()], 0);
+            uint8_t first_byte;
+            cudaMemcpy((void*)&first_byte, d_gridData, 1, cudaMemcpyDeviceToHost);
+            printf("%hhx\n",first_byte);
+
 
             // Create geometry and build BLAS
             OD.volumeGeomList[v->getAddress()] = geomCreate(OD.context, OD.volumeGeomType);

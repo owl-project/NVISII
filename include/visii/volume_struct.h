@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 #include <nanovdb/NanoVDB.h>
 #include <nanovdb/util/GridHandle.h>
+#include <nanovdb/util/Ray.h>
 
 struct VolumeStruct
 {

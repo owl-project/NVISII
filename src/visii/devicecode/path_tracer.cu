@@ -607,6 +607,159 @@ glm::mat4 test_interpolate(glm::mat4& _mat1, glm::mat4& _mat2, float _time)
     return finalMat;
 }
 
+/// Taken and modified from Algorithm 2 in "Pixar's Production Volume Rendering" paper.
+/// \param x The origin of the ray.
+/// \param w The direction of the light (opposite of ray direction). 
+/// \param d The distance along the ray to the boundary.
+/// \param t The returned hit distance.
+/// \param event Will be updated to represent the event that occured during tracking.
+///              0 means the boundary was hit
+///              1 means an absorption/emission occurred
+///              2 means a scattering collision occurred
+///              3 means a null collision occurred
+template<typename AccT>
+__device__
+void SampleDeltaTracking(
+    LCGRand &rng, 
+    AccT& acc, 
+    float majorant_extinction, 
+    float linear_attenuation_unit, 
+    vec3 x, 
+    vec3 w, 
+    float d, 
+    float &t, 
+    int &event
+) {
+    float rand1 = lcg_randomf(rng);
+    float rand2 = lcg_randomf(rng);
+    
+    // Set new t for the current x.
+    t = (-log(1.0f - rand1) / majorant_extinction) * linear_attenuation_unit;
+    
+    // A boundary has been hit
+    if (t >= d) {
+    	event = 0;
+        t = d;
+        return;
+    }
+    
+    // Update current position
+    x = x - t * w;
+    auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
+    float densityValue = majorant_extinction - acc.getValue(coord_pos);
+
+   	float absorption = densityValue * .25f; //sample_volume_absorption(x);
+    float scattering = densityValue * .75f; //sample_volume_scattering(x);
+    float extinction = absorption + scattering;
+    //float null_collision = 1.f - extinction;
+    float null_collision = majorant_extinction - extinction;
+    
+    //extinction = extinction / majorant_extinction;
+    absorption = absorption / majorant_extinction;
+    scattering = scattering / majorant_extinction;
+    null_collision = null_collision / majorant_extinction;
+    
+        
+    // An absorption/emission collision occured
+    if (rand2 < absorption) 
+    {
+    	event = 1;
+        return;
+    }
+    
+    // A scattering collision occurred
+    else if (rand2 < (absorption + scattering)) {
+    //else if (rand2 < (1.f - null_collision)) {
+        event = 2;
+        return;
+    }
+    
+    // A null collision occurred
+    else {
+        event = 3;
+        return;    	
+    }
+}
+
+/// Taken and modified from Algorithm 2 in "Pixar's Production Volume Rendering" paper.
+/// Implements the top level delta tracking algorithm, returning radiance.
+/// \param seed The seed to use by the random number generator.
+/// \param x The origin of the ray.
+/// \param w The direction of the light (opposite of ray direction). 
+/// \param d The distance along the ray to the boundary.
+template<typename AccT>
+__device__
+vec3 DeltaTracking(
+    LCGRand &rng, 
+    AccT& acc, 
+    cudaTextureObject_t &envTex,
+    float majorant_extinction, 
+    float linear_attenuation_unit, 
+    vec3 x, 
+    vec3 w
+) {
+    auto bbox = acc.root().bbox();
+    #define MAX_VOLUME_DEPTH 10000
+    float t0, t1;
+    
+    auto wRay = nanovdb::Ray<float>(
+        reinterpret_cast<const nanovdb::Vec3f&>( x ),
+        reinterpret_cast<const nanovdb::Vec3f&>( -w )
+    );
+    wRay.setTimes(EPSILON, 1e20f);
+    bool hit = wRay.clip(bbox);
+    if (!hit) return make_vec3(missColor(make_float3(-w), envTex));
+    
+    // Move ray to volume boundary
+    x = x - t0 * w;
+    t1 = t1 - t0;
+    t0 = 0.f;
+        
+    // Note: original algorigm had unlimited bounces. 
+    vec3 throughput = vec3(1.f);
+    for (int i = 0; i < MAX_VOLUME_DEPTH; ++i) {
+        int event = 0;
+        float t = 0.f;
+        SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, x, w, t1, t, event);
+        x = x - t * w;
+        
+        // A boundary has been hit. Sample the background.
+        if (event == 0) return throughput * make_vec3(missColor(make_float3(-w), envTex));
+        
+        // An absorption / emission occurred.
+        if (event == 1) return throughput * vec3(0.f);//vec3(sample_volume_emission(x));
+        
+        // A scattering collision occurred.
+        if (event == 2) {            
+            float rand1 = lcg_randomf(rng);
+            float rand2 = lcg_randomf(rng);
+            // Sample isotropic phase function to get new ray direction           
+            float phi = 2.0f * M_PI * rand1;
+            float cos_theta = 1.0f - 2.0f * rand2;
+            float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
+            w = -vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+            
+            // Compute updated boundary
+            auto wRay = nanovdb::Ray<float>(
+                reinterpret_cast<const nanovdb::Vec3f&>( x ),
+                reinterpret_cast<const nanovdb::Vec3f&>( -w )
+            );
+            bool hit = wRay.clip(bbox);
+            if (!hit) 
+                return throughput * make_vec3(missColor(make_float3(-w), envTex));
+        }
+        
+        // A null collision occurred.
+        if (event == 3) {
+            // update boundary in relation to the new collision x, w does not change.
+            t1 = t1 - t;
+        }
+    }
+    
+    // If we got stuck in the volume
+    return throughput * make_vec3(missColor(make_float3(-w), envTex));
+}
+
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     const RayGenData &self = owl::getProgramData<RayGenData>();
@@ -693,10 +846,19 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
     
     if (volPayload.tHit != -1.f) {
-        // const int entityID = LP.volumeInstanceToEntity.get(payload.instanceID, __LINE__);
-        // EntityStruct entity = LP.entities.get(entityID, __LINE__);
-        // VolumeStruct volume = LP.volumes.get(entity.volume_id, __LINE__);
-        // TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
+        const int entityID = LP.volumeInstanceToEntity.get(volPayload.instanceID, __LINE__);
+        EntityStruct entity = LP.entities.get(entityID, __LINE__);
+        VolumeStruct volume = LP.volumes.get(entity.volume_id, __LINE__);
+        TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
+
+        // for now, assuming transform is identity.
+        uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(0, __LINE__).data;
+        const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
+        const auto& tree = grid->tree();
+        auto acc = tree.getAccessor();
+        float majorant = tree.root().valueMax();
+        float linear_attenuation_unit = max(max(grid->voxelSize()[0], grid->voxelSize()[1]), grid->voxelSize()[2]);
+        vec3 color = DeltaTracking(rng, acc, envTex, majorant, linear_attenuation_unit, make_vec3(volRay.origin), -make_vec3(volRay.direction));
 
         auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
         float4* accumPtr = (float4*) LP.accumPtr;
@@ -704,12 +866,109 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float4* normalPtr = (float4*) LP.normalBuffer;
         float4* albedoPtr = (float4*) LP.albedoBuffer;
 
-        float4 color = make_float4(.0f, .0f, .0f, 1.f);
-        accumPtr[fbOfs] = color;
-        fbPtr[fbOfs] = color;
-        albedoPtr[fbOfs] = color;
-        normalPtr[fbOfs] = color;
+        float t0 = volRay.tmin;
+        float t1 = volRay.tmax;
+        auto bbox = acc.root().bbox();
+        auto wRay = nanovdb::Ray<float>(
+            reinterpret_cast<const nanovdb::Vec3f&>( volRay.origin ),
+            reinterpret_cast<const nanovdb::Vec3f&>( volRay.direction )
+        );
+        wRay.setTimes(t0, t1);
+        bool hit = wRay.clip(bbox);
+        if (
+            (pixelID.x == int(LP.frameSize.x / 2)) && 
+            (pixelID.y == int(LP.frameSize.y / 2))
+        ) {
+            float3 mn = make_float3(bbox.min()[0], bbox.min()[1], bbox.min()[2]);
+            float3 mx = make_float3(bbox.max()[0], bbox.max()[1], bbox.max()[2]);
+            // printf("hit %d bb %f %f %f, %f %f %f\n", hit, mn.x, mn.y, mn.z, mx.x, mx.y, mx.z);
+        }
+
+        float4 fbcolor = make_float4(color, 1.f);
+        float4 prev_color = accumPtr[fbOfs];
+        float4 accum_color = make_float4((make_float3(fbcolor) + float(LP.frameID) * make_float3(prev_color)) / float(LP.frameID + 1), 1.0f);
+
+        // if (lockout < 0) color = make_float4(1.f, 0.f, 0.f, 1.f);
+        accumPtr[fbOfs] = accum_color;
+        fbPtr[fbOfs] = accum_color;
+        albedoPtr[fbOfs] = accum_color;
+        normalPtr[fbOfs] = accum_color;
         return;
+
+        // uint64_t checksum = grid->checksum();
+        // auto bbox = grid->tree().bbox().asReal<float>();
+
+        //((void**)LP.volumeHandles.data)[0];// ((void*)LP.volumeHandles.data)[0];//getPtr(entity.volume_id, __LINE__);
+        // bool valid = grid->isValid();
+        
+        // return;
+
+
+        
+        // // {
+        //     // auto *data = reinterpret_cast<const typename GridT::DataType*>(grid);
+        //     // if (data->mMagic != NANOVDB_MAGIC_NUMBER) {
+        //     //     printf("Incorrect magic number: Expected %d, but read %d\n)", NANOVDB_MAGIC_NUMBER, data->mMagic);
+        //     //     // mErrorStr = ss.str();
+        //     // } 
+        //     // else if (!validateChecksum(*mGrid, detailed ? ChecksumMode::Full : ChecksumMode::Partial)) {
+        //     //     mErrorStr.assign("Mis-matching checksum");
+        //     // } else if (data->mMajor != NANOVDB_MAJOR_VERSION_NUMBER) {
+        //     //     ss << "Invalid major version number: Expected " << NANOVDB_MAJOR_VERSION_NUMBER << ", but read " << data->mMajor;
+        //     //     mErrorStr = ss.str();
+        //     // } else if (data->mGridClass >= GridClass::End) {
+        //     //     mErrorStr.assign("Invalid Grid Class");
+        //     // } else if (data->mGridType != mapToGridType<ValueT>()) {
+        //     //     mErrorStr.assign("Invalid Grid Type");
+        //     // } else if ( (const void*)(&(mGrid->tree())) != (const void*)(mGrid+1) ) {
+        //     //     mErrorStr.assign("Invalid Tree pointer");
+        //     // }
+        // // }
+        // // float3 mn = make_float3(bbox.min()[0], bbox.min()[1], bbox.min()[2]);
+        // // float3 mx = make_float3(bbox.max()[0], bbox.max()[1], bbox.max()[2]);
+        // // printf("bb %f %f %f, %f %f %f\n", mn.x, mn.y, mn.z, mx.x, mx.y, mx.z);
+        // // printf("t0 %f, t1 %f\n", iRay.t0(), iRay.t1());
+
+        
+        
+        
+        // // nanovdb::isValid(*grid, true, true);
+        
+        // // printf("Checksum: %llu\n", checksum);
+        
+
+        // auto wRay = nanovdb::Ray<float>(
+        //     reinterpret_cast<const nanovdb::Vec3f&>( volRay.origin ),
+        //     reinterpret_cast<const nanovdb::Vec3f&>( volRay.direction )
+        // );
+        // nanovdb::Ray<float> iRay = wRay;//wRay.worldToIndexF(*grid);
+        // iRay.setTimes(t0, t1);
+        
+        // const float voxelSize = 1.f;//static_cast<float>(grid->voxelSize()[0]);
+        // bool hit = iRay.clip(bbox);
+        // float transmittance = 1.f;
+        // if (hit) {
+            
+
+
+        //     float opacity = .125f;
+        //     const float dt = 1.f;//voxelSize;
+        //     // int lockout = 1000;
+        //     for (float t = iRay.t0(); t < iRay.t1(); t += dt) {
+        //         auto  densityValue = acc.getValue(nanovdb::Coord::Floor(iRay(t)));
+        //         float densityScalar = densityValue * opacity;
+        //         transmittance *= expf( -densityScalar * dt );
+        //         // lockout--;
+        //         // if (lockout < 0) {
+        //         //     break;
+        //         // }
+        //     }
+        //     // return transmittance;
+
+
+            
+        // }
+
     }
 
     // Shade each hit point on a path using NEE with MIS
