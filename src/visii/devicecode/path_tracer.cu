@@ -648,8 +648,8 @@ void SampleDeltaTracking(
     auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
     float densityValue = majorant_extinction - acc.getValue(coord_pos);
 
-   	float absorption = densityValue * .25f; //sample_volume_absorption(x);
-    float scattering = densityValue * .75f; //sample_volume_scattering(x);
+   	float absorption = densityValue * .5f; //sample_volume_absorption(x);
+    float scattering = densityValue * .5f; //sample_volume_scattering(x);
     float extinction = absorption + scattering;
     //float null_collision = 1.f - extinction;
     float null_collision = majorant_extinction - extinction;
@@ -698,6 +698,8 @@ vec3 DeltaTracking(
     vec3 x, 
     vec3 w
 ) {
+    auto &LP = optixLaunchParams;
+
     auto bbox = acc.root().bbox();
     #define MAX_VOLUME_DEPTH 10000
     float t0, t1;
@@ -708,14 +710,14 @@ vec3 DeltaTracking(
     );
     wRay.setTimes(EPSILON, 1e20f);
     bool hit = wRay.clip(bbox);
-    if (!hit) return make_vec3(missColor(make_float3(-w), envTex));
+    if (!hit) return make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
     
     // Move ray to volume boundary
     x = x - t0 * w;
     t1 = t1 - t0;
     t0 = 0.f;
         
-    // Note: original algorigm had unlimited bounces. 
+    // Note: original algorithm had unlimited bounces. 
     vec3 throughput = vec3(1.f);
     for (int i = 0; i < MAX_VOLUME_DEPTH; ++i) {
         int event = 0;
@@ -724,7 +726,7 @@ vec3 DeltaTracking(
         x = x - t * w;
         
         // A boundary has been hit. Sample the background.
-        if (event == 0) return throughput * make_vec3(missColor(make_float3(-w), envTex));
+        if (event == 0) return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
         
         // An absorption / emission occurred.
         if (event == 1) return throughput * vec3(0.f);//vec3(sample_volume_emission(x));
@@ -746,7 +748,7 @@ vec3 DeltaTracking(
             );
             bool hit = wRay.clip(bbox);
             if (!hit) 
-                return throughput * make_vec3(missColor(make_float3(-w), envTex));
+                return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
         }
         
         // A null collision occurred.
@@ -757,7 +759,7 @@ vec3 DeltaTracking(
     }
     
     // If we got stuck in the volume
-    return throughput * make_vec3(missColor(make_float3(-w), envTex));
+    return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
 }
 
 OPTIX_RAYGEN_PROGRAM(rayGen)()
