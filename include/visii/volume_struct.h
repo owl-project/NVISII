@@ -13,6 +13,8 @@
 
 struct VolumeStruct
 {
-    float majorant = 0.f;
+    float majorant = 1.f;
     float scale = 1.f;
+    float absorption = 0.5f;
+    float scattering = 0.5f;
 };

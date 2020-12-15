@@ -300,7 +300,64 @@ glm::vec3 Volume::getAabbCenter(uint32_t level, uint32_t node_idx)
         getMinAabbCorner(level, node_idx)) * .5f;
 }
 
+float Volume::getMax(uint32_t level, uint32_t node_idx)
+{
+    const nanovdb::GridMetaData* metadata = gridHdlPtr.get()->gridMetaData();
+    if (metadata->gridType() != nanovdb::GridType::Float) 
+        throw std::runtime_error("Error, unsupported grid format!");
+    nanovdb::FloatGrid* gridPtr = 
+        reinterpret_cast<nanovdb::FloatGrid*>(gridHdlPtr.get()->data());
+    
+    auto &tree = gridPtr->tree();
+    if (level == 0) {
+        auto node = tree.getNode<0>(node_idx);
+        auto m = node->valueMax();
+        return m;
+    }
+    if (level == 1) {
+        auto node = tree.getNode<1>(node_idx);
+        auto m = node->valueMax();
+        return m;
+    }
+    if (level == 2) {
+        auto node = tree.getNode<2>(node_idx);
+        auto m = node->valueMax();
+        return m;
+    }
+    if (level == 3) {
+        auto node = tree.getNode<3>(node_idx);
+        auto m = node->valueMax();
+        return m;
+    }    
+    return NAN;
+}
+
+
 std::shared_ptr<nanovdb::GridHandle<>> Volume::getNanoVDBGridHandle()
 {
     return gridHdlPtr;
+}
+
+void Volume::setScale(float units)
+{
+    this->volumeStructs[id].scale = units;
+    markDirty();
+}
+
+void Volume::setScattering(float scattering)
+{
+    this->volumeStructs[id].scattering = scattering;
+    markDirty();
+}
+
+void Volume::setAbsorption(float absorption)
+{
+    this->volumeStructs[id].absorption = absorption;
+    markDirty();
+}
+
+void Volume::setMajorant(float majorant)
+{
+    this->volumeStructs[id].majorant = majorant;
+    markDirty();
 }

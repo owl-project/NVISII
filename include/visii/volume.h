@@ -170,6 +170,21 @@ class Volume : public StaticFactory
 	/** @returns the handle to the nanovdb grid. For internal purposes. */
 	std::shared_ptr<nanovdb::GridHandle<>> getNanoVDBGridHandle();
 
+	/** todo... document */
+	void setScale(float units);
+
+	/** todo... document */
+	void setScattering(float scattering);
+	
+	/** todo... document */
+	void setAbsorption(float absorption);
+
+	/** todo... document */
+	void setMajorant(float majorant);
+
+	/** todo... document */
+	float getMax(uint32_t level, uint32_t node_idx);
+
   private:
 
   	/* TODO */

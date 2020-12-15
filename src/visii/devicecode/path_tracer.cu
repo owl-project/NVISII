@@ -624,6 +624,8 @@ void SampleDeltaTracking(
     AccT& acc, 
     float majorant_extinction, 
     float linear_attenuation_unit, 
+    float absorption_, 
+    float scattering_, 
     vec3 x, 
     vec3 w, 
     float d, 
@@ -646,10 +648,10 @@ void SampleDeltaTracking(
     // Update current position
     x = x - t * w;
     auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
-    float densityValue = majorant_extinction - acc.getValue(coord_pos);
+    float densityValue = acc.getValue(coord_pos);
 
-   	float absorption = densityValue * .5f; //sample_volume_absorption(x);
-    float scattering = densityValue * .5f; //sample_volume_scattering(x);
+   	float absorption = densityValue * absorption_; //sample_volume_absorption(x);
+    float scattering = densityValue * scattering_; //sample_volume_scattering(x);
     float extinction = absorption + scattering;
     //float null_collision = 1.f - extinction;
     float null_collision = majorant_extinction - extinction;
@@ -695,6 +697,8 @@ vec3 DeltaTracking(
     cudaTextureObject_t &envTex,
     float majorant_extinction, 
     float linear_attenuation_unit, 
+    float absorption, 
+    float scattering, 
     vec3 x, 
     vec3 w
 ) {
@@ -711,6 +715,8 @@ vec3 DeltaTracking(
     wRay.setTimes(EPSILON, 1e20f);
     bool hit = wRay.clip(bbox);
     if (!hit) return make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+    t0 = wRay.t0();
+    t1 = wRay.t1();
     
     // Move ray to volume boundary
     x = x - t0 * w;
@@ -722,7 +728,7 @@ vec3 DeltaTracking(
     for (int i = 0; i < MAX_VOLUME_DEPTH; ++i) {
         int event = 0;
         float t = 0.f;
-        SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, x, w, t1, t, event);
+        SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, absorption, scattering, x, w, t1, t, event);
         x = x - t * w;
         
         // A boundary has been hit. Sample the background.
@@ -748,7 +754,9 @@ vec3 DeltaTracking(
             );
             bool hit = wRay.clip(bbox);
             if (!hit) 
-                return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+                return vec3(0.f,1.f,0.f);//throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+            t0 = wRay.t0();
+            t1 = wRay.t1();
         }
         
         // A null collision occurred.
@@ -759,6 +767,7 @@ vec3 DeltaTracking(
     }
     
     // If we got stuck in the volume
+    return vec3(1.f, 0.f, 0.f);
     return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
 }
 
@@ -858,9 +867,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
         const auto& tree = grid->tree();
         auto acc = tree.getAccessor();
-        float majorant = tree.root().valueMax();
-        float linear_attenuation_unit = max(max(grid->voxelSize()[0], grid->voxelSize()[1]), grid->voxelSize()[2]);
-        vec3 color = DeltaTracking(rng, acc, envTex, majorant, linear_attenuation_unit, make_vec3(volRay.origin), -make_vec3(volRay.direction));
+        float majorant = volume.majorant;//tree.root().valueMax();
+        float linear_attenuation_unit = volume.scale;//max(max(grid->voxelSize()[0], grid->voxelSize()[1]), grid->voxelSize()[2]);
+        float absorption = volume.absorption;
+        float scattering = volume.scattering;
+        vec3 color = DeltaTracking(
+            rng, acc, envTex, 
+            majorant, linear_attenuation_unit, absorption, scattering,
+            make_vec3(volRay.origin), -make_vec3(volRay.direction));
 
         auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
         float4* accumPtr = (float4*) LP.accumPtr;
