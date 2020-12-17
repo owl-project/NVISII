@@ -79,11 +79,16 @@ void clearAll();
 */
 void deinitialize();
 
-/**
- * Registers a callback which is called on the render thread before each frame
- * of rendering. To disable the callback, pass nullptr/None here.
- */
+/* Deprecated. Please use the "register_callback" function instead. */
 void registerPreRenderCallback(std::function<void()> callback);
+
+/**
+ * Registers a callback which is called on the render thread before each rendered 
+ * frame. This mechanism is useful for implementing camera controls and other 
+ * routines dependent on cursor and button clicks. To disable the callback, pass 
+ * nullptr/None here.
+ */
+void registerCallback(std::function<void()> callback);
 
 /** 
  * Tells the renderer which camera entity to use for rendering. The transform 

@@ -425,11 +425,10 @@ void Transform::setRotation(quat newRotation, bool previous)
 	markDirty();
 }
 
-// void Transform::setRotation(float angle, vec3 axis)
-// {
-// 	setRotation(glm::angleAxis(angle, axis));
-// 	markDirty();
-// }
+void Transform::setAngleAxis(float angle, vec3 axis, bool previous)
+{
+	setRotation(glm::angleAxis(angle, axis), previous);
+}
 
 void Transform::addRotation(quat additionalRotation, bool previous)
 {
@@ -439,11 +438,10 @@ void Transform::addRotation(quat additionalRotation, bool previous)
 	markDirty();
 }
 
-// void Transform::addRotation(float angle, vec3 axis)
-// {
-// 	addRotation(glm::angleAxis(angle, axis));
-// 	markDirty();
-// }
+void Transform::addAngleAxis(float angle, vec3 axis, bool previous)
+{
+	addRotation(glm::angleAxis(angle, axis), previous);
+}
 
 void Transform::updateRotation()
 {
