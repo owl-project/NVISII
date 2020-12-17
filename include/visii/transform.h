@@ -350,14 +350,15 @@ class Transform : public StaticFactory
     */
     void setRotation(glm::quat newRotation, bool previous = false);
 
-    // /** 
-    //  * Sets the rotation of the transform from local to parent using an axis 
-    //  * in local space to rotate about, and an angle in radians to drive the rotation. 
-    //  * 
-    //  * @param angle The angle (in radians) to rotate.
-    //  * @param axis  The axis to rotate about.
-    // */
-    // void setRotation(float angle, glm::vec3 axis);
+    /** 
+     * Sets the rotation of the transform from local to parent using an axis 
+     * in local space to rotate about, and an angle in radians to drive the rotation. 
+     * 
+     * @param angle The angle (in radians) to rotate.
+     * @param axis  The axis to rotate about.
+     * @param previous If true, edits the previous rotation.
+    */
+    void setAngleAxis(float angle, glm::vec3 axis, bool previous = false);
 
     /** 
      * Adds a rotation to the existing transform rotation from local to parent 
@@ -368,15 +369,16 @@ class Transform : public StaticFactory
     */
     void addRotation(glm::quat additionalRotation, bool previous = false);
 
-    // /** 
-    //  * Adds a rotation to the existing transform rotation from local to parent 
-    //  * using an axis in local space to rotate about, and an angle in radians to 
-    //  * drive the rotation
-    //  *  
-    //  * @param angle The angle (in radians) to rotate the current transform quaterion by.
-    //  * @param axis  The axis to rotate about.
-    // */
-    // void addRotation(float angle, glm::vec3 axis);
+    /** 
+     * Adds a rotation to the existing transform rotation from local to parent 
+     * using an axis in local space to rotate about, and an angle in radians to 
+     * drive the rotation
+     *  
+     * @param angle The angle (in radians) to rotate the current transform quaterion by.
+     * @param axis  The axis to rotate about.
+     * @param previous If true, edits the previous rotation.
+    */
+    void addAngleAxis(float angle, glm::vec3 axis, bool previous = false);
 
     /** 
      * @param previous If true, returns the previous parent-space position.
