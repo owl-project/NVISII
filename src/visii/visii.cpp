@@ -170,7 +170,7 @@ static struct ViSII {
     std::recursive_mutex qMutex;
     std::queue<Command> commandQueue = {};
     bool headlessMode;
-    std::function<void()> preRenderCallback;
+    std::function<void()> callback;
     std::recursive_mutex callbackMutex;
 
 } ViSII;
@@ -837,7 +837,7 @@ std::future<void> enqueueCommand(std::function<void()> function)
 void enqueueCommandAndWait(std::function<void()> function)
 {
     if (ViSII.render_thread_id != std::this_thread::get_id()) {
-        if (ViSII.preRenderCallback) {
+        if (ViSII.callback) {
             throw std::runtime_error(
                 std::string("Error: calling a blocking function while callback set, which would otherwise result in a ")
                 + std::string("deadlock. To work around this issue, either temporarily clear the callback, or ")
@@ -2191,7 +2191,7 @@ void initializeInteractive(
     initialized = true;
     stopped = false;
     verbose = _verbose;
-    ViSII.preRenderCallback = nullptr;
+    ViSII.callback = nullptr;
 
     initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures);
 
@@ -2217,8 +2217,8 @@ void initializeInteractive(
             glClearColor(1,1,1,1);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            if (ViSII.preRenderCallback && ViSII.callbackMutex.try_lock()) {
-                ViSII.preRenderCallback();
+            if (ViSII.callback && ViSII.callbackMutex.try_lock()) {
+                ViSII.callback();
                 ViSII.callbackMutex.unlock();
             }
 
@@ -2299,7 +2299,7 @@ void initializeHeadless(
     initialized = true;
     stopped = false;
     verbose = _verbose;
-    ViSII.preRenderCallback = nullptr;
+    ViSII.callback = nullptr;
 
     initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures);
 
@@ -2311,8 +2311,8 @@ void initializeHeadless(
 
         while (!stopped)
         {
-            if(ViSII.preRenderCallback){
-                ViSII.preRenderCallback();
+            if(ViSII.callback){
+                ViSII.callback();
             }
             processCommandQueue();
             if (stopped) break;
@@ -2353,8 +2353,17 @@ void initialize(
     else initializeInteractive(windowOnTop, verbose, maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures);
 }
 
+static bool registerPreRenderCallbackDeprecatedShown = false;
 void registerPreRenderCallback(std::function<void()> callback){
-    ViSII.preRenderCallback = callback;
+    if (registerPreRenderCallbackDeprecatedShown == false) {
+        std::cout<<"Warning, register_pre_render_callback is deprecated and will be removed in a subsequent release. Please switch to register_callback." << std::endl;
+        registerPreRenderCallbackDeprecatedShown = true;
+    }
+    registerCallback(callback);
+}
+
+void registerCallback(std::function<void()> callback){
+    ViSII.callback = callback;
 }
 
 void clearAll()
