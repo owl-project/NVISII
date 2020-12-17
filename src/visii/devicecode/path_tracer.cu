@@ -725,22 +725,98 @@ vec3 DeltaTracking(
         
     // Note: original algorithm had unlimited bounces. 
     vec3 throughput = vec3(1.f);
+    vec3 illumination = vec3(0.f);
+    bool scattered = false;
     for (int i = 0; i < MAX_VOLUME_DEPTH; ++i) {
         int event = 0;
         float t = 0.f;
         SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, absorption, scattering, x, w, t1, t, event);
         x = x - t * w;
+
+        // Do NEE (for now, just against the dome light)
+        if (scattered && event == 0) {
+            float3 lightEmission = make_float3(0.f, 0.f, 0.f);
+            float lightPDF;
+            float3 lightDir;
+            if (
+                (LP.environmentMapWidth != 0) && (LP.environmentMapHeight != 0) &&
+                (LP.environmentMapRows != nullptr) && (LP.environmentMapCols != nullptr) 
+            ) {
+                // Reduces noise for strangely noisy dome light textures, but at the expense 
+                // of a highly uncoalesced binary search through a 2D CDF.
+                // disabled by default to avoid the hit to performance
+                float rx = lcg_randomf(rng);
+                float ry = lcg_randomf(rng);
+                float* rows = LP.environmentMapRows;
+                float* cols = LP.environmentMapCols;
+                int width = LP.environmentMapWidth;
+                int height = LP.environmentMapHeight;
+                float invjacobian = width * height / float(4 * M_PI);
+                float row_pdf, col_pdf;
+                unsigned x, y;
+                ry = sample_cdf(rows, height, ry, &y, &row_pdf);
+                y = max(min(y, height - 1), 0);
+                rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
+                lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
+                lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
+                lightPDF = row_pdf * col_pdf * invjacobian;
+            } 
+            else 
+            {
+                float rand1 = lcg_randomf(rng);
+                float rand2 = lcg_randomf(rng);
+
+                // Sample isotropic phase function to get new ray direction           
+                float phi = 2.0f * M_PI * rand1;
+                float cos_theta = 1.0f - 2.0f * rand2;
+                float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
+                lightDir = make_float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+                lightPDF = 1.f / float(2.0 * M_PI);
+            }
+
+            lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+            vec3 w = make_vec3(-lightDir);
+            // Compute updated boundary
+            auto wRay = nanovdb::Ray<float>(
+                reinterpret_cast<const nanovdb::Vec3f&>( x ),
+                reinterpret_cast<const nanovdb::Vec3f&>( -w )
+            );
+            bool hit = wRay.clip(bbox);
+            if (!hit) lightEmission = make_float3(0.f);
+            else {
+                float t = 0.f;
+                float t1 = wRay.t1();
+                SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, absorption, scattering, x, w, t1, t, event);
+                // boundary event
+                if (event != 0) lightEmission = make_float3(0.f);
+            }
+            illumination += throughput * make_vec3(lightEmission) / lightPDF;
+        }
         
         // A boundary has been hit. Sample the background.
-        if (event == 0) return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+        if (event == 0) {
+            if (!scattered) {
+                // trying to reduce noise. for HDRIs, this will randomly hit super bright pixels, which looks bad.
+                // I'm instead handling this path through NEE, but only if the light is scattered.
+                illumination += throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+            }
+            return illumination;
+        } 
         
         // An absorption / emission occurred.
-        if (event == 1) return throughput * vec3(0.f);//vec3(sample_volume_emission(x));
+        if (event == 1) {
+            return illumination; // + vec3(sample_volume_emission(x));
+            // return throughput * vec3(0.f);
+        }
         
         // A scattering collision occurred.
-        if (event == 2) {            
+        if (event == 2) {
+            scattered = true;
+            //throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+            
             float rand1 = lcg_randomf(rng);
             float rand2 = lcg_randomf(rng);
+
             // Sample isotropic phase function to get new ray direction           
             float phi = 2.0f * M_PI * rand1;
             float cos_theta = 1.0f - 2.0f * rand2;
@@ -753,8 +829,7 @@ vec3 DeltaTracking(
                 reinterpret_cast<const nanovdb::Vec3f&>( -w )
             );
             bool hit = wRay.clip(bbox);
-            if (!hit) 
-                return vec3(0.f,1.f,0.f);//throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+            if (!hit) return illumination; //vec3(0.f,0.f,0.f);
             t0 = wRay.t0();
             t1 = wRay.t1();
         }
@@ -767,8 +842,8 @@ vec3 DeltaTracking(
     }
     
     // If we got stuck in the volume
-    return vec3(1.f, 0.f, 0.f);
-    return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+    return illumination; //vec3(1.f, 0.f, 0.f);
+    // return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
 }
 
 OPTIX_RAYGEN_PROGRAM(rayGen)()
