@@ -1475,7 +1475,6 @@ void updateComponents()
             bool isLinear = texture->isLinear();
             uint32_t width = texture->getWidth();
             uint32_t height = texture->getHeight();
-            void* texels = ((isHDR) ? (void*)texture->getFloatTexels().data() : (void*)texture->getByteTexels().data());
             OWLTexelFormat format = ((isHDR) ? OWL_TEXEL_FORMAT_RGBA32F : OWL_TEXEL_FORMAT_RGBA8);
             OWLTextureColorSpace colorSpace = ((isLinear) ? OWL_COLOR_SPACE_LINEAR: OWL_COLOR_SPACE_SRGB);
             if (width < 1 || height < 1 || 
@@ -1485,14 +1484,29 @@ void updateComponents()
                 std::cout<<"Internal error: corrupt texture. Attempting to recover..." <<std::endl;
                 return; 
             }
-            OD.textureObjects[tid] = owlTexture2DCreate(
-                OD.context, 
-                format,
-                width, height, texels,
-                OWL_TEXTURE_LINEAR, 
-                OWL_TEXTURE_WRAP,
-                colorSpace
+            if (isHDR) {
+                auto texels = texture->getFloatTexels();
+                OD.textureObjects[tid] = owlTexture2DCreate(
+                    OD.context, 
+                    format,
+                    width, height, texels.data(),
+                    OWL_TEXTURE_LINEAR, 
+                    OWL_TEXTURE_WRAP,
+                    colorSpace
                 );
+            }
+            else {
+                auto texels = texture->getByteTexels();
+                OD.textureObjects[tid] = owlTexture2DCreate(
+                    OD.context, 
+                    format,
+                    width, height, texels.data(),
+                    OWL_TEXTURE_LINEAR, 
+                    OWL_TEXTURE_WRAP,
+                    colorSpace
+                );
+            }
+            
         }
 
         // Create additional cuda textures for material constants
