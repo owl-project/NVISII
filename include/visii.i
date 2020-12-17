@@ -247,7 +247,13 @@ namespace std {
     $1 = [$input]() {
       PyGILState_STATE gstate;
       gstate = PyGILState_Ensure();
-      PyEval_CallObject($input, NULL);
+      PyObject* result = PyEval_CallObjectWithKeywords($input, NULL, (PyObject *)NULL);
+      if (result == NULL) {
+        PyErr_Print();
+      }
+      else {
+        Py_DECREF(result);
+      }
       PyGILState_Release(gstate);
     };
   }
