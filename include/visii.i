@@ -244,14 +244,13 @@ namespace std {
       PyErr_SetString(PyExc_ValueError, "in method '" "$symname" "', argument " "$argnum" " function has an unexpected argument");
       return NULL;
     }
+    $1 = [$input]() {
+      PyGILState_STATE gstate;
+      gstate = PyGILState_Ensure();
+      PyEval_CallObject($input, NULL);
+      PyGILState_Release(gstate);
+    };
   }
-  $1 = [$input]() {
-    PyGILState_STATE gstate;
-    gstate = PyGILState_Ensure();
-    PyEval_CallObject($input, NULL);
-    /* Release the thread. No Python API allowed beyond this point. */
-    PyGILState_Release(gstate);
-  };
 }
 
 %include "visii/visii.h"

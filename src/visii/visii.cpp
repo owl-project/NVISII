@@ -171,6 +171,8 @@ static struct ViSII {
     std::queue<Command> commandQueue = {};
     bool headlessMode;
     std::function<void()> preRenderCallback;
+    std::recursive_mutex callbackMutex;
+
 } ViSII;
 
 void applyStyle()
@@ -832,6 +834,22 @@ std::future<void> enqueueCommand(std::function<void()> function)
     return new_future;
 }
 
+void enqueueCommandAndWait(std::function<void()> function)
+{
+    if (ViSII.render_thread_id != std::this_thread::get_id()) {
+        if (ViSII.preRenderCallback) {
+            throw std::runtime_error(
+                std::string("Error: calling a blocking function while callback set, which would otherwise result in a ")
+                + std::string("deadlock. To work around this issue, either temporarily clear the callback, or ")
+                + std::string("alternatively call this function from within the callback.")
+            );
+        }
+        enqueueCommand(function).wait();
+    } else {
+        function();
+    }
+}
+
 void processCommandQueue()
 {
     std::lock_guard<std::recursive_mutex> lock(ViSII.qMutex);
@@ -890,7 +908,8 @@ void setDomeLightColor(vec3 color)
 
 void clearDomeLightTexture()
 {
-    auto func = [] () {
+    resetAccumulation();
+    enqueueCommand([] () {
         OptixData.LP.environmentMapID = -1;
         if (OptixData.environmentMapRowsBuffer) owlBufferRelease(OptixData.environmentMapRowsBuffer);
         if (OptixData.environmentMapColsBuffer) owlBufferRelease(OptixData.environmentMapColsBuffer);
@@ -898,12 +917,7 @@ void clearDomeLightTexture()
         OptixData.environmentMapColsBuffer = nullptr;
         OptixData.LP.environmentMapWidth = -1;
         OptixData.LP.environmentMapHeight = -1;  
-    };
-
-    resetAccumulation();
-    auto future = enqueueCommand(func);
-    if (ViSII.render_thread_id != std::this_thread::get_id()) 
-        future.wait();
+    });
 }
 
 void generateDomeCDF()
@@ -930,7 +944,7 @@ vec3 toPolar(vec2 uv)
 
 void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float saturation)
 {
-    auto func = [sunPos, skyTint, atmosphereThickness, saturation] () {
+    enqueueCommand([sunPos, skyTint, atmosphereThickness, saturation] () {
         /* Generate procedural sky */
         uint32_t width = 1024/2;
         uint32_t height = 512/2;
@@ -987,15 +1001,12 @@ void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float
         OptixData.LP.environmentMapWidth = 0;
         OptixData.LP.environmentMapHeight = 0;  
         resetAccumulation();
-    };
-    auto future = enqueueCommand(func);
-    if (ViSII.render_thread_id != std::this_thread::get_id()) 
-        future.wait();
+    });
 }
 
 void setDomeLightTexture(Texture* texture, bool enableCDF)
 {
-    auto func = [texture, enableCDF] () {
+    enqueueCommand([texture, enableCDF] () {
         OptixData.LP.environmentMapID = texture->getId();
         if (enableCDF) {
             std::vector<glm::vec4> texels = texture->getFloatTexels();
@@ -1040,10 +1051,7 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
             OptixData.LP.environmentMapHeight = 0;  
         }
         resetAccumulation();        
-    };
-    auto future = enqueueCommand(func);
-    if (ViSII.render_thread_id != std::this_thread::get_id()) 
-        future.wait();
+    });
 }
 
 void setDomeLightRotation(glm::quat rotation)
@@ -1646,30 +1654,22 @@ void resizeWindow(uint32_t width, uint32_t height)
     height = (height <= 0) ? 1 : height;
     if (ViSII.headlessMode) return;
 
-    auto resizeWindow = [width, height] () {
+    enqueueCommand([width, height] () {
         using namespace Libraries;
         auto glfw = GLFW::Get();
         glfw->resize_window("ViSII", width, height);
-
         glViewport(0,0,width,height);
-    };
-
-    auto future = enqueueCommand(resizeWindow);
-    future.wait();
+    });
 }
 
 void enableDenoiser() 
 {
-    auto enableDenoiser = [] () { OptixData.enableDenoiser = true; };
-    auto f = enqueueCommand(enableDenoiser);
-    if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
+    enqueueCommand([] () { OptixData.enableDenoiser = true; });
 }
 
 void disableDenoiser()
 {
-    auto disableDenoiser = [] () { OptixData.enableDenoiser = false; };
-    auto f = enqueueCommand(disableDenoiser);
-    if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
+    enqueueCommand([] () { OptixData.enableDenoiser = false; });
 }
 
 void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelPrediction)
@@ -1679,7 +1679,7 @@ void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelP
             "If normal guide is enabled, albedo guide must also be enabled.");
     }
 
-    auto func = [useAlbedoGuide, useNormalGuide, useKernelPrediction](){
+    enqueueCommand([useAlbedoGuide, useNormalGuide, useKernelPrediction](){
         OptixData.enableAlbedoGuide = useAlbedoGuide;
         OptixData.enableNormalGuide = useNormalGuide;
         OptixData.enableKernelPrediction = useKernelPrediction;
@@ -1733,15 +1733,13 @@ void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelP
             (CUdeviceptr) bufferGetPointer(OptixData.denoiserScratchBuffer, 0), 
             scratchSizeInBytes
         );
-    };
-    auto future = enqueueCommand(func);
-    future.wait();
+    });
 }
 
 std::vector<float> readFrameBuffer() {
     std::vector<float> frameBuffer(OptixData.LP.frameSize.x * OptixData.LP.frameSize.y * 4);
 
-    auto readFrameBuffer = [&frameBuffer] () {
+    enqueueCommandAndWait([&frameBuffer] () {
         int num_devices = getDeviceCount();
         synchronizeDevices();
 
@@ -1754,11 +1752,7 @@ std::vector<float> readFrameBuffer() {
         }
 
         // memcpy(frameBuffer.data(), fb, frameBuffer.size() * sizeof(float));
-    };
-
-    auto future = enqueueCommand(readFrameBuffer);
-    future.wait();
-
+    });
     return frameBuffer;
 }
 
@@ -1766,7 +1760,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
     if ((width < 1) || (height < 1)) throw std::runtime_error("Error, invalid width/height");
     std::vector<float> frameBuffer(width * height * 4);
 
-    auto readFrameBuffer = [&frameBuffer, width, height, samplesPerPixel, seed] () {
+    enqueueCommandAndWait([&frameBuffer, width, height, samplesPerPixel, seed] () {
         if (!ViSII.headlessMode) {
             if ((width != WindowData.currentSize.x) || (height != WindowData.currentSize.y))
             {
@@ -1826,10 +1820,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
         cudaMemcpyAsync(frameBuffer.data(), fb, width * height * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
 
         synchronizeDevices();
-    };
-
-    auto future = enqueueCommand(readFrameBuffer);
-    future.wait();
+    });
 
     return frameBuffer;
 }
@@ -1846,7 +1837,7 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
 {
     std::vector<float> frameBuffer(width * height * 4);
 
-    auto readFrameBuffer = [&frameBuffer, width, height, startFrame, frameCount, bounce, _option, seed] () {
+    enqueueCommandAndWait([&frameBuffer, width, height, startFrame, frameCount, bounce, _option, seed] () {
         if (!ViSII.headlessMode) {
             if ((width != WindowData.currentSize.x) || (height != WindowData.currentSize.y))
             {
@@ -1963,10 +1954,7 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         OptixData.LP.renderDataMode = 0;
         OptixData.LP.renderDataBounce = 0;
         updateLaunchParams();
-    };
-
-    auto future = enqueueCommand(readFrameBuffer);
-    future.wait();
+    });
 
     return frameBuffer;
 }
@@ -2229,8 +2217,9 @@ void initializeInteractive(
             glClearColor(1,1,1,1);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            if(ViSII.preRenderCallback){
+            if (ViSII.preRenderCallback && ViSII.callbackMutex.try_lock()) {
                 ViSII.preRenderCallback();
+                ViSII.callbackMutex.unlock();
             }
 
             static double start=0;
@@ -2284,9 +2273,7 @@ void initializeInteractive(
     renderThread = thread(loop);
 
     // Waits for the render thread to start before returning
-    auto wait = [] () {};
-    auto future = enqueueCommand(wait);
-    future.wait();
+    enqueueCommandAndWait([] () {});
 }
 
 void initializeHeadless(
@@ -2340,9 +2327,7 @@ void initializeHeadless(
     renderThread = thread(loop);
 
     // Waits for the render thread to start before returning
-    auto wait = [] () {};
-    auto future = enqueueCommand(wait);
-    future.wait();
+    enqueueCommandAndWait([] () {});
 }
 
 void initialize(
@@ -2419,16 +2404,12 @@ void updateSceneAabb(Entity* entity)
 
 void enableUpdates()
 {
-    auto enableUpdates = [] () { lazyUpdatesEnabled = false; };
-    auto f = enqueueCommand(enableUpdates);
-    if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
+    enqueueCommand([] () { lazyUpdatesEnabled = false; });
 }
 
 void disableUpdates()
 {
-    auto disableUpdates = [] () { lazyUpdatesEnabled = true; };
-    auto f = enqueueCommand(disableUpdates);
-    if (ViSII.render_thread_id != std::this_thread::get_id()) f.wait();
+    enqueueCommand([] () { lazyUpdatesEnabled = true; });
 }
 
 bool areUpdatesEnabled()
@@ -2505,7 +2486,7 @@ vec2 getCursorPos()
 void setCursorMode(std::string mode)
 {
     if (ViSII.headlessMode) return;
-    auto func = [mode] () {
+    enqueueCommand([mode] () {
         std::string mode_ = mode;
         std::transform(mode_.data(), mode_.data() + mode_.size(), 
             std::addressof(mode_[0]), [](unsigned char c){ return std::toupper(c); });
@@ -2514,23 +2495,12 @@ void setCursorMode(std::string mode)
         if (mode_.compare("HIDDEN") == 0) value = GLFW_CURSOR_HIDDEN;
         if (mode_.compare("DISABLED") == 0) value = GLFW_CURSOR_DISABLED;
         glfwSetInputMode(WindowData.window, GLFW_CURSOR, value);
-    };
-    auto future = enqueueCommand(func);
-    if (ViSII.render_thread_id != std::this_thread::get_id()) future.wait();
+    });
 }
 
 ivec2 getWindowSize()
 {
     if (ViSII.headlessMode) return ivec2(NAN, NAN);
-    
-    auto func = [] () {
-        auto glfw = Libraries::GLFW::Get();
-        glfwGetFramebufferSize(WindowData.window, &WindowData.currentSize.x, &WindowData.currentSize.y);
-    };
-    auto future = enqueueCommand(func);
-    if (ViSII.render_thread_id != std::this_thread::get_id()) 
-        future.wait();
-
     return WindowData.currentSize;
 }
 
