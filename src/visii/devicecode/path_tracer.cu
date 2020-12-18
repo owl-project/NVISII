@@ -694,31 +694,35 @@ __device__
 vec3 DeltaTracking(
     LCGRand &rng, 
     AccT& acc, 
+    VolumeStruct& volume, 
+    TransformStruct& transform, 
+    MaterialStruct& material, 
     cudaTextureObject_t &envTex,
     float majorant_extinction, 
     float linear_attenuation_unit, 
     float absorption, 
     float scattering, 
-    vec3 x, 
-    vec3 w
+    vec3 world_x, 
+    vec3 world_w
 ) {
     auto &LP = optixLaunchParams;
-
     auto bbox = acc.root().bbox();
-    #define MAX_VOLUME_DEPTH 10000
-    float t0, t1;
-    
+    #define MAX_VOLUME_DEPTH 10000 
+
+    glm::mat4 localToWorld = transform.localToWorld;
+    glm::mat4 worldToLocal = glm::inverse(localToWorld);
+    vec3 x = glm::vec3(worldToLocal * glm::vec4(world_x, 1.f));
+    vec3 w = glm::vec3(worldToLocal * glm::vec4(world_w, 0.f));   
+
     auto wRay = nanovdb::Ray<float>(
         reinterpret_cast<const nanovdb::Vec3f&>( x ),
         reinterpret_cast<const nanovdb::Vec3f&>( -w )
     );
-    wRay.setTimes(EPSILON, 1e20f);
     bool hit = wRay.clip(bbox);
-    if (!hit) return make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-    t0 = wRay.t0();
-    t1 = wRay.t1();
-    
+    if (!hit) return make_vec3(missColor(make_float3(glm::vec3(localToWorld*glm::vec4(-w,0.f))), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+
     // Move ray to volume boundary
+    float t0 = wRay.t0(), t1 = wRay.t1();
     x = x - t0 * w;
     t1 = t1 - t0;
     t0 = 0.f;
@@ -733,8 +737,8 @@ vec3 DeltaTracking(
         SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, absorption, scattering, x, w, t1, t, event);
         x = x - t * w;
 
-        // Do NEE (for now, just against the dome light)
-        if (scattered && event == 0) {
+        // If we're at the boundary, and we scattered, do NEE (for now, just against the dome light)
+        if (event != 3 && scattered == true) {
             float3 lightEmission = make_float3(0.f, 0.f, 0.f);
             float lightPDF;
             float3 lightDir;
@@ -773,10 +777,8 @@ vec3 DeltaTracking(
                 lightDir = make_float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
                 lightPDF = 1.f / float(2.0 * M_PI);
             }
-
             lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-            vec3 w = make_vec3(-lightDir);
-            // Compute updated boundary
+            vec3 w = glm::vec3(worldToLocal * glm::vec4(make_vec3(-lightDir), 0.f));
             auto wRay = nanovdb::Ray<float>(
                 reinterpret_cast<const nanovdb::Vec3f&>( x ),
                 reinterpret_cast<const nanovdb::Vec3f&>( -w )
@@ -790,29 +792,24 @@ vec3 DeltaTracking(
                 // boundary event
                 if (event != 0) lightEmission = make_float3(0.f);
             }
-            illumination += throughput * make_vec3(lightEmission) / lightPDF;
+            illumination += throughput * make_vec3(lightEmission) / max(lightPDF, EPSILON);
+            return illumination;
         }
         
         // A boundary has been hit. Sample the background.
-        if (event == 0) {
-            if (!scattered) {
-                // trying to reduce noise. for HDRIs, this will randomly hit super bright pixels, which looks bad.
-                // I'm instead handling this path through NEE, but only if the light is scattered.
-                illumination += throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-            }
+        if (event == 0 && scattered == false) {
+            illumination += throughput * make_vec3(missColor(make_float3(glm::vec3(localToWorld*glm::vec4(-w,0.f))), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
             return illumination;
         } 
         
         // An absorption / emission occurred.
         if (event == 1) {
-            return illumination; // + vec3(sample_volume_emission(x));
-            // return throughput * vec3(0.f);
+            return vec3(0.f); // + vec3(sample_volume_emission(x));
         }
         
         // A scattering collision occurred.
         if (event == 2) {
             scattered = true;
-            //throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
             
             float rand1 = lcg_randomf(rng);
             float rand2 = lcg_randomf(rng);
@@ -842,7 +839,7 @@ vec3 DeltaTracking(
     }
     
     // If we got stuck in the volume
-    return illumination; //vec3(1.f, 0.f, 0.f);
+    return vec3(1.f, 0.f, 0.f);
     // return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
 }
 
@@ -936,6 +933,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         EntityStruct entity = LP.entities.get(entityID, __LINE__);
         VolumeStruct volume = LP.volumes.get(entity.volume_id, __LINE__);
         TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
+        MaterialStruct material = LP.materials.get(entity.material_id, __LINE__);
 
         // for now, assuming transform is identity.
         uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(0, __LINE__).data;
@@ -947,7 +945,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float absorption = volume.absorption;
         float scattering = volume.scattering;
         vec3 color = DeltaTracking(
-            rng, acc, envTex, 
+            rng, acc, volume, transform, material, envTex,
             majorant, linear_attenuation_unit, absorption, scattering,
             make_vec3(volRay.origin), -make_vec3(volRay.direction));
 
@@ -957,23 +955,28 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float4* normalPtr = (float4*) LP.normalBuffer;
         float4* albedoPtr = (float4*) LP.albedoBuffer;
 
-        float t0 = volRay.tmin;
-        float t1 = volRay.tmax;
-        auto bbox = acc.root().bbox();
-        auto wRay = nanovdb::Ray<float>(
-            reinterpret_cast<const nanovdb::Vec3f&>( volRay.origin ),
-            reinterpret_cast<const nanovdb::Vec3f&>( volRay.direction )
-        );
-        wRay.setTimes(t0, t1);
-        bool hit = wRay.clip(bbox);
-        if (
-            (pixelID.x == int(LP.frameSize.x / 2)) && 
-            (pixelID.y == int(LP.frameSize.y / 2))
-        ) {
-            float3 mn = make_float3(bbox.min()[0], bbox.min()[1], bbox.min()[2]);
-            float3 mx = make_float3(bbox.max()[0], bbox.max()[1], bbox.max()[2]);
-            // printf("hit %d bb %f %f %f, %f %f %f\n", hit, mn.x, mn.y, mn.z, mx.x, mx.y, mx.z);
-        }
+        // float t0 = volRay.tmin;
+        // float t1 = volRay.tmax;
+        // auto bbox = acc.root().bbox();
+        // auto wRay = nanovdb::Ray<float>(
+        //     reinterpret_cast<const nanovdb::Vec3f&>( volRay.origin ),
+        //     reinterpret_cast<const nanovdb::Vec3f&>( volRay.direction )
+        // );
+        // wRay.setTimes(t0, t1);
+        // bool hit = wRay.clip(bbox);
+        // if (
+        //     (pixelID.x == int(LP.frameSize.x / 2)) && 
+        //     (pixelID.y == int(LP.frameSize.y / 2))
+        // ) {
+        // //     float3 mn = make_float3(bbox.min()[0], bbox.min()[1], bbox.min()[2]);
+        // //     float3 mx = make_float3(bbox.max()[0], bbox.max()[1], bbox.max()[2]);
+        //     auto m = transform.localToWorld; 
+        //     printf("(%f %f %f %f), (%f %f %f %f), (%f %f %f %f), (%f %f %f %f) \n", 
+        //         m[0][0], m[0][1], m[0][2], m[0][3], 
+        //         m[1][0], m[1][1], m[1][2], m[1][3], 
+        //         m[2][0], m[2][1], m[2][2], m[2][3], 
+        //         m[3][0], m[3][1], m[3][2], m[3][3]);
+        // }
 
         float4 fbcolor = make_float4(color, 1.f);
         float4 prev_color = accumPtr[fbOfs];
