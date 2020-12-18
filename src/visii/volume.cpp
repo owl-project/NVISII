@@ -239,25 +239,31 @@ glm::vec3 Volume::getMinAabbCorner(uint32_t level, uint32_t node_idx)
     nanovdb::FloatGrid* gridPtr = 
         reinterpret_cast<nanovdb::FloatGrid*>(gridHdlPtr.get()->data());
     auto &tree = gridPtr->tree();
+    auto root = tree.getNode<3>(0);
+    auto mx = root->bbox().max();
+    auto mn = root->bbox().min();
+    glm::vec3 offset = glm::vec3(mn[0], mn[1], mn[2]) + 
+                (glm::vec3(mx[0], mx[1], mx[2]) - 
+                glm::vec3(mn[0], mn[1], mn[2])) * .5f;
     if (level == 0) {
         auto node = tree.getNode<0>(node_idx);
         auto m = node->bbox().min();
-        return glm::vec3(m[0], m[1], m[2]);
+        return glm::vec3(m[0], m[1], m[2])-offset;
     }
     if (level == 1) {
         auto node = tree.getNode<1>(node_idx);
         auto m = node->bbox().min();
-        return glm::vec3(m[0], m[1], m[2]);
+        return glm::vec3(m[0], m[1], m[2])-offset;
     }
     if (level == 2) {
         auto node = tree.getNode<2>(node_idx);
         auto m = node->bbox().min();
-        return glm::vec3(m[0], m[1], m[2]);
+        return glm::vec3(m[0], m[1], m[2])-offset;
     }
     if (level == 3) {
         auto node = tree.getNode<3>(node_idx);
         auto m = node->bbox().min();
-        return glm::vec3(m[0], m[1], m[2]);
+        return glm::vec3(m[0], m[1], m[2])-offset;
     }    
     return glm::vec3(NAN);
 }
@@ -270,32 +276,48 @@ glm::vec3 Volume::getMaxAabbCorner(uint32_t level, uint32_t node_idx)
     nanovdb::FloatGrid* gridPtr = 
         reinterpret_cast<nanovdb::FloatGrid*>(gridHdlPtr.get()->data());
     auto &tree = gridPtr->tree();
+    auto root = tree.getNode<3>(0);
+    auto mx = root->bbox().max();
+    auto mn = root->bbox().min();
+    glm::vec3 offset = glm::vec3(mn[0], mn[1], mn[2]) + 
+                (glm::vec3(mx[0], mx[1], mx[2]) - 
+                glm::vec3(mn[0], mn[1], mn[2])) * .5f;
     if (level == 0) {
         auto node = tree.getNode<0>(node_idx);
         auto m = node->bbox().max();
-        return glm::vec3(m[0], m[1], m[2]);
+        return glm::vec3(m[0], m[1], m[2])-offset;
     }
     if (level == 1) {
         auto node = tree.getNode<1>(node_idx);
         auto m = node->bbox().max();
-        return glm::vec3(m[0], m[1], m[2]);
+        return glm::vec3(m[0], m[1], m[2])-offset;
     }
     if (level == 2) {
         auto node = tree.getNode<2>(node_idx);
         auto m = node->bbox().max();
-        return glm::vec3(m[0], m[1], m[2]);
+        return glm::vec3(m[0], m[1], m[2])-offset;
     }
     if (level == 3) {
         auto node = tree.getNode<3>(node_idx);
         auto m = node->bbox().max();
-        return glm::vec3(m[0], m[1], m[2]);
+        return glm::vec3(m[0], m[1], m[2])-offset;
     }    
     return glm::vec3(NAN);
 }
 
 glm::vec3 Volume::getAabbCenter(uint32_t level, uint32_t node_idx)
 {
-    return getMinAabbCorner(level, node_idx) + 
+    nanovdb::FloatGrid* gridPtr = 
+        reinterpret_cast<nanovdb::FloatGrid*>(gridHdlPtr.get()->data());
+    auto &tree = gridPtr->tree();
+    auto root = tree.getNode<3>(0);
+    auto mx = root->bbox().max();
+    auto mn = root->bbox().min();
+    glm::vec3 offset = glm::vec3(mn[0], mn[1], mn[2]) + 
+                (glm::vec3(mx[0], mx[1], mx[2]) - 
+                glm::vec3(mn[0], mn[1], mn[2])) * .5f;
+
+    return -offset + getMinAabbCorner(level, node_idx) + 
         (getMaxAabbCorner(level, node_idx) - 
         getMinAabbCorner(level, node_idx)) * .5f;
 }

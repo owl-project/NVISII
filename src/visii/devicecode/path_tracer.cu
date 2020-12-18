@@ -190,7 +190,9 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
 OPTIX_INTERSECT_PROGRAM(VolumeIntersection)()
 {
     float tmax      = optixGetRayTmax();
-    optixReportIntersection(tmax, 0);
+    // Note, tmax here is unmodified. 
+    // This will need to change to support multiple simultaneous volumes.
+    optixReportIntersection(tmax, 0); 
 }
 
 OPTIX_BOUNDS_PROGRAM(VolumeBounds)(
@@ -706,20 +708,29 @@ vec3 DeltaTracking(
     vec3 world_w
 ) {
     auto &LP = optixLaunchParams;
-    auto bbox = acc.root().bbox();
+    auto bbox = acc.root().bbox();    
+    auto mx = bbox.max();
+    auto mn = bbox.min();
+    glm::vec3 offset = glm::vec3(mn[0], mn[1], mn[2]) + 
+                (glm::vec3(mx[0], mx[1], mx[2]) - 
+                glm::vec3(mn[0], mn[1], mn[2])) * .5f;
+
     #define MAX_VOLUME_DEPTH 10000 
 
-    glm::mat4 localToWorld = transform.localToWorld;
+    glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
     glm::mat4 worldToLocal = glm::inverse(localToWorld);
     vec3 x = glm::vec3(worldToLocal * glm::vec4(world_x, 1.f));
-    vec3 w = glm::vec3(worldToLocal * glm::vec4(world_w, 0.f));   
+    vec3 w = normalize(vec3(worldToLocal * vec4(world_w, 0.f))); // intentionally not normalizing here   
 
     auto wRay = nanovdb::Ray<float>(
         reinterpret_cast<const nanovdb::Vec3f&>( x ),
         reinterpret_cast<const nanovdb::Vec3f&>( -w )
     );
     bool hit = wRay.clip(bbox);
-    if (!hit) return make_vec3(missColor(make_float3(glm::vec3(localToWorld*glm::vec4(-w,0.f))), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+    if (!hit) {
+        float3 dir = make_float3(normalize(vec3(localToWorld * vec4(-w,0.f))));
+        return make_vec3(missColor(dir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+    }
 
     // Move ray to volume boundary
     float t0 = wRay.t0(), t1 = wRay.t1();
@@ -778,7 +789,10 @@ vec3 DeltaTracking(
                 lightPDF = 1.f / float(2.0 * M_PI);
             }
             lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-            vec3 w = glm::vec3(worldToLocal * glm::vec4(make_vec3(-lightDir), 0.f));
+
+            //// Note, scales the ray, potentially anisotropically. Effects apparent density.
+            vec3 w = normalize(glm::vec3(worldToLocal * glm::vec4(make_vec3(-lightDir), 0.f)));
+
             auto wRay = nanovdb::Ray<float>(
                 reinterpret_cast<const nanovdb::Vec3f&>( x ),
                 reinterpret_cast<const nanovdb::Vec3f&>( -w )
@@ -798,9 +812,10 @@ vec3 DeltaTracking(
         
         // A boundary has been hit. Sample the background.
         if (event == 0 && scattered == false) {
-            illumination += throughput * make_vec3(missColor(make_float3(glm::vec3(localToWorld*glm::vec4(-w,0.f))), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+            float3 dir = make_float3(normalize(vec3(localToWorld * vec4(-w,0.f))));
+            illumination += throughput * make_vec3(missColor(dir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
             return illumination;
-        } 
+        }
         
         // An absorption / emission occurred.
         if (event == 1) {
@@ -819,6 +834,9 @@ vec3 DeltaTracking(
             float cos_theta = 1.0f - 2.0f * rand2;
             float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
             w = -vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+
+            // Note, scales the ray, potentially anisotropically. Effects apparent density.
+            // w = normalize(vec3(worldToLocal * vec4(w, 0.f)));
             
             // Compute updated boundary
             auto wRay = nanovdb::Ray<float>(
@@ -922,6 +940,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     /*the ray to trace*/ ray,
                     /*prd*/ payload,
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+
+    if (
+            (pixelID.x == int(LP.frameSize.x / 2)) && 
+            (pixelID.y == int(LP.frameSize.y / 2))
+        ) 
+    {
+        volPayload.primitiveID = -2;
+    }
 
     owl::traceRay(  /*accel to trace against*/ LP.volumesIAS,
                 /*the ray to trace*/ volRay,

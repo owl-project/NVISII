@@ -1377,8 +1377,10 @@ void updateComponents()
             }     
         }
 
-        std::vector<owl4x3f>     t0Transforms;
-        std::vector<owl4x3f>     t1Transforms;
+        std::vector<owl4x3f>     t0OwlSurfaceTransforms;
+        std::vector<owl4x3f>     t1OwlSurfaceTransforms;
+        std::vector<owl4x3f>     t0OwlVolumeTransforms;
+        std::vector<owl4x3f>     t1OwlVolumeTransforms;
         auto oldSurfaceIAS = OD.surfacesIAS;
         auto oldVolumeIAS = OD.volumesIAS;
         
@@ -1392,7 +1394,7 @@ void updateComponents()
 
         // If no volumes instanced, insert an unhittable placeholder.
         // (required for certain older driver versions)
-        if (surfaceInstances.size() == 0) {
+        if (volumeInstances.size() == 0) {
             OD.volumesIAS = instanceGroupCreate(OD.context, 1);
             instanceGroupSetChild(OD.volumesIAS, 0, OD.placeholderUserGroup); 
             groupBuildAccel(OD.volumesIAS);
@@ -1403,11 +1405,11 @@ void updateComponents()
             OD.surfacesIAS = instanceGroupCreate(OD.context, surfaceInstances.size());
             for (uint32_t iid = 0; iid < surfaceInstances.size(); ++iid) {
                 instanceGroupSetChild(OD.surfacesIAS, iid, surfaceInstances[iid]);                 
-                t0Transforms.push_back(glmToOWL(t0SurfaceTransforms[iid]));
-                t1Transforms.push_back(glmToOWL(t1SurfaceTransforms[iid]));
+                t0OwlSurfaceTransforms.push_back(glmToOWL(t0SurfaceTransforms[iid]));
+                t1OwlSurfaceTransforms.push_back(glmToOWL(t1SurfaceTransforms[iid]));
             }            
-            owlInstanceGroupSetTransforms(OD.surfacesIAS,0,(const float*)t0Transforms.data());
-            owlInstanceGroupSetTransforms(OD.surfacesIAS,1,(const float*)t1Transforms.data());
+            owlInstanceGroupSetTransforms(OD.surfacesIAS,0,(const float*)t0OwlSurfaceTransforms.data());
+            owlInstanceGroupSetTransforms(OD.surfacesIAS,1,(const float*)t1OwlSurfaceTransforms.data());
             bufferResize(OD.surfaceInstanceToEntityBuffer, surfaceInstanceToEntity.size());
             bufferUpload(OD.surfaceInstanceToEntityBuffer, surfaceInstanceToEntity.data());
         }       
@@ -1417,11 +1419,11 @@ void updateComponents()
             OD.volumesIAS = instanceGroupCreate(OD.context, volumeInstances.size());
             for (uint32_t iid = 0; iid < volumeInstances.size(); ++iid) {
                 instanceGroupSetChild(OD.volumesIAS, iid, volumeInstances[iid]);                 
-                t0Transforms.push_back(glmToOWL(t0VolumeTransforms[iid]));
-                t1Transforms.push_back(glmToOWL(t1VolumeTransforms[iid]));
+                t0OwlVolumeTransforms.push_back(glmToOWL(t0VolumeTransforms[iid]));
+                t1OwlVolumeTransforms.push_back(glmToOWL(t1VolumeTransforms[iid]));
             }            
-            owlInstanceGroupSetTransforms(OD.volumesIAS,0,(const float*)t0Transforms.data());
-            owlInstanceGroupSetTransforms(OD.volumesIAS,1,(const float*)t1Transforms.data());
+            owlInstanceGroupSetTransforms(OD.volumesIAS,0,(const float*)t0OwlVolumeTransforms.data());
+            owlInstanceGroupSetTransforms(OD.volumesIAS,1,(const float*)t1OwlVolumeTransforms.data());
             bufferResize(OD.volumeInstanceToEntityBuffer, volumeInstanceToEntity.size());
             bufferUpload(OD.volumeInstanceToEntityBuffer, volumeInstanceToEntity.data());
         }
