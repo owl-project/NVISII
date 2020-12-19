@@ -1060,58 +1060,22 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     
     RayPayload surfPayload;
     surfPayload.tHit = -1.f;
-    surfRay.time = time;
-    
-    // temporary volume rendering test code
-    RayPayload volPayload;
-    volPayload.tHit = -1.f;
-    owl::Ray volRay = surfRay;
-
+    surfRay.time = time;    
     owl::traceRay(  /*accel to trace against*/ LP.surfacesIAS,
                     /*the ray to trace*/ surfRay,
                     /*prd*/ surfPayload,
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
+    owl::Ray volRay = surfRay;
     volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
+    RayPayload volPayload;
+    volPayload.tHit = -1.f;
     volPayload.rng = rng;
     owl::traceRay(  /*accel to trace against*/ LP.volumesIAS,
                     /*the ray to trace*/ volRay,
                     /*prd*/ volPayload,
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
     
-    // if (volPayload.tHit != -1.f) {
-    //     const int entityID = LP.volumeInstanceToEntity.get(volPayload.instanceID, __LINE__);
-    //     EntityStruct entity = LP.entities.get(entityID, __LINE__);
-    //     VolumeStruct volume = LP.volumes.get(entity.volume_id, __LINE__);
-    //     TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
-    //     MaterialStruct material = LP.materials.get(entity.material_id, __LINE__);
-
-    //     // for now, assuming transform is identity.
-    //     uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(0, __LINE__).data;
-    //     const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
-    //     const auto& tree = grid->tree();
-    //     auto acc = tree.getAccessor();
-    //     vec3 color = DeltaTracking(
-    //         rng, acc, volume, transform, material, envTex,
-    //         make_vec3(volRay.origin), -make_vec3(volRay.direction));
-
-    //     auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
-    //     float4* accumPtr = (float4*) LP.accumPtr;
-    //     float4* fbPtr = (float4*) LP.frameBuffer;
-    //     float4* normalPtr = (float4*) LP.normalBuffer;
-    //     float4* albedoPtr = (float4*) LP.albedoBuffer;
-
-    //     float4 fbcolor = make_float4(color, 1.f);
-    //     float4 prev_color = accumPtr[fbOfs];
-    //     float4 accum_color = make_float4((make_float3(fbcolor) + float(LP.frameID) * make_float3(prev_color)) / float(LP.frameID + 1), 1.0f);
-
-    //     accumPtr[fbOfs] = accum_color;
-    //     fbPtr[fbOfs] = accum_color;
-    //     albedoPtr[fbOfs] = accum_color;
-    //     normalPtr[fbOfs] = accum_color;
-    //     return;
-    // }
-
     // Shade each hit point on a path using NEE with MIS
     do {     
         float alpha = 0.f;
@@ -1143,24 +1107,30 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             break;
         }
 
-        // TEMPORARY TEST CODE
-        if (volPayload.tHit >= 0.f) {
-            accum_illum = make_float3(0.f, 0.f, 0.f);
-            break;
-        }
-                
-        // Load the surface we hit.
-        const int entityID = LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
-        EntityStruct entity = LP.entities.get(entityID, __LINE__);
-        MeshStruct mesh = LP.meshes.get(entity.mesh_id, __LINE__);
-        TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
+        bool isVolume = (volPayload.tHit >= 0.f);
 
+        // Load the object we hit.
+        int entityID;
+        if (isVolume) entityID = LP.volumeInstanceToEntity.get(surfPayload.instanceID, __LINE__);
+        else entityID = LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
+
+        EntityStruct entity = LP.entities.get(entityID, __LINE__);
+        TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
+        MeshStruct mesh;  
+        if (!isVolume) mesh = LP.meshes.get(entity.mesh_id, __LINE__);
+        
         // Skip forward if the hit object is invisible for this ray type, skip it.
         if (((entity.flags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
             surfRay.origin = surfRay.origin + surfRay.direction * (surfPayload.tHit + EPSILON);
             surfPayload.tHit = -1.f;
             surfRay.time = time;
             owl::traceRay( LP.surfacesIAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+
+            volRay = surfRay;
+            volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
+            volPayload.tHit = -1.f;
+            volPayload.rng = rng;
+            owl::traceRay( LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
             visibilitySkips++;
             if (visibilitySkips > 10) break; // avoid locking up.
             continue;
@@ -1168,7 +1138,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Set new outgoing light direction and hit position.
         const float3 w_o = -surfRay.direction;
-        float3 hit_p = surfRay.origin + surfPayload.tHit * surfRay.direction;
+        float3 hit_p;
+        if (volPayload.tHit >= 0.f) hit_p = volRay.origin + volPayload.tHit * volRay.direction;
+        else hit_p = surfRay.origin + surfPayload.tHit * surfRay.direction;
+
+        if (volPayload.tHit >= 0.f) {
+            accum_illum = make_float3(0.f, 0.f, 0.f);
+            break;
+        }
 
         // Load geometry data for the hit object
         float3 mp, p, v_x, v_y, v_z, v_gz, p_e1, p_e2; 
