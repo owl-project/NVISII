@@ -424,29 +424,25 @@ void loadMeshTriIndices(int meshID, int numIndices, int primitiveID, int3 &triIn
 }
 
 __device__
-void loadMeshVertexData(int meshID, int numVertices, int3 indices, float2 barycentrics, float3 &position, float3 &geometricNormal, float3 &edge1, float3 &edge2)
+void loadMeshVertexData(int meshID, int numVertices, int3 indices, float2 barycentrics, float3 &position, float3 &geometricNormal)
 {
     auto &LP = optixLaunchParams;
     auto vertices = LP.vertexLists.get(meshID, __LINE__);
     const float3 A = vertices.get(indices.x, __LINE__);
     const float3 B = vertices.get(indices.y, __LINE__);
     const float3 C = vertices.get(indices.z, __LINE__);
-    edge1 = B - A;
-    edge2 = C - A;
     position = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
     geometricNormal = normalize(cross(B-A,C-A));
 }
 
 __device__
-void loadMeshUVData(int meshID, int numTexCoords, int3 indices, float2 barycentrics, float2 &uv, float2 &edge1, float2 &edge2)
+void loadMeshUVData(int meshID, int numTexCoords, int3 indices, float2 barycentrics, float2 &uv)
 {
     auto &LP = optixLaunchParams;
     auto texCoords = LP.texCoordLists.get(meshID, __LINE__);
     const float2 &A = texCoords.get(indices.x, __LINE__);
     const float2 &B = texCoords.get(indices.y, __LINE__);
     const float2 &C = texCoords.get(indices.z, __LINE__);
-    edge1 = B - A;
-    edge2 = C - A;
     uv = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
 }
 
@@ -1142,21 +1138,24 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (volPayload.tHit >= 0.f) hit_p = volRay.origin + volPayload.tHit * volRay.direction;
         else hit_p = surfRay.origin + surfPayload.tHit * surfRay.direction;
 
-        if (volPayload.tHit >= 0.f) {
-            accum_illum = make_float3(0.f, 0.f, 0.f);
-            break;
-        }
-
         // Load geometry data for the hit object
-        float3 mp, p, v_x, v_y, v_z, v_gz, p_e1, p_e2; 
-        float2 uv, uv_e1, uv_e2; 
+        float3 mp, p, v_x, v_y, v_z, v_gz; 
+        float2 uv; 
         int3 indices;
         float3 diffuseMotion;
-        loadMeshTriIndices(entity.mesh_id, mesh.numTris, surfPayload.primitiveID, indices);
-        loadMeshVertexData(entity.mesh_id, mesh.numVerts, indices, surfPayload.barycentrics, mp, v_gz, p_e1, p_e2); // todo, remomve pe1,pe2
-        loadMeshUVData(entity.mesh_id, mesh.numVerts, indices, surfPayload.barycentrics, uv, uv_e1, uv_e2); // todo, remove e1, e2
-        loadMeshNormalData(entity.mesh_id, mesh.numVerts, indices, surfPayload.barycentrics, v_z);
-        loadMeshTangentData(entity.mesh_id, mesh.numVerts, indices, surfPayload.barycentrics, v_x);
+        if (volPayload.tHit >= 0.f) {
+            if (volPayload.tHit >= 0.f) {
+                accum_illum = make_float3(0.f, 0.f, 0.f);
+                break;
+            }
+        }
+        else {
+            loadMeshTriIndices(entity.mesh_id, mesh.numTris, surfPayload.primitiveID, indices);
+            loadMeshVertexData(entity.mesh_id, mesh.numVerts, indices, surfPayload.barycentrics, mp, v_gz);
+            loadMeshUVData(entity.mesh_id, mesh.numVerts, indices, surfPayload.barycentrics, uv);
+            loadMeshNormalData(entity.mesh_id, mesh.numVerts, indices, surfPayload.barycentrics, v_z);
+            loadMeshTangentData(entity.mesh_id, mesh.numVerts, indices, surfPayload.barycentrics, v_x);
+        }
 
         // Load material data for the hit object
         DisneyMaterial mat; MaterialStruct entityMaterial;
@@ -1165,14 +1164,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             loadDisneyMaterial(entityMaterial, uv, mat, MIN_ROUGHNESS);
         }
        
-        // Compute tangent and bitangent based on UVs
-        // {
-        //     float f = 1.0f / (uv_e1.x * uv_e2.y - uv_e2.x * uv_e1.y);
-        //     v_x.x = f * (uv_e2.y * p_e1.x - uv_e1.y * p_e2.x);
-        //     v_x.y = f * (uv_e2.y * p_e1.y - uv_e1.y * p_e2.y);
-        //     v_x.z = f * (uv_e2.y * p_e1.z - uv_e1.y * p_e2.z);
-        // }
-            
         // Transform geometry data into world space
         {
             // both glm::interpolate and my own interpolation functions cause artifacts... 
@@ -1459,13 +1450,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     bool visible = (entityID == sampledLightIDs[lid]);
                     // We hit the light we sampled previously
                     if (visible) {
-                        int3 indices; float3 p, p_e1, p_e2; float3 lv_gz; 
-                        float2 uv, uv_e1, uv_e2;
+                        int3 indices; float3 p; float3 lv_gz; float2 uv;
                         EntityStruct light_entity = LP.entities.get(sampledLightIDs[lid], __LINE__);
                         MeshStruct light_mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
                         LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
                         loadMeshTriIndices(light_entity.mesh_id, light_mesh.numTris, surfPayload.primitiveID, indices);
-                        loadMeshUVData(light_entity.mesh_id, light_mesh.numVerts, indices, surfPayload.barycentrics, uv, uv_e1, uv_e2);
+                        loadMeshUVData(light_entity.mesh_id, light_mesh.numVerts, indices, surfPayload.barycentrics, uv);
 
                         float dist = surfPayload.tHit;
                         float dotNWi = max(dot(surfRay.direction, v_gz), 0.f); // geometry term
