@@ -28,6 +28,7 @@ struct RayPayload {
     float localToWorld[12];
     float localToWorldT0[12];
     float localToWorldT1[12];
+    LCGRand rng;
 };
 
 __device__
@@ -171,14 +172,177 @@ OPTIX_CLOSEST_HIT_PROGRAM(ShadowRay)()
     prd.tHit = optixGetRayTmax();
 }
 
+/// Taken and modified from Algorithm 2 in "Pixar's Production Volume Rendering" paper.
+/// \param x The origin of the ray.
+/// \param w The direction of the light (opposite of ray direction). 
+/// \param d The distance along the ray to the boundary.
+/// \param t The returned hit distance.
+/// \param event Will be updated to represent the event that occured during tracking.
+///              0 means the boundary was hit
+///              1 means an absorption/emission occurred
+///              2 means a scattering collision occurred
+///              3 means a null collision occurred
+template<typename AccT>
+__device__
+void SampleDeltaTracking(
+    LCGRand &rng, 
+    AccT& acc, 
+    float majorant_extinction, 
+    float linear_attenuation_unit, 
+    float absorption_, 
+    float scattering_, 
+    vec3 x, 
+    vec3 w, 
+    float d, 
+    float &t, 
+    int &event
+) {
+    float rand1 = lcg_randomf(rng);
+    float rand2 = lcg_randomf(rng);
+    
+    // Set new t for the current x.
+    t = (-log(1.0f - rand1) / majorant_extinction) * linear_attenuation_unit;
+    
+    // A boundary has been hit
+    if (t >= d) {
+    	event = 0;
+        t = d;
+        return;
+    }
+    
+    // Update current position
+    x = x - t * w;
+    auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
+    float densityValue = majorant_extinction - acc.getValue(coord_pos); // temporary hack
+
+   	float absorption = densityValue * absorption_; //sample_volume_absorption(x);
+    float scattering = densityValue * scattering_; //sample_volume_scattering(x);
+    float extinction = absorption + scattering;
+    //float null_collision = 1.f - extinction;
+    float null_collision = majorant_extinction - extinction;
+    
+    //extinction = extinction / majorant_extinction;
+    absorption = absorption / majorant_extinction;
+    scattering = scattering / majorant_extinction;
+    null_collision = null_collision / majorant_extinction;
+    
+        
+    // An absorption/emission collision occured
+    if (rand2 < absorption) 
+    {
+    	event = 1;
+        return;
+    }
+    
+    // A scattering collision occurred
+    else if (rand2 < (absorption + scattering)) {
+    //else if (rand2 < (1.f - null_collision)) {
+        event = 2;
+        return;
+    }
+    
+    // A null collision occurred
+    else {
+        event = 3;
+        return;    	
+    }
+}
+
 OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
 {   
     auto &LP = optixLaunchParams;
     RayPayload &prd = owl::getPRD<RayPayload>();
     prd.instanceID = optixGetInstanceIndex();
-    prd.tHit = optixGetRayTmax();
     prd.barycentrics = optixGetTriangleBarycentrics();
     prd.primitiveID = optixGetPrimitiveIndex();
+    LCGRand rng = prd.rng;
+
+    // Load the volume we hit
+    const int entityID = LP.volumeInstanceToEntity.get(prd.instanceID, __LINE__);
+    EntityStruct entity = LP.entities.get(entityID, __LINE__);
+    TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
+    VolumeStruct volume = LP.volumes.get(entity.volume_id, __LINE__);
+
+    uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(entity.volume_id, __LINE__).data;
+    const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
+    const auto& tree = grid->tree();
+    auto acc = tree.getAccessor();
+
+    auto bbox = acc.root().bbox();    
+    auto mx = bbox.max();
+    auto mn = bbox.min();
+    glm::vec3 offset = glm::vec3(mn[0], mn[1], mn[2]) + 
+                (glm::vec3(mx[0], mx[1], mx[2]) - 
+                glm::vec3(mn[0], mn[1], mn[2])) * .5f;
+
+    float majorant_extinction = acc.root().valueMax();
+    float gradient_factor = volume.gradient_factor;
+    float linear_attenuation_unit = volume.scale;
+    float absorption = volume.absorption;
+    float scattering = volume.scattering;
+
+    glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
+    glm::mat4 worldToLocal = glm::inverse(localToWorld);
+    vec3 x = vec3(worldToLocal * make_vec4(optixGetWorldRayOrigin(), 1.f));
+    vec3 w = normalize(vec3(worldToLocal * -make_vec4(optixGetWorldRayDirection(), 0.f)));
+
+    // Compute boundary distance
+    auto wRay = nanovdb::Ray<float>(
+        reinterpret_cast<const nanovdb::Vec3f&>( x ),
+        reinterpret_cast<const nanovdb::Vec3f&>( -w )
+    );
+    if (!wRay.clip(bbox)) {
+        prd.tHit = -1.f;
+        return;
+    }
+
+    float d = wRay.t1();
+    if (optixGetRayTmax() > 0.f) {
+        glm::vec3 tmpDir = make_vec3(optixGetWorldRayDirection()) * optixGetRayTmax();
+        tmpDir = vec3(worldToLocal * vec4(tmpDir, 0.f));
+        d = min(d, length(tmpDir));
+    }
+
+    // Sample the free path distance to see if our ray makes it to the boundary
+    float t;
+    int event;
+    bool hitVolume = false;
+    #define MAX_NULL_COLLISIONS 1000
+    for (int dti = 0; dti < MAX_NULL_COLLISIONS; ++dti) {
+        SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, 
+            absorption, scattering, x, w, d, t, event);
+        x = x - t * w;
+
+        // The boundary was hit
+        if (event == 0) {
+            break;
+        }
+
+        // An absorption / emission event occurred
+        if (event == 1) {
+            hitVolume = true;
+            break;
+        }
+
+        // A scattering event occurred
+        if (event == 2) {
+            hitVolume = true;
+            break;
+        }
+
+        // A null collision occurred.
+        if (event == 3) {
+            // update boundary in relation to the new collision x, w does not change.
+            d = d - t;
+        }
+    }
+
+    if (!hitVolume) prd.tHit = -1.f;
+    else {
+        vec3 tmpDir = -w * t;
+        tmpDir = vec3(localToWorld * vec4(w, 0.f));
+        prd.tHit = length(tmpDir);
+    }
 }
 
 OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
@@ -606,82 +770,6 @@ glm::mat4 test_interpolate(glm::mat4& _mat1, glm::mat4& _mat2, float _time)
 }
 
 /// Taken and modified from Algorithm 2 in "Pixar's Production Volume Rendering" paper.
-/// \param x The origin of the ray.
-/// \param w The direction of the light (opposite of ray direction). 
-/// \param d The distance along the ray to the boundary.
-/// \param t The returned hit distance.
-/// \param event Will be updated to represent the event that occured during tracking.
-///              0 means the boundary was hit
-///              1 means an absorption/emission occurred
-///              2 means a scattering collision occurred
-///              3 means a null collision occurred
-template<typename AccT>
-__device__
-void SampleDeltaTracking(
-    LCGRand &rng, 
-    AccT& acc, 
-    float majorant_extinction, 
-    float linear_attenuation_unit, 
-    float absorption_, 
-    float scattering_, 
-    vec3 x, 
-    vec3 w, 
-    float d, 
-    float &t, 
-    int &event
-) {
-    float rand1 = lcg_randomf(rng);
-    float rand2 = lcg_randomf(rng);
-    
-    // Set new t for the current x.
-    t = (-log(1.0f - rand1) / majorant_extinction) * linear_attenuation_unit;
-    
-    // A boundary has been hit
-    if (t >= d) {
-    	event = 0;
-        t = d;
-        return;
-    }
-    
-    // Update current position
-    x = x - t * w;
-    auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
-    float densityValue = majorant_extinction - acc.getValue(coord_pos); // temporary hack
-
-   	float absorption = densityValue * absorption_; //sample_volume_absorption(x);
-    float scattering = densityValue * scattering_; //sample_volume_scattering(x);
-    float extinction = absorption + scattering;
-    //float null_collision = 1.f - extinction;
-    float null_collision = majorant_extinction - extinction;
-    
-    //extinction = extinction / majorant_extinction;
-    absorption = absorption / majorant_extinction;
-    scattering = scattering / majorant_extinction;
-    null_collision = null_collision / majorant_extinction;
-    
-        
-    // An absorption/emission collision occured
-    if (rand2 < absorption) 
-    {
-    	event = 1;
-        return;
-    }
-    
-    // A scattering collision occurred
-    else if (rand2 < (absorption + scattering)) {
-    //else if (rand2 < (1.f - null_collision)) {
-        event = 2;
-        return;
-    }
-    
-    // A null collision occurred
-    else {
-        event = 3;
-        return;    	
-    }
-}
-
-/// Taken and modified from Algorithm 2 in "Pixar's Production Volume Rendering" paper.
 /// Implements the top level delta tracking algorithm, returning radiance.
 /// \param seed The seed to use by the random number generator.
 /// \param x The origin of the ray.
@@ -984,6 +1072,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     /*prd*/ surfPayload,
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
+    volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
+    volPayload.rng = rng;
     owl::traceRay(  /*accel to trace against*/ LP.volumesIAS,
                     /*the ray to trace*/ volRay,
                     /*prd*/ volPayload,
@@ -1025,7 +1115,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     // Shade each hit point on a path using NEE with MIS
     do {     
         float alpha = 0.f;
-
+        
         // If ray misses, terminate the ray
         if ((surfPayload.tHit <= 0.f) && (volPayload.tHit <= 0.f)) {
             // Compute lighting from environment
@@ -1053,62 +1143,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             break;
         }
 
-        // Otherwise, determine if we hit a volume, or a surface. 
-        bool hitVolume = false;
-        do {
-            if (volPayload.tHit <= 1.f) {
-                // Load the volume we hit
-                const int entityID = LP.volumeInstanceToEntity.get(volPayload.instanceID, __LINE__);
-                EntityStruct entity = LP.entities.get(entityID, __LINE__);
-                TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
-                VolumeStruct volume = LP.volumes.get(entity.volume_id, __LINE__);
-
-                uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(entity.volume_id, __LINE__).data;
-                const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
-                const auto& tree = grid->tree();
-                auto acc = tree.getAccessor();
-
-                auto bbox = acc.root().bbox();    
-                auto mx = bbox.max();
-                auto mn = bbox.min();
-                glm::vec3 offset = glm::vec3(mn[0], mn[1], mn[2]) + 
-                            (glm::vec3(mx[0], mx[1], mx[2]) - 
-                            glm::vec3(mn[0], mn[1], mn[2])) * .5f;
-
-                float majorant_extinction = acc.root().valueMax();
-                float gradient_factor = volume.gradient_factor;
-                float linear_attenuation_unit = volume.scale;
-                float absorption = volume.absorption;
-                float scattering = volume.scattering;
-
-                glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
-                glm::mat4 worldToLocal = glm::inverse(localToWorld);
-                vec3 x = vec3(worldToLocal * make_vec4(volRay.direction, 1.f));
-                vec3 w = normalize(vec3(worldToLocal * make_vec4(volRay.origin, 0.f)));
-
-                // Compute boundary distance
-                auto wRay = nanovdb::Ray<float>(
-                    reinterpret_cast<const nanovdb::Vec3f&>( x ),
-                    reinterpret_cast<const nanovdb::Vec3f&>( -w )
-                );
-                if (!wRay.clip(bbox)) break;
-
-                float d = wRay.t1();
-                if (surfPayload.tHit > 0.f) {
-                    glm::vec3 tmpDir = make_vec3(surfRay.direction) * surfPayload.tHit;
-                    tmpDir = vec3(worldToLocal * vec4(tmpDir, 0.f));
-                    d = min(d, length(tmpDir));
-                }
-
-                // Sample the free path distance to see if our ray makes it to the boundary
-                float t;
-                int event;
-                SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, 
-                    absorption, scattering, x, w, d, t, event);
-            }
-        } while (false);
-
-        
+        // TEMPORARY TEST CODE
+        if (volPayload.tHit >= 0.f) {
+            accum_illum = make_float3(0.f, 0.f, 0.f);
+            break;
+        }
+                
         // Load the surface we hit.
         const int entityID = LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
         EntityStruct entity = LP.entities.get(entityID, __LINE__);
