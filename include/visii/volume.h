@@ -180,7 +180,7 @@ class Volume : public StaticFactory
 	void setAbsorption(float absorption);
 
 	/** todo... document */
-	void setMajorant(float majorant);
+	void setGradientFactor(float factor);
 
 	/** todo... document */
 	float getMax(uint32_t level, uint32_t node_idx);

@@ -10,10 +10,11 @@
 #include <nanovdb/NanoVDB.h>
 #include <nanovdb/util/GridHandle.h>
 #include <nanovdb/util/Ray.h>
+#include <nanovdb/util/SampleFromVoxels.h>
 
 struct VolumeStruct
 {
-    float majorant = 1.f;
+    float gradient_factor = 0.5f;
     float scale = 1.f;
     float absorption = 0.5f;
     float scattering = 0.5f;

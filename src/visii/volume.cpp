@@ -378,8 +378,8 @@ void Volume::setAbsorption(float absorption)
     markDirty();
 }
 
-void Volume::setMajorant(float majorant)
+void Volume::setGradientFactor(float factor)
 {
-    this->volumeStructs[id].majorant = majorant;
+    this->volumeStructs[id].gradient_factor = factor;
     markDirty();
 }

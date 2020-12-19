@@ -571,13 +571,9 @@ void saveHeatmapRenderData(
 }
 
 __device__
-float3 faceNormalForward(const float3 &w_o, const float3 &gn, const float3 &n)
+float3 faceNormalForward(const float3 &w_o, const float3 &n)
 {
     float3 new_n = n;
-    // if (dot(w_o, new_n) < 0.f) {
-    //     // prevents differences from geometric and shading normal from creating black artifacts
-    //     new_n = reflect(-new_n, gn); 
-    // }
     if (dot(w_o, new_n) < 0.f) {
         new_n = -new_n;
     }
@@ -650,7 +646,7 @@ void SampleDeltaTracking(
     // Update current position
     x = x - t * w;
     auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
-    float densityValue = acc.getValue(coord_pos);
+    float densityValue = majorant_extinction - acc.getValue(coord_pos); // temporary hack
 
    	float absorption = densityValue * absorption_; //sample_volume_absorption(x);
     float scattering = densityValue * scattering_; //sample_volume_scattering(x);
@@ -700,13 +696,20 @@ vec3 DeltaTracking(
     TransformStruct& transform, 
     MaterialStruct& material, 
     cudaTextureObject_t &envTex,
-    float majorant_extinction, 
-    float linear_attenuation_unit, 
-    float absorption, 
-    float scattering, 
     vec3 world_x, 
     vec3 world_w
 ) {
+    // Load material data for the hit object
+    DisneyMaterial mat;
+    loadDisneyMaterial(material, make_float2(0.f), mat, MIN_ROUGHNESS);
+    
+    auto sampler = nanovdb::SampleFromVoxels<AccT, /*Interpolation Degree*/1, /*UseCache*/false>(acc);
+    float majorant_extinction = acc.root().valueMax();
+    float gradient_factor = volume.gradient_factor;
+    float linear_attenuation_unit = volume.scale;//max(max(grid->voxelSize()[0], grid->voxelSize()[1]), grid->voxelSize()[2]);
+    float absorption = volume.absorption;
+    float scattering = volume.scattering;
+
     auto &LP = optixLaunchParams;
     auto bbox = acc.root().bbox();    
     auto mx = bbox.max();
@@ -824,16 +827,56 @@ vec3 DeltaTracking(
         
         // A scattering collision occurred.
         if (event == 2) {
-            scattered = true;
-            
-            float rand1 = lcg_randomf(rng);
-            float rand2 = lcg_randomf(rng);
+            // auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
+            float opacity = 1.f; // would otherwise be sampled from a transfer function
+            auto g = sampler.gradient(nanovdb::Vec3f(x.x, x.y, x.z));
+            float grad_len = length(vec3(g[0], g[1], g[2]));
+            float p_brdf = opacity * (1.f - exp(-25.f * pow(gradient_factor, 3.f) * grad_len));
+            float pdf;
+            float rand_brdf = lcg_randomf(rng);
+            if (rand_brdf < p_brdf) {
+                float3 w_i;
+                float bsdfPDF;
+                int sampledBsdf = -1;
+                int forcedBsdf = -1;
+                float3 bsdf, bsdfColor;
+                float3 v_z = make_float3(normalize(vec3(g[0], g[1], g[2])));
+                float3 v_x, v_y;
+                float3 w_o = make_float3(-w);
 
-            // Sample isotropic phase function to get new ray direction           
-            float phi = 2.0f * M_PI * rand1;
-            float cos_theta = 1.0f - 2.0f * rand2;
-            float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
-            w = -vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+                if (mat.specular_transmission == 0.f) {
+                    v_z = faceNormalForward(w_o, v_z);
+                }
+
+                ortho_basis(v_x, v_y, v_z);
+                sample_disney_brdf(mat, 
+                    v_z, w_o, v_x, v_y, 
+                    rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
+                w = make_vec3(w_i);
+                pdf = bsdfPDF;
+
+                // Terminate the path if the bsdf probability is impossible, or if the bsdf filters out all light
+                if (bsdfPDF < EPSILON || all_zero(bsdf) || all_zero(bsdfColor)) {
+                    return vec3(0.f);
+                }
+
+                throughput = (throughput * make_vec3(bsdf) * make_vec3(bsdfColor)) / max(bsdfPDF, EPSILON);
+            }
+            else {
+                // scattered = true; // temporarily disabling NEE
+                
+                float rand1 = lcg_randomf(rng);
+                float rand2 = lcg_randomf(rng);
+
+                // Sample isotropic phase function to get new ray direction           
+                float phi = 2.0f * M_PI * rand1;
+                float cos_theta = 1.0f - 2.0f * rand2;
+                float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
+                w = -vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+
+                pdf = 1.f;
+            }
+
 
             // Note, scales the ray, potentially anisotropically. Effects apparent density.
             // w = normalize(vec3(worldToLocal * vec4(w, 0.f)));
@@ -966,13 +1009,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
         const auto& tree = grid->tree();
         auto acc = tree.getAccessor();
-        float majorant = volume.majorant;//tree.root().valueMax();
-        float linear_attenuation_unit = volume.scale;//max(max(grid->voxelSize()[0], grid->voxelSize()[1]), grid->voxelSize()[2]);
-        float absorption = volume.absorption;
-        float scattering = volume.scattering;
         vec3 color = DeltaTracking(
             rng, acc, volume, transform, material, envTex,
-            majorant, linear_attenuation_unit, absorption, scattering,
             make_vec3(volRay.origin), -make_vec3(volRay.direction));
 
         auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
@@ -1235,7 +1273,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // If we didn't hit glass, flip the surface normal to face forward.
         if ((mat.specular_transmission == 0.f) && (entity.light_id == -1)) {
-            v_z = faceNormalForward(w_o, v_gz, v_z);
+            v_z = faceNormalForward(w_o, v_z);
         }
 
         // For segmentations, save geometric metadata
