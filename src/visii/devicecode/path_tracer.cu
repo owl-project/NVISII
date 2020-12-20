@@ -312,7 +312,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
     float t;
     int event;
     bool hitVolume = false;
-    #define MAX_NULL_COLLISIONS 1000
+    #define MAX_NULL_COLLISIONS 10000
     for (int dti = 0; dti < MAX_NULL_COLLISIONS; ++dti) {
         SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, 
             absorption, scattering, x, w, d, t, event);
@@ -436,7 +436,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
     float t;
     int event;
     bool hitVolume = false;
-    #define MAX_NULL_COLLISIONS 1000
+    #define MAX_NULL_COLLISIONS 10000
     for (int dti = 0; dti < MAX_NULL_COLLISIONS; ++dti) {
         SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, 
             absorption, scattering, x, w, d, t, event);
@@ -468,6 +468,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
 
     if (hitVolume) {
         prd.instanceID = optixGetInstanceIndex();
+        prd.eventID = event;
         vec3 tmpDir = -w * t;
         tmpDir = vec3(localToWorld * vec4(w, 0.f));
         prd.tHit = length(tmpDir);
@@ -1430,14 +1431,21 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             bsdf = make_float3(1.f / (4.0 * M_PI));
             bsdfColor = make_float3(1.f);
 
-            float rand1 = lcg_randomf(rng);
-            float rand2 = lcg_randomf(rng);
+            /* a scatter event occurred */
+            if (volPayload.eventID == 2) {
+                float rand1 = lcg_randomf(rng);
+                float rand2 = lcg_randomf(rng);
 
-            // Sample isotropic phase function to get new ray direction           
-            float phi = 2.0f * M_PI * rand1;
-            float cos_theta = 1.0f - 2.0f * rand2;
-            float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
-            w_i = make_float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+                // Sample isotropic phase function to get new ray direction           
+                float phi = 2.0f * M_PI * rand1;
+                float cos_theta = 1.0f - 2.0f * rand2;
+                float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
+                w_i = make_float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+            } 
+            /* An absorption / emission event occurred */
+            else if (volPayload.eventID == 1) {
+                bsdfColor = mat.base_color;
+            }
         }
 
         // Next, sample the light source by importance sampling the light
