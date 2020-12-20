@@ -260,13 +260,10 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
 {   
     auto &LP = optixLaunchParams;
     RayPayload &prd = owl::getPRD<RayPayload>();
-    prd.instanceID = optixGetInstanceIndex();
-    prd.barycentrics = optixGetTriangleBarycentrics();
-    prd.primitiveID = optixGetPrimitiveIndex();
     LCGRand rng = prd.rng;
 
     // Load the volume we hit
-    const int entityID = LP.volumeInstanceToEntity.get(prd.instanceID, __LINE__);
+    const int entityID = LP.volumeInstanceToEntity.get(optixGetInstanceIndex(), __LINE__);
     EntityStruct entity = LP.entities.get(entityID, __LINE__);
     TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
     VolumeStruct volume = LP.volumes.get(entity.volume_id, __LINE__);
@@ -347,6 +344,9 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
 
     if (!hitVolume) prd.tHit = -1.f;
     else {
+        prd.instanceID = optixGetInstanceIndex();
+        prd.primitiveID = optixGetPrimitiveIndex();
+
         vec3 tmpDir = -w * t;
         tmpDir = vec3(localToWorld * vec4(w, 0.f));
         prd.tHit = length(tmpDir);
@@ -354,10 +354,10 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
         auto sampler = nanovdb::SampleFromVoxels<nanovdb::DefaultReadAccessor<float>, /*Interpolation Degree*/1, /*UseCache*/false>(acc);
         auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
         float densityValue = acc.getValue(coord_pos);
-        auto g = sampler.gradient(nanovdb::Vec3f(x.x, x.y, x.z));
+        auto g = sampler.gradient(nanovdb::Vec3f(x.x, x.y, x.z)); 
 
-        prd.mp = make_float3(x + offset); // not super confident about this offset...
-        prd.gradient = make_float3(g[0], g[1], g[2]);
+        prd.mp = make_float3(x - offset); // not super confident about this offset...
+        prd.gradient = make_float3(g[0], g[1], g[2]);// TEMPORARY FOR BUNNY
         prd.density = densityValue;
         prd.eventID = event;
         optixGetObjectToWorldTransformMatrix(prd.localToWorld);
@@ -786,228 +786,228 @@ bool debugging() {
     return glm::all(glm::equal(pixelID, ivec2(LP.frameSize.x / 2, LP.frameSize.y / 2)));
 }
 
-/// Taken and modified from Algorithm 2 in "Pixar's Production Volume Rendering" paper.
-/// Implements the top level delta tracking algorithm, returning radiance.
-/// \param seed The seed to use by the random number generator.
-/// \param x The origin of the ray.
-/// \param w The direction of the light (opposite of ray direction). 
-/// \param d The distance along the ray to the boundary.
-template<typename AccT>
-__device__
-vec3 DeltaTracking(
-    LCGRand &rng, 
-    AccT& acc, 
-    VolumeStruct& volume, 
-    TransformStruct& transform, 
-    MaterialStruct& material, 
-    cudaTextureObject_t &envTex,
-    vec3 world_x, 
-    vec3 world_w
-) {
-    // Load material data for the hit object
-    DisneyMaterial mat;
-    loadDisneyMaterial(material, make_float2(0.f), mat, MIN_ROUGHNESS);
+// /// Taken and modified from Algorithm 2 in "Pixar's Production Volume Rendering" paper.
+// /// Implements the top level delta tracking algorithm, returning radiance.
+// /// \param seed The seed to use by the random number generator.
+// /// \param x The origin of the ray.
+// /// \param w The direction of the light (opposite of ray direction). 
+// /// \param d The distance along the ray to the boundary.
+// template<typename AccT>
+// __device__
+// vec3 DeltaTracking(
+//     LCGRand &rng, 
+//     AccT& acc, 
+//     VolumeStruct& volume, 
+//     TransformStruct& transform, 
+//     MaterialStruct& material, 
+//     cudaTextureObject_t &envTex,
+//     vec3 world_x, 
+//     vec3 world_w
+// ) {
+//     // Load material data for the hit object
+//     DisneyMaterial mat;
+//     loadDisneyMaterial(material, make_float2(0.f), mat, MIN_ROUGHNESS);
     
-    auto sampler = nanovdb::SampleFromVoxels<AccT, /*Interpolation Degree*/1, /*UseCache*/false>(acc);
-    float majorant_extinction = acc.root().valueMax();
-    float gradient_factor = volume.gradient_factor;
-    float linear_attenuation_unit = volume.scale;//max(max(grid->voxelSize()[0], grid->voxelSize()[1]), grid->voxelSize()[2]);
-    float absorption = volume.absorption;
-    float scattering = volume.scattering;
+//     auto sampler = nanovdb::SampleFromVoxels<AccT, /*Interpolation Degree*/1, /*UseCache*/false>(acc);
+//     float majorant_extinction = acc.root().valueMax();
+//     float gradient_factor = volume.gradient_factor;
+//     float linear_attenuation_unit = volume.scale;//max(max(grid->voxelSize()[0], grid->voxelSize()[1]), grid->voxelSize()[2]);
+//     float absorption = volume.absorption;
+//     float scattering = volume.scattering;
 
-    auto &LP = optixLaunchParams;
-    auto bbox = acc.root().bbox();    
-    auto mx = bbox.max();
-    auto mn = bbox.min();
-    glm::vec3 offset = glm::vec3(mn[0], mn[1], mn[2]) + 
-                (glm::vec3(mx[0], mx[1], mx[2]) - 
-                glm::vec3(mn[0], mn[1], mn[2])) * .5f;
+//     auto &LP = optixLaunchParams;
+//     auto bbox = acc.root().bbox();    
+//     auto mx = bbox.max();
+//     auto mn = bbox.min();
+//     glm::vec3 offset = glm::vec3(mn[0], mn[1], mn[2]) + 
+//                 (glm::vec3(mx[0], mx[1], mx[2]) - 
+//                 glm::vec3(mn[0], mn[1], mn[2])) * .5f;
 
-    #define MAX_VOLUME_DEPTH 10000 
+//     #define MAX_VOLUME_DEPTH 10000 
 
-    glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
-    glm::mat4 worldToLocal = glm::inverse(localToWorld);
-    vec3 x = glm::vec3(worldToLocal * glm::vec4(world_x, 1.f));
-    vec3 w = normalize(vec3(worldToLocal * vec4(world_w, 0.f))); // intentionally not normalizing here   
+//     glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
+//     glm::mat4 worldToLocal = glm::inverse(localToWorld);
+//     vec3 x = glm::vec3(worldToLocal * glm::vec4(world_x, 1.f));
+//     vec3 w = normalize(vec3(worldToLocal * vec4(world_w, 0.f))); // intentionally not normalizing here   
 
-    auto wRay = nanovdb::Ray<float>(
-        reinterpret_cast<const nanovdb::Vec3f&>( x ),
-        reinterpret_cast<const nanovdb::Vec3f&>( -w )
-    );
-    bool hit = wRay.clip(bbox);
-    if (!hit) {
-        float3 dir = make_float3(normalize(vec3(localToWorld * vec4(-w,0.f))));
-        return make_vec3(missColor(dir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-    }
+//     auto wRay = nanovdb::Ray<float>(
+//         reinterpret_cast<const nanovdb::Vec3f&>( x ),
+//         reinterpret_cast<const nanovdb::Vec3f&>( -w )
+//     );
+//     bool hit = wRay.clip(bbox);
+//     if (!hit) {
+//         float3 dir = make_float3(normalize(vec3(localToWorld * vec4(-w,0.f))));
+//         return make_vec3(missColor(dir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+//     }
 
-    // Move ray to volume boundary
-    float t0 = wRay.t0(), t1 = wRay.t1();
-    x = x - t0 * w;
-    t1 = t1 - t0;
-    t0 = 0.f;
+//     // Move ray to volume boundary
+//     float t0 = wRay.t0(), t1 = wRay.t1();
+//     x = x - t0 * w;
+//     t1 = t1 - t0;
+//     t0 = 0.f;
         
-    // Note: original algorithm had unlimited bounces. 
-    vec3 throughput = vec3(1.f);
-    vec3 illumination = vec3(0.f);
-    bool scattered = false;
-    for (int i = 0; i < MAX_VOLUME_DEPTH; ++i) {
-        int event = 0;
-        float t = 0.f;
-        SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, absorption, scattering, x, w, t1, t, event);
-        x = x - t * w;
+//     // Note: original algorithm had unlimited bounces. 
+//     vec3 throughput = vec3(1.f);
+//     vec3 illumination = vec3(0.f);
+//     bool scattered = false;
+//     for (int i = 0; i < MAX_VOLUME_DEPTH; ++i) {
+//         int event = 0;
+//         float t = 0.f;
+//         SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, absorption, scattering, x, w, t1, t, event);
+//         x = x - t * w;
 
-        // If we're at the boundary, and we scattered, do NEE (for now, just against the dome light)
-        if (event != 3 && scattered == true) {
-            float3 lightEmission = make_float3(0.f, 0.f, 0.f);
-            float lightPDF;
-            float3 lightDir;
-            if (
-                (LP.environmentMapWidth != 0) && (LP.environmentMapHeight != 0) &&
-                (LP.environmentMapRows != nullptr) && (LP.environmentMapCols != nullptr) 
-            ) {
-                // Reduces noise for strangely noisy dome light textures, but at the expense 
-                // of a highly uncoalesced binary search through a 2D CDF.
-                // disabled by default to avoid the hit to performance
-                float rx = lcg_randomf(rng);
-                float ry = lcg_randomf(rng);
-                float* rows = LP.environmentMapRows;
-                float* cols = LP.environmentMapCols;
-                int width = LP.environmentMapWidth;
-                int height = LP.environmentMapHeight;
-                float invjacobian = width * height / float(4 * M_PI);
-                float row_pdf, col_pdf;
-                unsigned x, y;
-                ry = sample_cdf(rows, height, ry, &y, &row_pdf);
-                y = max(min(y, height - 1), 0);
-                rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
-                lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
-                lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
-                lightPDF = row_pdf * col_pdf * invjacobian;
-            } 
-            else 
-            {
-                float rand1 = lcg_randomf(rng);
-                float rand2 = lcg_randomf(rng);
+//         // If we're at the boundary, and we scattered, do NEE (for now, just against the dome light)
+//         if (event != 3 && scattered == true) {
+//             float3 lightEmission = make_float3(0.f, 0.f, 0.f);
+//             float lightPDF;
+//             float3 lightDir;
+//             if (
+//                 (LP.environmentMapWidth != 0) && (LP.environmentMapHeight != 0) &&
+//                 (LP.environmentMapRows != nullptr) && (LP.environmentMapCols != nullptr) 
+//             ) {
+//                 // Reduces noise for strangely noisy dome light textures, but at the expense 
+//                 // of a highly uncoalesced binary search through a 2D CDF.
+//                 // disabled by default to avoid the hit to performance
+//                 float rx = lcg_randomf(rng);
+//                 float ry = lcg_randomf(rng);
+//                 float* rows = LP.environmentMapRows;
+//                 float* cols = LP.environmentMapCols;
+//                 int width = LP.environmentMapWidth;
+//                 int height = LP.environmentMapHeight;
+//                 float invjacobian = width * height / float(4 * M_PI);
+//                 float row_pdf, col_pdf;
+//                 unsigned x, y;
+//                 ry = sample_cdf(rows, height, ry, &y, &row_pdf);
+//                 y = max(min(y, height - 1), 0);
+//                 rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
+//                 lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
+//                 lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
+//                 lightPDF = row_pdf * col_pdf * invjacobian;
+//             } 
+//             else 
+//             {
+//                 float rand1 = lcg_randomf(rng);
+//                 float rand2 = lcg_randomf(rng);
 
-                // Sample isotropic phase function to get new ray direction           
-                float phi = 2.0f * M_PI * rand1;
-                float cos_theta = 1.0f - 2.0f * rand2;
-                float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
-                lightDir = make_float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
-                lightPDF = 1.f / float(2.0 * M_PI);
-            }
-            lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+//                 // Sample isotropic phase function to get new ray direction           
+//                 float phi = 2.0f * M_PI * rand1;
+//                 float cos_theta = 1.0f - 2.0f * rand2;
+//                 float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
+//                 lightDir = make_float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+//                 lightPDF = 1.f / float(2.0 * M_PI);
+//             }
+//             lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
 
-            //// Note, scales the ray, potentially anisotropically. Effects apparent density.
-            vec3 w = normalize(glm::vec3(worldToLocal * glm::vec4(make_vec3(-lightDir), 0.f)));
+//             //// Note, scales the ray, potentially anisotropically. Effects apparent density.
+//             vec3 w = normalize(glm::vec3(worldToLocal * glm::vec4(make_vec3(-lightDir), 0.f)));
 
-            auto wRay = nanovdb::Ray<float>(
-                reinterpret_cast<const nanovdb::Vec3f&>( x ),
-                reinterpret_cast<const nanovdb::Vec3f&>( -w )
-            );
-            bool hit = wRay.clip(bbox);
-            if (!hit) lightEmission = make_float3(0.f);
-            else {
-                float t = 0.f;
-                float t1 = wRay.t1();
-                SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, absorption, scattering, x, w, t1, t, event);
-                // boundary event
-                if (event != 0) lightEmission = make_float3(0.f);
-            }
-            illumination += throughput * make_vec3(lightEmission) / max(lightPDF, EPSILON);
-            return illumination;
-        }
+//             auto wRay = nanovdb::Ray<float>(
+//                 reinterpret_cast<const nanovdb::Vec3f&>( x ),
+//                 reinterpret_cast<const nanovdb::Vec3f&>( -w )
+//             );
+//             bool hit = wRay.clip(bbox);
+//             if (!hit) lightEmission = make_float3(0.f);
+//             else {
+//                 float t = 0.f;
+//                 float t1 = wRay.t1();
+//                 SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, absorption, scattering, x, w, t1, t, event);
+//                 // boundary event
+//                 if (event != 0) lightEmission = make_float3(0.f);
+//             }
+//             illumination += throughput * make_vec3(lightEmission) / max(lightPDF, EPSILON);
+//             return illumination;
+//         }
         
-        // A boundary has been hit. Sample the background.
-        if (event == 0 && scattered == false) {
-            float3 dir = make_float3(normalize(vec3(localToWorld * vec4(-w,0.f))));
-            illumination += throughput * make_vec3(missColor(dir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-            return illumination;
-        }
+//         // A boundary has been hit. Sample the background.
+//         if (event == 0 && scattered == false) {
+//             float3 dir = make_float3(normalize(vec3(localToWorld * vec4(-w,0.f))));
+//             illumination += throughput * make_vec3(missColor(dir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+//             return illumination;
+//         }
         
-        // An absorption / emission occurred.
-        if (event == 1) {
-            return vec3(0.f); // + vec3(sample_volume_emission(x));
-        }
+//         // An absorption / emission occurred.
+//         if (event == 1) {
+//             return vec3(0.f); // + vec3(sample_volume_emission(x));
+//         }
         
-        // A scattering collision occurred.
-        if (event == 2) {
-            // auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
-            float opacity = 1.f; // would otherwise be sampled from a transfer function
-            auto g = sampler.gradient(nanovdb::Vec3f(x.x, x.y, x.z));
-            float grad_len = length(vec3(g[0], g[1], g[2]));
-            float p_brdf = opacity * (1.f - exp(-25.f * pow(gradient_factor, 3.f) * grad_len));
-            float pdf;
-            float rand_brdf = lcg_randomf(rng);
-            if (rand_brdf < p_brdf) {
-                float3 w_i;
-                float bsdfPDF;
-                int sampledBsdf = -1;
-                int forcedBsdf = -1;
-                float3 bsdf, bsdfColor;
-                float3 v_z = make_float3(normalize(vec3(g[0], g[1], g[2])));
-                float3 v_x, v_y;
-                float3 w_o = make_float3(-w);
+//         // A scattering collision occurred.
+//         if (event == 2) {
+//             // auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
+//             float opacity = 1.f; // would otherwise be sampled from a transfer function
+//             auto g = sampler.gradient(nanovdb::Vec3f(x.x, x.y, x.z));
+//             float grad_len = length(vec3(g[0], g[1], g[2]));
+//             float p_brdf = opacity * (1.f - exp(-25.f * pow(gradient_factor, 3.f) * grad_len));
+//             float pdf;
+//             float rand_brdf = lcg_randomf(rng);
+//             if (rand_brdf < p_brdf) {
+//                 float3 w_i;
+//                 float bsdfPDF;
+//                 int sampledBsdf = -1;
+//                 int forcedBsdf = -1;
+//                 float3 bsdf, bsdfColor;
+//                 float3 v_z = make_float3(normalize(vec3(g[0], g[1], g[2])));
+//                 float3 v_x, v_y;
+//                 float3 w_o = make_float3(-w);
 
-                if (mat.specular_transmission == 0.f) {
-                    v_z = faceNormalForward(w_o, v_z);
-                }
+//                 if (mat.specular_transmission == 0.f) {
+//                     v_z = faceNormalForward(w_o, v_z);
+//                 }
 
-                ortho_basis(v_x, v_y, v_z);
-                sample_disney_brdf(mat, 
-                    v_z, w_o, v_x, v_y, 
-                    rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
-                w = make_vec3(w_i);
-                pdf = bsdfPDF;
+//                 ortho_basis(v_x, v_y, v_z);
+//                 sample_disney_brdf(mat, 
+//                     v_z, w_o, v_x, v_y, 
+//                     rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
+//                 w = make_vec3(w_i);
+//                 pdf = bsdfPDF;
 
-                // Terminate the path if the bsdf probability is impossible, or if the bsdf filters out all light
-                if (bsdfPDF < EPSILON || all_zero(bsdf) || all_zero(bsdfColor)) {
-                    return vec3(0.f);
-                }
+//                 // Terminate the path if the bsdf probability is impossible, or if the bsdf filters out all light
+//                 if (bsdfPDF < EPSILON || all_zero(bsdf) || all_zero(bsdfColor)) {
+//                     return vec3(0.f);
+//                 }
 
-                throughput = (throughput * make_vec3(bsdf) * make_vec3(bsdfColor)) / max(bsdfPDF, EPSILON);
-            }
-            else {
-                // scattered = true; // temporarily disabling NEE
+//                 throughput = (throughput * make_vec3(bsdf) * make_vec3(bsdfColor)) / max(bsdfPDF, EPSILON);
+//             }
+//             else {
+//                 // scattered = true; // temporarily disabling NEE
                 
-                float rand1 = lcg_randomf(rng);
-                float rand2 = lcg_randomf(rng);
+//                 float rand1 = lcg_randomf(rng);
+//                 float rand2 = lcg_randomf(rng);
 
-                // Sample isotropic phase function to get new ray direction           
-                float phi = 2.0f * M_PI * rand1;
-                float cos_theta = 1.0f - 2.0f * rand2;
-                float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
-                w = -vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+//                 // Sample isotropic phase function to get new ray direction           
+//                 float phi = 2.0f * M_PI * rand1;
+//                 float cos_theta = 1.0f - 2.0f * rand2;
+//                 float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
+//                 w = -vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
 
-                pdf = 1.f;
-            }
+//                 pdf = 1.f;
+//             }
 
 
-            // Note, scales the ray, potentially anisotropically. Effects apparent density.
-            // w = normalize(vec3(worldToLocal * vec4(w, 0.f)));
+//             // Note, scales the ray, potentially anisotropically. Effects apparent density.
+//             // w = normalize(vec3(worldToLocal * vec4(w, 0.f)));
             
-            // Compute updated boundary
-            auto wRay = nanovdb::Ray<float>(
-                reinterpret_cast<const nanovdb::Vec3f&>( x ),
-                reinterpret_cast<const nanovdb::Vec3f&>( -w )
-            );
-            bool hit = wRay.clip(bbox);
-            if (!hit) return illumination; //vec3(0.f,0.f,0.f);
-            t0 = wRay.t0();
-            t1 = wRay.t1();
-        }
+//             // Compute updated boundary
+//             auto wRay = nanovdb::Ray<float>(
+//                 reinterpret_cast<const nanovdb::Vec3f&>( x ),
+//                 reinterpret_cast<const nanovdb::Vec3f&>( -w )
+//             );
+//             bool hit = wRay.clip(bbox);
+//             if (!hit) return illumination; //vec3(0.f,0.f,0.f);
+//             t0 = wRay.t0();
+//             t1 = wRay.t1();
+//         }
         
-        // A null collision occurred.
-        if (event == 3) {
-            // update boundary in relation to the new collision x, w does not change.
-            t1 = t1 - t;
-        }
-    }
+//         // A null collision occurred.
+//         if (event == 3) {
+//             // update boundary in relation to the new collision x, w does not change.
+//             t1 = t1 - t;
+//         }
+//     }
     
-    // If we got stuck in the volume
-    return vec3(1.f, 0.f, 0.f);
-    // return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-}
+//     // If we got stuck in the volume
+//     return vec3(1.f, 0.f, 0.f);
+//     // return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+// }
 
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
@@ -1168,7 +1168,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (volPayload.tHit >= 0.f) {
             v_x = v_y = make_float3(0.f); // Perhaps I could use divergence / curl here?
             v_z = v_gz = normalize(volPayload.gradient);
-            if (any(isnan(make_vec3(v_z)))) v_z = make_float3(0.f);
+            if (any(isnan(make_vec3(v_z)))) v_z = v_gz = make_float3(0.f);
             mp = volPayload.mp;
             uv = make_float2(volPayload.density, length(volPayload.gradient));
         }
@@ -1251,6 +1251,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_z = faceNormalForward(w_o, v_z);
         }
 
+        if (any(isnan(make_vec3(v_z)))) {
+            // Since gradient can be 0, normalizing can cause nans. 
+            // Doesn't really matter, since 0 length normals result in a phase function (no surface present).
+            v_z = v_x = v_y = make_float3(0.f);
+        }
+
         // For segmentations, save geometric metadata
         saveGeometricRenderData(renderData, bounce, surfPayload.tHit, hit_p, v_z, w_o, uv, entityID, diffuseMotion, time, mat);
         if (bounce == 0) {
@@ -1280,24 +1286,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
         }
 
-        if (volPayload.tHit >= 0.f) {
-            float opacity = mat.alpha; // would otherwise be sampled from a transfer function
-            float grad_len = uv.y;
-            float p_brdf = opacity * (1.f - exp(-25.f * pow(volume.gradient_factor, 3.f) * grad_len));
-            float pdf;
-            float rand_brdf = lcg_randomf(rng);
-            
-            if (rand_brdf < p_brdf) {
-                illum = make_float3(1.f);
-            } else {
-                illum = make_float3(0.f);
-            }
-
-            break;
-        }
-
         // If the entity we hit is a light, terminate the path.
         // Note that NEE/MIS will also potentially terminate the path, preventing double-counting.
+        // todo: account for volumetric emission here...
         if (entity.light_id >= 0 && entity.light_id < LP.lights.count) {
             float dotNWi = max(dot(surfRay.direction, v_z), 0.f);
             if ((dotNWi > EPSILON) && (bounce != 0)) break;
@@ -1323,12 +1314,45 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // note, rdForcedBsdf is -1 by default
         int forcedBsdf = -1;
 
-        // First, sample the BRDF so that we can use the sampled direction for MIS
+        // If we hit a volume, use hybrid scattering to determine whether or not to use a BRDF or a phase function.
+        bool useBRDF = true;
+        if (volPayload.tHit >= 0.f) {
+            float opacity = mat.alpha; // would otherwise be sampled from a transfer function
+            float grad_len = uv.y;
+            float p_brdf = opacity * (1.f - exp(-25.f * pow(volume.gradient_factor, 3.f) * grad_len));
+            float pdf;
+            float rand_brdf = lcg_randomf(rng);
+            
+            if (rand_brdf < p_brdf) {
+                useBRDF = true;
+            } else {
+                useBRDF = false;
+            }
+        }
+
+        // First, sample the BRDF / phase function so that we can use the sampled direction for MIS
         float3 w_i;
         float bsdfPDF;
         int sampledBsdf = -1;
         float3 bsdf, bsdfColor;
-        sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
+        if (useBRDF) {
+            sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
+        } else {
+            // todo: implement henyey greenstien...
+            bsdfPDF = 1.f;
+            bsdf = bsdfColor = make_float3(1.f);
+
+            float rand1 = lcg_randomf(rng);
+            float rand2 = lcg_randomf(rng);
+
+            // Sample isotropic phase function to get new ray direction           
+            float phi = 2.0f * M_PI * rand1;
+            float cos_theta = 1.0f - 2.0f * rand2;
+            float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
+            w_i = make_float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+        }
+
+        // TEMPORARILY DISABLING
 
         // Next, sample the light source by importance sampling the light
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
@@ -1347,105 +1371,105 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // sample background
             if (randomID == numLights) {
                 sampledLightIDs[lid] = -1;
-                if (
-                    (LP.environmentMapWidth != 0) && (LP.environmentMapHeight != 0) &&
-                    (LP.environmentMapRows != nullptr) && (LP.environmentMapCols != nullptr) 
-                ) 
-                {
-                    // Reduces noise for strangely noisy dome light textures, but at the expense 
-                    // of a highly uncoalesced binary search through a 2D CDF.
-                    // disabled by default to avoid the hit to performance
-                    float rx = lcg_randomf(rng);
-                    float ry = lcg_randomf(rng);
-                    float* rows = LP.environmentMapRows;
-                    float* cols = LP.environmentMapCols;
-                    int width = LP.environmentMapWidth;
-                    int height = LP.environmentMapHeight;
-                    float invjacobian = width * height / float(4 * M_PI);
-                    float row_pdf, col_pdf;
-                    unsigned x, y;
-                    ry = sample_cdf(rows, height, ry, &y, &row_pdf);
-                    y = max(min(y, height - 1), 0);
-                    rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
-                    lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
-                    lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
-                    lightPDFs[lid] = row_pdf * col_pdf * invjacobian;
-                } 
-                else 
-                {            
-                    glm::mat3 tbn;
-                    tbn = glm::column(tbn, 0, make_vec3(v_x) );
-                    tbn = glm::column(tbn, 1, make_vec3(v_y) );
-                    tbn = glm::column(tbn, 2, make_vec3(v_z) );            
-                    const float3 hemi_dir = (cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
-                    lightDir = make_float3(tbn * make_vec3(hemi_dir));
-                    lightPDFs[lid] = 1.f / float(2.0 * M_PI);
-                }
+        //         if (
+        //             (LP.environmentMapWidth != 0) && (LP.environmentMapHeight != 0) &&
+        //             (LP.environmentMapRows != nullptr) && (LP.environmentMapCols != nullptr) 
+        //         ) 
+        //         {
+        //             // Reduces noise for strangely noisy dome light textures, but at the expense 
+        //             // of a highly uncoalesced binary search through a 2D CDF.
+        //             // disabled by default to avoid the hit to performance
+        //             float rx = lcg_randomf(rng);
+        //             float ry = lcg_randomf(rng);
+        //             float* rows = LP.environmentMapRows;
+        //             float* cols = LP.environmentMapCols;
+        //             int width = LP.environmentMapWidth;
+        //             int height = LP.environmentMapHeight;
+        //             float invjacobian = width * height / float(4 * M_PI);
+        //             float row_pdf, col_pdf;
+        //             unsigned x, y;
+        //             ry = sample_cdf(rows, height, ry, &y, &row_pdf);
+        //             y = max(min(y, height - 1), 0);
+        //             rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
+        //             lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
+        //             lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
+        //             lightPDFs[lid] = row_pdf * col_pdf * invjacobian;
+        //         } 
+        //         else 
+        //         {            
+        //             glm::mat3 tbn;
+        //             tbn = glm::column(tbn, 0, make_vec3(v_x) );
+        //             tbn = glm::column(tbn, 1, make_vec3(v_y) );
+        //             tbn = glm::column(tbn, 2, make_vec3(v_z) );            
+        //             const float3 hemi_dir = (cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
+        //             lightDir = make_float3(tbn * make_vec3(hemi_dir));
+        //             lightPDFs[lid] = 1.f / float(2.0 * M_PI);
+        //         }
 
-                numTris = 1.f;
-                lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+        //         numTris = 1.f;
+        //         lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
             }
             // sample light sources
             else 
             {
                 if (numLights == 0) continue;
                 sampledLightIDs[lid] = LP.lightEntities.get(randomID, __LINE__);
-                EntityStruct light_entity = LP.entities.get(sampledLightIDs[lid], __LINE__);
-                LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
-                TransformStruct transform = LP.transforms.get(light_entity.transform_id, __LINE__);
-                MeshStruct mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
-                uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
-                auto indices = LP.indexLists.get(light_entity.mesh_id, __LINE__);
-                auto vertices = LP.vertexLists.get(light_entity.mesh_id, __LINE__);
-                auto normals = LP.normalLists.get(light_entity.mesh_id, __LINE__);
-                auto texCoords = LP.texCoordLists.get(light_entity.mesh_id, __LINE__);
-                int3 triIndex = indices.get(random_tri_id, __LINE__);
+        //         EntityStruct light_entity = LP.entities.get(sampledLightIDs[lid], __LINE__);
+        //         LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
+        //         TransformStruct transform = LP.transforms.get(light_entity.transform_id, __LINE__);
+        //         MeshStruct mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
+        //         uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
+        //         auto indices = LP.indexLists.get(light_entity.mesh_id, __LINE__);
+        //         auto vertices = LP.vertexLists.get(light_entity.mesh_id, __LINE__);
+        //         auto normals = LP.normalLists.get(light_entity.mesh_id, __LINE__);
+        //         auto texCoords = LP.texCoordLists.get(light_entity.mesh_id, __LINE__);
+        //         int3 triIndex = indices.get(random_tri_id, __LINE__);
                 
-                // Sample the light to compute an incident light ray to this point
-                auto &ltw = transform.localToWorld;
-                float3 dir; float2 uv;
-                float3 pos = hit_p;
-                 // Might be a bug here with normal transform...
-                float3 n1 = make_float3(ltw * normals.get(triIndex.x, __LINE__));
-                float3 n2 = make_float3(ltw * normals.get(triIndex.y, __LINE__));
-                float3 n3 = make_float3(ltw * normals.get(triIndex.z, __LINE__));
-                float3 v1 = make_float3(ltw * make_float4(vertices.get(triIndex.x, __LINE__), 1.0f));
-                float3 v2 = make_float3(ltw * make_float4(vertices.get(triIndex.y, __LINE__), 1.0f));
-                float3 v3 = make_float3(ltw * make_float4(vertices.get(triIndex.z, __LINE__), 1.0f));
-                float2 uv1 = texCoords.get(triIndex.x, __LINE__);
-                float2 uv2 = texCoords.get(triIndex.y, __LINE__);
-                float2 uv3 = texCoords.get(triIndex.z, __LINE__);
-                sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
-                    lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDFs[lid], uv, 
-                    /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
+        //         // Sample the light to compute an incident light ray to this point
+        //         auto &ltw = transform.localToWorld;
+        //         float3 dir; float2 uv;
+        //         float3 pos = hit_p;
+        //          // Might be a bug here with normal transform...
+        //         float3 n1 = make_float3(ltw * normals.get(triIndex.x, __LINE__));
+        //         float3 n2 = make_float3(ltw * normals.get(triIndex.y, __LINE__));
+        //         float3 n3 = make_float3(ltw * normals.get(triIndex.z, __LINE__));
+        //         float3 v1 = make_float3(ltw * make_float4(vertices.get(triIndex.x, __LINE__), 1.0f));
+        //         float3 v2 = make_float3(ltw * make_float4(vertices.get(triIndex.y, __LINE__), 1.0f));
+        //         float3 v3 = make_float3(ltw * make_float4(vertices.get(triIndex.z, __LINE__), 1.0f));
+        //         float2 uv1 = texCoords.get(triIndex.x, __LINE__);
+        //         float2 uv2 = texCoords.get(triIndex.y, __LINE__);
+        //         float2 uv3 = texCoords.get(triIndex.z, __LINE__);
+        //         sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
+        //             lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDFs[lid], uv, 
+        //             /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
                 
-                falloff = light_light.falloff;
-                numTris = mesh.numTris;
-                lightDir = make_float3(dir.x, dir.y, dir.z);
-                if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
-                else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
+        //         falloff = light_light.falloff;
+        //         numTris = mesh.numTris;
+        //         lightDir = make_float3(dir.x, dir.y, dir.z);
+        //         if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
+        //         else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
             }
 
-            disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, bsdf, bsdfColor, forcedBsdf);
-            dotNWi = max(dot(lightDir, v_z), 0.f);
-            lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
-            if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
-                RayPayload payload; payload.instanceID = -2;
-                owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
-                ray.tmin = EPSILON * 10.f; ray.tmax = lightDistance + EPSILON; // needs to be distance to light, else anyhit logic breaks.
-                ray.origin = hit_p; ray.direction = lightDir;
-                ray.time = time;
-                owl::traceRay( LP.surfacesIAS, ray, payload, occlusion_flags);
-                bool visible = (randomID == numLights) ?
-                    (payload.instanceID == -2) : 
-                    ((payload.instanceID == -2) || (LP.surfaceInstanceToEntity.get(payload.instanceID, __LINE__) == sampledLightIDs[lid]));
-                if (visible) {
-                    if (randomID != numLights) lightEmission = lightEmission / pow(payload.tHit, falloff);
-                    float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
-                    float3 Li = (lightEmission * w) / lightPDFs[lid];
-                    irradiance = irradiance + (bsdf * bsdfColor * Li);
-                }
-            }
+        //     disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, bsdf, bsdfColor, forcedBsdf);
+        //     dotNWi = max(dot(lightDir, v_z), 0.f);
+        //     lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
+        //     if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
+        //         RayPayload payload; payload.instanceID = -2;
+        //         owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
+        //         ray.tmin = EPSILON * 10.f; ray.tmax = lightDistance + EPSILON; // needs to be distance to light, else anyhit logic breaks.
+        //         ray.origin = hit_p; ray.direction = lightDir;
+        //         ray.time = time;
+        //         owl::traceRay( LP.surfacesIAS, ray, payload, occlusion_flags);
+        //         bool visible = (randomID == numLights) ?
+        //             (payload.instanceID == -2) : 
+        //             ((payload.instanceID == -2) || (LP.surfaceInstanceToEntity.get(payload.instanceID, __LINE__) == sampledLightIDs[lid]));
+        //         if (visible) {
+        //             if (randomID != numLights) lightEmission = lightEmission / pow(payload.tHit, falloff);
+        //             float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
+        //             float3 Li = (lightEmission * w) / lightPDFs[lid];
+        //             irradiance = irradiance + (bsdf * bsdfColor * Li);
+        //         }
+        //     }
         }
 
         // For segmentations, save lighting metadata
@@ -1467,26 +1491,34 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         surfRay.time = sampleTime(lcg_randomf(rng));
         owl::traceRay(LP.surfacesIAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
+        volRay = surfRay;
+        volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
+        owl::traceRay(LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+
         // Check if we hit any of the previously sampled lights
         bool hitLight = false;
-        for (uint32_t lid = 0; lid < numLightSamples; ++lid)
+        // for (uint32_t lid = 0; lid < numLightSamples; ++lid)
+        uint32_t lid = 0;
         {
-            if (lightPDFs[lid] > EPSILON) 
+            // if (lightPDFs[lid] > EPSILON) 
             {
+                float dotNWi = (useBRDF) ? max(dot(surfRay.direction, v_gz), 0.f) : 1.f;  // geometry term
+
                 // if by sampling the brdf we also hit the dome light...
-                if ((surfPayload.instanceID == -1) && (sampledLightIDs[lid] == -1) && enableDomeSampling) {
+                if ((surfPayload.instanceID == -1) && (volPayload.instanceID == -1) && (sampledLightIDs[lid] == -1) && enableDomeSampling) {
                     // Case where we hit the background, and also previously sampled the background   
-                    float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
+                    float w = 1.f;//power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]); // TEMPORARY!!!
                     float3 lightEmission = missColor(surfRay, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure);
                     float3 Li = (lightEmission * w) / bsdfPDF;
-                    float dotNWi = max(dot(surfRay.direction, v_gz), 0.f);  // geometry term
+                    
                     if (dotNWi > 0.f) {
                         irradiance = irradiance + (bsdf * bsdfColor * Li);
                     }
                     hitLight = true;
                 }
                 // else if by sampling the brdf we also hit an area light
-                else if (surfPayload.instanceID != -1) {
+                // TODO: consider hitting emissive voxels?
+                else if (surfPayload.instanceID != -1 && volPayload.instanceID == -1) {
                     int entityID = LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
                     bool visible = (entityID == sampledLightIDs[lid]);
                     // We hit the light we sampled previously
@@ -1499,8 +1531,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         loadMeshUVData(light_entity.mesh_id, light_mesh.numVerts, indices, surfPayload.barycentrics, uv);
 
                         float dist = surfPayload.tHit;
-                        float dotNWi = max(dot(surfRay.direction, v_gz), 0.f); // geometry term
-
+                        
                         float3 lightEmission;
                         if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
                         else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
@@ -1508,7 +1539,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
                         if (dotNWi > EPSILON) 
                         {
-                            float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
+                            float w = 1.f;// power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]); // TEMPORARY!!!
                             float3 Li = (lightEmission * w) / bsdfPDF;
                             irradiance = irradiance + (bsdf * bsdfColor * Li);
                         }
