@@ -24,6 +24,13 @@ struct RayPayload {
     int instanceID = -1;
     int primitiveID = -1;
     float2 barycentrics;
+    
+    // for volumes
+    int eventID = -1;
+    float3 gradient;
+    float3 mp;
+    float density;
+
     float tHit = -1.f;
     float localToWorld[12];
     float localToWorldT0[12];
@@ -129,7 +136,6 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     // const float4* transform = (const float4*)( &transformData->transform[key][0] );
 
     // This seems to cause most of the stalls in san miguel scene.
-    optixGetObjectToWorldTransformMatrix(prd.localToWorld);
     // const int entityID = LP.surfaceInstanceToEntity.get(prd.instanceID, __LINE__);
     // EntityStruct entity = LP.entities.get(entityID, __LINE__);
     // TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
@@ -146,6 +152,8 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     // prd.localToWorld[10] = glm::row(transform.localToWorld, 2).z;
     // prd.localToWorld[11] = glm::row(transform.localToWorld, 2).w;
     // to_optix_tfm(transform.localToWorld, prd.localToWorld);
+    
+    optixGetObjectToWorldTransformMatrix(prd.localToWorld);
     
     // If we don't need motion vectors, (or in the future if an object 
     // doesn't have motion blur) then return.
@@ -342,6 +350,34 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
         vec3 tmpDir = -w * t;
         tmpDir = vec3(localToWorld * vec4(w, 0.f));
         prd.tHit = length(tmpDir);
+
+        auto sampler = nanovdb::SampleFromVoxels<nanovdb::DefaultReadAccessor<float>, /*Interpolation Degree*/1, /*UseCache*/false>(acc);
+        auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
+        float densityValue = acc.getValue(coord_pos);
+        auto g = sampler.gradient(nanovdb::Vec3f(x.x, x.y, x.z));
+
+        prd.mp = make_float3(x + offset); // not super confident about this offset...
+        prd.gradient = make_float3(g[0], g[1], g[2]);
+        prd.density = densityValue;
+        prd.eventID = event;
+        optixGetObjectToWorldTransformMatrix(prd.localToWorld);
+    
+        // If we don't need motion vectors, (or in the future if an object 
+        // doesn't have motion blur) then return.
+        if (LP.renderDataMode == RenderDataFlags::NONE) return;
+    
+        OptixTraversableHandle handle = optixGetTransformListHandle(prd.instanceID);
+        float4 trf00, trf01, trf02;
+        float4 trf10, trf11, trf12;
+        
+        optix_impl::optixGetInterpolatedTransformationFromHandle( trf00, trf01, trf02, handle, /* time */ 0.f, true );
+        optix_impl::optixGetInterpolatedTransformationFromHandle( trf10, trf11, trf12, handle, /* time */ 1.f, true );
+        memcpy(&prd.localToWorldT0[0], &trf00, sizeof(trf00));
+        memcpy(&prd.localToWorldT0[4], &trf01, sizeof(trf01));
+        memcpy(&prd.localToWorldT0[8], &trf02, sizeof(trf02));
+        memcpy(&prd.localToWorldT1[0], &trf10, sizeof(trf10));
+        memcpy(&prd.localToWorldT1[4], &trf11, sizeof(trf11));
+        memcpy(&prd.localToWorldT1[8], &trf12, sizeof(trf12));
     }
 }
 
@@ -750,21 +786,6 @@ bool debugging() {
     return glm::all(glm::equal(pixelID, ivec2(LP.frameSize.x / 2, LP.frameSize.y / 2)));
 }
 
-__device__
-glm::mat4 test_interpolate(glm::mat4& _mat1, glm::mat4& _mat2, float _time)
-{
-    glm::quat rot0 = glm::quat_cast(_mat1);
-    glm::quat rot1= glm::quat_cast(_mat2);
-
-    glm::quat finalRot = glm::slerp(rot0, rot1, _time);
-
-    glm::mat4 finalMat = glm::mat4_cast(finalRot);
-
-    finalMat[3] = _mat1[3] * (1 - _time) + _mat2[3] * _time;
-    
-    return finalMat;
-}
-
 /// Taken and modified from Algorithm 2 in "Pixar's Production Volume Rendering" paper.
 /// Implements the top level delta tracking algorithm, returning radiance.
 /// \param seed The seed to use by the random number generator.
@@ -1107,13 +1128,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Load the object we hit.
         int entityID;
-        if (isVolume) entityID = LP.volumeInstanceToEntity.get(surfPayload.instanceID, __LINE__);
+        if (isVolume) entityID = LP.volumeInstanceToEntity.get(volPayload.instanceID, __LINE__);
         else entityID = LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
 
         EntityStruct entity = LP.entities.get(entityID, __LINE__);
         TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
         MeshStruct mesh;  
+        VolumeStruct volume;  
         if (!isVolume) mesh = LP.meshes.get(entity.mesh_id, __LINE__);
+        else volume = LP.volumes.get(entity.volume_id, __LINE__);
         
         // Skip forward if the hit object is invisible for this ray type, skip it.
         if (((entity.flags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
@@ -1141,15 +1164,16 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // Load geometry data for the hit object
         float3 mp, p, v_x, v_y, v_z, v_gz; 
         float2 uv; 
-        int3 indices;
         float3 diffuseMotion;
         if (volPayload.tHit >= 0.f) {
-            if (volPayload.tHit >= 0.f) {
-                accum_illum = make_float3(0.f, 0.f, 0.f);
-                break;
-            }
+            v_x = v_y = make_float3(0.f); // Perhaps I could use divergence / curl here?
+            v_z = v_gz = normalize(volPayload.gradient);
+            if (any(isnan(make_vec3(v_z)))) v_z = make_float3(0.f);
+            mp = volPayload.mp;
+            uv = make_float2(volPayload.density, length(volPayload.gradient));
         }
         else {
+            int3 indices;
             loadMeshTriIndices(entity.mesh_id, mesh.numTris, surfPayload.primitiveID, indices);
             loadMeshVertexData(entity.mesh_id, mesh.numVerts, indices, surfPayload.barycentrics, mp, v_gz);
             loadMeshUVData(entity.mesh_id, mesh.numVerts, indices, surfPayload.barycentrics, uv);
@@ -1163,29 +1187,23 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             entityMaterial = LP.materials.get(entity.material_id, __LINE__);
             loadDisneyMaterial(entityMaterial, uv, mat, MIN_ROUGHNESS);
         }
-       
+      
         // Transform geometry data into world space
         {
-            // both glm::interpolate and my own interpolation functions cause artifacts... 
-            // optix transform seems to work though
-            // glm::mat4 xfm = test_interpolate(transform.localToWorld, transform.localToWorld, time);
-            glm::mat4 xfm = to_mat4(surfPayload.localToWorld);
+            glm::mat4 xfm = to_mat4((volPayload.tHit >= 0.f) ? volPayload.localToWorld : surfPayload.localToWorld);
             p = make_float3(xfm * make_vec4(mp, 1.0f));
             hit_p = p;
             glm::mat3 nxfm = transpose(glm::inverse(glm::mat3(xfm)));
             v_gz = make_float3(normalize(nxfm * make_vec3(v_gz)));
             v_z = make_float3(normalize(nxfm * make_vec3(v_z)));
             v_x = make_float3(normalize(nxfm * make_vec3(v_x)));
-
             
             v_y = -cross(v_z, v_x);
             v_x = -cross(v_y, v_z);
 
             if (LP.renderDataMode != RenderDataFlags::NONE) {
-                // glm::mat4 xfmt0 = transform.localToWorldPrev;
-                // glm::mat4 xfmt1 = transform.localToWorld;
-                glm::mat4 xfmt0 = to_mat4(surfPayload.localToWorldT0);
-                glm::mat4 xfmt1 = to_mat4(surfPayload.localToWorldT1);
+                glm::mat4 xfmt0 = to_mat4((volPayload.tHit >= 0.f) ? volPayload.localToWorldT0 : surfPayload.localToWorldT0);
+                glm::mat4 xfmt1 = to_mat4((volPayload.tHit >= 0.f) ? volPayload.localToWorldT1 : surfPayload.localToWorldT1);
                 vec4 tmp1 = LP.proj * LP.viewT0 * xfmt0 * make_vec4(mp, 1.0f);
                 vec4 tmp2 = LP.proj * LP.viewT1 * xfmt1 * make_vec4(mp, 1.0f);
                 float3 pt0 = make_float3(tmp1 / tmp1.w) * .5f;
@@ -1194,7 +1212,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             } else {
                 diffuseMotion = make_float3(0.f, 0.f, 0.f);
             }
-        }    
+        }
         
         // Fallback for tangent and bitangent if UVs result in degenerate vectors.
         if (
@@ -1249,10 +1267,33 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 surfPayload.tHit = -1.f;
                 surfRay.time = time;
                 owl::traceRay( LP.surfacesIAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+
+                volRay = surfRay;
+                volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
+                volPayload.tHit = -1.f;
+                volPayload.rng = rng;
+                owl::traceRay( LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+                
                 ++bounce;     
                 specularBounce++; // counting transparency as a specular bounce for now
                 continue;
             }
+        }
+
+        if (volPayload.tHit >= 0.f) {
+            float opacity = mat.alpha; // would otherwise be sampled from a transfer function
+            float grad_len = uv.y;
+            float p_brdf = opacity * (1.f - exp(-25.f * pow(volume.gradient_factor, 3.f) * grad_len));
+            float pdf;
+            float rand_brdf = lcg_randomf(rng);
+            
+            if (rand_brdf < p_brdf) {
+                illum = make_float3(1.f);
+            } else {
+                illum = make_float3(0.f);
+            }
+
+            break;
         }
 
         // If the entity we hit is a light, terminate the path.
