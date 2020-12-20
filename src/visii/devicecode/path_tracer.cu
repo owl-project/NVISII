@@ -221,7 +221,7 @@ void SampleDeltaTracking(
     // Update current position
     x = x - t * w;
     auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
-    float densityValue = majorant_extinction - acc.getValue(coord_pos); // temporary hack
+    float densityValue = acc.getValue(coord_pos);
 
    	float absorption = densityValue * absorption_; //sample_volume_absorption(x);
     float scattering = densityValue * scattering_; //sample_volume_scattering(x);
@@ -1425,9 +1425,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (useBRDF) {
             sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
         } else {
-            // todo: implement henyey greenstien...
-            bsdfPDF = 1.f;
-            bsdf = make_float3(3.f / (M_PI));
+            // currently isotropic. Todo: implement henyey greenstien...
+            bsdfPDF = 1.f / (4.0 * M_PI);
+            bsdf = make_float3(1.f / (4.0 * M_PI));
             bsdfColor = make_float3(1.f);
 
             float rand1 = lcg_randomf(rng);
@@ -1439,8 +1439,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
             w_i = make_float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
         }
-
-        // TEMPORARILY DISABLING
 
         // Next, sample the light source by importance sampling the light
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
@@ -1542,8 +1540,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, l_bsdf, l_bsdfColor, forcedBsdf);
                 dotNWi = max(dot(lightDir, v_z), 0.f);
             } else {
-                // todo: implement henyey greenstien...
-                l_bsdf = make_float3(3.f / (M_PI));
+                // currently isotropic. Todo: implement henyey greenstien...
+                l_bsdf = make_float3(1.f / (4.0 * M_PI));
                 l_bsdfColor = make_float3(1.f);
                 dotNWi = 1.f; // no geom term for phase function
             }
