@@ -145,7 +145,7 @@ static struct OptixData {
     std::vector<uint32_t> lightEntities;
 
     bool enableDenoiser = false;
-    bool enableKernelPrediction = true;
+    bool enableKernelPrediction = false;
     bool enableAlbedoGuide = true;
     bool enableNormalGuide = true;
     OptixDenoiserSizes denoiserSizes;
@@ -823,7 +823,7 @@ void initializeOptix(bool headless)
     auto cudaStream = getStream(OD.context, 0);
     OPTIX_CHECK(optixDenoiserCreate(optixContext, &options, &OD.denoiser));
     
-    OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_AOV;
+    OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_HDR; // having troubles with the AOV denoiser again...
     OPTIX_CHECK(optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0));
 
     OPTIX_CHECK(optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes));
