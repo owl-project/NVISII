@@ -1426,13 +1426,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (useBRDF) {
             sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
         } else {
-            // currently isotropic. Todo: implement henyey greenstien...
-            bsdfPDF = 1.f / (4.0 * M_PI);
-            bsdf = make_float3(1.f / (4.0 * M_PI));
-            bsdfColor = make_float3(1.f);
-
             /* a scatter event occurred */
             if (volPayload.eventID == 2) {
+                // currently isotropic. Todo: implement henyey greenstien...
                 float rand1 = lcg_randomf(rng);
                 float rand2 = lcg_randomf(rng);
 
@@ -1440,11 +1436,19 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 float phi = 2.0f * M_PI * rand1;
                 float cos_theta = 1.0f - 2.0f * rand2;
                 float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
+                
+                bsdfPDF = 1.f / (4.0 * M_PI);
+                bsdf = make_float3(1.f / (4.0 * M_PI));
+                bsdfColor = make_float3(1.f);
                 w_i = make_float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
             } 
             /* An absorption / emission event occurred */
-            else if (volPayload.eventID == 1) {
-                bsdfColor = mat.base_color;
+             
+            if (volPayload.eventID == 1) {
+                bsdfPDF = 1.f / (4.0 * M_PI);
+                bsdf = make_float3(1.f / (4.0 * M_PI));
+                bsdfColor = mat.base_color;                
+                w_i = -w_o;
             }
         }
 
@@ -1555,7 +1559,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
             lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
             if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
-                RayPayload surfPayload; surfPayload.instanceID = -2; surfPayload.rng = rng;
+                RayPayload surfPayload; surfPayload.instanceID = -2;
                 RayPayload volPayload = surfPayload;
                 owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
                 ray.tmin = EPSILON * 10.f; ray.tmax = lightDistance + EPSILON; // needs to be distance to light, else anyhit logic breaks.
@@ -1563,6 +1567,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 ray.time = time;
                 owl::traceRay( LP.surfacesIAS, ray, surfPayload, occlusion_flags);
                 ray.tmax = (surfPayload.instanceID == -2) ? ray.tmax : surfPayload.tHit;
+                volPayload.rng = rng;
                 owl::traceRay( LP.volumesIAS, ray, volPayload, occlusion_flags);
                 bool visible;
                 if (randomID == numLights) {
@@ -1603,6 +1608,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         volRay = surfRay;
         volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
+        volPayload.rng = rng;
         owl::traceRay(LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
         // Check if we hit any of the previously sampled lights
