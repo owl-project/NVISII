@@ -195,6 +195,7 @@ void setDirectLightingClamp(float clamp);
  * 
  * @param diffuse_depth The maximum number of diffuse bounces allowed per ray.
  * @param specular_depth The maximum number of specular (reflection/refraction) bounces allowed per ray.
+ * @param specular_depth The maximum number of specular (reflection/refraction) bounces allowed per ray.
  */ 
 void setMaxBounceDepth(uint32_t diffuse_depth = 2, uint32_t specular_depth = 8);
 

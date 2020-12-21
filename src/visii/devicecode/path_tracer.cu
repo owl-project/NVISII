@@ -339,6 +339,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
         if (event == 3) {
             // update boundary in relation to the new collision x, w does not change.
             d = d - t;
+            printf("NULL COLLISION!\n");
         }
     }
 
@@ -1100,6 +1101,7 @@ bool debugging() {
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     const RayGenData &self = owl::getProgramData<RayGenData>();
+    cudaTextureObject_t envTex = getEnvironmentTexture();
     
     auto &LP = optixLaunchParams;
     auto launchIndex = optixGetLaunchIndex().x;
@@ -1109,14 +1111,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     /* compute who is repsonible for a given group of pixels */
     /* and if it's not us, just return. */
     /* (some other device will compute these pixels) */
-    // int deviceThatIsResponsible = (pixelID.x>>5) % self.deviceCount;
     int deviceThatIsResponsible = (pixelID.x>>5) % self.deviceCount;
     if (self.deviceIndex != deviceThatIsResponsible) {
-        // auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
-        // float4* accumPtr = (float4*) LP.accumPtr;
-        // float4* fbPtr = (float4*) LP.frameBuffer;
-        // accumPtr[fbOfs] = make_float4(0.f);
-        // fbPtr[fbOfs] = make_float4(0.f);
         return;
     }
 
@@ -1131,21 +1127,17 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     // If no camera is in use, just display some random noise...
     owl::Ray surfRay;
-    {
-        EntityStruct    camera_entity;
-        TransformStruct camera_transform;
-        CameraStruct    camera;
-        if (!loadCamera(camera_entity, camera, camera_transform)) {
-            auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
-            LP.frameBuffer[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
-            return;
-        }
-        
-        // Trace an initial ray through the scene
-        surfRay = generateRay(camera, camera_transform, pixelID, LP.frameSize, rng, time);
+    EntityStruct    camera_entity;
+    TransformStruct camera_transform;
+    CameraStruct    camera;
+    if (!loadCamera(camera_entity, camera, camera_transform)) {
+        auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
+        LP.frameBuffer[fbOfs] = vec4(lcg_randomf(rng), lcg_randomf(rng), lcg_randomf(rng), 1.f);
+        return;
     }
-
-    cudaTextureObject_t envTex = getEnvironmentTexture();
+    
+    // Trace an initial ray through the scene
+    surfRay = generateRay(camera, camera_transform, pixelID, LP.frameSize, rng, time);
 
     float3 accum_illum = make_float3(0.f);
     float3 pathThroughput = make_float3(1.f);
@@ -1395,8 +1387,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
 
         // Next, we'll be sampling direct light sources
-        int32_t sampledLightIDs[MAX_LIGHT_SAMPLES] = {-2};
-        float lightPDFs[MAX_LIGHT_SAMPLES] = {0.f};
+        int32_t sampledLightID = -2;
+        float lightPDF = 0.f;
         float3 irradiance = make_float3(0.f);
 
         // note, rdForcedBsdf is -1 by default
@@ -1454,136 +1446,134 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Next, sample the light source by importance sampling the light
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
-        for (uint32_t lid = 0; lid < numLightSamples; ++lid) 
-        {
-            uint32_t randmax = (enableDomeSampling) ? numLights + 1 : numLights;
-            uint32_t randomID = uint32_t(min(lcg_randomf(rng) * randmax, float(randmax-1)));
-            float dotNWi;
-            float3 l_bsdf, l_bsdfColor;
-            float3 lightEmission;
-            float3 lightDir;
-            float lightDistance = 1e20f;
-            float falloff = 2.0f;
-            int numTris;
+        
+        uint32_t randmax = (enableDomeSampling) ? numLights + 1 : numLights;
+        uint32_t randomID = uint32_t(min(lcg_randomf(rng) * randmax, float(randmax-1)));
+        float dotNWi;
+        float3 l_bsdf, l_bsdfColor;
+        float3 lightEmission;
+        float3 lightDir;
+        float lightDistance = 1e20f;
+        float falloff = 2.0f;
+        int numTris;
 
-            // sample background
-            if (randomID == numLights) {
-                sampledLightIDs[lid] = -1;
-                if (
-                    (LP.environmentMapWidth != 0) && (LP.environmentMapHeight != 0) &&
-                    (LP.environmentMapRows != nullptr) && (LP.environmentMapCols != nullptr) 
-                ) 
-                {
-                    // Reduces noise for strangely noisy dome light textures, but at the expense 
-                    // of a highly uncoalesced binary search through a 2D CDF.
-                    // disabled by default to avoid the hit to performance
-                    float rx = lcg_randomf(rng);
-                    float ry = lcg_randomf(rng);
-                    float* rows = LP.environmentMapRows;
-                    float* cols = LP.environmentMapCols;
-                    int width = LP.environmentMapWidth;
-                    int height = LP.environmentMapHeight;
-                    float invjacobian = width * height / float(4 * M_PI);
-                    float row_pdf, col_pdf;
-                    unsigned x, y;
-                    ry = sample_cdf(rows, height, ry, &y, &row_pdf);
-                    y = max(min(y, height - 1), 0);
-                    rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
-                    lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
-                    lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
-                    lightPDFs[lid] = row_pdf * col_pdf * invjacobian;
-                } 
-                else 
-                {            
-                    glm::mat3 tbn;
-                    tbn = glm::column(tbn, 0, make_vec3(v_x) );
-                    tbn = glm::column(tbn, 1, make_vec3(v_y) );
-                    tbn = glm::column(tbn, 2, make_vec3(v_z) );            
-                    const float3 hemi_dir = (cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
-                    lightDir = make_float3(tbn * make_vec3(hemi_dir));
-                    lightPDFs[lid] = 1.f / float(2.0 * M_PI);
-                }
-
-                numTris = 1.f;
-                lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-            }
-            // sample light sources
-            else 
+        // sample background
+        if (randomID == numLights) {
+            sampledLightID = -1;
+            if (
+                (LP.environmentMapWidth != 0) && (LP.environmentMapHeight != 0) &&
+                (LP.environmentMapRows != nullptr) && (LP.environmentMapCols != nullptr) 
+            ) 
             {
-                if (numLights == 0) continue;
-                sampledLightIDs[lid] = LP.lightEntities.get(randomID, __LINE__);
-                EntityStruct light_entity = LP.entities.get(sampledLightIDs[lid], __LINE__);
-                LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
-                TransformStruct transform = LP.transforms.get(light_entity.transform_id, __LINE__);
-                MeshStruct mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
-                uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
-                auto indices = LP.indexLists.get(light_entity.mesh_id, __LINE__);
-                auto vertices = LP.vertexLists.get(light_entity.mesh_id, __LINE__);
-                auto normals = LP.normalLists.get(light_entity.mesh_id, __LINE__);
-                auto texCoords = LP.texCoordLists.get(light_entity.mesh_id, __LINE__);
-                int3 triIndex = indices.get(random_tri_id, __LINE__);
-                
-                // Sample the light to compute an incident light ray to this point
-                auto &ltw = transform.localToWorld;
-                float3 dir; float2 uv;
-                float3 pos = hit_p;
-                 // Might be a bug here with normal transform...
-                float3 n1 = make_float3(ltw * normals.get(triIndex.x, __LINE__));
-                float3 n2 = make_float3(ltw * normals.get(triIndex.y, __LINE__));
-                float3 n3 = make_float3(ltw * normals.get(triIndex.z, __LINE__));
-                float3 v1 = make_float3(ltw * make_float4(vertices.get(triIndex.x, __LINE__), 1.0f));
-                float3 v2 = make_float3(ltw * make_float4(vertices.get(triIndex.y, __LINE__), 1.0f));
-                float3 v3 = make_float3(ltw * make_float4(vertices.get(triIndex.z, __LINE__), 1.0f));
-                float2 uv1 = texCoords.get(triIndex.x, __LINE__);
-                float2 uv2 = texCoords.get(triIndex.y, __LINE__);
-                float2 uv3 = texCoords.get(triIndex.z, __LINE__);
-                sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
-                    lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDFs[lid], uv, 
-                    /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
-                
-                falloff = light_light.falloff;
-                numTris = mesh.numTris;
-                lightDir = make_float3(dir.x, dir.y, dir.z);
-                if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
-                else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
+                // Reduces noise for strangely noisy dome light textures, but at the expense 
+                // of a highly uncoalesced binary search through a 2D CDF.
+                // disabled by default to avoid the hit to performance
+                float rx = lcg_randomf(rng);
+                float ry = lcg_randomf(rng);
+                float* rows = LP.environmentMapRows;
+                float* cols = LP.environmentMapCols;
+                int width = LP.environmentMapWidth;
+                int height = LP.environmentMapHeight;
+                float invjacobian = width * height / float(4 * M_PI);
+                float row_pdf, col_pdf;
+                unsigned x, y;
+                ry = sample_cdf(rows, height, ry, &y, &row_pdf);
+                y = max(min(y, height - 1), 0);
+                rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
+                lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
+                lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
+                lightPDF = row_pdf * col_pdf * invjacobian;
+            } 
+            else 
+            {            
+                glm::mat3 tbn;
+                tbn = glm::column(tbn, 0, make_vec3(v_x) );
+                tbn = glm::column(tbn, 1, make_vec3(v_y) );
+                tbn = glm::column(tbn, 2, make_vec3(v_z) );            
+                const float3 hemi_dir = (cos_sample_hemisphere(make_float2(lcg_randomf(rng), lcg_randomf(rng))));
+                lightDir = make_float3(tbn * make_vec3(hemi_dir));
+                lightPDF = 1.f / float(2.0 * M_PI);
             }
 
-            if (useBRDF) {
-                disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, l_bsdf, l_bsdfColor, forcedBsdf);
-                dotNWi = max(dot(lightDir, v_z), 0.f);
+            numTris = 1.f;
+            lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+        }
+        // sample light sources
+        else 
+        {
+            if (numLights == 0) continue;
+            sampledLightID = LP.lightEntities.get(randomID, __LINE__);
+            EntityStruct light_entity = LP.entities.get(sampledLightID, __LINE__);
+            LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
+            TransformStruct transform = LP.transforms.get(light_entity.transform_id, __LINE__);
+            MeshStruct mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
+            uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
+            auto indices = LP.indexLists.get(light_entity.mesh_id, __LINE__);
+            auto vertices = LP.vertexLists.get(light_entity.mesh_id, __LINE__);
+            auto normals = LP.normalLists.get(light_entity.mesh_id, __LINE__);
+            auto texCoords = LP.texCoordLists.get(light_entity.mesh_id, __LINE__);
+            int3 triIndex = indices.get(random_tri_id, __LINE__);
+            
+            // Sample the light to compute an incident light ray to this point
+            auto &ltw = transform.localToWorld;
+            float3 dir; float2 uv;
+            float3 pos = hit_p;
+                // Might be a bug here with normal transform...
+            float3 n1 = make_float3(ltw * normals.get(triIndex.x, __LINE__));
+            float3 n2 = make_float3(ltw * normals.get(triIndex.y, __LINE__));
+            float3 n3 = make_float3(ltw * normals.get(triIndex.z, __LINE__));
+            float3 v1 = make_float3(ltw * make_float4(vertices.get(triIndex.x, __LINE__), 1.0f));
+            float3 v2 = make_float3(ltw * make_float4(vertices.get(triIndex.y, __LINE__), 1.0f));
+            float3 v3 = make_float3(ltw * make_float4(vertices.get(triIndex.z, __LINE__), 1.0f));
+            float2 uv1 = texCoords.get(triIndex.x, __LINE__);
+            float2 uv2 = texCoords.get(triIndex.y, __LINE__);
+            float2 uv3 = texCoords.get(triIndex.z, __LINE__);
+            sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
+                lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDF, uv, 
+                /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
+            
+            falloff = light_light.falloff;
+            numTris = mesh.numTris;
+            lightDir = make_float3(dir.x, dir.y, dir.z);
+            if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
+            else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
+        }
+
+        if (useBRDF) {
+            disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, l_bsdf, l_bsdfColor, forcedBsdf);
+            dotNWi = max(dot(lightDir, v_z), 0.f);
+        } else {
+            // currently isotropic. Todo: implement henyey greenstien...
+            l_bsdf = make_float3(1.f / (4.0 * M_PI));
+            l_bsdfColor = make_float3(1.f);
+            dotNWi = 1.f; // no geom term for phase function
+        }
+        lightPDF *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
+        if ((lightPDF > 0.0) && (dotNWi > EPSILON)) {
+            RayPayload surfPayload; surfPayload.instanceID = -2;
+            RayPayload volPayload = surfPayload;
+            owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
+            ray.tmin = EPSILON * 10.f; ray.tmax = lightDistance + EPSILON; // needs to be distance to light, else anyhit logic breaks.
+            ray.origin = hit_p; ray.direction = lightDir;
+            ray.time = time;
+            owl::traceRay( LP.surfacesIAS, ray, surfPayload, occlusion_flags);
+            ray.tmax = (surfPayload.instanceID == -2) ? ray.tmax : surfPayload.tHit;
+            volPayload.rng = rng;
+            owl::traceRay( LP.volumesIAS, ray, volPayload, occlusion_flags);
+            bool visible;
+            if (randomID == numLights) {
+                //  If we sampled the dome light, just check to see if we hit anything
+                visible = (surfPayload.instanceID == -2) && (volPayload.instanceID == -2);
             } else {
-                // currently isotropic. Todo: implement henyey greenstien...
-                l_bsdf = make_float3(1.f / (4.0 * M_PI));
-                l_bsdfColor = make_float3(1.f);
-                dotNWi = 1.f; // no geom term for phase function
+                // If we sampled a light source, then check to see if we hit something other than the light
+                int surfEntity = (surfPayload.instanceID == -2) ? -1 : LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
+                visible = (volPayload.instanceID == -2) && (surfPayload.instanceID == -2 || surfEntity == sampledLightID);
             }
-            lightPDFs[lid] *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
-            if ((lightPDFs[lid] > 0.0) && (dotNWi > EPSILON)) {
-                RayPayload surfPayload; surfPayload.instanceID = -2;
-                RayPayload volPayload = surfPayload;
-                owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
-                ray.tmin = EPSILON * 10.f; ray.tmax = lightDistance + EPSILON; // needs to be distance to light, else anyhit logic breaks.
-                ray.origin = hit_p; ray.direction = lightDir;
-                ray.time = time;
-                owl::traceRay( LP.surfacesIAS, ray, surfPayload, occlusion_flags);
-                ray.tmax = (surfPayload.instanceID == -2) ? ray.tmax : surfPayload.tHit;
-                volPayload.rng = rng;
-                owl::traceRay( LP.volumesIAS, ray, volPayload, occlusion_flags);
-                bool visible;
-                if (randomID == numLights) {
-                    //  If we sampled the dome light, just check to see if we hit anything
-                    visible = (surfPayload.instanceID == -2) && (volPayload.instanceID == -2);
-                } else {
-                    // If we sampled a light source, then check to see if we hit something other than the light
-                    int surfEntity = (surfPayload.instanceID == -2) ? -1 : LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
-                    visible = (volPayload.instanceID == -2) && (surfPayload.instanceID == -2 || surfEntity == sampledLightIDs[lid]);
-                }
-                if (visible) {
-                    if (randomID != numLights) lightEmission = lightEmission / pow(surfPayload.tHit, falloff);
-                    float w = power_heuristic(1.f, lightPDFs[lid], 1.f, bsdfPDF);
-                    float3 Li = (lightEmission * w) / lightPDFs[lid];
-                    irradiance = irradiance + (l_bsdf * l_bsdfColor * Li);
-                }
+            if (visible) {
+                if (randomID != numLights) lightEmission = lightEmission / pow(surfPayload.tHit, falloff);
+                float w = power_heuristic(1.f, lightPDF, 1.f, bsdfPDF);
+                float3 Li = (lightEmission * w) / lightPDF;
+                irradiance = irradiance + (l_bsdf * l_bsdfColor * Li);
             }
         }
 
@@ -1613,58 +1603,54 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Check if we hit any of the previously sampled lights
         bool hitLight = false;
-        for (uint32_t lid = 0; lid < numLightSamples; ++lid)
+        if (lightPDF > EPSILON) 
         {
-            if (lightPDFs[lid] > EPSILON) 
-            {
-                float dotNWi = (useBRDF) ? max(dot(surfRay.direction, v_gz), 0.f) : 1.f;  // geometry term
+            float dotNWi = (useBRDF) ? max(dot(surfRay.direction, v_gz), 0.f) : 1.f;  // geometry term
 
-                // if by sampling the brdf we also hit the dome light...
-                if ((surfPayload.instanceID == -1) && (volPayload.instanceID == -1) && (sampledLightIDs[lid] == -1) && enableDomeSampling) {
-                    // Case where we hit the background, and also previously sampled the background   
-                    float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
-                    float3 lightEmission = missColor(surfRay, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure);
-                    float3 Li = (lightEmission * w) / bsdfPDF;
+            // if by sampling the brdf we also hit the dome light...
+            if ((surfPayload.instanceID == -1) && (volPayload.instanceID == -1) && (sampledLightID == -1) && enableDomeSampling) {
+                // Case where we hit the background, and also previously sampled the background   
+                float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDF);
+                float3 lightEmission = missColor(surfRay, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure);
+                float3 Li = (lightEmission * w) / bsdfPDF;
+                
+                if (dotNWi > 0.f) {
+                    irradiance = irradiance + (bsdf * bsdfColor * Li);
+                }
+                hitLight = true;
+            }
+            // else if by sampling the brdf we also hit an area light
+            // TODO: consider hitting emissive voxels?
+            else if (surfPayload.instanceID != -1 && volPayload.instanceID == -1) {
+                int entityID = LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
+                bool visible = (entityID == sampledLightID);
+                // We hit the light we sampled previously
+                if (visible) {
+                    int3 indices; float3 p; float3 lv_gz; float2 uv;
+                    EntityStruct light_entity = LP.entities.get(sampledLightID, __LINE__);
+                    MeshStruct light_mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
+                    LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
+                    loadMeshTriIndices(light_entity.mesh_id, light_mesh.numTris, surfPayload.primitiveID, indices);
+                    loadMeshUVData(light_entity.mesh_id, light_mesh.numVerts, indices, surfPayload.barycentrics, uv);
+
+                    float dist = surfPayload.tHit;
                     
-                    if (dotNWi > 0.f) {
+                    float3 lightEmission;
+                    if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
+                    else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
+                    lightEmission = lightEmission / pow(dist, light_light.falloff);
+
+                    if (dotNWi > EPSILON) 
+                    {
+                        float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDF);
+                        float3 Li = (lightEmission * w) / bsdfPDF;
                         irradiance = irradiance + (bsdf * bsdfColor * Li);
                     }
                     hitLight = true;
                 }
-                // else if by sampling the brdf we also hit an area light
-                // TODO: consider hitting emissive voxels?
-                else if (surfPayload.instanceID != -1 && volPayload.instanceID == -1) {
-                    int entityID = LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
-                    bool visible = (entityID == sampledLightIDs[lid]);
-                    // We hit the light we sampled previously
-                    if (visible) {
-                        int3 indices; float3 p; float3 lv_gz; float2 uv;
-                        EntityStruct light_entity = LP.entities.get(sampledLightIDs[lid], __LINE__);
-                        MeshStruct light_mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
-                        LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
-                        loadMeshTriIndices(light_entity.mesh_id, light_mesh.numTris, surfPayload.primitiveID, indices);
-                        loadMeshUVData(light_entity.mesh_id, light_mesh.numVerts, indices, surfPayload.barycentrics, uv);
-
-                        float dist = surfPayload.tHit;
-                        
-                        float3 lightEmission;
-                        if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
-                        else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
-                        lightEmission = lightEmission / pow(dist, light_light.falloff);
-
-                        if (dotNWi > EPSILON) 
-                        {
-                            float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDFs[lid]);
-                            float3 Li = (lightEmission * w) / bsdfPDF;
-                            irradiance = irradiance + (bsdf * bsdfColor * Li);
-                        }
-                        hitLight = true;
-                    }
-                }
             }
         }
-        irradiance = irradiance / float(numLightSamples);
-
+        
         // Accumulate radiance (ie pathThroughput * irradiance), and update the path throughput using the sampled BRDF
         float3 contribution = pathThroughput * irradiance;
         illum = illum + contribution;

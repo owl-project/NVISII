@@ -10,7 +10,7 @@ class Buffer : public owl::device::Buffer
 {
   public:
   __both__
-  T get(size_t address, uint32_t line) {
+  inline T get(size_t address, uint32_t line) {
     #if defined(__CUDACC__)
     #ifdef CHECK_ACCESSES
     if (data == nullptr) {::printf("Device Side Error on Line %d: buffer was nullptr.\n", line); asm("trap;");}
@@ -21,7 +21,7 @@ class Buffer : public owl::device::Buffer
   }
 
   __both__
-  T* getPtr(size_t address, uint32_t line) {
+  inline T* getPtr(size_t address, uint32_t line) {
     #if defined(__CUDACC__)
     #ifdef CHECK_ACCESSES
     if (data == nullptr) {::printf("Device Side Error on Line %d: buffer was nullptr.\n", line); asm("trap;");}
@@ -31,3 +31,5 @@ class Buffer : public owl::device::Buffer
     return &((T*)data)[address];
   }
 };
+
+#define GET(TYPE, BUFFER, ADDRESS) ((TYPE*)BUFFER.data)[address]
