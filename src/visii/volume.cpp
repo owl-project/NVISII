@@ -6,6 +6,7 @@
 #include <glm/gtc/color_space.hpp>
 
 #include <nanovdb/util/GridChecksum.h>
+#include <nanovdb/util/Primitives.h>
 
 std::vector<Volume> Volume::volumes;
 std::vector<VolumeStruct> Volume::volumeStructs;
@@ -134,9 +135,7 @@ Volume* Volume::createFromFile(std::string name, std::string path) {
                 throw std::runtime_error("Error: unable to read nvdb grid!");
             }
 
-            v->gridMetaData = list[0];
             v->gridHdlPtr = std::make_shared<nanovdb::GridHandle<>>(std::move(gridHdl));
-            //v->gridHdl = std::move(gridHdl);
         }
         else {
             throw std::runtime_error(std::string("Error: unsupported format ") + 
@@ -146,7 +145,70 @@ Volume* Volume::createFromFile(std::string name, std::string path) {
     };
 
     try {
+        return StaticFactory::create<Volume>(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size(), create);
+    } catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size());
+		throw;
+	}
+}
 
+Volume *Volume::createSphere(std::string name)
+{
+    auto create = [] (Volume* v) {
+        nanovdb::GridHandle<> gridHdl = nanovdb::createFogVolumeSphere();
+        v->gridHdlPtr = std::make_shared<nanovdb::GridHandle<>>(std::move(gridHdl));
+        v->markDirty();
+    };
+
+    try {
+        return StaticFactory::create<Volume>(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size(), create);
+    } catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size());
+		throw;
+	}
+}
+
+Volume *Volume::createTorus(std::string name)
+{
+    auto create = [] (Volume* v) {
+        nanovdb::GridHandle<> gridHdl = nanovdb::createFogVolumeTorus();
+        v->gridHdlPtr = std::make_shared<nanovdb::GridHandle<>>(std::move(gridHdl));
+        v->markDirty();
+    };
+
+    try {
+        return StaticFactory::create<Volume>(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size(), create);
+    } catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size());
+		throw;
+	}
+}
+
+Volume *Volume::createBox(std::string name)
+{
+    auto create = [] (Volume* v) {
+        nanovdb::GridHandle<> gridHdl = nanovdb::createFogVolumeBox();
+        v->gridHdlPtr = std::make_shared<nanovdb::GridHandle<>>(std::move(gridHdl));
+        v->markDirty();
+    };
+
+    try {
+        return StaticFactory::create<Volume>(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size(), create);
+    } catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size());
+		throw;
+	}
+}
+
+Volume *Volume::createOctahedron(std::string name)
+{
+    auto create = [] (Volume* v) {
+        nanovdb::GridHandle<> gridHdl = nanovdb::createFogVolumeOctahedron();
+        v->gridHdlPtr = std::make_shared<nanovdb::GridHandle<>>(std::move(gridHdl));
+        v->markDirty();
+    };
+
+    try {
         return StaticFactory::create<Volume>(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size(), create);
     } catch (...) {
 		StaticFactory::removeIfExists(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size());

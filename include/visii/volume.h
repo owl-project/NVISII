@@ -55,6 +55,38 @@ class Volume : public StaticFactory
 	*/
 	static Volume *createFromFile(std::string name, std::string path);
 	
+	/**
+	 * Creates a sparse fog volume of a sphere such that the exterior
+	 * is 0 and inactive, the interior is active with values varying
+	 * smoothly from 0 at the surface of the sphere to 1 at the half 
+	 * width and interior of the sphere.
+	*/
+	static Volume *createSphere(std::string name);
+	
+	/**
+	 * Creates a sparse fog volume of a torus in the xz-plane such
+	 * that the exterior is 0 and inactive, the interior is active with
+	 * values varying smoothly from 0 at the surface of the torus to 1
+	 * at the half width and interior of the torus.
+	*/
+	static Volume *createTorus(std::string name);
+	
+	/**
+	 * Creates a sparse fog volume of a box such that the exterior 
+	 * is 0 and inactive, the interior is active with values varying
+	 * smoothly from 0 at the surface of the box to 1 at the half width
+	 * and interior of the box.
+	 */
+	static Volume *createBox(std::string name);
+	
+	/**
+	 * Creates a sparse fog volume of an octahedron such that the exterior
+	 * is 0 and inactive, the interior is active with values varying
+	 * smoothly from 0 at the surface of the octahedron to 1 at the half width
+	 * and interior of the octahedron
+	 */
+	static Volume *createOctahedron(std::string name);
+
     /**
      * @param name The name of the Volume to get
 	 * @returns a Volume who's name matches the given name 
@@ -203,6 +235,5 @@ class Volume : public StaticFactory
 	static std::set<Volume*> dirtyVolumes;
 
     /** Private volume data here... */
-	nanovdb::io::GridMetaData gridMetaData;
-    std::shared_ptr<nanovdb::GridHandle<>> gridHdlPtr;
+	std::shared_ptr<nanovdb::GridHandle<>> gridHdlPtr;
 };
