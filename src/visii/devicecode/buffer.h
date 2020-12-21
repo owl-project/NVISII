@@ -32,4 +32,7 @@ class Buffer : public owl::device::Buffer
   }
 };
 
-#define GET(TYPE, BUFFER, ADDRESS) ((TYPE*)BUFFER.data)[address]
+#define GET(RETURN, TYPE, BUFFER, ADDRESS) \
+if (BUFFER.data == nullptr) {::printf("Device Side Error on Line %d: buffer was nullptr.\n", __LINE__); asm("trap;");} \
+if (ADDRESS >= BUFFER.count) {::printf("Device Side Error on Line %d: out of bounds access (address: %d, size %d).\n", __LINE__, ADDRESS, uint32_t(BUFFER.count)); asm("trap;");} \
+RETURN = ((TYPE*)BUFFER.data)[ADDRESS];\

@@ -76,7 +76,8 @@ cudaTextureObject_t getEnvironmentTexture()
     auto &LP = optixLaunchParams;
     cudaTextureObject_t tex = 0;
     if (LP.environmentMapID >= 0) {
-        return LP.textureObjects.get(LP.environmentMapID, __LINE__);
+        GET(tex, cudaTextureObject_t, LP.textureObjects, LP.environmentMapID);
+        return tex;
     } else if ((LP.environmentMapID == -2) && (LP.proceduralSkyTexture != 0)) {
         return LP.proceduralSkyTexture;
     }
@@ -134,24 +135,6 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     // optixGetInterpolatedTransformation( trf0, trf1, trf2, transformData, time );
     // const float4* transform = (const float4*)( &transformData->transform[key][0] );
     // const float4* transform = (const float4*)( &transformData->transform[key][0] );
-
-    // This seems to cause most of the stalls in san miguel scene.
-    // const int entityID = LP.surfaceInstanceToEntity.get(prd.instanceID, __LINE__);
-    // EntityStruct entity = LP.entities.get(entityID, __LINE__);
-    // TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
-    // prd.localToWorld[0]  = glm::row(transform.localToWorld, 0).x;
-    // prd.localToWorld[1]  = glm::row(transform.localToWorld, 0).y;
-    // prd.localToWorld[2]  = glm::row(transform.localToWorld, 0).z;
-    // prd.localToWorld[3]  = glm::row(transform.localToWorld, 0).w;
-    // prd.localToWorld[4]  = glm::row(transform.localToWorld, 1).x;
-    // prd.localToWorld[5]  = glm::row(transform.localToWorld, 1).y;
-    // prd.localToWorld[6]  = glm::row(transform.localToWorld, 1).z;
-    // prd.localToWorld[7]  = glm::row(transform.localToWorld, 1).w;
-    // prd.localToWorld[8]  = glm::row(transform.localToWorld, 2).x;
-    // prd.localToWorld[9]  = glm::row(transform.localToWorld, 2).y;
-    // prd.localToWorld[10] = glm::row(transform.localToWorld, 2).z;
-    // prd.localToWorld[11] = glm::row(transform.localToWorld, 2).w;
-    // to_optix_tfm(transform.localToWorld, prd.localToWorld);
     
     optixGetObjectToWorldTransformMatrix(prd.localToWorld);
     
@@ -263,11 +246,10 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
     LCGRand rng = prd.rng;
 
     // Load the volume we hit
-    const int entityID = LP.volumeInstanceToEntity.get(optixGetInstanceIndex(), __LINE__);
-    EntityStruct entity = LP.entities.get(entityID, __LINE__);
-    TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
-    VolumeStruct volume = LP.volumes.get(entity.volume_id, __LINE__);
-
+    GET(const int entityID, int, LP.volumeInstanceToEntity, optixGetInstanceIndex());
+    GET(EntityStruct entity, EntityStruct, LP.entities, entityID);
+    GET(TransformStruct transform, TransformStruct, LP.transforms, entity.transform_id);
+    GET(VolumeStruct volume, VolumeStruct, LP.volumes, entity.volume_id);
     uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(entity.volume_id, __LINE__).data;
     const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
     const auto& tree = grid->tree();
@@ -389,11 +371,10 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
     LCGRand rng = prd.rng;
 
     // Load the volume we hit
-    const int entityID = LP.volumeInstanceToEntity.get(optixGetInstanceIndex(), __LINE__);
-    EntityStruct entity = LP.entities.get(entityID, __LINE__);
-    TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
-    VolumeStruct volume = LP.volumes.get(entity.volume_id, __LINE__);
-
+    GET(const int entityID, int, LP.volumeInstanceToEntity, optixGetInstanceIndex());
+    GET(EntityStruct entity, EntityStruct, LP.entities, entityID);
+    GET(TransformStruct transform, TransformStruct, LP.transforms, entity.transform_id);
+    GET(VolumeStruct volume, VolumeStruct, LP.volumes, entity.volume_id);
     uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(entity.volume_id, __LINE__).data;
     const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
     const auto& tree = grid->tree();
@@ -507,8 +488,8 @@ bool loadCamera(EntityStruct &cameraEntity, CameraStruct &camera, TransformStruc
     if (!cameraEntity.initialized) return false;
     if ((cameraEntity.transform_id < 0) || (cameraEntity.transform_id >= LP.transforms.count)) return false;
     if ((cameraEntity.camera_id < 0) || (cameraEntity.camera_id >= LP.cameras.count)) return false;
-    camera = LP.cameras.get(cameraEntity.camera_id, __LINE__);
-    transform = LP.transforms.get(cameraEntity.transform_id, __LINE__);
+    GET(camera, CameraStruct, LP.cameras, cameraEntity.camera_id);
+    GET(transform, TransformStruct, LP.transforms, cameraEntity.transform_id);
     return true;
 }
 
@@ -516,9 +497,9 @@ inline __device__
 float3 sampleTexture(int32_t textureId, float2 texCoord, float3 defaultVal) {
     auto &LP = optixLaunchParams;
     if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
-    cudaTextureObject_t tex = LP.textureObjects.get(textureId, __LINE__);
+    GET(cudaTextureObject_t tex, cudaTextureObject_t, LP.textureObjects, textureId);
     if (!tex) return defaultVal;
-    TextureStruct texInfo = LP.textures.get(textureId, __LINE__);
+    GET(TextureStruct texInfo, TextureStruct, LP.textures, textureId);
     texCoord.x = texCoord.x / texInfo.scale.x;
     texCoord.y = texCoord.y / texInfo.scale.y;
     return make_float3(tex2D<float4>(tex, texCoord.x, texCoord.y));
@@ -528,9 +509,9 @@ inline __device__
 float sampleTexture(int32_t textureId, float2 texCoord, int8_t channel, float defaultVal) {
     auto &LP = optixLaunchParams;
     if (textureId < 0 || textureId >= (LP.textures.count + LP.materials.count * NUM_MAT_PARAMS)) return defaultVal;
-    cudaTextureObject_t tex = LP.textureObjects.get(textureId, __LINE__);
+    GET(cudaTextureObject_t tex, cudaTextureObject_t, LP.textureObjects, textureId);
     if (!tex) return defaultVal;
-    TextureStruct texInfo = LP.textures.get(textureId, __LINE__);
+    GET(TextureStruct texInfo, TextureStruct, LP.textures, textureId);
     texCoord.x = texCoord.x / texInfo.scale.x;
     texCoord.y = texCoord.y / texInfo.scale.y;
     if (channel == 0) return tex2D<float4>(tex, texCoord.x, texCoord.y).x;
@@ -544,18 +525,18 @@ __device__
 void loadMeshTriIndices(int meshID, int numIndices, int primitiveID, int3 &triIndices)
 {
     auto &LP = optixLaunchParams;
-    auto indices = LP.indexLists.get(meshID, __LINE__);
-    triIndices = indices.get(primitiveID, __LINE__);   
+    GET(Buffer<int3> indices, Buffer<int3>, LP.indexLists, meshID);
+    GET(triIndices, int3, indices, primitiveID);
 }
 
 __device__
 void loadMeshVertexData(int meshID, int numVertices, int3 indices, float2 barycentrics, float3 &position, float3 &geometricNormal)
 {
     auto &LP = optixLaunchParams;
-    auto vertices = LP.vertexLists.get(meshID, __LINE__);
-    const float3 A = vertices.get(indices.x, __LINE__);
-    const float3 B = vertices.get(indices.y, __LINE__);
-    const float3 C = vertices.get(indices.z, __LINE__);
+    GET(Buffer<float3> vertices, Buffer<float3>, LP.vertexLists, meshID);
+    GET(const float3 A, float3, vertices, indices.x);
+    GET(const float3 B, float3, vertices, indices.y);
+    GET(const float3 C, float3, vertices, indices.z);
     position = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
     geometricNormal = normalize(cross(B-A,C-A));
 }
@@ -564,10 +545,10 @@ __device__
 void loadMeshUVData(int meshID, int numTexCoords, int3 indices, float2 barycentrics, float2 &uv)
 {
     auto &LP = optixLaunchParams;
-    auto texCoords = LP.texCoordLists.get(meshID, __LINE__);
-    const float2 &A = texCoords.get(indices.x, __LINE__);
-    const float2 &B = texCoords.get(indices.y, __LINE__);
-    const float2 &C = texCoords.get(indices.z, __LINE__);
+    GET(Buffer<float2> texCoords, Buffer<float2>, LP.texCoordLists, meshID);
+    GET(const float2 A, float2, texCoords, indices.x);
+    GET(const float2 B, float2, texCoords, indices.y);
+    GET(const float2 C, float2, texCoords, indices.z);
     uv = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
 }
 
@@ -575,22 +556,22 @@ __device__
 void loadMeshNormalData(int meshID, int numNormals, int3 indices, float2 barycentrics, float3 &normal)
 {
     auto &LP = optixLaunchParams;
-    auto normals = LP.normalLists.get(meshID, __LINE__);
-    const float3 &A = make_float3(normals.get(indices.x, __LINE__));
-    const float3 &B = make_float3(normals.get(indices.y, __LINE__));
-    const float3 &C = make_float3(normals.get(indices.z, __LINE__));
-    normal = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
+    GET(Buffer<float4> normals, Buffer<float4>, LP.normalLists, meshID);
+    GET(const float4 A, float4, normals, indices.x);
+    GET(const float4 B, float4, normals, indices.y);
+    GET(const float4 C, float4, normals, indices.z);
+    normal = make_float3(A) * (1.f - (barycentrics.x + barycentrics.y)) + make_float3(B) * barycentrics.x + make_float3(C) * barycentrics.y;
 }
 
 __device__
 void loadMeshTangentData(int meshID, int numTangents, int3 indices, float2 barycentrics, float3 &tangent)
 {
     auto &LP = optixLaunchParams;
-    auto tangents = LP.tangentLists.get(meshID, __LINE__);
-    const float3 &A = make_float3(tangents.get(indices.x, __LINE__));
-    const float3 &B = make_float3(tangents.get(indices.y, __LINE__));
-    const float3 &C = make_float3(tangents.get(indices.z, __LINE__));
-    tangent = A * (1.f - (barycentrics.x + barycentrics.y)) + B * barycentrics.x + C * barycentrics.y;
+    GET(Buffer<float4> tangents, Buffer<float4>, LP.tangentLists, meshID);
+    GET(const float4 A, float4, tangents, indices.x);
+    GET(const float4 B, float4, tangents, indices.y);
+    GET(const float4 C, float4, tangents, indices.z);
+    tangent = make_float3(A) * (1.f - (barycentrics.x + barycentrics.y)) + make_float3(B) * barycentrics.x + make_float3(C) * barycentrics.y;
 }
 
 __device__ 
@@ -1208,15 +1189,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Load the object we hit.
         int entityID;
-        if (isVolume) entityID = LP.volumeInstanceToEntity.get(volPayload.instanceID, __LINE__);
-        else entityID = LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
+        if (isVolume) { GET(entityID, int, LP.volumeInstanceToEntity, volPayload.instanceID); }
+        else { GET(entityID, int, LP.surfaceInstanceToEntity, surfPayload.instanceID); }
 
-        EntityStruct entity = LP.entities.get(entityID, __LINE__);
-        TransformStruct transform = LP.transforms.get(entity.transform_id, __LINE__);
+        GET(EntityStruct entity, EntityStruct, LP.entities, entityID);
+        GET(TransformStruct transform, TransformStruct, LP.transforms, entity.transform_id);
         MeshStruct mesh;  
         VolumeStruct volume;  
-        if (!isVolume) mesh = LP.meshes.get(entity.mesh_id, __LINE__);
-        else volume = LP.volumes.get(entity.volume_id, __LINE__);
+        if (!isVolume) { GET(mesh, MeshStruct, LP.meshes, entity.mesh_id); }
+        else { GET(volume, VolumeStruct, LP.volumes, entity.volume_id); }
         
         // Skip forward if the hit object is invisible for this ray type, skip it.
         if (((entity.flags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
@@ -1264,7 +1245,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // Load material data for the hit object
         DisneyMaterial mat; MaterialStruct entityMaterial;
         if (entity.material_id >= 0 && entity.material_id < LP.materials.count) {
-            entityMaterial = LP.materials.get(entity.material_id, __LINE__);
+            GET(entityMaterial, MaterialStruct, LP.materials, entity.material_id);
             loadDisneyMaterial(entityMaterial, uv, mat, MIN_ROUGHNESS);
         }
       
@@ -1373,7 +1354,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             float dotNWi = max(dot(surfRay.direction, v_z), 0.f);
             if ((dotNWi > EPSILON) && (bounce != 0)) break;
 
-            LightStruct entityLight = LP.lights.get(entity.light_id, __LINE__);
+            GET(LightStruct entityLight, LightStruct, LP.lights, entity.light_id);
             float3 lightEmission;
             if (entityLight.color_texture_id == -1) lightEmission = make_float3(entityLight.r, entityLight.g, entityLight.b);
             else lightEmission = sampleTexture(entityLight.color_texture_id, uv, make_float3(0.f, 0.f, 0.f));
@@ -1502,32 +1483,40 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         else 
         {
             if (numLights == 0) continue;
-            sampledLightID = LP.lightEntities.get(randomID, __LINE__);
-            EntityStruct light_entity = LP.entities.get(sampledLightID, __LINE__);
-            LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
-            TransformStruct transform = LP.transforms.get(light_entity.transform_id, __LINE__);
-            MeshStruct mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
+            GET( sampledLightID, int, LP.lightEntities, randomID );
+            GET( EntityStruct light_entity, EntityStruct, LP.entities, sampledLightID );
+            GET( LightStruct light_light, LightStruct, LP.lights, light_entity.light_id );
+            GET( TransformStruct transform, TransformStruct, LP.transforms, light_entity.transform_id );
+            GET( MeshStruct mesh, MeshStruct, LP.meshes, light_entity.mesh_id );
             uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
-            auto indices = LP.indexLists.get(light_entity.mesh_id, __LINE__);
-            auto vertices = LP.vertexLists.get(light_entity.mesh_id, __LINE__);
-            auto normals = LP.normalLists.get(light_entity.mesh_id, __LINE__);
-            auto texCoords = LP.texCoordLists.get(light_entity.mesh_id, __LINE__);
-            int3 triIndex = indices.get(random_tri_id, __LINE__);
+            GET( Buffer<int3> indices, Buffer<int3>, LP.indexLists, light_entity.mesh_id );
+            GET( Buffer<float3> vertices, Buffer<float3>, LP.vertexLists, light_entity.mesh_id );
+            GET( Buffer<float4> normals, Buffer<float4>, LP.normalLists, light_entity.mesh_id );
+            GET( Buffer<float2> texCoords, Buffer<float2>, LP.texCoordLists, light_entity.mesh_id );
+            GET( int3 triIndex, int3, indices, random_tri_id );
             
             // Sample the light to compute an incident light ray to this point
             auto &ltw = transform.localToWorld;
             float3 dir; float2 uv;
             float3 pos = hit_p;
-                // Might be a bug here with normal transform...
-            float3 n1 = make_float3(ltw * normals.get(triIndex.x, __LINE__));
-            float3 n2 = make_float3(ltw * normals.get(triIndex.y, __LINE__));
-            float3 n3 = make_float3(ltw * normals.get(triIndex.z, __LINE__));
-            float3 v1 = make_float3(ltw * make_float4(vertices.get(triIndex.x, __LINE__), 1.0f));
-            float3 v2 = make_float3(ltw * make_float4(vertices.get(triIndex.y, __LINE__), 1.0f));
-            float3 v3 = make_float3(ltw * make_float4(vertices.get(triIndex.z, __LINE__), 1.0f));
-            float2 uv1 = texCoords.get(triIndex.x, __LINE__);
-            float2 uv2 = texCoords.get(triIndex.y, __LINE__);
-            float2 uv3 = texCoords.get(triIndex.z, __LINE__);
+
+            GET(float3 n1, float3, normals, triIndex.x );
+            GET(float3 n2, float3, normals, triIndex.y );
+            GET(float3 n3, float3, normals, triIndex.z );
+            GET(float3 v1, float3, vertices, triIndex.x );
+            GET(float3 v2, float3, vertices, triIndex.y );
+            GET(float3 v3, float3, vertices, triIndex.z );
+            GET(float2 uv1, float2, texCoords, triIndex.x );
+            GET(float2 uv2, float2, texCoords, triIndex.y );
+            GET(float2 uv3, float2, texCoords, triIndex.z );
+
+            // Might be a bug here with normal transform...
+            n1 = make_float3(ltw * make_float4(n1, 0.0f));
+            n2 = make_float3(ltw * make_float4(n2, 0.0f));
+            n3 = make_float3(ltw * make_float4(n3, 0.0f));
+            v1 = make_float3(ltw * make_float4(v1, 1.0f));
+            v2 = make_float3(ltw * make_float4(v2, 1.0f));
+            v3 = make_float3(ltw * make_float4(v3, 1.0f));
             sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
                 lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDF, uv, 
                 /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
@@ -1566,7 +1555,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 visible = (surfPayload.instanceID == -2) && (volPayload.instanceID == -2);
             } else {
                 // If we sampled a light source, then check to see if we hit something other than the light
-                int surfEntity = (surfPayload.instanceID == -2) ? -1 : LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
+                int surfEntity;
+                if (surfPayload.instanceID == -2) surfEntity = -1;
+                else { GET(surfEntity, int, LP.surfaceInstanceToEntity, surfPayload.instanceID); }
                 visible = (volPayload.instanceID == -2) && (surfPayload.instanceID == -2 || surfEntity == sampledLightID);
             }
             if (visible) {
@@ -1622,14 +1613,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // else if by sampling the brdf we also hit an area light
             // TODO: consider hitting emissive voxels?
             else if (surfPayload.instanceID != -1 && volPayload.instanceID == -1) {
-                int entityID = LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
+                GET(int entityID, int, LP.surfaceInstanceToEntity, surfPayload.instanceID);
                 bool visible = (entityID == sampledLightID);
                 // We hit the light we sampled previously
                 if (visible) {
                     int3 indices; float3 p; float3 lv_gz; float2 uv;
-                    EntityStruct light_entity = LP.entities.get(sampledLightID, __LINE__);
-                    MeshStruct light_mesh = LP.meshes.get(light_entity.mesh_id, __LINE__);
-                    LightStruct light_light = LP.lights.get(light_entity.light_id, __LINE__);
+                    GET(EntityStruct light_entity, EntityStruct, LP.entities, sampledLightID);
+                    GET(MeshStruct light_mesh, MeshStruct, LP.meshes, light_entity.mesh_id);
+                    GET(LightStruct light_light, LightStruct, LP.lights, light_entity.light_id);
                     loadMeshTriIndices(light_entity.mesh_id, light_mesh.numTris, surfPayload.primitiveID, indices);
                     loadMeshUVData(light_entity.mesh_id, light_mesh.numVerts, indices, surfPayload.barycentrics, uv);
 

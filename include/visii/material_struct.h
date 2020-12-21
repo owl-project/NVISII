@@ -7,25 +7,7 @@
 using namespace glm;
 
 /* Follows the disney BSDF */
-struct MaterialStruct {
-    // vec4 base_color = vec4(0.f); // 16 // Note: also contains alpha
-    // vec4 subsurface_radius = vec4(0.f); // 32
-    // vec4 subsurface_color = vec4(0.f); //48
-    // float subsurface = 0.f; // 52
-    // float metallic = 0.f; // 56
-    // float specular = 0.f; // 60
-    // float specular_tint = 0.f; // 64
-    // float roughness = 0.f; // 68
-    // float anisotropic = 0.f; // 72
-    // float anisotropic_rotation = 0.f; // 76
-    // float sheen = 0.f; // 80
-    // float sheen_tint = 0.f; // 84
-    // float clearcoat = 0.f; // 88
-    // float clearcoat_roughness = 0.f; // 92
-    // float ior = 0.f; // 96
-    // float transmission = 0.f; // 100
-    // float transmission_roughness = 0.f; // 104
-    
+struct MaterialStruct {    
     int32_t transmission_roughness_texture_id = -1; // 112
     int32_t base_color_texture_id = -1; // 120
     int32_t roughness_texture_id = -1; // 124
