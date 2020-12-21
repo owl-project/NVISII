@@ -216,6 +216,46 @@ Volume *Volume::createOctahedron(std::string name)
 	}
 }
 
+Volume *Volume::createFromData(
+    std::string name, 
+    uint32_t width, 
+    uint32_t height, 
+    uint32_t depth, 
+    const float* data, 
+    uint32_t length,
+    float background
+)
+{
+    if (length != (width * height * depth)) { throw std::runtime_error("Error: width * height * depth does not equal length of data!"); }
+    if (width == 0) { throw std::runtime_error("Error: width must be greater than 0!"); }
+    if (height == 0) { throw std::runtime_error("Error: height must be greater than 0!"); }
+    if (depth == 0) { throw std::runtime_error("Error: depth must be greater than 0!"); }
+
+    auto create = [width, height, depth, data, background] (Volume* v) {
+        nanovdb::GridBuilder<float> builder(background);
+        auto acc = builder.getAccessor();
+
+        for (uint32_t z = 0; z < depth; ++z) {
+            for (uint32_t y = 0; y < height; ++y) {
+                for (uint32_t x = 0; x < width; ++x) {
+                    acc.setValue(nanovdb::Coord(x + 1, y + 1, z + 1), data[x + y * width + z * width * height]);
+                }
+            }
+        }
+
+        nanovdb::GridHandle<> gridHdl = builder.getHandle<>();
+        v->gridHdlPtr = std::make_shared<nanovdb::GridHandle<>>(std::move(gridHdl));
+        v->markDirty();
+    };
+
+    try {
+        return StaticFactory::create<Volume>(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size(), create);
+    } catch (...) {
+		StaticFactory::removeIfExists(editMutex, name, "Volume", lookupTable, volumes.data(), volumes.size());
+		throw;
+	}
+}
+
 std::shared_ptr<std::recursive_mutex> Volume::getEditMutex()
 {
 	return editMutex;

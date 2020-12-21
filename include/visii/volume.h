@@ -87,6 +87,26 @@ class Volume : public StaticFactory
 	 */
 	static Volume *createOctahedron(std::string name);
 
+	/**
+	 * Constructs a Volume with the given name from custom user data. 
+	 * @param name The name of the volume to create.
+	 * @param width The width of the volume.
+	 * @param height The height of the volume.
+	 * @param depth The depth of the volume.
+	 * @param data A row major flattened vector of single-scalar voxels. 
+	 * The length of this vector should be width * height * depth.
+	 * @param background If a voxel matches this value, that voxel is considered
+	 * as "empty". This is used to "sparcify" the volume and save memory.
+	 */
+	static Volume *createFromData(
+		std::string name, 
+		uint32_t width, 
+		uint32_t height, 
+		uint32_t depth, 
+		const float* data, 
+		uint32_t length,
+		float background);
+
     /**
      * @param name The name of the Volume to get
 	 * @returns a Volume who's name matches the given name 

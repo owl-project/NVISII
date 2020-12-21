@@ -1576,7 +1576,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 } else {
                     // If we sampled a light source, then check to see if we hit something other than the light
                     int surfEntity = (surfPayload.instanceID == -2) ? -1 : LP.surfaceInstanceToEntity.get(surfPayload.instanceID, __LINE__);
-                    visible = (volPayload.instanceID == -2) && (surfPayload.instanceID != -2 || surfEntity == sampledLightIDs[lid]);
+                    visible = (volPayload.instanceID == -2) && (surfPayload.instanceID == -2 || surfEntity == sampledLightIDs[lid]);
                 }
                 if (visible) {
                     if (randomID != numLights) lightEmission = lightEmission / pow(surfPayload.tHit, falloff);
