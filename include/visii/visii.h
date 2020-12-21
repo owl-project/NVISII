@@ -195,9 +195,9 @@ void setDirectLightingClamp(float clamp);
  * 
  * @param diffuse_depth The maximum number of diffuse bounces allowed per ray.
  * @param specular_depth The maximum number of specular (reflection/refraction) bounces allowed per ray.
- * @param specular_depth The maximum number of specular (reflection/refraction) bounces allowed per ray.
+ * @param volume_depth The maximum number of volume bounces allowed per ray.
  */ 
-void setMaxBounceDepth(uint32_t diffuse_depth = 2, uint32_t specular_depth = 8);
+void setMaxBounceDepth(uint32_t diffuse_depth = 2, uint32_t specular_depth = 8, uint32_t volume_depth = 2);
 
 /**
  * Sets the number of light samples to take per path vertex. A higher number of samples will reduce noise per frame, but

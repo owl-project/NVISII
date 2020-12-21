@@ -36,6 +36,7 @@ struct LaunchParams {
     float indirectClamp = 100.f; 
     uint32_t maxSpecularBounceDepth = 8;
     uint32_t maxDiffuseBounceDepth = 2;
+    uint32_t maxVolumeBounceDepth = 2;
     uint32_t numLightSamples = 1;
     uint32_t seed = 0;
     vec2 xPixelSamplingInterval = vec2(0.f,1.f);

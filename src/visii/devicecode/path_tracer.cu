@@ -321,7 +321,6 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
         if (event == 3) {
             // update boundary in relation to the new collision x, w does not change.
             d = d - t;
-            printf("NULL COLLISION!\n");
         }
     }
 
@@ -1130,6 +1129,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     uint8_t bounce = 0;
     uint8_t diffuseBounce = 0;
     uint8_t specularBounce = 0;
+    uint8_t volumeBounce = 0;
     uint8_t visibilitySkips = 0;
 
     // direct here is used for final image clamping
@@ -1667,9 +1667,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // if the bounce count is less than the max bounce count, potentially add on radiance from the next hit location.
         ++bounce;     
-        if (sampledBsdf == 0) diffuseBounce++;
+        if (!useBRDF) volumeBounce++;
+        else if (sampledBsdf == 0) diffuseBounce++;
         else specularBounce++;
-    } while (diffuseBounce < LP.maxDiffuseBounceDepth && specularBounce < LP.maxSpecularBounceDepth);   
+    } while (diffuseBounce < LP.maxDiffuseBounceDepth && specularBounce < LP.maxSpecularBounceDepth && volumeBounce < LP.maxVolumeBounceDepth);   
 
     // For segmentations, save heatmap metadata
     saveHeatmapRenderData(renderData, bounce, start_clock);
