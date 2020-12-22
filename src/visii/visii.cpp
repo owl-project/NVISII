@@ -2453,7 +2453,7 @@ void initializeInteractive(
         owlContextDestroy(OptixData.context);
     };
 
-    renderThread = thread(loop);
+    renderThread = std::thread(loop);
 
     // Waits for the render thread to start before returning
     enqueueCommandAndWait([] () {});
@@ -2508,7 +2508,7 @@ void initializeHeadless(
         owlContextDestroy(OptixData.context);
     };
 
-    renderThread = thread(loop);
+    renderThread = std::thread(loop);
 
     // Waits for the render thread to start before returning
     enqueueCommandAndWait([] () {});

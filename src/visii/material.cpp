@@ -1,6 +1,8 @@
 #include <visii/material.h>
 #include <visii/texture.h>
 
+namespace visii {
+
 std::vector<Material> Material::materials;
 std::vector<MaterialStruct> Material::materialStructs;
 std::map<std::string, uint32_t> Material::lookupTable;
@@ -877,3 +879,5 @@ void Material::clearNormalMapTexture()
 // 		this->material_struct.flags &= ~(1 << MaterialFlags::MATERIAL_FLAGS_HIDDEN);
 // 	}
 // }
+
+};

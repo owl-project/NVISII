@@ -123,14 +123,14 @@ namespace std {
   %template(Float4Vector) vector<array<float, 4>>;
   %template(UINT32Vector) vector<uint32_t>;
   %template(StringVector) vector<string>;
-  %template(EntityVector) vector<Entity*>;
-  %template(TransformVector) vector<Transform*>;
-  %template(MeshVector) vector<Mesh*>;
-  %template(CameraVector) vector<Camera*>;
-  %template(TextureVector) vector<Texture*>;
-  %template(LightVector) vector<Light*>;
-  %template(MaterialVector) vector<Material*>;
-  %template(VolumeVector) vector<Volume*>;
+  %template(EntityVector) vector<visii::Entity*>;
+  %template(TransformVector) vector<visii::Transform*>;
+  %template(MeshVector) vector<visii::Mesh*>;
+  %template(CameraVector) vector<visii::Camera*>;
+  %template(TextureVector) vector<visii::Texture*>;
+  %template(LightVector) vector<visii::Light*>;
+  %template(MaterialVector) vector<visii::Material*>;
+  %template(VolumeVector) vector<visii::Volume*>;
 }
 
 /* STD Maps */
@@ -140,64 +140,64 @@ namespace std {
 }
 
 /* -------- Ignores --------------*/
-%ignore Entity::Entity();
-%ignore Entity::Entity(std::string name, uint32_t id);
-%ignore Entity::initializeFactory();
-%ignore Entity::getFront();
-%ignore Entity::getFrontStruct();
-%ignore Entity::isFactoryInitialized();
-%ignore Entity::updateComponents();
-%ignore Entity::getStruct();
-%ignore Entity::getEditMutex();
-%ignore Entity::isDirty();
-%ignore Entity::isClean();
-%ignore Entity::markDirty();
-%ignore Entity::markClean();
+%ignore visii::Entity::Entity();
+%ignore visii::Entity::Entity(std::string name, uint32_t id);
+%ignore visii::Entity::initializeFactory();
+%ignore visii::Entity::getFront();
+%ignore visii::Entity::getFrontStruct();
+%ignore visii::Entity::isFactoryInitialized();
+%ignore visii::Entity::updateComponents();
+%ignore visii::Entity::getStruct();
+%ignore visii::Entity::getEditMutex();
+%ignore visii::Entity::isDirty();
+%ignore visii::Entity::isClean();
+%ignore visii::Entity::markDirty();
+%ignore visii::Entity::markClean();
 
-%ignore Transform::Transform();
-%ignore Transform::Transform(std::string name, uint32_t id);
-%ignore Transform::initializeFactory();
-%ignore Transform::getFront();
-%ignore Transform::getFrontStruct();
-%ignore Transform::isFactoryInitialized();
-%ignore Transform::updateComponents();
-%ignore Transform::getStruct();
-%ignore Transform::getEditMutex();
-%ignore Transform::isDirty();
-%ignore Transform::isClean();
-%ignore Transform::markDirty();
-%ignore Transform::markClean();
+%ignore visii::Transform::Transform();
+%ignore visii::Transform::Transform(std::string name, uint32_t id);
+%ignore visii::Transform::initializeFactory();
+%ignore visii::Transform::getFront();
+%ignore visii::Transform::getFrontStruct();
+%ignore visii::Transform::isFactoryInitialized();
+%ignore visii::Transform::updateComponents();
+%ignore visii::Transform::getStruct();
+%ignore visii::Transform::getEditMutex();
+%ignore visii::Transform::isDirty();
+%ignore visii::Transform::isClean();
+%ignore visii::Transform::markDirty();
+%ignore visii::Transform::markClean();
 
-%ignore Material::Material();
-%ignore Material::Material(std::string name, uint32_t id);
-%ignore Material::initializeFactory();
-%ignore Material::getFront();
-%ignore Material::getFrontStruct();
-%ignore Material::isFactoryInitialized();
-%ignore Material::updateComponents();
-%ignore Material::getStruct();
-%ignore Material::getEditMutex();
-%ignore Material::isDirty();
-%ignore Material::isClean();
-%ignore Material::markDirty();
-%ignore Material::markClean();
+%ignore visii::Material::Material();
+%ignore visii::Material::Material(std::string name, uint32_t id);
+%ignore visii::Material::initializeFactory();
+%ignore visii::Material::getFront();
+%ignore visii::Material::getFrontStruct();
+%ignore visii::Material::isFactoryInitialized();
+%ignore visii::Material::updateComponents();
+%ignore visii::Material::getStruct();
+%ignore visii::Material::getEditMutex();
+%ignore visii::Material::isDirty();
+%ignore visii::Material::isClean();
+%ignore visii::Material::markDirty();
+%ignore visii::Material::markClean();
 
-%ignore Camera::Camera();
-%ignore Camera::Camera(std::string name, uint32_t id);
+%ignore visii::Camera::Camera();
+%ignore visii::Camera::Camera(std::string name, uint32_t id);
 
-%ignore Mesh::Mesh();
-%ignore Mesh::Mesh(std::string name, uint32_t id);
+%ignore visii::Mesh::Mesh();
+%ignore visii::Mesh::Mesh(std::string name, uint32_t id);
 
-%ignore Light::Light();
-%ignore Light::Light(std::string name, uint32_t id);
+%ignore visii::Light::Light();
+%ignore visii::Light::Light(std::string name, uint32_t id);
 
-%ignore Texture::Texture();
-%ignore Texture::Texture(std::string name, uint32_t id);
-%ignore Texture::~Texture();
+%ignore visii::Texture::Texture();
+%ignore visii::Texture::Texture(std::string name, uint32_t id);
+%ignore visii::Texture::~Texture();
 
-%ignore Volume::Volume();
-%ignore Volume::Volume(std::string name, uint32_t id);
-%ignore Volume::~Volume();
+%ignore visii::Volume::Volume();
+%ignore visii::Volume::Volume(std::string name, uint32_t id);
+%ignore visii::Volume::~Volume();
 
 /* -------- Renames --------------*/
 %rename("%(undercase)s",%$isfunction) "";

@@ -13,6 +13,9 @@
 #include <gli/core/s3tc.hpp>
 
 #include <glm/gtc/color_space.hpp>
+
+namespace visii {
+
 std::vector<Texture> Texture::textures;
 std::vector<TextureStruct> Texture::textureStructs;
 std::map<std::string, uint32_t> Texture::lookupTable;
@@ -673,3 +676,5 @@ std::map<std::string, uint32_t> Texture::getNameToIdMap()
 {
 	return lookupTable;
 }
+
+};

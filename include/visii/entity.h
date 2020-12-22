@@ -3,6 +3,8 @@
 #include <visii/utilities/static_factory.h>
 #include <visii/entity_struct.h>
 
+namespace visii {
+
 class Camera;
 class Light;
 class Transform;
@@ -230,4 +232,6 @@ public:
 
 	/** For internal use. */
 	void updateRenderables();
+};
+
 };

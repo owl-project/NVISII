@@ -6,6 +6,8 @@
 #include <visii/utilities/static_factory.h>
 #include <visii/texture_struct.h>
 
+namespace visii {
+
 /**
  * The "Texture" component describes a 2D pattern used to drive the "Material" component's parameters.
 */
@@ -227,4 +229,6 @@ class Texture : public StaticFactory
     std::vector<vec4> floatTexels;
     std::vector<u8vec4> byteTexels;
 	bool linear = false;
+};
+
 };

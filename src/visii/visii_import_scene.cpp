@@ -191,7 +191,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         Texture* texture = nullptr;
         try {
             texture = (Texture::get(textureName) != nullptr) ? Texture::get(textureName) : Texture::createFromFile(textureName, tex.path);
-        } catch (exception& e) {
+        } catch (std::exception& e) {
             if (verbose) std::cout<<"Warning: unable to load texture " << textureName <<  " : " << std::string(e.what()) <<std::endl;
         }
         visiiScene.textures.push_back(texture);
@@ -357,7 +357,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 indices
             );
         }
-        catch (exception& e) {
+        catch (std::exception& e) {
             if (verbose) std::cout<<"Warning: unable to load mesh " << meshName <<  " : " << std::string(e.what()) <<std::endl;
             continue;
         }

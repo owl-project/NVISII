@@ -11,6 +11,8 @@
 #include <nanovdb/util/IO.h>
 #include <nanovdb/util/GridValidator.h>
 
+namespace visii {
+
 /**
  * The "Volume" component is essentially the dual of a mesh component. 
  * As a result, entities can have a mesh component or a volume component attached,
@@ -256,4 +258,6 @@ class Volume : public StaticFactory
 
     /** Private volume data here... */
 	std::shared_ptr<nanovdb::GridHandle<>> gridHdlPtr;
+};
+
 };

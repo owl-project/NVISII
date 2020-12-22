@@ -7,6 +7,8 @@
 #include <visii/volume.h>
 #include <visii/visii.h>
 
+namespace visii {
+
 std::vector<Entity> Entity::entities;
 std::vector<EntityStruct> Entity::entityStructs;
 std::map<std::string, uint32_t> Entity::lookupTable;
@@ -461,3 +463,5 @@ std::map<std::string, uint32_t> Entity::getNameToIdMap()
 {
 	return lookupTable;
 }
+
+};

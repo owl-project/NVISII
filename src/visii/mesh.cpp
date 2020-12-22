@@ -24,6 +24,8 @@
 
 #include <generator/generator.hpp>
 
+namespace visii {
+
 std::vector<Mesh> Mesh::meshes;
 std::vector<MeshStruct> Mesh::meshStructs;
 std::map<std::string, uint32_t> Mesh::lookupTable;
@@ -1406,3 +1408,5 @@ std::map<std::string, uint32_t> Mesh::getNameToIdMap()
 {
 	return lookupTable;
 }
+
+};

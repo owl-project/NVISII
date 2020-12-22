@@ -11,6 +11,7 @@
 #include <map>
 #include <mutex>
 #include <array>
+#include <string>
 
 /* External includes */
 #include <glm/glm.hpp>
@@ -20,6 +21,8 @@
 #include <visii/utilities/static_factory.h>
 #include <visii/mesh_struct.h>
 #include <visii/utilities/hash_combiner.h>
+
+namespace visii {
 
 /* Forward declarations */
 class Vertex
@@ -41,12 +44,15 @@ class Vertex
 	}
 };
 
+};
+
+
 namespace std
 {
 template <>
-struct hash<Vertex>
+struct hash<visii::Vertex>
 {
-	size_t operator()(const Vertex &k) const
+	size_t operator()(const visii::Vertex &k) const
 	{
 		std::size_t h = 0;
 		hash_combine(h, k.point.x, k.point.y, k.point.z,
@@ -58,6 +64,8 @@ struct hash<Vertex>
 	}
 };
 } // namespace std
+
+namespace visii {
 
 /* Class declaration */
 class Mesh : public StaticFactory
@@ -1079,4 +1087,6 @@ class Mesh : public StaticFactory
             generateSmoothTangents();
             computeMetadata();
         }
+};
+
 };

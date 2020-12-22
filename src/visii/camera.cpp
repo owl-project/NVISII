@@ -1,6 +1,8 @@
 #include <visii/camera.h>
 #include <glm/gtx/matrix_transform_2d.hpp>
 
+namespace visii {
+
 std::vector<Camera> Camera::cameras;
 std::vector<CameraStruct> Camera::cameraStructs;
 std::map<std::string, uint32_t> Camera::lookupTable;
@@ -581,3 +583,5 @@ void Camera::setIntrinsics(float fx, float fy, float cx, float cy, float width, 
 // 	render_ready = false;
 // 	lk.unlock();
 // }
+
+};

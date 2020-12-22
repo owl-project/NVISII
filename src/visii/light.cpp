@@ -1,6 +1,8 @@
 #include <visii/light.h>
 #include <visii/texture.h>
 
+namespace visii {
+
 std::vector<Light> Light::lights;
 std::vector<LightStruct> Light::lightStructs;
 std::map<std::string, uint32_t> Light::lookupTable;
@@ -263,3 +265,5 @@ std::map<std::string, uint32_t> Light::getNameToIdMap()
 {
 	return lookupTable;
 }
+
+};

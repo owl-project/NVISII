@@ -6,6 +6,8 @@
 #include <visii/utilities/static_factory.h>
 #include <visii/camera_struct.h>
 
+namespace visii {
+
 /**
  * The "Camera" component describes the perspective of an entity.
  * It lens properties, like depth of field, focal length, field of view, and so on.
@@ -250,4 +252,6 @@ private:
 
 		/** For internal use. Returns the mutex used to lock cameras for processing by the renderer. */
 		static std::shared_ptr<std::recursive_mutex> getEditMutex();
+};
+
 };

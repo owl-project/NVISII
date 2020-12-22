@@ -8,6 +8,8 @@
 #include <nanovdb/util/GridChecksum.h>
 #include <nanovdb/util/Primitives.h>
 
+namespace visii {
+
 std::vector<Volume> Volume::volumes;
 std::vector<VolumeStruct> Volume::volumeStructs;
 std::map<std::string, uint32_t> Volume::lookupTable;
@@ -485,3 +487,5 @@ void Volume::setGradientFactor(float factor)
     this->volumeStructs[id].gradient_factor = factor;
     markDirty();
 }
+
+};

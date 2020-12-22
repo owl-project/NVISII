@@ -4,6 +4,8 @@
 #include <visii/utilities/static_factory.h>
 #include <visii/light_struct.h>
 
+namespace visii {
+
 class Texture;
 
 /**
@@ -227,4 +229,6 @@ private:
 
     /* Indicates this component has been edited */
     bool dirty = true;
+};
+
 };

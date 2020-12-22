@@ -2,6 +2,8 @@
 #include <visii/entity.h>
 #include <glm/gtx/matrix_decompose.hpp>
 
+namespace visii {
+
 std::vector<Transform> Transform::transforms;
 std::vector<TransformStruct> Transform::transformStructs;
 std::map<std::string, uint32_t> Transform::lookupTable;
@@ -964,3 +966,5 @@ TransformStruct &Transform::getStruct()
 {
 	return transformStructs[id];
 }
+
+};

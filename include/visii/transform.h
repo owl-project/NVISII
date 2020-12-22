@@ -21,7 +21,7 @@
 #include <visii/utilities/static_factory.h>
 #include <visii/transform_struct.h>
 
-using namespace std;
+namespace visii {
 
 /**
  * The "Transform" component places an entity into the scene.
@@ -729,4 +729,6 @@ class Transform : public StaticFactory
 
     /** @returns a struct with only essential data */
     TransformStruct &getStruct();
+};
+
 };

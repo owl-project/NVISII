@@ -21,6 +21,8 @@
 #include <visii/utilities/static_factory.h>
 #include <visii/material_struct.h>
 
+namespace visii {
+
 class Texture;
 
 // enum MaterialFlags : uint32_t { 
@@ -681,4 +683,6 @@ class Material : public StaticFactory
     float ior = 0.f;
     float transmission = 0.f;
     float transmission_roughness = 0.f;
+};
+
 };
