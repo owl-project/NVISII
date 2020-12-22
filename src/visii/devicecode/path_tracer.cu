@@ -202,7 +202,7 @@ void SampleDeltaTracking(
     }
     
     // Update current position
-    x = x - t * w;
+    x = x + t * w;
     auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
     float densityValue = acc.getValue(coord_pos);
 
@@ -271,12 +271,12 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
     glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
     glm::mat4 worldToLocal = glm::inverse(localToWorld);
     vec3 x = vec3(worldToLocal * make_vec4(optixGetWorldRayOrigin(), 1.f));
-    vec3 w = normalize(vec3(worldToLocal * -make_vec4(optixGetWorldRayDirection(), 0.f)));
+    vec3 w = normalize(vec3(worldToLocal * make_vec4(optixGetWorldRayDirection(), 0.f)));
 
     // Compute boundary distance
     auto wRay = nanovdb::Ray<float>(
         reinterpret_cast<const nanovdb::Vec3f&>( x ),
-        reinterpret_cast<const nanovdb::Vec3f&>( -w )
+        reinterpret_cast<const nanovdb::Vec3f&>( w )
     );
     if (!wRay.clip(bbox)) {
         prd.tHit = -1.f;
@@ -298,7 +298,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
     for (int dti = 0; dti < MAX_NULL_COLLISIONS; ++dti) {
         SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, 
             absorption, scattering, x, w, d, t, event);
-        x = x - t * w;
+        x = x + t * w;
 
         // The boundary was hit
         if (event == 0) {
@@ -329,7 +329,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
         prd.instanceID = optixGetInstanceIndex();
         prd.primitiveID = optixGetPrimitiveIndex();
 
-        vec3 tmpDir = -w * t;
+        vec3 tmpDir = w * t;
         tmpDir = vec3(localToWorld * vec4(w, 0.f));
         prd.tHit = length(tmpDir);
 
@@ -395,12 +395,12 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
     glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
     glm::mat4 worldToLocal = glm::inverse(localToWorld);
     vec3 x = vec3(worldToLocal * make_vec4(optixGetWorldRayOrigin(), 1.f));
-    vec3 w = normalize(vec3(worldToLocal * -make_vec4(optixGetWorldRayDirection(), 0.f)));
+    vec3 w = normalize(vec3(worldToLocal * make_vec4(optixGetWorldRayDirection(), 0.f)));
 
     // Compute boundary distance
     auto wRay = nanovdb::Ray<float>(
         reinterpret_cast<const nanovdb::Vec3f&>( x ),
-        reinterpret_cast<const nanovdb::Vec3f&>( -w )
+        reinterpret_cast<const nanovdb::Vec3f&>( w )
     );
     if (!wRay.clip(bbox)) {
         return;
@@ -421,7 +421,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
     for (int dti = 0; dti < MAX_NULL_COLLISIONS; ++dti) {
         SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, 
             absorption, scattering, x, w, d, t, event);
-        x = x - t * w;
+        x = x + t * w;
 
         // The boundary was hit
         if (event == 0) {
@@ -450,7 +450,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
     if (hitVolume) {
         prd.instanceID = optixGetInstanceIndex();
         prd.eventID = event;
-        vec3 tmpDir = -w * t;
+        vec3 tmpDir = w * t;
         tmpDir = vec3(localToWorld * vec4(w, 0.f));
         prd.tHit = length(tmpDir);
     }
