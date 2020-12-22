@@ -108,6 +108,7 @@ import_array();
 #include "visii/transform.h"
 #include "visii/material.h"
 #include "visii/mesh.h"
+using namespace visii;
 %}
 
 /* STD Vectors */

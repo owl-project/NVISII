@@ -5,6 +5,8 @@
 
 #include <set>
 
+namespace visii {
+
 struct TextureInfo {
     std::string path = "";
     bool is_bump = false;
@@ -456,4 +458,6 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
     if (updatesEnabled) enableUpdates();
     if (verbose) std::cout<<"Done!"<<std::endl;
     return visiiScene;
+}
+
 }

@@ -350,7 +350,7 @@ void Entity::computeAabb()
 		entityStructs[id].bbmax = vec4(bbmax, 1.f);
 	}
 
-	updateSceneAabb(this);
+	visii::updateSceneAabb(this);
 }
 
 void Entity::updateRenderables() 

@@ -8,6 +8,8 @@
 #include <visii/texture.h>
 #include <visii/volume.h>
 
+namespace visii {
+
 /**
   * Deprecated. Please use initialize() instead.
 */
@@ -440,3 +442,5 @@ bool shouldWindowClose();
 
 // This is for internal testing purposes. Don't call this unless you know what you're doing.
 void __test__(std::vector<std::string> args);
+
+};

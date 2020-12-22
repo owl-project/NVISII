@@ -58,6 +58,8 @@
 // #include <thrust/device_vector.h>
 // #include <thrust/device_ptr.h>
 
+namespace visii {
+
 // extern optixDenoiserSetModel;
 std::promise<void> exitSignal;
 std::thread renderThread;
@@ -2782,3 +2784,5 @@ void __test__(std::vector<std::string> args) {
 
     resetAccumulation();
 }
+
+};
