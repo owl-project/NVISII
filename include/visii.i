@@ -277,6 +277,8 @@ namespace std {
 %include "visii/material.h"
 %include "visii/mesh.h"
 
+using namespace visii;
+
 // void registerPreRenderCallback(std::function<void()> callback);
 // %feature("director") CallBack;
 
