@@ -26,6 +26,10 @@ struct RayPayload {
     float2 barycentrics;
     
     // for volumes
+    float3 objectSpaceRayOrigin;
+    float3 objectSpaceRayDirection;
+    float t0;
+    float t1;
     int eventID = -1;
     float3 gradient;
     float3 mp;
@@ -186,7 +190,8 @@ void SampleDeltaTracking(
     vec3 w, 
     float d, 
     float &t, 
-    int &event
+    int &event,
+    bool debug = false
 ) {
     float rand1 = lcg_randomf(rng);
     float rand2 = lcg_randomf(rng);
@@ -239,6 +244,21 @@ void SampleDeltaTracking(
     }
 }
 
+// bool debug = (prd.primitiveID == -2);
+// if (debug) {
+//     if (!  ((mn[0] < x[0]) && (x[0] < mx[0]) && 
+//             (mn[1] < x[1]) && (x[1] < mx[1]) && 
+//             (mn[2] < x[2]) && (x[2] < mx[2]))
+//     ) {
+//         printf("X");
+//     } else {
+//         printf("O");
+//     }
+// }
+// if (debug) {
+//     printf("\n");
+// }
+
 OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
 {   
     auto &LP = optixLaunchParams;
@@ -270,25 +290,16 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
 
     glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
     glm::mat4 worldToLocal = glm::inverse(localToWorld);
-    vec3 x = vec3(worldToLocal * make_vec4(optixGetWorldRayOrigin(), 1.f));
-    vec3 w = normalize(vec3(worldToLocal * make_vec4(optixGetWorldRayDirection(), 0.f)));
+    vec3 x = make_vec3(prd.objectSpaceRayOrigin) + offset;
+    vec3 w = make_vec3(prd.objectSpaceRayDirection);
 
-    // Compute boundary distance
-    auto wRay = nanovdb::Ray<float>(
-        reinterpret_cast<const nanovdb::Vec3f&>( x ),
-        reinterpret_cast<const nanovdb::Vec3f&>( w )
-    );
-    if (!wRay.clip(bbox)) {
-        prd.tHit = -1.f;
-        return;
-    }
+    linear_attenuation_unit /= length(w); // might need to be * instead of / ?
 
-    float d = wRay.t1();
-    if (optixGetRayTmax() > 0.f) {
-        glm::vec3 tmpDir = make_vec3(optixGetWorldRayDirection()) * optixGetRayTmax();
-        tmpDir = vec3(worldToLocal * vec4(tmpDir, 0.f));
-        d = min(d, length(tmpDir));
-    }
+    // Move ray to volume boundary
+    float t0 = prd.t0, t1 = prd.t1;
+    x = x + t0 * w;
+    t1 = t1 - t0;
+    t0 = 0.f;
 
     // Sample the free path distance to see if our ray makes it to the boundary
     float t;
@@ -297,7 +308,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
     #define MAX_NULL_COLLISIONS 10000
     for (int dti = 0; dti < MAX_NULL_COLLISIONS; ++dti) {
         SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, 
-            absorption, scattering, x, w, d, t, event);
+            absorption, scattering, x, w, t1, t, event);
         x = x + t * w;
 
         // The boundary was hit
@@ -320,18 +331,17 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
         // A null collision occurred.
         if (event == 3) {
             // update boundary in relation to the new collision x, w does not change.
-            d = d - t;
+            t1 = t1 - t;
         }
     }
 
-    if (!hitVolume) prd.tHit = -1.f;
+    if (!hitVolume) {
+        prd.tHit = -1.f;
+    }
     else {
         prd.instanceID = optixGetInstanceIndex();
-        prd.primitiveID = optixGetPrimitiveIndex();
-
-        vec3 tmpDir = w * t;
-        tmpDir = vec3(localToWorld * vec4(w, 0.f));
-        prd.tHit = length(tmpDir);
+        prd.eventID = event;
+        prd.tHit = t;
 
         auto sampler = nanovdb::SampleFromVoxels<nanovdb::DefaultReadAccessor<float>, /*Interpolation Degree*/1, /*UseCache*/false>(acc);
         auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
@@ -341,7 +351,6 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
         prd.mp = make_float3(x - offset); // not super confident about this offset...
         prd.gradient = make_float3(g[0], g[1], g[2]);// TEMPORARY FOR BUNNY
         prd.density = densityValue;
-        prd.eventID = event;
         optixGetObjectToWorldTransformMatrix(prd.localToWorld);
     
         // If we don't need motion vectors, (or in the future if an object 
@@ -394,24 +403,16 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
 
     glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
     glm::mat4 worldToLocal = glm::inverse(localToWorld);
-    vec3 x = vec3(worldToLocal * make_vec4(optixGetWorldRayOrigin(), 1.f));
-    vec3 w = normalize(vec3(worldToLocal * make_vec4(optixGetWorldRayDirection(), 0.f)));
+    vec3 x = make_vec3(prd.objectSpaceRayOrigin) + offset;
+    vec3 w = make_vec3(prd.objectSpaceRayDirection);
 
-    // Compute boundary distance
-    auto wRay = nanovdb::Ray<float>(
-        reinterpret_cast<const nanovdb::Vec3f&>( x ),
-        reinterpret_cast<const nanovdb::Vec3f&>( w )
-    );
-    if (!wRay.clip(bbox)) {
-        return;
-    }
+    linear_attenuation_unit /= length(w); // might need to be * instead of / ?
 
-    float d = wRay.t1();
-    if (optixGetRayTmax() > 0.f) {
-        glm::vec3 tmpDir = make_vec3(optixGetWorldRayDirection()) * optixGetRayTmax();
-        tmpDir = vec3(worldToLocal * vec4(tmpDir, 0.f));
-        d = min(d, length(tmpDir));
-    }
+    // Move ray to volume boundary
+    float t0 = prd.t0, t1 = prd.t1;
+    x = x + t0 * w;
+    t1 = t1 - t0;
+    t0 = 0.f;
 
     // Sample the free path distance to see if our ray makes it to the boundary
     float t;
@@ -420,7 +421,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
     #define MAX_NULL_COLLISIONS 10000
     for (int dti = 0; dti < MAX_NULL_COLLISIONS; ++dti) {
         SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, 
-            absorption, scattering, x, w, d, t, event);
+            absorption, scattering, x, w, t1, t, event);
         x = x + t * w;
 
         // The boundary was hit
@@ -443,25 +444,70 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
         // A null collision occurred.
         if (event == 3) {
             // update boundary in relation to the new collision x, w does not change.
-            d = d - t;
+            t1 = t1 - t;
         }
     }
 
-    if (hitVolume) {
+    if (!hitVolume) {
+        prd.tHit = -1.f;
+    }
+    else {
         prd.instanceID = optixGetInstanceIndex();
         prd.eventID = event;
-        vec3 tmpDir = w * t;
-        tmpDir = vec3(localToWorld * vec4(w, 0.f));
-        prd.tHit = length(tmpDir);
+        prd.tHit = t;
     }
 }
 
 OPTIX_INTERSECT_PROGRAM(VolumeIntersection)()
 {
-    float tmax      = optixGetRayTmax();
-    // Note, tmax here is unmodified. 
-    // This will need to change to support multiple simultaneous volumes.
-    optixReportIntersection(tmax, 0); 
+    // float old_tmax      = optixGetRayTmax();
+
+    // const int primID = optixGetPrimitiveIndex();
+    const auto &self = owl::getProgramData<VolumeGeomData>();
+    float3 origin = optixGetObjectRayOrigin();
+
+    // note, this is _not_ normalized. Useful for computing world space tmin/mmax
+    float3 direction = optixGetObjectRayDirection();
+
+    float3 lb = make_float3(self.bbmin.x, self.bbmin.y, self.bbmin.z);
+    float3 rt = make_float3(self.bbmax.x, self.bbmax.y, self.bbmax.z);
+
+    // typical ray AABB intersection test
+    float3 dirfrac;
+
+    // direction is unit direction vector of ray
+    dirfrac.x = 1.0f / direction.x;
+    dirfrac.y = 1.0f / direction.y;
+    dirfrac.z = 1.0f / direction.z;
+
+    // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+    // origin is origin of ray
+    float t1 = (lb.x - origin.x)*dirfrac.x;
+    float t2 = (rt.x - origin.x)*dirfrac.x;
+    float t3 = (lb.y - origin.y)*dirfrac.y;
+    float t4 = (rt.y - origin.y)*dirfrac.y;
+    float t5 = (lb.z - origin.z)*dirfrac.z;
+    float t6 = (rt.z - origin.z)*dirfrac.z;
+
+    float thit0 = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+    float thit1 = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+    // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+    if (thit1 < 0) { return; }
+
+    // if tmin > tmax, ray doesn't intersect AABB
+    if (thit0 >= thit1) { return; }
+
+    // clip hit to near position
+    thit0 = max(thit0, optixGetRayTmin());
+
+    RayPayload &prd = owl::getPRD<RayPayload>();
+    if (optixReportIntersection(thit0, /* hit kind */ 0)) {
+        prd.objectSpaceRayOrigin = origin;
+        prd.objectSpaceRayDirection = direction;
+        prd.t0 = max(prd.t0, thit0);
+        prd.t1 = min(prd.t1, thit1);
+    }
 }
 
 OPTIX_BOUNDS_PROGRAM(VolumeBounds)(
@@ -1087,6 +1133,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     auto launchIndex = optixGetLaunchIndex().x;
     auto launchDim = optixGetLaunchDimensions().x;
     auto pixelID = ivec2(launchIndex % LP.frameSize.x, launchIndex / LP.frameSize.x);
+    bool debug = (pixelID.x == int(LP.frameSize.x / 2) && pixelID.y == int(LP.frameSize.y / 2));
 
     /* compute who is repsonible for a given group of pixels */
     /* and if it's not us, just return. */
@@ -1149,6 +1196,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     RayPayload volPayload;
     volPayload.tHit = -1.f;
     volPayload.rng = rng;
+    volPayload.t0 = volRay.tmin;
+    volPayload.t1 = volRay.tmax;
+    volPayload.primitiveID = (debug) ? -2 : -1;
     owl::traceRay(  /*accel to trace against*/ LP.volumesIAS,
                     /*the ray to trace*/ volRay,
                     /*prd*/ volPayload,
@@ -1210,6 +1260,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
             volPayload.tHit = -1.f;
             volPayload.rng = rng;
+            volPayload.t0 = volRay.tmin;
+            volPayload.t1 = volRay.tmax;
+            volPayload.primitiveID = (debug) ? -3 : -1;
             owl::traceRay( LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
             visibilitySkips++;
             if (visibilitySkips > 10) break; // avoid locking up.
@@ -1339,6 +1392,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
                 volPayload.tHit = -1.f;
                 volPayload.rng = rng;
+                volPayload.t0 = volRay.tmin;
+                volPayload.t1 = volRay.tmax;
+                volPayload.primitiveID = (debug) ? -4 : -1;
                 owl::traceRay( LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
                 
                 ++bounce;     
@@ -1548,6 +1604,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             owl::traceRay( LP.surfacesIAS, ray, surfPayload, occlusion_flags);
             ray.tmax = (surfPayload.instanceID == -2) ? ray.tmax : surfPayload.tHit;
             volPayload.rng = rng;
+            volPayload.t0 = volRay.tmin;
+            volPayload.t1 = volRay.tmax;
+            volPayload.primitiveID = (debug) ? -5 : -1;
             owl::traceRay( LP.volumesIAS, ray, volPayload, occlusion_flags);
             bool visible;
             if (randomID == numLights) {
@@ -1590,6 +1649,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         volRay = surfRay;
         volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
         volPayload.rng = rng;
+        volPayload.t0 = volRay.tmin;
+        volPayload.t1 = volRay.tmax;
+        volPayload.primitiveID = (debug) ? -6 : -1;
         owl::traceRay(LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
         // Check if we hit any of the previously sampled lights
