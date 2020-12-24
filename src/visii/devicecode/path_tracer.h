@@ -16,6 +16,7 @@ struct TrianglesGeomData
 struct VolumeGeomData {
     float4 bbmin;
     float4 bbmax;
+    uint32_t volumeID;
 };
 
 /* variables for the ray generation program */

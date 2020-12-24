@@ -263,14 +263,12 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
 {   
     auto &LP = optixLaunchParams;
     RayPayload &prd = owl::getPRD<RayPayload>();
+    const auto &self = owl::getProgramData<VolumeGeomData>();
     LCGRand rng = prd.rng;
 
     // Load the volume we hit
-    GET(const int entityID, int, LP.volumeInstanceToEntity, optixGetInstanceIndex());
-    GET(EntityStruct entity, EntityStruct, LP.entities, entityID);
-    GET(TransformStruct transform, TransformStruct, LP.transforms, entity.transform_id);
-    GET(VolumeStruct volume, VolumeStruct, LP.volumes, entity.volume_id);
-    uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(entity.volume_id, __LINE__).data;
+    GET(VolumeStruct volume, VolumeStruct, LP.volumes, self.volumeID);
+    uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(self.volumeID, __LINE__).data;
     const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
     const auto& tree = grid->tree();
     auto acc = tree.getAccessor();
@@ -288,12 +286,10 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
     float absorption = volume.absorption;
     float scattering = volume.scattering;
 
-    glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
-    glm::mat4 worldToLocal = glm::inverse(localToWorld);
     vec3 x = make_vec3(prd.objectSpaceRayOrigin) + offset;
     vec3 w = make_vec3(prd.objectSpaceRayDirection);
 
-    linear_attenuation_unit /= length(w); // might need to be * instead of / ?
+    linear_attenuation_unit /= length(w);
 
     // Move ray to volume boundary
     float t0 = prd.t0, t1 = prd.t1;
@@ -375,15 +371,12 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
 OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
 {
     auto &LP = optixLaunchParams;
+    const auto &self = owl::getProgramData<VolumeGeomData>();
     RayPayload &prd = owl::getPRD<RayPayload>();
     LCGRand rng = prd.rng;
 
-    // Load the volume we hit
-    GET(const int entityID, int, LP.volumeInstanceToEntity, optixGetInstanceIndex());
-    GET(EntityStruct entity, EntityStruct, LP.entities, entityID);
-    GET(TransformStruct transform, TransformStruct, LP.transforms, entity.transform_id);
-    GET(VolumeStruct volume, VolumeStruct, LP.volumes, entity.volume_id);
-    uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(entity.volume_id, __LINE__).data;
+    GET(VolumeStruct volume, VolumeStruct, LP.volumes, self.volumeID);
+    uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(self.volumeID, __LINE__).data;
     const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
     const auto& tree = grid->tree();
     auto acc = tree.getAccessor();
@@ -401,12 +394,10 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
     float absorption = volume.absorption;
     float scattering = volume.scattering;
 
-    glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
-    glm::mat4 worldToLocal = glm::inverse(localToWorld);
     vec3 x = make_vec3(prd.objectSpaceRayOrigin) + offset;
     vec3 w = make_vec3(prd.objectSpaceRayDirection);
 
-    linear_attenuation_unit /= length(w); // might need to be * instead of / ?
+    linear_attenuation_unit /= length(w);
 
     // Move ray to volume boundary
     float t0 = prd.t0, t1 = prd.t1;

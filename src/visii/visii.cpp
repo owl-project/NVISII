@@ -756,6 +756,7 @@ void initializeOptix(bool headless)
     OWLVarDecl volumeGeomVars[] = {
         { "bbmin", OWL_USER_TYPE(glm::vec4), OWL_OFFSETOF(VolumeGeomData, bbmin)},
         { "bbmax", OWL_USER_TYPE(glm::vec4), OWL_OFFSETOF(VolumeGeomData, bbmax)},
+        { "volumeID", OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(VolumeGeomData, volumeID)},
         {/* sentinel to mark end of list */}
     };
     OD.volumeGeomType = owlGeomTypeCreate(OD.context, OWL_GEOM_USER, sizeof(VolumeGeomData), volumeGeomVars, -1);
@@ -1304,12 +1305,14 @@ void updateComponents()
 
 
             // Create geometry and build BLAS
+            uint32_t volumeID = v->getAddress();
             OD.volumeGeomList[v->getAddress()] = geomCreate(OD.context, OD.volumeGeomType);
             owlGeomSetPrimCount(OD.volumeGeomList[v->getAddress()], 1); // for now, only one prim per volume. This might change...
             glm::vec4 tmpbbmin = glm::vec4(v->getMinAabbCorner(3, 0), 1.f);
             glm::vec4 tmpbbmax = glm::vec4(v->getMaxAabbCorner(3, 0), 1.f);
             owlGeomSetRaw(OD.volumeGeomList[v->getAddress()], "bbmin", &tmpbbmin);
             owlGeomSetRaw(OD.volumeGeomList[v->getAddress()], "bbmax", &tmpbbmax);
+            owlGeomSetRaw(OD.volumeGeomList[v->getAddress()], "volumeID", &volumeID);
             OD.volumeBlasList[v->getAddress()] = owlUserGeomGroupCreate(OD.context, 1, &OD.volumeGeomList[v->getAddress()]);
             groupBuildAccel(OD.volumeBlasList[v->getAddress()]);    
         }
