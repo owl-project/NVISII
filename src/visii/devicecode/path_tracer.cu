@@ -160,6 +160,12 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     memcpy(&prd.localToWorldT1[8], &trf12, sizeof(trf12));
 }
 
+OPTIX_CLOSEST_HIT_PROGRAM(DistanceRay)()
+{
+    RayPayload &prd = owl::getPRD<RayPayload>();
+    prd.tHit = optixGetRayTmax();
+}
+
 OPTIX_CLOSEST_HIT_PROGRAM(ShadowRay)()
 {
     RayPayload &prd = owl::getPRD<RayPayload>();
@@ -1526,9 +1532,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 }
                 y = max(min(y, height - 1), 0);
                 // sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
-                if (debug) {
-                    printf("y is %d \n", y);
-                }
+                // if (debug) {
+                //     printf("y is %d \n", y);
+                // }
                 {
                     RayPayload cdfPayload;
                     owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
@@ -1544,9 +1550,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                         col_pdf = data[x] - data[x - 1];
                     }
                 }
-                if (debug) {
-                    printf("x is %d \n", x);
-                }
+                // if (debug) {
+                //     printf("x is %d \n", x);
+                // }
                 lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
                 lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
                 lightPDF = row_pdf * col_pdf * invjacobian;
@@ -1565,25 +1571,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 unsigned x, y;
                 sample_cdf(rows, height, ry, &y, &row_pdf);
                 y = max(min(y, height - 1), 0);
-                if (debug) {
-                    RayPayload cdfPayload;
-                    owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
-                    ray.tmin = 0.f; ray.tmax = 1e20f;
-                    ray.origin = make_float3(width - 1.f, 0.f, ry); ray.direction = make_float3(0.f, 1.f, 0.f);
-                    ray.time = time;
-                    owl::traceRay( LP.environmentMapCDFIAS, ray, cdfPayload, occlusion_flags);
-                    printf("y is %d and %f \n", y, cdfPayload.tHit);
-                }
                 sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
-                if (debug) {
-                    RayPayload cdfPayload;
-                    owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
-                    ray.tmin = 0.f; ray.tmax = 1e20f;
-                    ray.origin = make_float3(0.f, (float)y, rx); ray.direction = make_float3(1.f, 0.f, 0.f);
-                    ray.time = time;
-                    owl::traceRay( LP.environmentMapCDFIAS, ray, cdfPayload, occlusion_flags);
-                    printf("x is %d and %f \n", x, cdfPayload.tHit);
-                }
                 lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
                 lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
                 lightPDF = row_pdf * col_pdf * invjacobian;

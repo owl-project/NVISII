@@ -775,8 +775,8 @@ void initializeOptix(bool headless)
 
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
-    geomTypeSetClosestHit(OD.cdfTrianglesGeomType, /*ray type */ 0, OD.module,"ShadowRay"); // might change
-    geomTypeSetClosestHit(OD.cdfTrianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay"); // might change
+    geomTypeSetClosestHit(OD.cdfTrianglesGeomType, /*ray type */ 0, OD.module,"DistanceRay");
+    geomTypeSetClosestHit(OD.cdfTrianglesGeomType, /*ray type */ 1, OD.module,"DistanceRay");
     owlGeomTypeSetClosestHit(OD.volumeGeomType, /*ray type */ 0, OD.module,"VolumeMesh");
     owlGeomTypeSetClosestHit(OD.volumeGeomType, /*ray type */ 1, OD.module,"VolumeShadowRay");
     owlGeomTypeSetIntersectProg(OD.volumeGeomType, /*ray type */ 0, OD.module,"VolumeIntersection");
@@ -1136,13 +1136,15 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
             std::vector<OWLGeom> cdfGeoms;
             uint32_t offset = 0;
             for (int y = 0, i = 0; y < cdfHeight; y++) {
+                float prev_height = 0.f;
                 for (int x = 0; x < cdfWidth; x++, i++) {
                     float height = cols[i];
                     // XZ plane tris
-                    glm::vec3 v00 = glm::vec3(x, y - .5f, 0.f);
-                    glm::vec3 v01 = glm::vec3(x, y + .5f, 0.f);
+                    glm::vec3 v00 = glm::vec3(x, y - .5f, prev_height);
+                    glm::vec3 v01 = glm::vec3(x, y + .5f, prev_height);
                     glm::vec3 v02 = glm::vec3(x, y - .5f, height);
                     glm::vec3 v03 = glm::vec3(x, y + .5f, height);
+                    prev_height = height;
                     cdfVertices.push_back(v00);
                     cdfVertices.push_back(v01);
                     cdfVertices.push_back(v02);
@@ -1153,13 +1155,15 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
                 }
             }
 
+            float prev_height = 0.f;
             for (int y = 0; y < cdfHeight; y++) {
                 float height = rows[y];
                 // YZ plane tris
-                glm::vec3 v0 = glm::vec3((cdfWidth - 1) - .5f, y, 0.f);
-                glm::vec3 v1 = glm::vec3((cdfWidth - 1) + .5f, y, 0.f);
+                glm::vec3 v0 = glm::vec3((cdfWidth - 1) - .5f, y, prev_height);
+                glm::vec3 v1 = glm::vec3((cdfWidth - 1) + .5f, y, prev_height);
                 glm::vec3 v2 = glm::vec3((cdfWidth - 1) - .5f, y, height);
                 glm::vec3 v3 = glm::vec3((cdfWidth - 1) + .5f, y, height);
+                prev_height = height;
                 cdfVertices.push_back(v0);
                 cdfVertices.push_back(v1);
                 cdfVertices.push_back(v2);
