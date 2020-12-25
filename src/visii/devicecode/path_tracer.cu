@@ -1459,17 +1459,18 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 
                 bsdfPDF = 1.f / (4.0 * M_PI);
                 bsdf = make_float3(1.f / (4.0 * M_PI));
-                bsdfColor = make_float3(1.f);
                 w_i = make_float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
             } 
-            /* An absorption / emission event occurred */
-             
+
+            /* An absorption / emission event occurred */ 
             if (volPayload.eventID == 1) {
                 bsdfPDF = 1.f / (4.0 * M_PI);
                 bsdf = make_float3(1.f / (4.0 * M_PI));
-                bsdfColor = mat.base_color;                
                 w_i = -w_o;
             }
+
+            // For all events, modify throughput by base color.
+            bsdfColor = mat.base_color;
         }
 
         // Next, sample the light source by importance sampling the light
@@ -1581,7 +1582,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         } else {
             // currently isotropic. Todo: implement henyey greenstien...
             l_bsdf = make_float3(1.f / (4.0 * M_PI));
-            l_bsdfColor = make_float3(1.f);
+            l_bsdfColor = mat.base_color;
             dotNWi = 1.f; // no geom term for phase function
         }
         lightPDF *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
