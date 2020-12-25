@@ -130,6 +130,7 @@ static struct OptixData {
     OWLMissProg missProg;
     OWLGeomType trianglesGeomType;
     OWLGeomType volumeGeomType;
+    OWLGeomType cdfTrianglesGeomType;
 
     std::vector<OWLBuffer> vertexLists;
     std::vector<OWLBuffer> normalLists;
@@ -169,6 +170,11 @@ static struct OptixData {
     OWLGroup placeholderGroup;
     OWLGroup placeholderUserGroup;
 
+    OWLBuffer environmentMapCDFIndices;
+    OWLBuffer environmentMapCDFVertices;
+    OWLGeom environmentMapCDFGeom;
+    OWLGroup environmentMapCDF;
+    OWLGroup environmentMapCDFIAS;
 } OptixData;
 
 static struct ViSII {
@@ -605,6 +611,7 @@ void initializeOptix(bool headless)
         { "environmentMapCols",      OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, environmentMapCols)},
         { "environmentMapWidth",     OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapWidth)},
         { "environmentMapHeight",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, environmentMapHeight)},
+        { "environmentMapCDFIAS",    OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, environmentMapCDFIAS)},
         { "textureObjects",          OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, textureObjects)},
         { "volumeHandles",           OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, volumeHandles)},
         { "proceduralSkyTexture",    OWL_TEXTURE,                       OWL_OFFSETOF(LaunchParams, proceduralSkyTexture)},
@@ -760,8 +767,12 @@ void initializeOptix(bool headless)
         {/* sentinel to mark end of list */}
     };
     OD.volumeGeomType = owlGeomTypeCreate(OD.context, OWL_GEOM_USER, sizeof(VolumeGeomData), volumeGeomVars, -1);
+    OD.cdfTrianglesGeomType = owlGeomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
+
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
+    geomTypeSetClosestHit(OD.cdfTrianglesGeomType, /*ray type */ 0, OD.module,"ShadowRay"); // might change
+    geomTypeSetClosestHit(OD.cdfTrianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay"); // might change
     owlGeomTypeSetClosestHit(OD.volumeGeomType, /*ray type */ 0, OD.module,"VolumeMesh");
     owlGeomTypeSetClosestHit(OD.volumeGeomType, /*ray type */ 1, OD.module,"VolumeShadowRay");
     owlGeomTypeSetIntersectProg(OD.volumeGeomType, /*ray type */ 0, OD.module,"VolumeIntersection");
@@ -813,6 +824,9 @@ void initializeOptix(bool headless)
     instanceGroupSetChild(volumesIAS, 0, OD.placeholderUserGroup); 
     groupBuildAccel(volumesIAS);
     launchParamsSetGroup(OD.launchParams, "volumesIAS", volumesIAS);
+
+    // TESTING importance sample using RT core CDF idea
+    launchParamsSetGroup(OD.launchParams, "environmentMapCDFIAS", surfacesIAS); // placeholder CDF accel
 
     // Build *SBT* required to trace the groups   
     buildPipeline(OD.context);
@@ -1106,6 +1120,66 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
             OptixData.environmentMapColsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), cdfWidth * cdfHeight, cols.data());
             OptixData.LP.environmentMapWidth = cdfWidth;
             OptixData.LP.environmentMapHeight = cdfHeight;  
+
+            if (OptixData.environmentMapCDF) { owlGroupRelease(OptixData.environmentMapCDF); OptixData.environmentMapCDF = nullptr; }
+            if (OptixData.environmentMapCDFIAS) { owlGroupRelease(OptixData.environmentMapCDFIAS); OptixData.environmentMapCDFIAS = nullptr; }
+            if (OptixData.environmentMapCDFIndices) {owlBufferDestroy(OptixData.environmentMapCDFIndices); OptixData.environmentMapCDFIndices = nullptr; }
+            if (OptixData.environmentMapCDFVertices) {owlBufferDestroy(OptixData.environmentMapCDFVertices); OptixData.environmentMapCDFVertices = nullptr; }
+            if (OptixData.environmentMapCDFGeom) {owlGeomRelease(OptixData.environmentMapCDFGeom); OptixData.environmentMapCDFGeom = nullptr; }
+            
+            std::vector<glm::vec3> cdfVertices;
+            std::vector<glm::ivec3> cdfIndices;
+            std::vector<OWLGeom> cdfGeoms;
+            uint32_t offset = 0;
+            for (int y = 0, i = 0; y < cdfHeight; y++) {
+                for (int x = 0; x < cdfWidth; x++, i++) {
+                    float height = cols[i];
+                    // XZ plane tris
+                    glm::vec3 v00 = glm::vec3(x - .5f, y, 0.f);
+                    glm::vec3 v01 = glm::vec3(x + .5f, y, 0.f);
+                    glm::vec3 v02 = glm::vec3(x - .5f, y, height);
+                    glm::vec3 v03 = glm::vec3(x + .5f, y, height);
+                    cdfVertices.push_back(v00);
+                    cdfVertices.push_back(v01);
+                    cdfVertices.push_back(v02);
+                    cdfVertices.push_back(v03);
+                    cdfIndices.push_back(glm::ivec3(0, 1, 2) + glm::ivec3(offset));
+                    cdfIndices.push_back(glm::ivec3(0, 2, 3) + glm::ivec3(offset));
+                    offset += 4;
+                }
+            }
+
+            for (int y = 0; y < cdfHeight; y++) {
+                float height = rows[y];
+                // YZ plane tris
+                glm::vec3 v0 = glm::vec3(cdfWidth - 1, y - .5f, 0.f);
+                glm::vec3 v1 = glm::vec3(cdfWidth - 1, y + .5f, 0.f);
+                glm::vec3 v2 = glm::vec3(cdfWidth - 1, y - .5f, height);
+                glm::vec3 v3 = glm::vec3(cdfWidth - 1, y + .5f, height);
+                cdfVertices.push_back(v0);
+                cdfVertices.push_back(v1);
+                cdfVertices.push_back(v2);
+                cdfVertices.push_back(v3);
+                cdfIndices.push_back(glm::ivec3(0, 1, 2) + glm::ivec3(offset));
+                cdfIndices.push_back(glm::ivec3(0, 2, 3) + glm::ivec3(offset));
+                offset += 4;
+            }
+            
+            std::cout<< "Creating " << cdfVertices.size() << " vertices" << std::endl;
+            std::cout<< "Creating " << cdfIndices.size() << " indices" << std::endl;
+            OptixData.environmentMapCDFVertices = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(glm::vec3), cdfVertices.size(), 0);
+            OptixData.environmentMapCDFIndices = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(glm::ivec3), cdfIndices.size(), 0);
+            OptixData.environmentMapCDFGeom = owlGeomCreate(OptixData.context, OptixData.cdfTrianglesGeomType);
+            owlTrianglesSetVertices(OptixData.environmentMapCDFGeom, OptixData.environmentMapCDFVertices, cdfVertices.size(), sizeof(vec3), 0);
+            owlTrianglesSetIndices(OptixData.environmentMapCDFGeom, OptixData.environmentMapCDFIndices, cdfIndices.size(), sizeof(ivec3), 0);
+            OptixData.environmentMapCDF = owlTrianglesGeomGroupCreate(OptixData.context, 1, &OptixData.environmentMapCDFGeom);
+            owlGroupBuildAccel(OptixData.environmentMapCDF);
+            OptixData.environmentMapCDFIAS = owlInstanceGroupCreate(OptixData.context, 1);
+            owlInstanceGroupSetChild(OptixData.environmentMapCDFIAS, 0, OptixData.environmentMapCDF);
+            owlGroupBuildAccel(OptixData.environmentMapCDFIAS);
+            owlParamsSetGroup(OptixData.launchParams, "environmentMapCDFIAS", OptixData.environmentMapCDFIAS);
+
+            owlBuildSBT(OptixData.context);
         }
         else {
             OptixData.LP.environmentMapWidth = 0;
@@ -1258,7 +1332,7 @@ void updateComponents()
             trianglesSetVertices(OD.surfaceGeomList[m->getAddress()], OD.vertexLists[m->getAddress()], m->getVertices().size(), sizeof(std::array<float, 3>), 0);
             trianglesSetIndices(OD.surfaceGeomList[m->getAddress()], OD.indexLists[m->getAddress()], m->getTriangleIndices().size() / 3, sizeof(ivec3), 0);
             OD.surfaceBlasList[m->getAddress()] = trianglesGeomGroupCreate(OD.context, 1, &OD.surfaceGeomList[m->getAddress()]);
-            groupBuildAccel(OD.surfaceBlasList[m->getAddress()]);          
+            groupBuildAccel(OD.surfaceBlasList[m->getAddress()]);
         }
 
         bufferUpload(OD.vertexListsBuffer, OD.vertexLists.data());

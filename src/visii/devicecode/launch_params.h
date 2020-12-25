@@ -72,6 +72,8 @@ struct LaunchParams {
     float* environmentMapCols = nullptr;
     int environmentMapWidth = 0;
     int environmentMapHeight = 0;
+    OptixTraversableHandle environmentMapCDFIAS;
+
     cudaTextureObject_t proceduralSkyTexture = 0;
     Buffer<cudaTextureObject_t> textureObjects; //cudaTextureObject_t
     Buffer<Buffer<uint8_t>> volumeHandles; //nanovdb::GridHandle<>
