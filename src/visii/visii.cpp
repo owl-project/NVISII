@@ -767,7 +767,11 @@ void initializeOptix(bool headless)
         {/* sentinel to mark end of list */}
     };
     OD.volumeGeomType = owlGeomTypeCreate(OD.context, OWL_GEOM_USER, sizeof(VolumeGeomData), volumeGeomVars, -1);
-    OD.cdfTrianglesGeomType = owlGeomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
+    OWLVarDecl cdfTrianglesGeomVars[] = {
+        { "height", OWL_USER_TYPE(float), OWL_OFFSETOF(CDFTrianglesGeomData, height)},
+        {/* sentinel to mark end of list */}
+    };
+    OD.cdfTrianglesGeomType = owlGeomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(CDFTrianglesGeomData), cdfTrianglesGeomVars,-1);
 
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
     geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
@@ -1135,10 +1139,10 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
                 for (int x = 0; x < cdfWidth; x++, i++) {
                     float height = cols[i];
                     // XZ plane tris
-                    glm::vec3 v00 = glm::vec3(x - .5f, y, 0.f);
-                    glm::vec3 v01 = glm::vec3(x + .5f, y, 0.f);
-                    glm::vec3 v02 = glm::vec3(x - .5f, y, height);
-                    glm::vec3 v03 = glm::vec3(x + .5f, y, height);
+                    glm::vec3 v00 = glm::vec3(x, y - .5f, 0.f);
+                    glm::vec3 v01 = glm::vec3(x, y + .5f, 0.f);
+                    glm::vec3 v02 = glm::vec3(x, y - .5f, height);
+                    glm::vec3 v03 = glm::vec3(x, y + .5f, height);
                     cdfVertices.push_back(v00);
                     cdfVertices.push_back(v01);
                     cdfVertices.push_back(v02);
@@ -1152,10 +1156,10 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
             for (int y = 0; y < cdfHeight; y++) {
                 float height = rows[y];
                 // YZ plane tris
-                glm::vec3 v0 = glm::vec3(cdfWidth - 1, y - .5f, 0.f);
-                glm::vec3 v1 = glm::vec3(cdfWidth - 1, y + .5f, 0.f);
-                glm::vec3 v2 = glm::vec3(cdfWidth - 1, y - .5f, height);
-                glm::vec3 v3 = glm::vec3(cdfWidth - 1, y + .5f, height);
+                glm::vec3 v0 = glm::vec3((cdfWidth - 1) - .5f, y, 0.f);
+                glm::vec3 v1 = glm::vec3((cdfWidth - 1) + .5f, y, 0.f);
+                glm::vec3 v2 = glm::vec3((cdfWidth - 1) - .5f, y, height);
+                glm::vec3 v3 = glm::vec3((cdfWidth - 1) + .5f, y, height);
                 cdfVertices.push_back(v0);
                 cdfVertices.push_back(v1);
                 cdfVertices.push_back(v2);
@@ -1167,8 +1171,8 @@ void setDomeLightTexture(Texture* texture, bool enableCDF)
             
             std::cout<< "Creating " << cdfVertices.size() << " vertices" << std::endl;
             std::cout<< "Creating " << cdfIndices.size() << " indices" << std::endl;
-            OptixData.environmentMapCDFVertices = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(glm::vec3), cdfVertices.size(), 0);
-            OptixData.environmentMapCDFIndices = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(glm::ivec3), cdfIndices.size(), 0);
+            OptixData.environmentMapCDFVertices = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(glm::vec3), cdfVertices.size(), cdfVertices.data());
+            OptixData.environmentMapCDFIndices = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(glm::ivec3), cdfIndices.size(), cdfIndices.data());
             OptixData.environmentMapCDFGeom = owlGeomCreate(OptixData.context, OptixData.cdfTrianglesGeomType);
             owlTrianglesSetVertices(OptixData.environmentMapCDFGeom, OptixData.environmentMapCDFVertices, cdfVertices.size(), sizeof(vec3), 0);
             owlTrianglesSetIndices(OptixData.environmentMapCDFGeom, OptixData.environmentMapCDFIndices, cdfIndices.size(), sizeof(ivec3), 0);

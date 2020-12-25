@@ -12,6 +12,12 @@ using namespace glm;
 struct TrianglesGeomData
 {int placeholder;};
 
+struct CDFTrianglesGeomData
+{
+    // The height of the CDF quad we hit
+    float height;
+};
+
 /* variables for the volume user geometry */
 struct VolumeGeomData {
     float4 bbmin;

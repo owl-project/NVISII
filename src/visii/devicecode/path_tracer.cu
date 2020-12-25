@@ -1494,6 +1494,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 (LP.environmentMapRows != nullptr) && (LP.environmentMapCols != nullptr) 
             ) 
             {
+                #define EXPERIMENT
+                #ifdef EXPERIMENT
                 // Reduces noise for strangely noisy dome light textures, but at the expense 
                 // of a highly uncoalesced binary search through a 2D CDF.
                 // disabled by default to avoid the hit to performance
@@ -1506,12 +1508,86 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 float invjacobian = width * height / float(4 * M_PI);
                 float row_pdf, col_pdf;
                 unsigned x, y;
-                ry = sample_cdf(rows, height, ry, &y, &row_pdf);
+                // sample_cdf(rows, height, ry, &y, &row_pdf);
+                {
+                    RayPayload cdfPayload;
+                    owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
+                    ray.tmin = 0.f; ray.tmax = 1e20f;
+                    ray.origin = make_float3(width - 1.f, 0.f, ry); ray.direction = make_float3(0.f, 1.f, 0.f);
+                    ray.time = time;
+                    owl::traceRay( LP.environmentMapCDFIAS, ray, cdfPayload, occlusion_flags);
+                    y = (unsigned)cdfPayload.tHit;
+                    float* data = rows;
+                    if (y == 0) {
+                        row_pdf = data[0];
+                    } else {
+                        row_pdf = data[y] - data[y - 1];
+                    }
+                }
                 y = max(min(y, height - 1), 0);
-                rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
+                // sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
+                if (debug) {
+                    printf("y is %d \n", y);
+                }
+                {
+                    RayPayload cdfPayload;
+                    owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
+                    ray.tmin = 0.f; ray.tmax = 1e20f;
+                    ray.origin = make_float3(0.f, (float)y, rx); ray.direction = make_float3(1.f, 0.f, 0.f);
+                    ray.time = time;
+                    owl::traceRay( LP.environmentMapCDFIAS, ray, cdfPayload, occlusion_flags);
+                    x = (unsigned)cdfPayload.tHit;
+                    float* data = cols + y * width;
+                    if (x == 0) {
+                        col_pdf = data[0];
+                    } else {
+                        col_pdf = data[x] - data[x - 1];
+                    }
+                }
+                if (debug) {
+                    printf("x is %d \n", x);
+                }
                 lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
                 lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
                 lightPDF = row_pdf * col_pdf * invjacobian;
+                #else
+                // Reduces noise for strangely noisy dome light textures, but at the expense 
+                // of a highly uncoalesced binary search through a 2D CDF.
+                // disabled by default to avoid the hit to performance
+                float rx = lcg_randomf(rng);
+                float ry = lcg_randomf(rng);
+                float* rows = LP.environmentMapRows;
+                float* cols = LP.environmentMapCols;
+                int width = LP.environmentMapWidth;
+                int height = LP.environmentMapHeight;
+                float invjacobian = width * height / float(4 * M_PI);
+                float row_pdf, col_pdf;
+                unsigned x, y;
+                sample_cdf(rows, height, ry, &y, &row_pdf);
+                y = max(min(y, height - 1), 0);
+                if (debug) {
+                    RayPayload cdfPayload;
+                    owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
+                    ray.tmin = 0.f; ray.tmax = 1e20f;
+                    ray.origin = make_float3(width - 1.f, 0.f, ry); ray.direction = make_float3(0.f, 1.f, 0.f);
+                    ray.time = time;
+                    owl::traceRay( LP.environmentMapCDFIAS, ray, cdfPayload, occlusion_flags);
+                    printf("y is %d and %f \n", y, cdfPayload.tHit);
+                }
+                sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
+                if (debug) {
+                    RayPayload cdfPayload;
+                    owl::RayT</*type*/1, /*prd*/1> ray; // shadow ray
+                    ray.tmin = 0.f; ray.tmax = 1e20f;
+                    ray.origin = make_float3(0.f, (float)y, rx); ray.direction = make_float3(1.f, 0.f, 0.f);
+                    ray.time = time;
+                    owl::traceRay( LP.environmentMapCDFIAS, ray, cdfPayload, occlusion_flags);
+                    printf("x is %d and %f \n", x, cdfPayload.tHit);
+                }
+                lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
+                lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
+                lightPDF = row_pdf * col_pdf * invjacobian;
+                #endif
             } 
             else 
             {            
