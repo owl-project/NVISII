@@ -293,10 +293,23 @@ find_program(BIN2C bin2c
   /usr/local/cuda/bin)
 
 # optix 7
+option(OPTION_OPTIX_VERSION "The version of optix to use." 7.2)
+if ($ENV{OPTIX_VERSION}) 
+set(OPTION_OPTIX_VERSION $ENV{OPTIX_VERSION})
+endif()
+
+if(${OPTION_OPTIX_VERSION} EQUAL 7.2)
 set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.2.0/)
 find_package(OptiX REQUIRED VERSION 7.2)
-#include_directories(${OptiX_INCLUDE})
+elseif(${OPTION_OPTIX_VERSION} EQUAL 7.1)
+set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.1.0/)
+find_package(OptiX REQUIRED VERSION 7.1)
+else()
+set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/optix-7.0.0/)
+find_package(OptiX REQUIRED VERSION 7.0)
+endif()
 
+#include_directories(${OptiX_INCLUDE})
 
 # owl
 #set(SET_UP_CONFIGURATIONS_DONE 1)

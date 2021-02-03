@@ -45,9 +45,9 @@
 #endif
 #include <tinyexr.h>
 
-#define USE_AOV
+// #define USE_OPTIX70
+// #define USE_OPTIX71
 #define USE_OPTIX72
-// #undef USE_OPTIX71
 
 // #define __optix_optix_function_table_h__
 #include <optix_stubs.h>
@@ -1722,7 +1722,8 @@ void denoiseImage() {
             scratchSizeInBytes));
     }
 
-    if (!OD.enableKernelPrediction) {
+    #ifndef USE_OPTIX70
+    if (OD.enableKernelPrediction) {
         OPTIX_CHECK(optixDenoiserComputeAverageColor(
             OD.denoiser, 
             cudaStream, 
@@ -1731,6 +1732,7 @@ void denoiseImage() {
             (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0),
             scratchSizeInBytes));
     }
+    #endif
 
     params.denoiseAlpha = 0;    // Don't touch alpha.
     params.blendFactor  = 0.0f; // Show the denoised image only.
@@ -1865,6 +1867,12 @@ void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelP
     enqueueCommand([useAlbedoGuide, useNormalGuide, useKernelPrediction](){
         OptixData.enableAlbedoGuide = useAlbedoGuide;
         OptixData.enableNormalGuide = useNormalGuide;
+        #ifdef USE_OPTIX70
+        if (useKernelPrediction) {
+            throw std::runtime_error("Error: the current build of ViSII uses optix"
+            " 7.0, which does not support the kernel prediction denoiser.");
+        }
+        #endif
         OptixData.enableKernelPrediction = useKernelPrediction;
 
         // Reconfigure denoiser
@@ -1886,8 +1894,12 @@ void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelP
         OPTIX_CHECK(optixDenoiserCreate(optixContext, &options, &OptixData.denoiser));
 
         OptixDenoiserModelKind kind;
-        if (OptixData.enableKernelPrediction) kind = OPTIX_DENOISER_MODEL_KIND_AOV;
-        else kind = OPTIX_DENOISER_MODEL_KIND_HDR;
+        #ifdef USE_OPTIX70
+            kind = OPTIX_DENOISER_MODEL_KIND_HDR;
+        #else
+            if (OptixData.enableKernelPrediction) kind = OPTIX_DENOISER_MODEL_KIND_AOV;
+            else kind = OPTIX_DENOISER_MODEL_KIND_HDR;
+        #endif
         
         OPTIX_CHECK(
             optixDenoiserSetModel(OptixData.denoiser, kind, 

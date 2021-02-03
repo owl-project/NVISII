@@ -15,6 +15,7 @@ jobs:
         os:
           - ubuntu-18.04
         python-version: [cp35-cp35m, cp36-cp36m, cp37-cp37m, cp38-cp38]
+        optix-version: [70, 71, 72]
 
     container:
       quay.io/pypa/manylinux2014_x86_64
@@ -29,10 +30,7 @@ jobs:
           
       # Download external dependencies
       - name: Download Dependencies
-        run: |
-            # Add directory containing cmake
-            export PATH=$PATH:/opt/_internal/cpython-3.8.6/bin/
-            
+        run: |            
             # list contents of python folder
             #ls -R /opt/python/${{ matrix.python-version }}
             
@@ -50,9 +48,8 @@ jobs:
             
             # Get cmake
             /opt/python/cp38-cp38/bin/pip install cmake
-            find / -iname "cmake"
-            
-            /opt/_internal/cpython-3.8.6/bin/cmake --version
+            CMAKEEXEC=/opt/python/cp38-cp38/bin/cmake            
+            $CMAKEEXEC --version
             
             # Setuptools scm
             /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm
@@ -87,7 +84,10 @@ jobs:
             
       - name: Configure and install cmake project
         run: |
-          export PATH=$PATH:/opt/_internal/cpython-3.8.6/bin/
+          # Set OptiX Version
+          export OPTIX_VERSION=${{ matrix.optix-version }}
+          CMAKEEXEC=/opt/python/cp38-cp38/bin/cmake            
+
           source /opt/rh/devtoolset-8/enable
           
           PY=${{ matrix.python-version }}
@@ -110,7 +110,7 @@ jobs:
           #cd tmate-2.4.0-static-linux-amd64
           #./tmate -F
           
-           cmake ../ \
+          $CMAKEEXEC ../ \
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
@@ -120,7 +120,7 @@ jobs:
           -DPython_VERSION_MINOR=${PY:3:1} \
           -DCMAKE_BUILD_TYPE=Release \
  
-          cmake --build . --config Release --target install
+          $CMAKEEXEC --build . --config Release --target install
           cd ..
           cd install
           

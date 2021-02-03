@@ -3,9 +3,12 @@
 # text can be found in LICENSE.md
 from setuptools import setup, dist
 import wheel 
-
+import os
 # required to geneerate a platlib folder required by audittools
 from setuptools.command.install import install
+# for generating a wheel version from git tag
+from setuptools_scm import get_version
+
 class InstallPlatlib(install):
     def finalize_options(self):
         install.finalize_options(self)
@@ -19,6 +22,19 @@ class BinaryDistribution(dist.Distribution):
         return False
     def has_ext_modules(foo):
         return True
+
+
+current_version = get_version(
+    root = "..", 
+    relative_to = __file__,
+    fallback_version='0.0.0-dev0'
+)
+
+optix_version = os.environ.get("OPTIX_VERSION", None)
+if optix_version:
+    current_version = current_version + "." + optix_version
+
+print(current_version)
 
 setup(
     # This package is called visii
@@ -35,15 +51,17 @@ setup(
     # See class BinaryDistribution that was defined earlier
     distclass=BinaryDistribution,
 
-    # This gets the version from the most recent git tag, potentially concatinating a commit hash at the end.
-    use_scm_version={
-        'fallback_version': '0.0.0-dev0',
-        "root" : "..",
-        "relative_to" : __file__ 
-    },
+    version = current_version,
+    # # This gets the version from the most recent git tag, potentially concatinating 
+    # # a commit hash at the end.
+    # use_scm_version={
+    #     'fallback_version': '0.0.0-dev0',
+    #     "root" : "..",
+    #     "relative_to" : __file__ 
+    # },
 
     # Note, below might give "WARNING: The wheel package is not available." if wheel isnt installed
-    setup_requires=['setuptools_scm'], # discouraged
+    # setup_requires=['setuptools_scm'], # discouraged
 
     author='Nate Morrical',
     author_email='',
