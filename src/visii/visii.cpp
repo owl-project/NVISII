@@ -45,10 +45,6 @@
 #endif
 #include <tinyexr.h>
 
-// #define USE_OPTIX70
-// #define USE_OPTIX71
-#define USE_OPTIX72
-
 // #define __optix_optix_function_table_h__
 #include <optix_stubs.h>
 // OptixFunctionTable g_optixFunctionTable;
