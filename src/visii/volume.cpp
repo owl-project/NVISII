@@ -8,6 +8,8 @@
 #include <nanovdb/util/GridChecksum.h>
 #include <nanovdb/util/Primitives.h>
 
+#include <sys/stat.h>
+
 namespace visii {
 
 std::vector<Volume> Volume::volumes;
