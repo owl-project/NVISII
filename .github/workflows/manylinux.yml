@@ -75,10 +75,10 @@ jobs:
             cd build
 
             # tmate for debugging
-            wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
-            tar xf tmate-2.4.0-static-linux-amd64.tar.xz
-            cd tmate-2.4.0-static-linux-amd64
-            ./tmate -F
+            # wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+            # tar xf tmate-2.4.0-static-linux-amd64.tar.xz
+            # cd tmate-2.4.0-static-linux-amd64
+            # ./tmate -F
             
             wget http://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz
             tar xzf swig-4.0.2.tar.gz
