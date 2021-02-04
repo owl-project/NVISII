@@ -433,6 +433,8 @@ __device__ float3 disney_microfacet_isotropic(const DisneyMaterial &mat, const f
 __device__ float3 disney_microfacet_transmission_color(const DisneyMaterial &mat, const float3 &n,
 	const float3 &w_o, const float3 &w_i, const float3 &w_h)
 {	
+	// Approximate absorption
+	// note that compositing will be incorrect...
 	return mat.base_color;
 }
 
@@ -449,9 +451,12 @@ __device__ void disney_microfacet_transmission_isotropic(const DisneyMaterial &m
 	float3 w_ht = -(w_o * eta_i + w_i * eta_o);
 	w_ht = normalize(w_ht);
 
-	float lum = luminance(mat.base_color);
-	float3 tint = lum > 0.f ? mat.base_color / lum : make_float3(1.f);
-	float3 spec = mat.base_color;//lerp(mat.specular * 0.08f * lerp(make_float3(1.f), tint, mat.specular_tint), mat.base_color, mat.metallic);
+	color = disney_microfacet_transmission_color(mat, n, w_o, w_i, w_ht);
+
+	float lum = luminance(color);
+	float3 tint = lum > 0.f ? color / lum : make_float3(1.f);
+	
+	float3 spec = disney_microfacet_transmission_color(mat, n, w_o, w_i, w_ht);
 
 	// float alpha = max(MIN_ALPHA, mat.roughness * mat.roughness);
 	float cos_theta_h = fabs(dot(n, w_ht));
@@ -460,7 +465,7 @@ __device__ void disney_microfacet_transmission_isotropic(const DisneyMaterial &m
 	float g = smith_shadowing_ggx(abs(dot(n, w_i)), alpha) * smith_shadowing_ggx(abs(dot(n, w_o)), alpha);
 	
 	bsdf = d;
-	color = mat.base_color;
+	color = spec;
 	return;// * f;// * g; // * f * g;
 
 
@@ -746,7 +751,7 @@ __device__ void sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		if (all_zero(w_i)) {
 			w_i = reflect(-w_o, (entering) ? w_h : -w_h);
 			pdf = 1.f;
-			color = mat.base_color;
+			color = make_float3(1.f); // Normally absorption would happen here...
 			bsdf = make_float3(1.f);
 			return;
 		}

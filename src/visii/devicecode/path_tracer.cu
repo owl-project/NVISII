@@ -1200,7 +1200,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float alpha = 0.f;
         
         // If ray misses, terminate the ray
-        if ((surfPayload.tHit <= 0.f) && (volPayload.tHit <= 0.f)) {
+        if (((surfPayload.tHit <= 0.f) && (volPayload.tHit <= 0.f))
+            || (diffuseBounce >= LP.maxDiffuseBounceDepth)
+            || (specularBounce >= LP.maxSpecularBounceDepth)
+            || (volumeBounce >= LP.maxVolumeBounceDepth)
+        ) 
+        {
             // Compute lighting from environment
             if (bounce == 0) {
                 float3 col = missColor(surfRay, envTex);
@@ -1724,7 +1729,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (!useBRDF) volumeBounce++;
         else if (sampledBsdf == 0) diffuseBounce++;
         else specularBounce++;
-    } while (diffuseBounce < LP.maxDiffuseBounceDepth && specularBounce < LP.maxSpecularBounceDepth && volumeBounce < LP.maxVolumeBounceDepth);   
+    } while (true);   
 
     // For segmentations, save heatmap metadata
     saveHeatmapRenderData(renderData, bounce, start_clock);
