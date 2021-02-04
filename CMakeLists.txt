@@ -293,9 +293,10 @@ find_program(BIN2C bin2c
   /usr/local/cuda/bin)
 
 # optix 7
-option(OPTION_OPTIX_VERSION "The version of optix to use." 72)
 if ($ENV{OPTIX_VERSION}) 
 set(OPTION_OPTIX_VERSION $ENV{OPTIX_VERSION})
+else()
+set(OPTION_OPTIX_VERSION 72)
 endif()
 
 if(${OPTION_OPTIX_VERSION} EQUAL 72)

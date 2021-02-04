@@ -16,6 +16,11 @@
  * H -> w_h
  */
 
+#define DISNEY_DIFFUSE_BRDF 0
+#define DISNEY_GLOSSY_BRDF 1
+#define DISNEY_CLEARCOAT_BRDF 2
+#define DISNEY_TRANSMISSION_BRDF 3
+
 struct DisneyMaterial {
 	float3 base_color;
 	float3 subsurface_color;
@@ -699,10 +704,10 @@ __device__ void sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 	sampled_bsdf = component;
 
 	float2 samples = make_float2(lcg_randomf(rng), lcg_randomf(rng));
-	if (component == 0) {
+	if (component == DISNEY_DIFFUSE_BRDF) {
 		// Sample diffuse component
 		w_i = sample_lambertian_dir(n, v_x, v_y, samples);
-	} else if (component == 1) {
+	} else if (component == DISNEY_GLOSSY_BRDF) {
 		float3 w_h;
 		float alpha = max(MIN_ALPHA, mat.roughness * mat.roughness);
 		if (mat.anisotropy == 0.f) {
@@ -722,7 +727,7 @@ __device__ void sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 			bsdf = make_float3(0.f);
 			return;
 		}
-	} else if (component == 2) {
+	} else if (component == DISNEY_CLEARCOAT_BRDF) {
 		// Sample clear coat component
 		float alpha = lerp(0.1f, MIN_ALPHA, mat.clearcoat_gloss);
 		float3 w_h = sample_gtr_1_h(n, v_x, v_y, alpha, samples);

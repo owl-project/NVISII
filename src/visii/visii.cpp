@@ -584,9 +584,11 @@ void initializeOptix(bool headless)
         { "domeLightColor",          OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, domeLightColor)},
         { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
         { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
-        { "maxDiffuseBounceDepth",   OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxDiffuseBounceDepth)},
-        { "maxSpecularBounceDepth",  OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxSpecularBounceDepth)},
-        { "maxVolumeBounceDepth",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxVolumeBounceDepth)},
+        { "maxDiffuseDepth",         OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxDiffuseDepth)},
+        { "maxGlossyDepth",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxGlossyDepth)},
+        { "maxTransparencyDepth",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxTransparencyDepth)},
+        { "maxTransmissionDepth",    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxTransmissionDepth)},
+        { "maxVolumeDepth",          OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxVolumeDepth)},
         { "numLightSamples",         OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightSamples)},
         { "seed",                    OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, seed)},
         { "xPixelSamplingInterval",  OWL_USER_TYPE(glm::vec2),          OWL_OFFSETOF(LaunchParams, xPixelSamplingInterval)},
@@ -738,9 +740,11 @@ void initializeOptix(bool headless)
     launchParamsSetRaw(OD.launchParams, "domeLightColor", &OD.LP.domeLightColor);
     launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
     launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
-    launchParamsSetRaw(OD.launchParams, "maxDiffuseBounceDepth", &OD.LP.maxDiffuseBounceDepth);
-    launchParamsSetRaw(OD.launchParams, "maxSpecularBounceDepth", &OD.LP.maxSpecularBounceDepth);
-    launchParamsSetRaw(OD.launchParams, "maxVolumeBounceDepth", &OD.LP.maxVolumeBounceDepth);
+    launchParamsSetRaw(OD.launchParams, "maxDiffuseDepth", &OD.LP.maxDiffuseDepth);
+    launchParamsSetRaw(OD.launchParams, "maxGlossyDepth", &OD.LP.maxGlossyDepth);
+    launchParamsSetRaw(OD.launchParams, "maxTransparencyDepth", &OD.LP.maxTransparencyDepth);
+    launchParamsSetRaw(OD.launchParams, "maxTransmissionDepth", &OD.LP.maxTransmissionDepth);
+    launchParamsSetRaw(OD.launchParams, "maxVolumeDepth", &OD.LP.maxVolumeDepth);
     launchParamsSetRaw(OD.launchParams, "numLightSamples", &OD.LP.numLightSamples);
     launchParamsSetRaw(OD.launchParams, "seed", &OD.LP.seed);
     launchParamsSetRaw(OD.launchParams, "xPixelSamplingInterval", &OD.LP.xPixelSamplingInterval);
@@ -1145,14 +1149,24 @@ void setDirectLightingClamp(float clamp)
     resetAccumulation();
 }
 
-void setMaxBounceDepth(uint32_t diffuseDepth, uint32_t specularDepth, uint32_t volumeDepth)
-{
-    OptixData.LP.maxDiffuseBounceDepth = diffuseDepth;
-    OptixData.LP.maxSpecularBounceDepth = specularDepth;
-    OptixData.LP.maxVolumeBounceDepth = volumeDepth;
-    launchParamsSetRaw(OptixData.launchParams, "maxDiffuseBounceDepth", &OptixData.LP.maxDiffuseBounceDepth);
-    launchParamsSetRaw(OptixData.launchParams, "maxSpecularBounceDepth", &OptixData.LP.maxSpecularBounceDepth);
-    launchParamsSetRaw(OptixData.launchParams, "maxVolumeBounceDepth", &OptixData.LP.maxVolumeBounceDepth);
+void setMaxBounceDepth(
+    uint32_t diffuseDepth,
+    uint32_t glossyDepth,
+    uint32_t transparencyDepth,
+    uint32_t transmissionDepth,
+    uint32_t volumeDepth
+) {
+    OptixData.LP.maxDiffuseDepth = diffuseDepth;
+    OptixData.LP.maxGlossyDepth = glossyDepth;
+    OptixData.LP.maxTransparencyDepth = transparencyDepth;
+    OptixData.LP.maxTransmissionDepth = transmissionDepth;
+    OptixData.LP.maxVolumeDepth = volumeDepth;
+    
+    launchParamsSetRaw(OptixData.launchParams, "maxDiffuseDepth", &OptixData.LP.maxDiffuseDepth);
+    launchParamsSetRaw(OptixData.launchParams, "maxGlossyDepth", &OptixData.LP.maxGlossyDepth);
+    launchParamsSetRaw(OptixData.launchParams, "maxTransparencyDepth", &OptixData.LP.maxTransparencyDepth);
+    launchParamsSetRaw(OptixData.launchParams, "maxTransmissionDepth", &OptixData.LP.maxTransmissionDepth);
+    launchParamsSetRaw(OptixData.launchParams, "maxVolumeDepth", &OptixData.LP.maxVolumeDepth);
     resetAccumulation();
 }
 

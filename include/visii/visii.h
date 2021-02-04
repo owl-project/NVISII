@@ -192,14 +192,26 @@ void setDirectLightingClamp(float clamp);
  * Sets the maximum number of times that a ray originating from the camera can bounce through the scene to accumulate light.
  * For scenes containing only rough surfaces, this max bounce depth can be set to lower values.
  * For scenes containing complex transmissive or reflective objects like glass or metals, this 
- * max bounce depth might need to be increased to accurately render these objects. Specular and diffuse
- * max bounce depth is separated to optimize these scenes.
+ * max bounce depth might need to be increased to accurately render these objects. 
  * 
- * @param diffuse_depth The maximum number of diffuse bounces allowed per ray.
- * @param specular_depth The maximum number of specular (reflection/refraction) bounces allowed per ray.
+ * @param diffuse_depth The maximum number of diffuse bounces allowed per ray. 
+ * Higher counts will increase global illumination effects.
+ * @param glossy_depth The maximum number of glossy (reflection) bounces allowed per ray.
+ * Increases recursion in setups with mirrors, shiny surfaces, metals, etc
+ * @param transparency_depth The maximum number of transparency (alpha) bounces allowed per ray.
+ * Used for alpha cutouts of folliage and alpha transparent objects.
+ * @param transmission_depth The maximum number of transmission (refraction) bounces allowed per ray.
+ * For scenes containing glass, higher transmission depths result in more realistic refractions.
  * @param volume_depth The maximum number of volume bounces allowed per ray.
+ * At 0, volumes are single-scattering. Higher values result in multiple scattering.
  */ 
-void setMaxBounceDepth(uint32_t diffuse_depth = 2, uint32_t specular_depth = 8, uint32_t volume_depth = 2);
+void setMaxBounceDepth(
+  uint32_t diffuse_depth = 4,
+  uint32_t glossy_depth = 4,
+  uint32_t transparency_depth = 8,
+  uint32_t transmission_depth = 12,
+  uint32_t volume_depth = 2
+);
 
 /**
  * Sets the number of light samples to take per path vertex. A higher number of samples will reduce noise per frame, but

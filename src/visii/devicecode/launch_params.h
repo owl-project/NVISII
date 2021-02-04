@@ -34,9 +34,11 @@ struct LaunchParams {
     glm::vec3 domeLightColor = glm::vec3(-1.f);
     float directClamp = 100.f; 
     float indirectClamp = 100.f; 
-    uint32_t maxSpecularBounceDepth = 8;
-    uint32_t maxDiffuseBounceDepth = 2;
-    uint32_t maxVolumeBounceDepth = 2;
+    uint32_t maxDiffuseDepth = 4;
+    uint32_t maxGlossyDepth = 4;
+    uint32_t maxTransparencyDepth = 8;
+    uint32_t maxTransmissionDepth = 12;
+    uint32_t maxVolumeDepth = 2;
     uint32_t numLightSamples = 1;
     uint32_t seed = 0;
     vec2 xPixelSamplingInterval = vec2(0.f,1.f);

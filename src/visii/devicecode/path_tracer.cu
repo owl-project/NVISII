@@ -1164,11 +1164,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     float3 primaryNormal = make_float3(0.f);
     initializeRenderData(renderData);
 
-    uint8_t bounce = 0;
-    uint8_t diffuseBounce = 0;
-    uint8_t specularBounce = 0;
-    uint8_t volumeBounce = 0;
-    uint8_t visibilitySkips = 0;
+    uint8_t depth = 0;
+    uint8_t diffuseDepth = 0;
+    uint8_t glossyDepth = 0;
+    uint8_t transparencyDepth = 0;
+    uint8_t transmissionDepth = 0;
+    uint8_t volumeDepth = 0;
 
     // direct here is used for final image clamping
     float3 directIllum = make_float3(0.f);
@@ -1200,14 +1201,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float alpha = 0.f;
         
         // If ray misses, terminate the ray
-        if (((surfPayload.tHit <= 0.f) && (volPayload.tHit <= 0.f))
-            || (diffuseBounce >= LP.maxDiffuseBounceDepth)
-            || (specularBounce >= LP.maxSpecularBounceDepth)
-            || (volumeBounce >= LP.maxVolumeBounceDepth)
-        ) 
-        {
+        if ((surfPayload.tHit <= 0.f) && (volPayload.tHit <= 0.f)) {
             // Compute lighting from environment
-            if (bounce == 0) {
+            if (depth == 0) {
                 float3 col = missColor(surfRay, envTex);
                 illum = illum + pathThroughput * (col * LP.domeLightIntensity);
                 directIllum = illum;
@@ -1227,7 +1223,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             vec4 tmp2 = LP.proj * LP.viewT1 * /*xfmt1 **/ make_vec4(pFar, 1.0f);
             float3 pt1 = make_float3(tmp2 / tmp2.w) * .5f;
             mvec = pt1 - pt0;
-            saveMissRenderData(renderData, bounce, mvec);
+            saveMissRenderData(renderData, depth, mvec);
             break;
         }
 
@@ -1260,8 +1256,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             volPayload.t1 = volRay.tmax;
             volPayload.primitiveID = (debug) ? -3 : -1;
             owl::traceRay( LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
-            visibilitySkips++;
-            if (visibilitySkips > 10) break; // avoid locking up.
+            transparencyDepth++;
+            if (transparencyDepth > LP.maxTransparencyDepth) break;
             continue;
         }
 
@@ -1368,8 +1364,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
 
         // For segmentations, save geometric metadata
-        saveGeometricRenderData(renderData, bounce, surfPayload.tHit, hit_p, v_z, w_o, uv, entityID, diffuseMotion, time, mat);
-        if (bounce == 0) {
+        saveGeometricRenderData(renderData, depth, surfPayload.tHit, hit_p, v_z, w_o, uv, entityID, diffuseMotion, time, mat);
+        if (depth == 0) {
             primaryAlbedo = mat.base_color;
             primaryNormal = v_z;
         }
@@ -1393,8 +1389,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 volPayload.primitiveID = (debug) ? -4 : -1;
                 owl::traceRay( LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
                 
-                ++bounce;     
-                specularBounce++; // counting transparency as a specular bounce for now
+                ++depth;     
+                transparencyDepth++;
                 continue;
             }
         }
@@ -1404,7 +1400,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // todo: account for volumetric emission here...
         if (entity.light_id >= 0 && entity.light_id < LP.lights.count) {
             float dotNWi = max(dot(surfRay.direction, v_z), 0.f);
-            if ((dotNWi > EPSILON) && (bounce != 0)) break;
+            if ((dotNWi > EPSILON) && (depth != 0)) break;
 
             GET(LightStruct entityLight, LightStruct, LP.lights, entity.light_id);
             float3 lightEmission;
@@ -1412,10 +1408,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             else lightEmission = sampleTexture(entityLight.color_texture_id, uv, make_float3(0.f, 0.f, 0.f));
             float dist = surfPayload.tHit;
             lightEmission = (lightEmission * entityLight.intensity);
-            if (bounce != 0) lightEmission = (lightEmission * pow(2.f, entityLight.exposure)) / (dist * dist);
+            if (depth != 0) lightEmission = (lightEmission * pow(2.f, entityLight.exposure)) / (dist * dist);
             float3 contribution = pathThroughput * lightEmission;
             illum = illum + contribution;
-            if (bounce == 0) directIllum = illum;
+            if (depth == 0) directIllum = illum;
             break;
         }
 
@@ -1625,7 +1621,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
 
         // For segmentations, save lighting metadata
-        saveLightingColorRenderData(renderData, bounce, v_z, w_o, w_i, mat);
+        saveLightingColorRenderData(renderData, depth, v_z, w_o, w_i, mat);
 
         // Terminate the path if the bsdf probability is impossible, or if the bsdf filters out all light
         if (bsdfPDF < EPSILON || all_zero(bsdf) || all_zero(bsdfColor)) {
@@ -1705,7 +1701,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float3 contribution = pathThroughput * irradiance;
         illum = illum + contribution;
         pathThroughput = (pathThroughput * bsdf * bsdfColor) / bsdfPDF;
-        if (bounce == 0) directIllum = illum;
+        if (depth == 0) directIllum = illum;
 
         // Avoid double counting light sources by terminating here if we hit a light sampled thorugh NEE/MIS
         if (hitLight) break;
@@ -1725,14 +1721,23 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // }
 
         // if the bounce count is less than the max bounce count, potentially add on radiance from the next hit location.
-        ++bounce;     
-        if (!useBRDF) volumeBounce++;
-        else if (sampledBsdf == 0) diffuseBounce++;
-        else specularBounce++;
-    } while (true);   
+        ++depth;     
+        if (!useBRDF) volumeDepth++;
+        else if (sampledBsdf == DISNEY_DIFFUSE_BRDF) diffuseDepth++;
+        else if (sampledBsdf == DISNEY_GLOSSY_BRDF) glossyDepth++;
+        else if (sampledBsdf == DISNEY_CLEARCOAT_BRDF) glossyDepth++;
+        else if (sampledBsdf == DISNEY_TRANSMISSION_BRDF) transmissionDepth++;
+        // transparency depth handled earlier
+    } while (
+        diffuseDepth < LP.maxDiffuseDepth && 
+        glossyDepth < LP.maxGlossyDepth && 
+        transparencyDepth < LP.maxTransparencyDepth && 
+        transmissionDepth < LP.maxTransmissionDepth && 
+        volumeDepth < LP.maxVolumeDepth
+    );   
 
     // For segmentations, save heatmap metadata
-    saveHeatmapRenderData(renderData, bounce, start_clock);
+    saveHeatmapRenderData(renderData, depth, start_clock);
 
     // clamp out any extreme fireflies
     glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);
