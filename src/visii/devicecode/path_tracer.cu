@@ -1126,6 +1126,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     auto pixelID = ivec2(launchIndex % LP.frameSize.x, launchIndex / LP.frameSize.x);
     bool debug = (pixelID.x == int(LP.frameSize.x / 2) && pixelID.y == int(LP.frameSize.y / 2));
 
+    float tmax = glm::distance(LP.sceneBBMin, LP.sceneBBMax);
+
     /* compute who is repsonible for a given group of pixels */
     /* and if it's not us, just return. */
     /* (some other device will compute these pixels) */
@@ -1156,6 +1158,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     
     // Trace an initial ray through the scene
     surfRay = generateRay(camera, camera_transform, pixelID, LP.frameSize, rng, time);
+    surfRay.tmax = tmax;
 
     float3 accum_illum = make_float3(0.f);
     float3 pathThroughput = make_float3(1.f);

@@ -237,6 +237,7 @@ Texture* Texture::createFromFile(std::string name, std::string path, bool linear
                     for(BlockCoord.y = 0, TexelCoord.y = 0; BlockCoord.y < LevelExtentInBlocks.y; ++BlockCoord.y, TexelCoord.y += BlockExtent.y) {
                         for(BlockCoord.x = 0, TexelCoord.x = 0; BlockCoord.x < LevelExtentInBlocks.x; ++BlockCoord.x, TexelCoord.x += BlockExtent.x) {
                             if (format == gli::FORMAT_RGBA_DXT1_UNORM_BLOCK8) {
+                                l->linear = false; // hack for buggy importer...
                                 const gli::detail::dxt1_block *DXT1Block = TextureCompressed.data<gli::detail::dxt1_block>(0, 0, Level) + (BlockCoord.y * LevelExtentInBlocks.x + BlockCoord.x);
                                 const gli::detail::texel_block4x4 DecompressedBlock = gli::detail::decompress_dxt1_block(*DXT1Block);
                                 for(DecompressedBlockCoord.y = 0; DecompressedBlockCoord.y < glm::min(4, LevelExtent.y); ++DecompressedBlockCoord.y) {
@@ -246,6 +247,7 @@ Texture* Texture::createFromFile(std::string name, std::string path, bool linear
                                 }
                             }
                             else if (format == gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16) {
+                                l->linear = false; // hack for buggy importer...
                                 const gli::detail::dxt5_block *DXT5Block = TextureCompressed.data<gli::detail::dxt5_block>(0, 0, Level) + (BlockCoord.y * LevelExtentInBlocks.x + BlockCoord.x);
                                 const gli::detail::texel_block4x4 DecompressedBlock = gli::detail::decompress_dxt5_block(*DXT5Block);
                                 for(DecompressedBlockCoord.y = 0; DecompressedBlockCoord.y < glm::min(4, LevelExtent.y); ++DecompressedBlockCoord.y) {
