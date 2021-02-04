@@ -143,7 +143,11 @@ static struct OptixData {
     std::vector<uint32_t> lightEntities;
 
     bool enableDenoiser = false;
+    #if USE_OPTIX72
+    bool enableKernelPrediction = true;
+    #else
     bool enableKernelPrediction = false;
+    #endif
     bool enableAlbedoGuide = true;
     bool enableNormalGuide = true;
     OptixDenoiserSizes denoiserSizes;

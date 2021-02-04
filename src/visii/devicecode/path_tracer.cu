@@ -1474,6 +1474,29 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             bsdfColor = mat.base_color;
         }
 
+        // At this point, if we are refracting and we ran out of transmission bounces, skip forward.
+        // This avoids creating black regions on glass objects due to bounce limits
+        if (sampledBsdf == DISNEY_TRANSMISSION_BRDF && transmissionDepth >= LP.maxTransmissionDepth) {
+            surfRay.origin = surfRay.origin + surfRay.direction * (surfPayload.tHit + EPSILON);
+            surfPayload.tHit = -1.f;
+            surfRay.time = time;
+            owl::traceRay( LP.surfacesIAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+
+            volRay = surfRay;
+            volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
+            volPayload.tHit = -1.f;
+            volPayload.rng = rng;
+            volPayload.t0 = volRay.tmin;
+            volPayload.t1 = volRay.tmax;
+            volPayload.primitiveID = (debug) ? -4 : -1;
+            owl::traceRay( LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+            
+            // Count this as a "transparent" bounce.
+            ++depth;     
+            transparencyDepth++;
+            continue;
+        }
+
         // Next, sample the light source by importance sampling the light
         const uint32_t occlusion_flags = OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
         
@@ -1728,11 +1751,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         else if (sampledBsdf == DISNEY_CLEARCOAT_BRDF) glossyDepth++;
         else if (sampledBsdf == DISNEY_TRANSMISSION_BRDF) transmissionDepth++;
         // transparency depth handled earlier
+        
+        // for transmission, once we hit the limit, we'll stop refracting instead 
+        // of terminating, just so that we don't get black regions in our glass
+        if (transmissionDepth >= LP.maxTransmissionDepth) continue;
     } while (
         diffuseDepth < LP.maxDiffuseDepth && 
         glossyDepth < LP.maxGlossyDepth && 
+        // transmissionDepth < LP.maxTransmissionDepth &&  // see comment above
         transparencyDepth < LP.maxTransparencyDepth && 
-        transmissionDepth < LP.maxTransmissionDepth && 
         volumeDepth < LP.maxVolumeDepth
     );   
 
