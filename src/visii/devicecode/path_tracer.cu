@@ -903,7 +903,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     auto pixelID = ivec2(launchIndex % LP.frameSize.x, launchIndex / LP.frameSize.x);
     bool debug = (pixelID.x == int(LP.frameSize.x / 2) && pixelID.y == int(LP.frameSize.y / 2));
 
-    float tmax = glm::distance(LP.sceneBBMin, LP.sceneBBMax);
+    float tmax = 1e20f; //todo: customize depending on scene bounds //glm::distance(LP.sceneBBMin, LP.sceneBBMax);
 
     /* compute who is repsonible for a given group of pixels */
     /* and if it's not us, just return. */

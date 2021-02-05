@@ -823,46 +823,7 @@ void initializeOptix(bool headless)
     buildSBT(OD.context);
 
     // Setup denoiser
-    OptixDenoiserOptions options;
-    options.inputKind = OPTIX_DENOISER_INPUT_RGB_ALBEDO_NORMAL;
-    #ifndef USE_OPTIX72
-    options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
-    #endif
-    auto optixContext = getOptixContext(OD.context, 0);
-    auto cudaStream = getStream(OD.context, 0);
-    OPTIX_CHECK(optixDenoiserCreate(optixContext, &options, &OD.denoiser));
-    
-    OptixDenoiserModelKind kind = OPTIX_DENOISER_MODEL_KIND_HDR; // having troubles with the AOV denoiser again...
-    OPTIX_CHECK(optixDenoiserSetModel(OD.denoiser, kind, /*data*/ nullptr, /*sizeInBytes*/ 0));
-
-    OPTIX_CHECK(optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes));
-    uint64_t scratchSizeInBytes;
-    #ifdef USE_OPTIX70
-    scratchSizeInBytes = OD.denoiserSizes.recommendedScratchSizeInBytes;
-    #else
-    scratchSizeInBytes = OD.denoiserSizes.withOverlapScratchSizeInBytes;
-    #endif
-
-    OD.denoiserScratchBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
-        scratchSizeInBytes, nullptr);
-    OD.denoiserStateBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 
-        OD.denoiserSizes.stateSizeInBytes, nullptr);
-    OD.hdrIntensityBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(float),
-        1, nullptr);
-    OD.colorAvgBuffer = deviceBufferCreate(OD.context, OWL_USER_TYPE(float),
-        4, nullptr);
-        
-
-    OPTIX_CHECK(optixDenoiserSetup (
-        OD.denoiser, 
-        (cudaStream_t) cudaStream, 
-        (unsigned int) OD.LP.frameSize.x, 
-        (unsigned int) OD.LP.frameSize.y, 
-        (CUdeviceptr) bufferGetPointer(OD.denoiserStateBuffer, 0), 
-        OD.denoiserSizes.stateSizeInBytes,
-        (CUdeviceptr) bufferGetPointer(OD.denoiserScratchBuffer, 0), 
-        scratchSizeInBytes
-    ));
+    configureDenoiser(OD.enableAlbedoGuide, OD.enableNormalGuide, OD.enableKernelPrediction);
 
     OD.placeholder = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(void*), 1, nullptr);
 
@@ -1890,7 +1851,16 @@ void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelP
         OptixData.enableKernelPrediction = useKernelPrediction;
 
         // Reconfigure denoiser
-
+        // Allocate required buffers
+        if (!OptixData.hdrIntensityBuffer)
+            OptixData.hdrIntensityBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), 1, nullptr);
+        if (!OptixData.colorAvgBuffer)
+            OptixData.colorAvgBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), 4, nullptr);
+        if (!OptixData.denoiserScratchBuffer)
+            OptixData.denoiserScratchBuffer = deviceBufferCreate(OptixData.context, OWL_USER_TYPE(void*), 1, nullptr);
+        if (!OptixData.denoiserStateBuffer)
+            OptixData.denoiserStateBuffer = deviceBufferCreate(OptixData.context, OWL_USER_TYPE(void*), 1, nullptr);
+        
         // Setup denoiser
         OptixDenoiserOptions options;
         if ((!useAlbedoGuide) && (!useNormalGuide)) options.inputKind = OPTIX_DENOISER_INPUT_RGB;
@@ -1929,8 +1899,8 @@ void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelP
         #else
         scratchSizeInBytes = OptixData.denoiserSizes.withOverlapScratchSizeInBytes;
         #endif
-        bufferResize(OptixData.denoiserScratchBuffer, scratchSizeInBytes);
-        bufferResize(OptixData.denoiserStateBuffer, OptixData.denoiserSizes.stateSizeInBytes);
+        owlBufferResize(OptixData.denoiserScratchBuffer, scratchSizeInBytes);
+        owlBufferResize(OptixData.denoiserStateBuffer, OptixData.denoiserSizes.stateSizeInBytes);
         
         optixDenoiserSetup (
             OptixData.denoiser, 
