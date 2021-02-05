@@ -892,229 +892,6 @@ bool debugging() {
     return glm::all(glm::equal(pixelID, ivec2(LP.frameSize.x / 2, LP.frameSize.y / 2)));
 }
 
-// /// Taken and modified from Algorithm 2 in "Pixar's Production Volume Rendering" paper.
-// /// Implements the top level delta tracking algorithm, returning radiance.
-// /// \param seed The seed to use by the random number generator.
-// /// \param x The origin of the ray.
-// /// \param w The direction of the light (opposite of ray direction). 
-// /// \param d The distance along the ray to the boundary.
-// template<typename AccT>
-// __device__
-// vec3 DeltaTracking(
-//     LCGRand &rng, 
-//     AccT& acc, 
-//     VolumeStruct& volume, 
-//     TransformStruct& transform, 
-//     MaterialStruct& material, 
-//     cudaTextureObject_t &envTex,
-//     vec3 world_x, 
-//     vec3 world_w
-// ) {
-//     // Load material data for the hit object
-//     DisneyMaterial mat;
-//     loadDisneyMaterial(material, make_float2(0.f), mat, MIN_ROUGHNESS);
-    
-//     auto sampler = nanovdb::SampleFromVoxels<AccT, /*Interpolation Degree*/1, /*UseCache*/false>(acc);
-//     float majorant_extinction = acc.root().valueMax();
-//     float gradient_factor = volume.gradient_factor;
-//     float linear_attenuation_unit = volume.scale;//max(max(grid->voxelSize()[0], grid->voxelSize()[1]), grid->voxelSize()[2]);
-//     float absorption = volume.absorption;
-//     float scattering = volume.scattering;
-
-//     auto &LP = optixLaunchParams;
-//     auto bbox = acc.root().bbox();    
-//     auto mx = bbox.max();
-//     auto mn = bbox.min();
-//     glm::vec3 offset = glm::vec3(mn[0], mn[1], mn[2]) + 
-//                 (glm::vec3(mx[0], mx[1], mx[2]) - 
-//                 glm::vec3(mn[0], mn[1], mn[2])) * .5f;
-
-//     #define MAX_VOLUME_DEPTH 10000 
-
-//     glm::mat4 localToWorld = glm::translate(transform.localToWorld, -offset);
-//     glm::mat4 worldToLocal = glm::inverse(localToWorld);
-//     vec3 x = glm::vec3(worldToLocal * glm::vec4(world_x, 1.f));
-//     vec3 w = normalize(vec3(worldToLocal * vec4(world_w, 0.f))); // intentionally not normalizing here   
-
-//     auto wRay = nanovdb::Ray<float>(
-//         reinterpret_cast<const nanovdb::Vec3f&>( x ),
-//         reinterpret_cast<const nanovdb::Vec3f&>( -w )
-//     );
-//     bool hit = wRay.clip(bbox);
-//     if (!hit) {
-//         float3 dir = make_float3(normalize(vec3(localToWorld * vec4(-w,0.f))));
-//         return make_vec3(missColor(dir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-//     }
-
-//     // Move ray to volume boundary
-//     float t0 = wRay.t0(), t1 = wRay.t1();
-//     x = x - t0 * w;
-//     t1 = t1 - t0;
-//     t0 = 0.f;
-        
-//     // Note: original algorithm had unlimited bounces. 
-//     vec3 throughput = vec3(1.f);
-//     vec3 illumination = vec3(0.f);
-//     bool scattered = false;
-//     for (int i = 0; i < MAX_VOLUME_DEPTH; ++i) {
-//         int event = 0;
-//         float t = 0.f;
-//         SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, absorption, scattering, x, w, t1, t, event);
-//         x = x - t * w;
-
-//         // If we're at the boundary, and we scattered, do NEE (for now, just against the dome light)
-//         if (event != 3 && scattered == true) {
-//             float3 lightEmission = make_float3(0.f, 0.f, 0.f);
-//             float lightPDF;
-//             float3 lightDir;
-//             if (
-//                 (LP.environmentMapWidth != 0) && (LP.environmentMapHeight != 0) &&
-//                 (LP.environmentMapRows != nullptr) && (LP.environmentMapCols != nullptr) 
-//             ) {
-//                 // Reduces noise for strangely noisy dome light textures, but at the expense 
-//                 // of a highly uncoalesced binary search through a 2D CDF.
-//                 // disabled by default to avoid the hit to performance
-//                 float rx = lcg_randomf(rng);
-//                 float ry = lcg_randomf(rng);
-//                 float* rows = LP.environmentMapRows;
-//                 float* cols = LP.environmentMapCols;
-//                 int width = LP.environmentMapWidth;
-//                 int height = LP.environmentMapHeight;
-//                 float invjacobian = width * height / float(4 * M_PI);
-//                 float row_pdf, col_pdf;
-//                 unsigned x, y;
-//                 ry = sample_cdf(rows, height, ry, &y, &row_pdf);
-//                 y = max(min(y, height - 1), 0);
-//                 rx = sample_cdf(cols + y * width, width, rx, &x, &col_pdf);
-//                 lightDir = make_float3(toPolar(vec2((x /*+ rx*/) / float(width), (y/* + ry*/)/float(height))));
-//                 lightDir = glm::inverse(LP.environmentMapRotation) * lightDir;
-//                 lightPDF = row_pdf * col_pdf * invjacobian;
-//             } 
-//             else 
-//             {
-//                 float rand1 = lcg_randomf(rng);
-//                 float rand2 = lcg_randomf(rng);
-
-//                 // Sample isotropic phase function to get new ray direction           
-//                 float phi = 2.0f * M_PI * rand1;
-//                 float cos_theta = 1.0f - 2.0f * rand2;
-//                 float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
-//                 lightDir = make_float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
-//                 lightPDF = 1.f / float(2.0 * M_PI);
-//             }
-//             lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-
-//             //// Note, scales the ray, potentially anisotropically. Effects apparent density.
-//             vec3 w = normalize(glm::vec3(worldToLocal * glm::vec4(make_vec3(-lightDir), 0.f)));
-
-//             auto wRay = nanovdb::Ray<float>(
-//                 reinterpret_cast<const nanovdb::Vec3f&>( x ),
-//                 reinterpret_cast<const nanovdb::Vec3f&>( -w )
-//             );
-//             bool hit = wRay.clip(bbox);
-//             if (!hit) lightEmission = make_float3(0.f);
-//             else {
-//                 float t = 0.f;
-//                 float t1 = wRay.t1();
-//                 SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, absorption, scattering, x, w, t1, t, event);
-//                 // boundary event
-//                 if (event != 0) lightEmission = make_float3(0.f);
-//             }
-//             illumination += throughput * make_vec3(lightEmission) / max(lightPDF, EPSILON);
-//             return illumination;
-//         }
-        
-//         // A boundary has been hit. Sample the background.
-//         if (event == 0 && scattered == false) {
-//             float3 dir = make_float3(normalize(vec3(localToWorld * vec4(-w,0.f))));
-//             illumination += throughput * make_vec3(missColor(dir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-//             return illumination;
-//         }
-        
-//         // An absorption / emission occurred.
-//         if (event == 1) {
-//             return vec3(0.f); // + vec3(sample_volume_emission(x));
-//         }
-        
-//         // A scattering collision occurred.
-//         if (event == 2) {
-//             // auto coord_pos = nanovdb::Coord::Floor( nanovdb::Vec3f(x.x, x.y, x.z) );
-//             float opacity = 1.f; // would otherwise be sampled from a transfer function
-//             auto g = sampler.gradient(nanovdb::Vec3f(x.x, x.y, x.z));
-//             float grad_len = length(vec3(g[0], g[1], g[2]));
-//             float p_brdf = opacity * (1.f - exp(-25.f * pow(gradient_factor, 3.f) * grad_len));
-//             float pdf;
-//             float rand_brdf = lcg_randomf(rng);
-//             if (rand_brdf < p_brdf) {
-//                 float3 w_i;
-//                 float bsdfPDF;
-//                 int sampledBsdf = -1;
-//                 int forcedBsdf = -1;
-//                 float3 bsdf, bsdfColor;
-//                 float3 v_z = make_float3(normalize(vec3(g[0], g[1], g[2])));
-//                 float3 v_x, v_y;
-//                 float3 w_o = make_float3(-w);
-
-//                 if (mat.specular_transmission == 0.f) {
-//                     v_z = faceNormalForward(w_o, v_z);
-//                 }
-
-//                 ortho_basis(v_x, v_y, v_z);
-//                 sample_disney_brdf(mat, 
-//                     v_z, w_o, v_x, v_y, 
-//                     rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
-//                 w = make_vec3(w_i);
-//                 pdf = bsdfPDF;
-
-//                 // Terminate the path if the bsdf probability is impossible, or if the bsdf filters out all light
-//                 if (bsdfPDF < EPSILON || all_zero(bsdf) || all_zero(bsdfColor)) {
-//                     return vec3(0.f);
-//                 }
-
-//                 throughput = (throughput * make_vec3(bsdf) * make_vec3(bsdfColor)) / max(bsdfPDF, EPSILON);
-//             }
-//             else {
-//                 // scattered = true; // temporarily disabling NEE
-                
-//                 float rand1 = lcg_randomf(rng);
-//                 float rand2 = lcg_randomf(rng);
-
-//                 // Sample isotropic phase function to get new ray direction           
-//                 float phi = 2.0f * M_PI * rand1;
-//                 float cos_theta = 1.0f - 2.0f * rand2;
-//                 float sin_theta = sqrt (1.0f - cos_theta * cos_theta);
-//                 w = -vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
-
-//                 pdf = 1.f;
-//             }
-
-
-//             // Note, scales the ray, potentially anisotropically. Effects apparent density.
-//             // w = normalize(vec3(worldToLocal * vec4(w, 0.f)));
-            
-//             // Compute updated boundary
-//             auto wRay = nanovdb::Ray<float>(
-//                 reinterpret_cast<const nanovdb::Vec3f&>( x ),
-//                 reinterpret_cast<const nanovdb::Vec3f&>( -w )
-//             );
-//             bool hit = wRay.clip(bbox);
-//             if (!hit) return illumination; //vec3(0.f,0.f,0.f);
-//             t0 = wRay.t0();
-//             t1 = wRay.t1();
-//         }
-        
-//         // A null collision occurred.
-//         if (event == 3) {
-//             // update boundary in relation to the new collision x, w does not change.
-//             t1 = t1 - t;
-//         }
-//     }
-    
-//     // If we got stuck in the volume
-//     return vec3(1.f, 0.f, 0.f);
-//     // return throughput * make_vec3(missColor(make_float3(-w), envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
-// }
-
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     const RayGenData &self = owl::getProgramData<RayGenData>();
@@ -1449,6 +1226,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float3 bsdf, bsdfColor;
         if (useBRDF) {
             sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
+            // If interpolated normal throws ray under the surface (when goemetric and interpolated normals disagree)
+            // fix by reflecting the sampled incoming light direction about the geometric normal. 
+            if (sampledBsdf != DISNEY_TRANSMISSION_BRDF && dot(w_i, v_gz) < 0.f) w_i = reflect(w_i, v_gz);
         } else {
             /* a scatter event occurred */
             if (volPayload.eventID == 2) {
@@ -1505,13 +1285,13 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         
         uint32_t randmax = (enableDomeSampling) ? numLights + 1 : numLights;
         uint32_t randomID = uint32_t(min(lcg_randomf(rng) * randmax, float(randmax-1)));
-        float dotNWi;
-        float3 l_bsdf, l_bsdfColor;
-        float3 lightEmission;
-        float3 lightDir;
+        float dotNWi  = 0.f;
+        float3 l_bsdf = make_float3(0.f), l_bsdfColor = make_float3(0.f);
+        float3 lightEmission = make_float3(0.f);
+        float3 lightDir = make_float3(0.f);
         float lightDistance = 1e20f;
         float falloff = 2.0f;
-        int numTris;
+        int numTris = 0;
 
         // sample background
         if (randomID == numLights) {
@@ -1606,6 +1386,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (useBRDF) {
             disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, l_bsdf, l_bsdfColor, forcedBsdf);
             dotNWi = max(dot(lightDir, v_z), 0.f);
+            if (dot(lightDir, v_gz) < 0.f) dotNWi = 0.f;
         } else {
             // currently isotropic. Todo: implement henyey greenstien...
             l_bsdf = make_float3(1.f / (4.0 * M_PI));
