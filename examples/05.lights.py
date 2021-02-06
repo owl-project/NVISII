@@ -2,7 +2,7 @@ import visii
 import random
 
 opt = lambda : None
-opt.spp = 256 
+opt.spp = 1000
 opt.width = 500
 opt.height = 500 
 opt.out = "05_lights.png"
@@ -24,7 +24,7 @@ camera = visii.entity.create(
 camera.get_transform().look_at(
     at = (0,0,.5),
     up = (0,0,1),
-    eye = (-2,-2,1),
+    eye = (-2,-2,1.5),
 )
 visii.set_camera_entity(camera)
 
@@ -63,14 +63,14 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light_2')
 )
-obj_entity.get_light().set_intensity(1)
+obj_entity.get_light().set_intensity(2)
 
 # you can also set the light color manually
-obj_entity.get_light().set_color((1,0,0))
+obj_entity.get_light().set_color((1.,.0,.0))
 
 #lets set the size and placement of the light
 obj_entity.get_transform().set_scale((0.1, 0.1, 0.1))
-obj_entity.get_transform().set_position((0,-0.6,0.4))
+obj_entity.get_transform().set_position((0.2,-0.7,0.10))
 obj_entity.get_transform().set_rotation(visii.angleAxis(90, (0,0,1)))
 
 # third light 
@@ -151,21 +151,17 @@ sphere2.get_material().set_base_color(
 sphere2.get_material().set_roughness(0)   
 sphere2.get_material().set_specular(0)   
 
-sphere3 = visii.entity.create(
-    name="sphere3",
-    mesh = visii.mesh.create_sphere("sphere3"),
-    transform = visii.transform.create("sphere3"),
-    material = visii.material.create("sphere3")
+disk = visii.entity.create(
+    name="disk",
+    mesh = visii.mesh.create_capped_cylinder("disk"),
+    transform = visii.transform.create("disk"),
+    material = visii.material.create("disk")
 )
-sphere3.get_transform().set_position(
-    visii.vec3(0.6,-0.6,0.16))
-sphere3.get_transform().set_scale(
-    visii.vec3(0.16))
-sphere3.get_material().set_base_color(
-    visii.vec3(0.5,0.8,0.5))  
-sphere3.get_material().set_roughness(0)   
-sphere3.get_material().set_specular(1)   
-sphere3.get_material().set_metallic(1)
+disk.get_transform().set_scale((.4,.4,.01))
+disk.get_transform().set_position((0.2,-0.7,0.01))
+disk.get_material().set_roughness(0)
+disk.get_material().set_metallic(1)
+disk.get_material().set_base_color((1,1,1))
 
 cone = visii.entity.create(
     name="cone",
