@@ -629,6 +629,8 @@ class Material : public StaticFactory
 
     /** 
      * A normal map texture used to displace surface normals. 
+     * Note that we expect R=X+, G=Y+, and B=Z+ (Matches Blender / OpenGL).
+     * Textures imported as ".dds" are an exception, and use R=X+, G=Y-, and B=Z+ (Matches DirectX style)
      * 
      * @param texture A texture containing a surface normal displacement between 0 and 1. A channel is ignored.
     */
@@ -671,7 +673,7 @@ class Material : public StaticFactory
     glm::vec4 subsurface_color = glm::vec4(0.f);
     float subsurface = 0.f;
     float metallic = 0.f;
-    float specular = 0.f;
+    float specular = 0.5f;
     float specular_tint = 0.f;
     float roughness = 0.f;
     float anisotropic = 0.f;

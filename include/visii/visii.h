@@ -206,8 +206,8 @@ void setDirectLightingClamp(float clamp);
  * At 0, volumes are single-scattering. Higher values result in multiple scattering.
  */ 
 void setMaxBounceDepth(
-  uint32_t diffuse_depth = 4,
-  uint32_t glossy_depth = 4,
+  uint32_t diffuse_depth = 2,
+  uint32_t glossy_depth = 2,
   uint32_t transparency_depth = 8,
   uint32_t transmission_depth = 12,
   uint32_t volume_depth = 2

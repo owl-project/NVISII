@@ -14,4 +14,5 @@ struct TextureStruct
     int32_t width = -1;
     int32_t height = -1;
     vec2 scale = vec2(1.f, 1.f); 
+    bool rightHanded = true;
 };
