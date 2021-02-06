@@ -190,9 +190,9 @@ __device__ float gtr_2_pdf(const float3 &w_o, const float3 &w_i, const float3 &w
 	if (!same_hemisphere(w_o, w_i, n)) {
 		return 0.f;
 	}
-	float cos_theta_h = dot(n, w_h);
+	float cos_theta_h = fabs(dot(n, w_h));
 	float d = gtr_2(cos_theta_h, alpha);
-	return d * cos_theta_h / (4.f * dot(w_o, w_h));
+	return d * cos_theta_h / (4.f * fabs(dot(w_o, w_h)));
 }
 
 __device__ float gtr_2_transmission_pdf(const float3 &w_o, const float3 &w_i, const float3 &n, float transmission_roughness, float ior)
@@ -428,10 +428,10 @@ __device__ float3 disney_microfacet_isotropic(const DisneyMaterial &mat, const f
 	float3 spec = lerp(mat.specular * 0.08f * lerp(make_float3(1.f), tint, mat.specular_tint), mat.base_color, mat.metallic);
 
 	float alpha = max(MIN_ALPHA, mat.roughness * mat.roughness);
-	float d = gtr_2(dot(n, w_h), alpha);
+	float d = gtr_2(fabs(dot(n, w_h)), alpha);
 	// float3 f = lerp(spec, make_float3(1.f), schlick_weight(dot(w_i, w_h))); // seems to be noisy
-	float3 f = lerp(spec, make_float3(1.f), schlick_weight(dot(w_o, n)));
-	float g = smith_shadowing_ggx(dot(n, w_i), alpha) * smith_shadowing_ggx(dot(n, w_o), alpha);
+	float3 f = lerp(spec, make_float3(1.f), schlick_weight(fabs(dot(w_o, n))));
+	float g = smith_shadowing_ggx(fabs(dot(n, w_i)), alpha) * smith_shadowing_ggx(fabs(dot(n, w_o)), alpha);
 	return d * f * g;
 }
 
@@ -514,10 +514,10 @@ __device__ float3 disney_microfacet_anisotropic(const DisneyMaterial &mat, const
 	float aspect = sqrt(1.f - mat.anisotropy * 0.9f);
 	float a = mat.roughness * mat.roughness;
 	float2 alpha = make_float2(max(MIN_ALPHA, a / aspect), max(MIN_ALPHA, a * aspect));
-	float d = gtr_2_aniso(dot(n, w_h), fabs(dot(w_h, v_x)), fabs(dot(w_h, v_y)), alpha);
-	float3 f = lerp(spec, make_float3(1.f), schlick_weight(dot(w_i, w_h)));
-	float g = smith_shadowing_ggx_aniso(dot(n, w_i), fabs(dot(w_i, v_x)), fabs(dot(w_i, v_y)), alpha)
-		* smith_shadowing_ggx_aniso(dot(n, w_o), fabs(dot(w_o, v_x)), fabs(dot(w_o, v_y)), alpha);
+	float d = gtr_2_aniso(fabs(dot(n, w_h)), fabs(dot(w_h, v_x)), fabs(dot(w_h, v_y)), alpha);
+	float3 f = lerp(spec, make_float3(1.f), schlick_weight(fabs(dot(w_i, w_h))));
+	float g = smith_shadowing_ggx_aniso(fabs(dot(n, w_i)), fabs(dot(w_i, v_x)), fabs(dot(w_i, v_y)), alpha)
+		* smith_shadowing_ggx_aniso(fabs(dot(n, w_o)), fabs(dot(w_o, v_x)), fabs(dot(w_o, v_y)), alpha);
 	return d * f * g;
 }
 
@@ -525,9 +525,9 @@ __device__ float disney_clear_coat(const DisneyMaterial &mat, const float3 &n,
 	const float3 &w_o, const float3 &w_i, const float3 &w_h)
 {
 	float alpha = lerp(0.1f, MIN_ALPHA, mat.clearcoat_gloss);
-	float d = gtr_1(dot(n, w_h), alpha);
+	float d = gtr_1(fabs(dot(n, w_h)), alpha);
 	float f = lerp(0.04f, 1.f, schlick_weight(dot(w_i, n)));
-	float g = smith_shadowing_ggx(dot(n, w_i), 0.25f) * smith_shadowing_ggx(dot(n, w_o), 0.25f);
+	float g = smith_shadowing_ggx(fabs(dot(n, w_i)), 0.25f) * smith_shadowing_ggx(fabs(dot(n, w_o)), 0.25f);
 	return /*0.25f * */mat.clearcoat * d * f * g;
 }
 
@@ -553,19 +553,13 @@ __device__ void disney_brdf(const DisneyMaterial &mat, const float3 &n,
 	color = make_float3(0.f);
 	bsdf = make_float3(0.f);
 
-	if (!same_hemisphere(w_o, w_i, n)) {
-		// transmissive objects refract when back of surface is visible.
-		if (mat.specular_transmission > 0.f) 
-		{
-			float spec_trans; float3 trans_color;
-			disney_microfacet_transmission_isotropic(mat, n, w_o, w_i, spec_trans, trans_color);
-			spec_trans = spec_trans * (1.f - mat.metallic) * mat.specular_transmission;
-			color = trans_color;
-			bsdf = make_float3(spec_trans);			
-			return;
-		}
-
-		// non-transmissive objects appear black when back of surface is visible.
+	// transmissive objects refract when back of surface is visible.
+	if (!same_hemisphere(w_o, w_i, n) && (mat.specular_transmission > 0.f)) {
+		float spec_trans; float3 trans_color;
+		disney_microfacet_transmission_isotropic(mat, n, w_o, w_i, spec_trans, trans_color);
+		spec_trans = spec_trans * (1.f - mat.metallic) * mat.specular_transmission;
+		color = trans_color;
+		bsdf = make_float3(spec_trans);			
 		return;
 	}
 
@@ -605,8 +599,9 @@ __device__ void disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		return;
 	}
 
-	bsdf = (lerp(diffuse_bsdf * diffuse_color, subsurface_bsdf * subsurface_color, mat.flatness) * (1.f - mat.metallic) * (1.f - mat.specular_transmission) 
-		+ sheen + gloss + coat) * fabs(dot(w_i, n)); 
+	bsdf = //make_float3(1.f)*gloss;//sheen + gloss + coat;
+	 (lerp(diffuse_bsdf * diffuse_color, subsurface_bsdf * subsurface_color, mat.flatness) * (1.f - mat.metallic) * (1.f - mat.specular_transmission) 
+	 	+ sheen + gloss + coat) * fabs(dot(w_i, n)); // using dot * .5 + .5 to reduce discontinuity with bad normal maps
 	color = make_float3(1);		
 }
 

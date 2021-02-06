@@ -283,6 +283,10 @@ Texture* Texture::createFromFile(std::string name, std::string path, bool linear
                 int lvl = 0;
                 textureStructs[l->getId()].width = (uint32_t)(TextureLocalDecompressed.extent(lvl).x);
                 textureStructs[l->getId()].height = (uint32_t)(TextureLocalDecompressed.extent(lvl).y);
+                
+                // for directX normal maps
+                if (extension.compare(".dds") == 0) textureStructs[l->getId()].rightHanded = false;
+
                 auto image = TextureLocalDecompressed[lvl]; // get mipmap 0
                 if (gli::is_float(format)) {
                     l->floatTexels.resize(textureStructs[l->getId()].width * textureStructs[l->getId()].height);

@@ -873,16 +873,6 @@ void saveHeatmapRenderData(
 }
 
 __device__
-float3 faceNormalForward(const float3 &w_o, const float3 &n)
-{
-    float3 new_n = n;
-    if (dot(w_o, new_n) < 0.f) {
-        new_n = -new_n;
-    }
-    return new_n;
-}
-
-__device__
 bool debugging() {
     #ifndef DEBUGGING
     return false;
@@ -1083,9 +1073,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_gz = make_float3(normalize(nxfm * make_vec3(v_gz)));
             v_z = make_float3(normalize(nxfm * make_vec3(v_z)));
             v_x = make_float3(normalize(nxfm * make_vec3(v_x)));
-            
-            v_y = -cross(v_z, v_x);
-            v_x = -cross(v_y, v_z);
+            v_y = cross(v_z, v_x);
+            v_x = cross(v_y, v_z);
 
             if (LP.renderDataMode != RenderDataFlags::NONE) {
                 glm::mat4 xfmt0 = to_mat4((volPayload.tHit >= 0.f) ? volPayload.localToWorldT0 : surfPayload.localToWorldT0);
@@ -1120,11 +1109,21 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if (entity.light_id >= 0 && entity.light_id < LP.lights.count) {
                 dN = make_float3(0.5f, .5f, 1.f);
             } else {
-                dN = sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float3(0.5f, .5f, 1.f));
+                dN = sampleTexture(entityMaterial.normal_map_texture_id, uv, make_float3(0.5f, .5f, 0.f));
+                GET(TextureStruct tex, TextureStruct, LP.textures, entityMaterial.normal_map_texture_id);
+                // For DirectX normal maps. 
+                // if (!tex.rightHanded) {
+                //     dN.y = 1.f - dN.y;
+                // }
             }
 
             dN = normalize( (dN * make_float3(2.0f)) - make_float3(1.f) );   
             v_z = make_float3(tbn * make_vec3(dN));
+
+            // make sure geometric and shading normal face the same direction.
+            if (dot(v_z, v_gz) < 0.f) {
+                v_z = -v_z;
+            }
         }
 
         // // TEMP CODE
@@ -1134,7 +1133,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // If we didn't hit glass, flip the surface normal to face forward.
         if ((mat.specular_transmission == 0.f) && (entity.light_id == -1)) {
-            v_z = faceNormalForward(w_o, v_z);
+            if (dot(w_o, v_gz) < 0.f) {
+                v_z = -v_z;
+                v_gz = -v_gz;
+            }
         }
 
         if (any(isnan(make_vec3(v_z)))) {
@@ -1226,9 +1228,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float3 bsdf, bsdfColor;
         if (useBRDF) {
             sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
-            // If interpolated normal throws ray under the surface (when goemetric and interpolated normals disagree)
+            
             // fix by reflecting the sampled incoming light direction about the geometric normal. 
-            if (sampledBsdf != DISNEY_TRANSMISSION_BRDF && dot(w_i, v_gz) < 0.f) w_i = reflect(w_i, v_gz);
+            if (sampledBsdf != DISNEY_TRANSMISSION_BRDF) 
+            {
+                // forces the ray to pop out of the surface, but only if it's gone under
+                float f = 1.f - glm::smoothstep(0.f, 0.3f, mat.roughness);
+                f *= glm::clamp(-dot(w_i, v_gz), 0.f, 1.f);
+                w_i = w_i + 2.f * v_gz * f; 
+            }
         } else {
             /* a scatter event occurred */
             if (volPayload.eventID == 2) {
@@ -1386,7 +1394,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (useBRDF) {
             disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, l_bsdf, l_bsdfColor, forcedBsdf);
             dotNWi = max(dot(lightDir, v_z), 0.f);
-            if (dot(lightDir, v_gz) < 0.f) dotNWi = 0.f;
+
+            // auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
+            // LP.frameBuffer[fbOfs] = vec4(l_bsdf.x, l_bsdf.y, l_bsdf.z, 1.f);
+            // return;
         } else {
             // currently isotropic. Todo: implement henyey greenstien...
             l_bsdf = make_float3(1.f / (4.0 * M_PI));
