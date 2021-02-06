@@ -302,7 +302,7 @@ __device__ void disney_diffuse(const DisneyMaterial &mat, const float3 &n,
 	float n_dot_o = fabs(dot(w_o, n));
 	float n_dot_i = fabs(dot(w_i, n));
 	float i_dot_h = dot(w_i, w_h);
-	float fd90 = 0.5f + 0.5f * mat.roughness * i_dot_h * i_dot_h;
+	float fd90 = 0.5f + 1.0f * mat.roughness * i_dot_h * i_dot_h;
 	float fi = schlick_weight(n_dot_i);
 	float fo = schlick_weight(n_dot_o);
 	color = disney_diffuse_color(mat, n, w_o, w_i, w_h);
@@ -429,8 +429,9 @@ __device__ float3 disney_microfacet_isotropic(const DisneyMaterial &mat, const f
 
 	float alpha = max(MIN_ALPHA, mat.roughness * mat.roughness);
 	float d = gtr_2(fabs(dot(n, w_h)), alpha);
-	// float3 f = lerp(spec, make_float3(1.f), schlick_weight(dot(w_i, w_h))); // seems to be noisy
-	float3 f = lerp(spec, make_float3(1.f), schlick_weight(fabs(dot(w_o, n)))*.5f);
+	// Finding dot(w_o, n) to be less noisy, but doesn't look as good for crazy normal maps compared to dot(w_i, w_h)
+	// Also finding fresnel to be introducing unwanted energy for smooth plastics, so I'm adding a correction term.
+	float3 f = lerp(spec, make_float3(1.f), schlick_weight(fabs(dot(w_i, w_h))) * lerp(.5f, 1.f, max(mat.metallic, alpha)));
 	float g = smith_shadowing_ggx(fabs(dot(n, w_i)), alpha) * smith_shadowing_ggx(fabs(dot(n, w_o)), alpha);
 	return d * f * g;
 }
@@ -515,7 +516,9 @@ __device__ float3 disney_microfacet_anisotropic(const DisneyMaterial &mat, const
 	float a = mat.roughness * mat.roughness;
 	float2 alpha = make_float2(max(MIN_ALPHA, a / aspect), max(MIN_ALPHA, a * aspect));
 	float d = gtr_2_aniso(fabs(dot(n, w_h)), fabs(dot(w_h, v_x)), fabs(dot(w_h, v_y)), alpha);
-	float3 f = lerp(spec, make_float3(1.f), schlick_weight(fabs(dot(w_i, w_h)))*.5f);
+	// Finding dot(w_o, n) to be less noisy, but doesn't look as good for crazy normal maps compared to dot(w_i, w_h)
+	// Also finding fresnel to be introducing unwanted energy for smooth plastics, so I'm adding a correction term.
+	float3 f = lerp(spec, make_float3(1.f), schlick_weight(fabs(dot(w_i, w_h))) * lerp(.5f, 1.f, max(mat.metallic, alpha.x * alpha.y)));
 	float g = smith_shadowing_ggx_aniso(fabs(dot(n, w_i)), fabs(dot(w_i, v_x)), fabs(dot(w_i, v_y)), alpha)
 		* smith_shadowing_ggx_aniso(fabs(dot(n, w_o)), fabs(dot(w_o, v_x)), fabs(dot(w_o, v_y)), alpha);
 	return d * f * g;
@@ -649,7 +652,7 @@ __device__ void disney_pdf(const DisneyMaterial &mat, const float3 &n,
 	float transmission_kludge = mat.specular_transmission;
 	n_comp -= lerp(transmission_kludge, metallic_kludge, mat.metallic); 
 	// trying to make smooth plastics lose less energy
-	n_comp += lerp(1.f - max(mat.metallic, mat.specular_transmission), 0.f, mat.roughness*mat.roughness);
+	// n_comp += lerp(1.f - max(mat.metallic, mat.specular_transmission), 0.f, mat.roughness*mat.roughness);
 
 	if (forced_bsdf == 0) {
 		pdf = diffuse; return;
