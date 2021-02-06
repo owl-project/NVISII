@@ -1190,7 +1190,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             else lightEmission = sampleTexture(entityLight.color_texture_id, uv, make_float3(0.f, 0.f, 0.f));
             float dist = surfPayload.tHit;
             lightEmission = (lightEmission * entityLight.intensity);
-            if (depth != 0) lightEmission = (lightEmission * pow(2.f, entityLight.exposure)) / (dist * dist);
+            if (depth != 0) lightEmission = (lightEmission * pow(2.f, entityLight.exposure)) / max((dist * dist), 1.f);
             float3 contribution = pathThroughput * lightEmission;
             illum = illum + contribution;
             if (depth == 0) directIllum = illum;
@@ -1431,7 +1431,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 visible = (volPayload.instanceID == -2) && (surfPayload.instanceID == -2 || surfEntity == sampledLightID);
             }
             if (visible) {
-                if (randomID != numLights) lightEmission = lightEmission / pow(surfPayload.tHit, falloff);
+                if (randomID != numLights) lightEmission = lightEmission / max(pow(surfPayload.tHit, falloff),1.f);
                 float w = power_heuristic(1.f, lightPDF, 1.f, bsdfPDF);
                 float3 Li = (lightEmission * w) / lightPDF;
                 irradiance = irradiance + (l_bsdf * l_bsdfColor * Li);
@@ -1502,7 +1502,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     float3 lightEmission;
                     if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
                     else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
-                    lightEmission = lightEmission / pow(dist, light_light.falloff);
+                    lightEmission = lightEmission / max(pow(dist, light_light.falloff), 1.f);
 
                     if (dotNWi > EPSILON) 
                     {
