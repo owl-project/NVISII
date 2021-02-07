@@ -32,6 +32,7 @@ visii.set_camera_entity(camera)
 
 # lets turn off the ambiant lights 
 visii.set_dome_light_intensity(0)
+visii.disable_dome_light_sampling()
 
 # add a light to an entity
 obj_entity = visii.entity.create(

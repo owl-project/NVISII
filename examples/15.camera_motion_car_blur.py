@@ -70,20 +70,19 @@ floor = visii.entity.create(
 )
 floor.get_transform().set_scale(visii.vec3(10000))
 floor.get_transform().set_position(visii.vec3(0, 0, -5))
-floor.get_material().set_base_color(visii.vec3(.0))
+floor.get_material().set_base_color(visii.vec3(1.0))
 floor.get_material().set_roughness(1)
 floor.get_material().set_specular(0)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # This function loads the 
-sdb = visii.import_obj(
-    "sdb", # prefix name
+sdb = visii.import_scene(
     'content/bmw/bmw.obj', #obj path
-    'content/bmw/', # mtl folder 
     visii.vec3(0,0,0), # translation 
     visii.vec3(1), # scale here
-    visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)) #rotation here
+    visii.angleAxis(3.14 * .5, visii.vec3(1,0,0)), #rotation here
+    args=["verbose"]
 )
 
 # mirror = visii.material.get('sdbMirror')
@@ -99,7 +98,7 @@ hl.set_intensity(1000)
 tl.set_intensity(1000)
 
 #%%
-for i_s, s in enumerate(sdb):
+for i_s, s in enumerate(sdb.entities):
     # print(s.get_name())
     # if 'car' in s.get_name():
     #     print(s.get_name())

@@ -30,8 +30,6 @@ camera.get_transform().look_at(
 )
 visii.set_camera_entity(camera)
 
-visii.disable_dome_light_sampling()
-
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 sdb = visii.import_scene(
@@ -67,8 +65,8 @@ mirror.set_base_color((1,1,1))
 for i_s, s in enumerate(sdb.entities):
     if "light" in s.get_name().lower():
         s.set_light(visii.light.create('light'))
-        s.get_light().set_intensity(10)
-        s.get_light().set_exposure(18)
+        s.get_light().set_intensity(1)
+        s.get_light().set_exposure(15)
         s.get_light().set_temperature(5000)
         s.clear_material()
 

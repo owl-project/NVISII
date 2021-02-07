@@ -34,6 +34,7 @@ visii.set_camera_entity(camera)
 
 # lets turn off the ambiant lights 
 visii.set_dome_light_intensity(0)
+visii.disable_dome_light_sampling()
 
 tex = visii.texture.create_from_file("tex", "content/gradient.png")
 
@@ -49,12 +50,7 @@ obj_entity.set_light(
 
 # Intensity effects the appearance of the light in 
 # addition to what intensity that light emits.
-obj_entity.get_light().set_intensity(4)
-
-# Exposure does not effect direct appearance of the light,
-# but does effect the relative power of the light in illuminating
-# other objects.
-obj_entity.get_light().set_exposure(-1)
+obj_entity.get_light().set_intensity(2)
 
 # lets set the color texture as the color of the light
 obj_entity.get_light().set_color_texture(tex)
@@ -78,8 +74,7 @@ obj_entity = visii.entity.create(
 obj_entity.set_light(
     visii.light.create('light_2')
 )
-obj_entity.get_light().set_intensity(3)
-obj_entity.get_light().set_exposure(-5)
+obj_entity.get_light().set_intensity(2)
 
 # you can also set the light color manually
 obj_entity.get_light().set_color_texture(tex)
