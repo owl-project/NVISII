@@ -1233,8 +1233,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if (sampledBsdf != DISNEY_TRANSMISSION_BRDF) 
             {
                 // forces the ray to pop out of the surface, but only if it's gone under
-                float f = 1.f - glm::smoothstep(0.f, 0.3f, mat.roughness);
-                f *= glm::clamp(-dot(w_i, v_gz), 0.f, 1.f);
+                float f = glm::clamp(-dot(w_i, v_gz), 0.f, 1.f);
                 w_i = w_i + 2.f * v_gz * f; 
             }
         } else {
