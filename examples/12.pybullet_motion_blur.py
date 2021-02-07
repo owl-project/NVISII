@@ -8,7 +8,7 @@ import pybullet as p
 
 opt = lambda: None
 opt.nb_objects = 50
-opt.spp = 128
+opt.spp = 256
 opt.width = 500
 opt.height = 500 
 opt.noise = False
@@ -29,6 +29,11 @@ visii.initialize(headless = False, lazy_updates=True)
 
 if not opt.noise is True: 
     visii.enable_denoiser()
+
+    # Since objects are under motion, we'll disable albedo / normal guides
+    visii.configure_denoiser(
+        use_albedo_guide=False, 
+        use_normal_guide=False)
 
 
 # Create a camera

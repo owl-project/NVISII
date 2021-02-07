@@ -57,7 +57,6 @@ areaLight1 = visii.entity.create(
 )
 areaLight1.get_transform().set_rotation(visii.angleAxis(3.14, (1,0,0)))
 areaLight1.get_light().set_intensity(1)
-areaLight1.get_light().set_exposure(-3)
 areaLight1.get_light().set_temperature(8000)
 areaLight1.get_transform().set_position((0, 0, .6))
 areaLight1.get_transform().set_scale((.2, .2, .2))

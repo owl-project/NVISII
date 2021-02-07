@@ -1,4 +1,5 @@
 import visii
+import os
 import numpy as np 
 from math import acos
 from math import sqrt
@@ -12,6 +13,14 @@ opt.width = 1280
 opt.height = 720 
 opt.noise = False
 opt.path_obj = 'content/dragon/dragon.obj'
+opt.outf = '20_motion_vectors_outf/'
+
+# # # # # # # # # # # # # # # # # # # # # # # # #
+if os.path.isdir(opt.outf):
+    print(f'folder {opt.outf}/ exists')
+else:
+    os.mkdir(opt.outf)
+    print(f'created folder {opt.outf}/')
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 visii.initialize(headless=True, verbose=True)
@@ -186,7 +195,7 @@ visii.render_to_file(
     width=int(opt.width), 
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
-    file_path=f"20_frame1.png"
+    file_path=opt.outf + "20_frame1.png"
 )
 
 obj1.get_transform().set_position(obj1.get_transform().get_position(),previous=True)
@@ -210,7 +219,7 @@ motion_vectors_array = visii.render_data(
 motion_vectors_array = np.array(motion_vectors_array).reshape(opt.height,opt.width,4) * -1
 motion_vectors_array = np.flipud(motion_vectors_array)
 image = generate_image_from_motion_vector(motion_vectors_array)
-cv2.imwrite("20_motion_from_1_to_2.png",image*255)
+cv2.imwrite(opt.outf + "20_motion_from_1_to_2.png",image*255)
 
 
 # frame now has to be set at 1 to have the current image, e.g., the transformed one
@@ -219,7 +228,7 @@ visii.render_to_file(
     width=int(opt.width), 
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
-    file_path=f"20_frame2.png"
+    file_path=opt.outf + "20_frame2.png"
 )
 
 

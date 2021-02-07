@@ -1,7 +1,3 @@
-import sys, os, math
-os.add_dll_directory(os.path.join(os.getcwd(), '..', 'install'))
-sys.path.append(os.path.join(os.getcwd(), "..", "install"))
-
 import os
 import math
 import visii
@@ -96,8 +92,8 @@ visii.sample_pixel_area((.5, .5), (.5, .5))
 # First, let's render out the scene with motion blur to understand
 # how the object is moving
 visii.sample_time_interval((0.0, 1.0))
-visii.render_to_png(width=opt.width, height=opt.height, samples_per_pixel=opt.spp,
-    image_path=f"{opt.outf}/motion_blur.png"
+visii.render_to_file(width=opt.width, height=opt.height, samples_per_pixel=opt.spp,
+    file_path=f"{opt.outf}/motion_blur.png"
 )
 
 def save_image(data, name):
@@ -160,7 +156,7 @@ t1_motion_vectors_array = visii.render_data_to_file(
     frame_count=1,
     bounce=int(0),
     options="diffuse_motion_vectors",
-    image_path= f"{opt.outf}/t1_motion_vectors.exr"
+    file_path= f"{opt.outf}/t1_motion_vectors.exr"
 )
 t1_motion_vectors_array = visii.render_data(
     width=opt.width, 

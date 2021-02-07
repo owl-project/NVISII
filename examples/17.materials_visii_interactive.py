@@ -7,12 +7,10 @@ from PySide2.QtWidgets import *
 
 visii.initialize()
 visii.resize_window(1000,1000)
-visii.set_max_bounce_depth(diffuse_depth=2, specular_depth=20)
 visii.enable_denoiser()
 
 # Set the sky
 dome = visii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
-visii.set_dome_light_intensity(1.15)
 visii.set_dome_light_texture(dome)
 
 # Set camera
@@ -58,7 +56,7 @@ teapotahedron.get_material().set_roughness(0.0)
 
 # Objects can be made to be "alpha transparent", which simulates little holes in the
 # mesh that let light through. The smaller the alpha, the more little holes.
-teapotahedron.get_material().set_alpha(0.5)   
+teapotahedron.get_material().set_alpha(1.0)   
 
 # Make a QT window to demonstrate the difference between alpha transparency and transmission
 app = QApplication([]) # Start an application.
@@ -98,7 +96,7 @@ slider.setValue(40)
 layout.addWidget(QLabel('Camera Elevation')) 
 layout.addWidget(slider) 
 
-color = [1,0.1,0.5]
+color = [0,1.0,1.0]
 
 def setColorHue(value):
     value = value / 100.0
@@ -136,7 +134,7 @@ layout.addWidget(slider)
 
 slider = QSlider(Qt.Horizontal) 
 slider.valueChanged[int].connect(setColorValue)
-slider.setValue(int(color[1]*100))
+slider.setValue(int(color[2]*100))
 layout.addWidget(QLabel('Color Value')) 
 layout.addWidget(slider) 
 
@@ -144,10 +142,10 @@ layout.addWidget(slider)
 def setAlpha(value):
     value = value / 100.0
     teapotahedron.get_material().set_alpha(value)
-setAlpha(50)
+setAlpha(100)
 slider = QSlider(Qt.Horizontal) 
 slider.valueChanged[int].connect(setAlpha)
-slider.setValue(50)
+slider.setValue(100)
 layout.addWidget(QLabel('Alpha')) 
 layout.addWidget(slider) 
 
@@ -171,6 +169,16 @@ slider.setValue(0)
 layout.addWidget(QLabel('Roughness')) 
 layout.addWidget(slider) 
 
+def setTransmissionRoughness(value):
+    value = value / 100.0
+    teapotahedron.get_material().set_transmission_roughness(value)
+setTransmissionRoughness(0)
+slider = QSlider(Qt.Horizontal) 
+slider.valueChanged[int].connect(setTransmissionRoughness)
+slider.setValue(0)
+layout.addWidget(QLabel('Transmission Roughness')) 
+layout.addWidget(slider) 
+
 def setMetal(value):
     value = value / 100.0
     teapotahedron.get_material().set_metallic(value)
@@ -181,13 +189,23 @@ slider.setValue(0)
 layout.addWidget(QLabel('Metallic')) 
 layout.addWidget(slider) 
 
+def setAnisotropic(value):
+    value = value / 100.0
+    teapotahedron.get_material().set_anisotropic(value)
+setAnisotropic(0)
+slider = QSlider(Qt.Horizontal) 
+slider.valueChanged[int].connect(setAnisotropic)
+slider.setValue(0)
+layout.addWidget(QLabel('Anisotropy')) 
+layout.addWidget(slider) 
+
 def setSpecular(value):
     value = value / 100.0
     teapotahedron.get_material().set_specular(value)
-setSpecular(0)
+setSpecular(50)
 slider = QSlider(Qt.Horizontal) 
 slider.valueChanged[int].connect(setSpecular)
-slider.setValue(0)
+slider.setValue(50)
 layout.addWidget(QLabel('Specular')) 
 layout.addWidget(slider) 
 

@@ -6,9 +6,9 @@ import random
 import numpy as np 
 
 opt = lambda : None
-opt.spp = 256 
-opt.width = 500
-opt.height = 500 
+opt.spp = 1000 
+opt.width = 1024
+opt.height = 1024 
 opt.out = "07_procedural_texture.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #

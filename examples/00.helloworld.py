@@ -7,6 +7,6 @@ import visii
 
 visii.initialize()
 
-input("Press Enter to continue...")
+while (not visii.should_window_close()): pass
 
 visii.deinitialize()

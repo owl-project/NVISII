@@ -12,6 +12,11 @@ opt.out = '11_instance_motion_blur.png'
 visii.initialize(headless=True, verbose=True)
 
 if not opt.noise is True: 
+    # Since objects are under motion, we'll disable albedo / normal guides
+    visii.configure_denoiser(
+        use_albedo_guide=False, 
+        use_normal_guide=False)
+        
     visii.enable_denoiser()
 
 camera = visii.entity.create(
@@ -117,11 +122,11 @@ obj3.get_transform().set_scalar_velocity((-.5, -.5, -.5))
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.render_to_png(
+visii.render_to_file(
     width=int(opt.width), 
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
-    image_path=f"{opt.out}"
+    file_path=f"{opt.out}"
 )
 
 # let's clean up the GPU
