@@ -86,7 +86,7 @@ mat.set_roughness(1)
 mat.set_specular(0)
 
 # Normal maps must be made using linear = True.
-test_normal_tex = visii.texture.create_from_file("test_normal_map",'../data/TestNormalMap.png', linear = True)
+test_normal_tex = visii.texture.create_from_file("test_normal_map",'content/TestNormalMap.png', linear = True)
 mat.set_normal_map_texture(test_normal_tex)
 
 brick_plane = visii.entity.create(
