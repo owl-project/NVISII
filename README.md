@@ -1,15 +1,15 @@
-# ViSII - A VIrtual Scene Imaging Interface
+# NVISII - NVIDIA Scene Imaging Interface
 
-![ViSII examples](https://i.imgur.com/A3MDFzy.png)
+![NViSII examples](https://i.imgur.com/A3MDFzy.png)
 
-ViSII is a python-enabled ray tracing based renderer built on top of NVIDIA OptiX (C++/CUDA backend). 
+NVISII is a python-enabled ray tracing based renderer built on top of NVIDIA OptiX (C++/CUDA backend). 
 The tool allows you to define complex scenes: 3d meshes, object materials, lights, loading textures, _etc._, and render 
 them using ray tracing techniques. 
 A scene can be described in many ways, you can use our simple mesh definitions, use multiple obj files, or 
 load a complex scene defined in an obj file.
 ViSII can be used to export metadata about the scene, _e.g._, object segmentation. 
 
-[Documentation](https://owl-project.github.io/ViSII/).
+[Documentation](https://www.nvisii.com).
 
 <!--
 This library provides a simple, primarily python-user targeted, interface to rendering images of a virtual scene. Its key cornerstones are:
@@ -36,28 +36,28 @@ If you need more information about how to install NVIDIA drivers on Ubuntu pleas
 
 ## Getting Started 
 
-We wrote different examples covering most of the functionalities of ViSII, [here](examples/). 
-You can also find more extensive documentation [here](https://owl-project.github.io/ViSII/).
+We wrote different examples covering most of the functionalities of NVISII, [here](examples/). 
+You can also find more extensive documentation [here](https://www.nvisii.com).
 
 ## Building 
 
-Exact commands used to ViSII can be found in .github/manylinux.yml and .github/windows.yml.
+Exact commands used to build NVISII can be found in .github/manylinux.yml and .github/windows.yml.
 More information on how to build will be added in the near future. 
 
-<!-- Although we do not recommend building visii from scratch. Here are the rudimentary 
+<!-- Although we do not recommend building nvisii from scratch. Here are the rudimentary 
 requirements: 
 -->
 
 ## Docker
 
-Here are the steps to build a docker image for ViSII. 
+Here are the steps to build a docker image for NVISII. 
 
 ```
 cd docker
 sudo sh get_nvidia_libs.sh
 ```
 
-Since the CUDA docker image includes limited libs, this script adds the missing one for ViSII to run. 
+Since the CUDA docker image includes limited libs, this script adds the missing one for NVISII to run. 
 This could potentially cause problems if the docker image is deployed on a different system, 
 please make sure the NVIDIA drivers match on all your systems. 
 
@@ -66,9 +66,9 @@ docker build . -t visii:07.20
 ```
 
 You can run an example like follow, 
-make sure you change `/PATH/TO/ViSII/` to your path to the root of this repo.   
+make sure you change `/PATH/TO/NVISII/` to your path to the root of this repo.   
 ```
-docker run --gpus 1 -v /PATH/TO/ViSII/:/code visii:07.20 python examples/01.simple_scene.py
+docker run --gpus 1 -v /PATH/TO/NVISII/:/code visii:07.20 python examples/01.simple_scene.py
 ```
 This will save a `tmp.png` in the root folder. 
 
@@ -76,10 +76,10 @@ This will save a `tmp.png` in the root folder.
 
 If you use this tool in your research project, please cite as follows:
 
-    @misc{Morrical20visii,
+    @misc{Morrical20nvisii,
     author = {Nathan Morrical and Jonathan Tremblay and Stan Birchfield and Ingo Wald},
-    note= {\url{ https://github.com/owl-project/ViSII/ }},
-    title = {{ViSII}: VIrtual Scene Imaging Interface},
+    note= {\url{ https://github.com/owl-project/NVISII/ }},
+    title = {{NVISII}: NVIDIA Scene Imaging Interface},
     Year = 2020
     }
 
