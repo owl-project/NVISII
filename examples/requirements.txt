@@ -2,7 +2,7 @@ visii
 pybullet
 noise
 numpy
-PIL
+pillow
 scipy
 pygame
 open3d
