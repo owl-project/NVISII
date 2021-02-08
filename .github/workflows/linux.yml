@@ -129,7 +129,7 @@ jobs:
           -DPython_VERSION_MINOR=${PY:3:1} \
           -DCMAKE_BUILD_TYPE=Release \
 
- 
+
           $CMAKEEXEC --build . --config Release --target install
           cd ..
           cd install
@@ -163,7 +163,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: nvisii-${{ matrix.os }}-python${{ matrix.python-version }}
+          name: nvisii-${{ matrix.os }}-python${{ matrix.python-version }}-optix${{ matrix.optix-version }}
           path: install/dist/wheelhouse/*.whl
           
   deploy:
