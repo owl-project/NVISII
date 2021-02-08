@@ -544,78 +544,95 @@ __device__ float3 disney_sheen(const DisneyMaterial &mat, const float3 &n,
 	return f * mat.sheen * sheen_color;
 }
 
-// when a BSDF is forced, we'll try to separate the color out of the bsdf filtered value.
-// this isn't always possible though, since sheen, gloss, and clearcoat might all have
-// unique colors, and combine together to make one single glossy color.
-// note, assumes all input vectors are normalized.
-__device__ void disney_brdf(const DisneyMaterial &mat, const float3 &n,
-	const float3 &w_o, const float3 &w_i, const float3 &w_h, const float3 &v_x, const float3 &v_y,
-	float3 &bsdf, float3 &color, int forced_bsdf
+/* 
+ * Compute the throughput of a given sampled direction
+ * @param mat The structure containing material information.
+ * @param g_n The geometric normal (cross product of the two triangle edges)
+ * @param s_n The shading normal (per-vertex interpolated normal)
+ * @param b_n The bent normal (see A.3 here https://arxiv.org/abs/1705.01263)
+ * @param v_x The tangent vector
+ * @param v_y The binormal vector
+ * @param w_o The outgoing (aka view) vector
+ * @param w_i The sampled incoming (aka light) vector
+ * @param w_h The halfway vector between the incoming and outgoing vectors
+ * @param pdf The returned probability of this sample
+ */
+__device__ void disney_brdf(
+	const DisneyMaterial &mat, 
+	const float3 &g_n,
+	const float3 &s_n,
+	const float3 &b_n,
+	const float3 &v_x, 
+	const float3 &v_y,
+	const float3 &w_o, 
+	const float3 &w_i, 
+	const float3 &w_h, 
+	float3 &bsdf
 ) {
-	// initialize color and bsdf value to black for now.
-	color = make_float3(0.f);
+	// initialize bsdf value to black for now.
 	bsdf = make_float3(0.f);
 
 	// transmissive objects refract when back of surface is visible.
-	if (!same_hemisphere(w_o, w_i, n) && (mat.specular_transmission > 0.f)) {
+	if (!same_hemisphere(w_o, w_i, b_n) && (mat.specular_transmission > 0.f)) {
 		float spec_trans; float3 trans_color;
-		disney_microfacet_transmission_isotropic(mat, n, w_o, w_i, spec_trans, trans_color);
+		disney_microfacet_transmission_isotropic(mat, b_n, w_o, w_i, spec_trans, trans_color);
 		spec_trans = spec_trans * (1.f - mat.metallic) * mat.specular_transmission;
-		color = trans_color;
-		bsdf = make_float3(spec_trans);			
+		bsdf = make_float3(spec_trans) * trans_color;			
 		return;
 	}
 
-	// If forcing transmission, stop here.
-	if (forced_bsdf == 3) return;
-
-	float coat = disney_clear_coat(mat, n, w_o, w_i, w_h);
-	float3 sheen = disney_sheen(mat, n, w_o, w_i, w_h);
+	float coat = disney_clear_coat(mat, b_n, w_o, w_i, w_h);
+	float3 sheen = disney_sheen(mat, b_n, w_o, w_i, w_h);
 	float3 diffuse_bsdf, diffuse_color;
-	disney_diffuse(mat, n, w_o, w_i, w_h, diffuse_bsdf, diffuse_color);
+	disney_diffuse(mat, b_n, w_o, w_i, w_h, diffuse_bsdf, diffuse_color);
 	float3 subsurface_bsdf, subsurface_color;
-	disney_subsurface(mat, n, w_o, w_i, w_h, subsurface_bsdf, subsurface_color);
+	disney_subsurface(mat, b_n, w_o, w_i, w_h, subsurface_bsdf, subsurface_color);
 	float3 gloss;
 	if (mat.anisotropy == 0.f) {
-		gloss = disney_microfacet_isotropic(mat, n, w_o, w_i, w_h);
+		gloss = disney_microfacet_isotropic(mat, b_n, w_o, w_i, w_h);
 		// gloss = gloss + disney_multiscatter(mat, n, w_o, w_i, GGX_E_LOOKUP, GGX_E_AVG_LOOKUP);
 	} else 
 	{
-		gloss = disney_microfacet_anisotropic(mat, n, w_o, w_i, w_h, v_x, v_y);
+		gloss = disney_microfacet_anisotropic(mat, b_n, w_o, w_i, w_h, v_x, v_y);
 		// gloss = gloss + disney_multiscatter(mat, n, w_o, w_i, GGX_E_LOOKUP, GGX_E_AVG_LOOKUP);
 	}
 	
-	// If diffuse BRDF is forced
-	if (forced_bsdf == 0) {
-		color = diffuse_color;
-		bsdf = (lerp(diffuse_bsdf, subsurface_bsdf, mat.flatness) 
-				* (1.f - mat.metallic) 
-				* (1.f - mat.specular_transmission) 
-				* fabs(dot(w_i, n)));
-		return;
-	}
-
-	// If glossy BRDF is forced
-	if ((forced_bsdf == 1) || (forced_bsdf == 2)) {
-		color = disney_microfacet_reflection_color(mat, n, w_o, w_i, w_h);
-		bsdf = ((sheen + gloss + coat) * fabs(dot(w_i, n))) / color;
-		return;
-	}
-
-	bsdf = //make_float3(1.f)*gloss;//sheen + gloss + coat;
-	 (lerp(diffuse_bsdf * diffuse_color, subsurface_bsdf * subsurface_color, mat.flatness) * (1.f - mat.metallic) * (1.f - mat.specular_transmission) 
-	 	+ sheen + coat + gloss) * fabs(dot(w_i, n));
-	color = make_float3(1);		
+	bsdf = (lerp(diffuse_bsdf * diffuse_color, 
+				subsurface_bsdf * subsurface_color, 
+				mat.flatness) 
+		* (1.f - mat.metallic) * (1.f - mat.specular_transmission) 
+	 	+ sheen + coat + gloss) * fabs(dot(w_i, b_n));
 }
 
-__device__ void disney_pdf(const DisneyMaterial &mat, const float3 &n,
-	const float3 &w_o, const float3 &w_i, const float3 &w_h, const float3 &v_x, const float3 &v_y,
-	float &pdf, int forced_bsdf
+/* 
+ * Compute the probability of a given sampled direction
+ * @param mat The structure containing material information.
+ * @param g_n The geometric normal (cross product of the two triangle edges)
+ * @param s_n The shading normal (per-vertex interpolated normal)
+ * @param b_n The bent normal (see A.3 here https://arxiv.org/abs/1705.01263)
+ * @param v_x The tangent vector
+ * @param v_y The binormal vector
+ * @param w_o The outgoing (aka view) vector
+ * @param w_i The sampled incoming (aka light) vector
+ * @param w_h The halfway vector between the incoming and outgoing vectors
+ * @param pdf The returned probability of this sample
+ */
+__device__ void disney_pdf(
+	const DisneyMaterial &mat, 
+	const float3 &g_n,
+	const float3 &s_n,
+	const float3 &b_n,
+	const float3 &v_x, 
+	const float3 &v_y,
+	const float3 &w_o, 
+	const float3 &w_i, 
+	const float3 &w_h, 
+	float &pdf
 ) {
 	pdf = 0.f;
 
-	bool entering = dot(w_o, n) > 0.f;
-	bool sameHemisphere = same_hemisphere(w_o, w_i, n);
+	bool entering = dot(w_o, b_n) > 0.f;
+	bool sameHemisphere = same_hemisphere(w_o, w_i, b_n);
 	
 	float alpha = max(0.002f, mat.roughness * mat.roughness);
 	float t_alpha = max(0.002f, mat.transmission_roughness * mat.transmission_roughness);
@@ -624,20 +641,20 @@ __device__ void disney_pdf(const DisneyMaterial &mat, const float3 &n,
 
 	float clearcoat_alpha = lerp(0.1f, MIN_ALPHA, mat.clearcoat_gloss);
 
-	float diffuse = lambertian_pdf(w_i, n);
-	float clear_coat = gtr_1_pdf(w_o, w_i, w_h, n, clearcoat_alpha);
+	float diffuse = lambertian_pdf(w_i, b_n);
+	float clear_coat = gtr_1_pdf(w_o, w_i, w_h, b_n, clearcoat_alpha);
 
 	float n_comp = 3.f;
 	float microfacet = 0.f;
 	float microfacet_transmission = 0.f;
 	if (mat.anisotropy == 0.f) {
-		microfacet = gtr_2_pdf(w_o, w_i, w_h, n, alpha);
+		microfacet = gtr_2_pdf(w_o, w_i, w_h, b_n, alpha);
 	} else {
-		microfacet = gtr_2_aniso_pdf(w_o, w_i, w_h, n, v_x, v_y, alpha_aniso);
+		microfacet = gtr_2_aniso_pdf(w_o, w_i, w_h, b_n, v_x, v_y, alpha_aniso);
 	}
 
-	if ((mat.specular_transmission > 0.f) && (!same_hemisphere(w_o, w_i, n))) {
-		microfacet_transmission = gtr_2_transmission_pdf(w_o, w_i, n, mat.transmission_roughness, mat.ior);
+	if ((mat.specular_transmission > 0.f) && (!same_hemisphere(w_o, w_i, b_n))) {
+		microfacet_transmission = gtr_2_transmission_pdf(w_o, w_i, b_n, mat.transmission_roughness, mat.ior);
 	} 
 
 	// not sure why, but energy seems to be added from smooth metallic. By subtracting mat.metallic from n_comps,
@@ -651,100 +668,86 @@ __device__ void disney_pdf(const DisneyMaterial &mat, const float3 &n,
 	float metallic_kludge = mat.metallic;
 	float transmission_kludge = mat.specular_transmission;
 	n_comp -= lerp(transmission_kludge, metallic_kludge, mat.metallic); 
-	// trying to make smooth plastics lose less energy
-	// n_comp += lerp(1.f - max(mat.metallic, mat.specular_transmission), 0.f, mat.roughness*mat.roughness);
-
-	if (forced_bsdf == 0) {
-		pdf = diffuse; return;
-	}
-	if (forced_bsdf == 1) {
-		pdf = microfacet; return;
-	}
-	if (forced_bsdf == 2) {
-		pdf = clear_coat; return;
-	}
-	if (forced_bsdf == 3) {
-		pdf = microfacet_transmission; return;
-	}
-
 	pdf = (diffuse + microfacet + microfacet_transmission + clear_coat) / n_comp;
 }
 
-/* Sample a component of the Disney BRDF, returns the sampled BRDF color,
- * ray reflection direction (w_i) and sample PDF.
+/* 
+ * Sample a component of the Disney BRDF
+ * @param mat The structure containing material information.
+ * @param rng The random number generator
+ * @param g_n The geometric normal (cross product of the two triangle edges)
+ * @param s_n The shading normal (per-vertex interpolated normal)
+ * @param b_n The bent normal (see A.3 here https://arxiv.org/abs/1705.01263)
+ * @param v_x The tangent vector
+ * @param v_y The binormal vector
+ * @param w_o The outgoing (aka view) vector
+ * @param w_i The returned incoming (aka light) vector
+ * @param pdf The probability of this sample, for importance sampling
+ * @param sampled_bsdf Enum for which bsdf was sampled. 
+ * 	Can be either DISNEY_DIFFUSE_BRDF, DISNEY_GLOSSY_BRDF, DISNEY_CLEARCOAT_BRDF, DISNEY_TRANSMISSION_BRDF
+ * @param bsdf The throughput of all brdfs in the sampled direction
  */
-__device__ void sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
-	const float3 &w_o, const float3 &v_x, const float3 &v_y, LCGRand &rng,
-	float3 &w_i, float &pdf, int &sampled_bsdf, float3 &bsdf, float3 &color, 
-	int forced_bsdf)
-{
-	bool entering = dot(w_o, n) > 0.f;
-
-	int component = 0;
-	if ((forced_bsdf < 0) || (forced_bsdf > 3)) {
-		if (mat.specular_transmission == 0.f) {
-			component = lcg_randomf(rng) * 3.f;
-			component = glm::clamp(component, 0, 2);
-		} else 
-		{
-			if (entering) {
-				component = lcg_randomf(rng) * 4.f;
-				component = glm::clamp(component, 0, 3);
-			}
-			// HACK, forcing only refractive brdf when entering surface 
-			else component = 3; 
+__device__ void sample_disney_brdf(
+	const DisneyMaterial &mat,
+	LCGRand &rng,
+	const float3 &g_n, const float3 &s_n, const float3 &b_n, 
+	const float3 &v_x, const float3 &v_y,
+	const float3 &w_o,
+	float3 &w_i, 
+	float &pdf, 
+	int &sampled_bsdf, 
+	float3 &bsdf
+) {
+	// Randomly pick a brdf to sample
+	if (mat.specular_transmission == 0.f) {
+		sampled_bsdf = lcg_randomf(rng) * 3.f;
+		sampled_bsdf = glm::clamp(sampled_bsdf, 0, 2);
+	} else {
+		// If we're looking at the front face 
+		if (dot(w_o, b_n) > 0.f) {
+			sampled_bsdf = lcg_randomf(rng) * 4.f;
+			sampled_bsdf = glm::clamp(sampled_bsdf, 0, 3);
 		}
+		else sampled_bsdf = DISNEY_TRANSMISSION_BRDF; 
 	}
-	else {
-		// possible bug here related to above hack and transmissive surfaces with total internal reflections
-		component = forced_bsdf;
-	}
-
-	// is_specular = ((component != 0) && (component != 3));
-	sampled_bsdf = component;
 
 	float2 samples = make_float2(lcg_randomf(rng), lcg_randomf(rng));
-	if (component == DISNEY_DIFFUSE_BRDF) {
-		// Sample diffuse component
-		w_i = sample_lambertian_dir(n, v_x, v_y, samples);
-	} else if (component == DISNEY_GLOSSY_BRDF) {
+	if (sampled_bsdf == DISNEY_DIFFUSE_BRDF) {
+		w_i = sample_lambertian_dir(b_n, v_x, v_y, samples);
+	} else if (sampled_bsdf == DISNEY_GLOSSY_BRDF) {
 		float3 w_h;
 		float alpha = max(MIN_ALPHA, mat.roughness * mat.roughness);
 		if (mat.anisotropy == 0.f) {
-			w_h = sample_gtr_2_h(n, v_x, v_y, alpha, samples);
+			w_h = sample_gtr_2_h(b_n, v_x, v_y, alpha, samples);
 		} else {
 			float aspect = sqrt(1.f - mat.anisotropy * 0.9f);
 			float2 alpha_aniso = make_float2(max(MIN_ALPHA, alpha / aspect), max(MIN_ALPHA, alpha * aspect));
-			w_h = sample_gtr_2_aniso_h(n, v_x, v_y, alpha_aniso, samples);
+			w_h = sample_gtr_2_aniso_h(b_n, v_x, v_y, alpha_aniso, samples);
 		}
 		w_i = reflect(-w_o, w_h);
 
 		// Invalid reflection, terminate ray
-		if (!same_hemisphere(w_o, w_i, n)) {
+		if (!same_hemisphere(w_o, w_i, b_n)) {
 			pdf = 0.f;
 			w_i = make_float3(0.f);
-			color = make_float3(0.f);
 			bsdf = make_float3(0.f);
 			return;
 		}
-	} else if (component == DISNEY_CLEARCOAT_BRDF) {
-		// Sample clear coat component
+	} else if (sampled_bsdf == DISNEY_CLEARCOAT_BRDF) {
 		float alpha = lerp(0.1f, MIN_ALPHA, mat.clearcoat_gloss);
-		float3 w_h = sample_gtr_1_h(n, v_x, v_y, alpha, samples);
+		float3 w_h = sample_gtr_1_h(b_n, v_x, v_y, alpha, samples);
 		w_i = reflect(-w_o, w_h);
 
 		// Invalid reflection, terminate ray
-		if (!same_hemisphere(w_o, w_i, n)) {
+		if (!same_hemisphere(w_o, w_i, b_n)) {
 			pdf = 0.f;
 			w_i = make_float3(0.f);
-			color = make_float3(0.f);
 			bsdf = make_float3(0.f);
 			return;
 		}
-	} else {	
-		// Sample microfacet transmission component
+	} else if (sampled_bsdf == DISNEY_TRANSMISSION_BRDF) {	
 		float alpha = max(MIN_ALPHA, mat.transmission_roughness * mat.transmission_roughness);
-		float3 w_h = sample_gtr_2_h(n, v_x, v_y, alpha, samples);
+		float3 w_h = sample_gtr_2_h(b_n, v_x, v_y, alpha, samples);
 		float eta_o, eta_i;
 		bool entering = relative_ior(w_o, w_h, mat.ior, eta_o, eta_i);
 		// w_i = refract(-w_o, w_h, eta_o / eta_i);
@@ -756,15 +759,13 @@ __device__ void sample_disney_brdf(const DisneyMaterial &mat, const float3 &n,
 		if (all_zero(w_i)) {
 			w_i = reflect(-w_o, (entering) ? w_h : -w_h);
 			pdf = 1.f;
-			color = make_float3(1.f); // Normally absorption would happen here...
-			bsdf = make_float3(1.f);
+			bsdf = make_float3(1.f);// Normally absorption would happen here...
 			return;
 		}
-	// return make_float3(1.f); // HACK
 	}
 	
 	float3 w_h = normalize(w_i + w_o);
-	disney_pdf(mat, n, w_o, w_i, w_h, v_x, v_y, pdf, forced_bsdf);
-	disney_brdf(mat, n, w_o, w_i, w_h, v_x, v_y, bsdf, color, forced_bsdf);
+	disney_pdf(mat, g_n, s_n, b_n, v_x, v_y, w_o, w_i, w_h, pdf);
+	disney_brdf(mat, g_n, s_n, b_n, v_x, v_y, w_o, w_i, w_h, bsdf);
 }
 

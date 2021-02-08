@@ -1038,7 +1038,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         else hit_p = surfRay.origin + surfPayload.tHit * surfRay.direction;
 
         // Load geometry data for the hit object
-        float3 mp, p, v_x, v_y, v_z, v_gz; 
+        float3 mp, p, v_x, v_y, v_z, v_gz, v_bz; 
         float2 uv; 
         float3 diffuseMotion;
         if (volPayload.tHit >= 0.f) {
@@ -1124,6 +1124,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if (dot(v_z, v_gz) < 0.f) {
                 v_z = -v_z;
             }
+
+            v_bz = v_z;
         }
 
         // // TEMP CODE
@@ -1136,6 +1138,15 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if (dot(w_o, v_gz) < 0.f) {
                 v_z = -v_z;
                 v_gz = -v_gz;
+            }
+
+            // compute bent normal
+            float3 r = reflect(-w_o, v_z);
+            float a = dot(v_gz, r);
+            v_bz = v_z;
+            if (a < 0.f) {
+                float b = max(0.001f, dot(v_z, v_gz));
+                v_bz = normalize(w_o + normalize(r - v_z * a / b));
             }
         }
 
@@ -1202,9 +1213,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float lightPDF = 0.f;
         float3 irradiance = make_float3(0.f);
 
-        // note, rdForcedBsdf is -1 by default
-        int forcedBsdf = -1;
-
         // If we hit a volume, use hybrid scattering to determine whether or not to use a BRDF or a phase function.
         bool useBRDF = true;
         if (volPayload.tHit >= 0.f) {
@@ -1225,17 +1233,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float3 w_i;
         float bsdfPDF;
         int sampledBsdf = -1;
-        float3 bsdf, bsdfColor;
+        float3 bsdf;
         if (useBRDF) {
-            sample_disney_brdf(mat, v_z, w_o, v_x, v_y, rng, w_i, bsdfPDF, sampledBsdf, bsdf, bsdfColor, forcedBsdf);
-            
-            // fix by reflecting the sampled incoming light direction about the geometric normal. 
-            if (sampledBsdf != DISNEY_TRANSMISSION_BRDF) 
-            {
-                // forces the ray to pop out of the surface, but only if it's gone under
-                float f = glm::clamp(-dot(w_i, v_gz), 0.f, 1.f);
-                w_i = w_i + 2.f * v_gz * f; 
-            }
+            sample_disney_brdf(
+                mat, rng, v_gz, v_z, v_bz, v_x, v_y, w_o, // inputs
+                w_i, bsdfPDF, sampledBsdf, bsdf);         // outputs
         } else {
             /* a scatter event occurred */
             if (volPayload.eventID == 2) {
@@ -1261,7 +1263,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
 
             // For all events, modify throughput by base color.
-            bsdfColor = mat.base_color;
+            bsdf = bsdf * mat.base_color;
         }
 
         // At this point, if we are refracting and we ran out of transmission bounces, skip forward.
@@ -1293,7 +1295,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         uint32_t randmax = (enableDomeSampling) ? numLights + 1 : numLights;
         uint32_t randomID = uint32_t(min(lcg_randomf(rng) * randmax, float(randmax-1)));
         float dotNWi  = 0.f;
-        float3 l_bsdf = make_float3(0.f), l_bsdfColor = make_float3(0.f);
+        float3 l_bsdf = make_float3(0.f);
         float3 lightEmission = make_float3(0.f);
         float3 lightDir = make_float3(0.f);
         float lightDistance = 1e20f;
@@ -1391,7 +1393,10 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
 
         if (useBRDF) {
-            disney_brdf(mat, v_z, w_o, lightDir, normalize(w_o + lightDir), v_x, v_y, l_bsdf, l_bsdfColor, forcedBsdf);
+            disney_brdf(
+                mat, v_gz, v_z, v_bz, v_x, v_y,
+                w_o, lightDir, normalize(w_o + lightDir), l_bsdf
+            );
             dotNWi = max(dot(lightDir, v_z), 0.f);
 
             // auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
@@ -1399,8 +1404,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // return;
         } else {
             // currently isotropic. Todo: implement henyey greenstien...
-            l_bsdf = make_float3(1.f / (4.0 * M_PI));
-            l_bsdfColor = mat.base_color;
+            l_bsdf = make_float3(1.f / (4.0 * M_PI)) * mat.base_color;
             dotNWi = 1.f; // no geom term for phase function
         }
         lightPDF *= (1.f / float(numLights + 1.f)) * (1.f / float(numTris));
@@ -1433,7 +1437,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 if (randomID != numLights) lightEmission = lightEmission / max(pow(surfPayload.tHit, falloff),1.f);
                 float w = power_heuristic(1.f, lightPDF, 1.f, bsdfPDF);
                 float3 Li = (lightEmission * w) / lightPDF;
-                irradiance = irradiance + (l_bsdf * l_bsdfColor * Li);
+                irradiance = irradiance + (l_bsdf * Li);
             }
         }
 
@@ -1441,7 +1445,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         saveLightingColorRenderData(renderData, depth, v_z, w_o, w_i, mat);
 
         // Terminate the path if the bsdf probability is impossible, or if the bsdf filters out all light
-        if (bsdfPDF < EPSILON || all_zero(bsdf) || all_zero(bsdfColor)) {
+        if (bsdfPDF < EPSILON || all_zero(bsdf)) {
             float3 contribution = pathThroughput * irradiance;
             illum = illum + contribution;
             break;
@@ -1478,7 +1482,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 float3 Li = (lightEmission * w) / bsdfPDF;
                 
                 if (dotNWi > 0.f) {
-                    irradiance = irradiance + (bsdf * bsdfColor * Li);
+                    irradiance = irradiance + (bsdf * Li);
                 }
                 hitLight = true;
             }
@@ -1507,7 +1511,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                     {
                         float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDF);
                         float3 Li = (lightEmission * w) / bsdfPDF;
-                        irradiance = irradiance + (bsdf * bsdfColor * Li);
+                        irradiance = irradiance + (bsdf * Li);
                     }
                     hitLight = true;
                 }
@@ -1517,7 +1521,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // Accumulate radiance (ie pathThroughput * irradiance), and update the path throughput using the sampled BRDF
         float3 contribution = pathThroughput * irradiance;
         illum = illum + contribution;
-        pathThroughput = (pathThroughput * bsdf * bsdfColor) / bsdfPDF;
+        pathThroughput = (pathThroughput * bsdf) / bsdfPDF;
         if (depth == 0) directIllum = illum;
 
         // Avoid double counting light sources by terminating here if we hit a light sampled thorugh NEE/MIS
