@@ -1,3 +1,5 @@
+name: Linux CI
+
 on:
   push:
     branches: [ master ]
@@ -66,7 +68,7 @@ jobs:
             yum -y install unar  
             yum -y install zip      
             
-            source /opt/rh/devtoolset-8/enable
+            source /opt/rh/devtoolset-9/enable
     
             # Build a version of SWIG we can use
             mkdir build
@@ -93,7 +95,7 @@ jobs:
           export OPTIX_VERSION=${{ matrix.optix-version }}
           CMAKEEXEC=/opt/python/cp38-cp38/bin/cmake            
 
-          source /opt/rh/devtoolset-8/enable
+          source /opt/rh/devtoolset-9/enable
           
           PY=${{ matrix.python-version }}
           PYVER=${PY:2:1}.${PY:3:1}
