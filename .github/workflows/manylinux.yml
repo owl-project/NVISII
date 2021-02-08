@@ -61,7 +61,9 @@ jobs:
             yum clean all
             yum -y install cuda-11-2
             yum -y install xorg-x11-server-devel
+            yum -y install libXi-devel
             yum -y install libXinerama-devel
+            yum -y install libX11-devel
             yum -y install glfw-devel
             yum -y install wget
             yum -y install pcre-devel
