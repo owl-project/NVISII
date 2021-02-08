@@ -24,7 +24,7 @@ jobs:
       matrix:	
         os:	
           - windows-latest
-        python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
+        python-version: [2.7, 3.5, 3.6, 3.7, 3.8, 3.9]
         optix-version: [70, 71, 72]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
