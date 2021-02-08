@@ -1,11 +1,11 @@
-#include <visii/visii.h>
+#include <nvisii/nvisii.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
 #include <set>
 
-namespace visii {
+namespace nvisii {
 
 struct TextureInfo {
     std::string path = "";
@@ -53,7 +53,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         if (args[i].compare("max_quality") == 0) max_quality = true;
     }
 
-    Scene visiiScene;
+    Scene nvisiiScene;
 
     // Check and validate the specified model file extension.
     const char* extension = strrchr(path.c_str(), '.');
@@ -98,7 +98,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         }
         if (verbose) std::cout<< "Creating material " << materialName << std::endl;
         auto mat = Material::create(materialName);
-        visiiScene.materials.push_back(mat);
+        nvisiiScene.materials.push_back(mat);
         material_light_map[mat] = nullptr;
         aiString Path;
         
@@ -194,7 +194,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         } catch (std::exception& e) {
             if (verbose) std::cout<<"Warning: unable to load texture " << textureName <<  " : " << std::string(e.what()) <<std::endl;
         }
-        visiiScene.textures.push_back(texture);
+        nvisiiScene.textures.push_back(texture);
         texture_map[tex.path] = texture;
     }
 
@@ -202,7 +202,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
     for (uint32_t materialIdx = 0; materialIdx < scene->mNumMaterials; ++materialIdx) {
         auto &material = scene->mMaterials[materialIdx];
         auto name = std::string(material->GetName().C_Str());
-        auto mat = visiiScene.materials[materialIdx];
+        auto mat = nvisiiScene.materials[materialIdx];
         aiString Path;
         
         // todo, add texture paths to map above, load later and connect
@@ -238,7 +238,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 if (texture_map[path]) {
                     material_light_map[mat] = Light::create(mat->getName());
                     material_light_map[mat]->setColorTexture(texture_map[path]);
-                    visiiScene.lights.push_back(material_light_map[mat]);
+                    nvisiiScene.lights.push_back(material_light_map[mat]);
                 }
             }
         }  
@@ -262,7 +262,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
     }
 
     // load objects
-    visiiScene.meshes.resize(scene->mNumMeshes, nullptr);
+    nvisiiScene.meshes.resize(scene->mNumMeshes, nullptr);
     for (uint32_t meshIdx = 0; meshIdx < scene->mNumMeshes; ++meshIdx) {
         auto &aiMesh = scene->mMeshes[meshIdx];
         auto &aiVertices = aiMesh->mVertices;
@@ -348,7 +348,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         if (!validFaces) continue; 
 
         try {
-            visiiScene.meshes[meshIdx] = Mesh::createFromData(
+            nvisiiScene.meshes[meshIdx] = Mesh::createFromData(
                 meshName, 
                 positions, 3,
                 normals, 3,
@@ -391,7 +391,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
     }
 
     std::function<void(aiNode*, Transform*, int level)> addNode;
-    addNode = [&scene, &visiiScene, &material_light_map, &addNode, position, rotation, scale, verbose]
+    addNode = [&scene, &nvisiiScene, &material_light_map, &addNode, position, rotation, scale, verbose]
         (aiNode* node, Transform* parentTransform, int level) 
     {
         // Create the transform to represent this node
@@ -411,19 +411,19 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         } 
         else transform->setParent(parentTransform);
 
-        visiiScene.transforms.push_back(transform);
+        nvisiiScene.transforms.push_back(transform);
         
         // Create entities for each mesh that is associated with this node
         for (uint32_t mid = 0; mid < node->mNumMeshes; ++mid) {
             uint32_t meshIndex = node->mMeshes[mid];
-            auto mesh = visiiScene.meshes[meshIndex];
+            auto mesh = nvisiiScene.meshes[meshIndex];
             if (mesh == nullptr) {
                 if (verbose) std::cout<< std::string(level, '\t') << "Warning: Skipping entity in " << transformName << " (bad mesh)" <<std::endl;
                 continue;
             }
 
             auto &aiMesh = scene->mMeshes[meshIndex];
-            auto material = visiiScene.materials[aiMesh->mMaterialIndex];
+            auto material = nvisiiScene.materials[aiMesh->mMaterialIndex];
             
             duplicateCount = 0;
             std::string entityName = transformName + "_" + mesh->getName();
@@ -445,7 +445,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
             }
             entity->setTransform(transform);
             if (verbose) std::cout<< std::string(level + 1, '\t') << "transform: \"" << transform->getName() << "\", " << std::endl;
-            visiiScene.entities.push_back(entity);
+            nvisiiScene.entities.push_back(entity);
         }
 
         for (uint32_t cid = 0; cid < node->mNumChildren; ++cid) 
@@ -457,7 +457,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
 
     if (updatesEnabled) enableUpdates();
     if (verbose) std::cout<<"Done!"<<std::endl;
-    return visiiScene;
+    return nvisiiScene;
 }
 
 }

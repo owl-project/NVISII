@@ -1,23 +1,23 @@
-import visii
+import nvisii
 import math
 import PySide2
 import colorsys
 from PySide2.QtCore import *
 from PySide2.QtWidgets import *
 
-visii.initialize()
-visii.resize_window(1000,1000)
-visii.enable_denoiser()
+nvisii.initialize()
+nvisii.resize_window(1000,1000)
+nvisii.enable_denoiser()
 
 # Set the sky
-dome = visii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
-visii.set_dome_light_texture(dome)
+dome = nvisii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
+nvisii.set_dome_light_texture(dome)
 
 # Set camera
-camera = visii.entity.create(
+camera = nvisii.entity.create(
     name = "camera",
-    transform = visii.transform.create(name = "camera_transform"),
-    camera = visii.camera.create(
+    transform = nvisii.transform.create(name = "camera_transform"),
+    camera = nvisii.camera.create(
         name = "camera_camera", 
         aspect = 1.0
     )
@@ -27,14 +27,14 @@ camera.get_transform().look_at(
     up = (0, 0, 1),   # up vector
     eye = (0, 5, 2)   # eye position
 )
-visii.set_camera_entity(camera)
+nvisii.set_camera_entity(camera)
 
 # Floor
-floor = visii.entity.create(
+floor = nvisii.entity.create(
     name = "floor",
-    mesh = visii.mesh.create_plane("mesh_floor"),
-    transform = visii.transform.create("transform_floor"),
-    material = visii.material.create("material_floor")
+    mesh = nvisii.mesh.create_plane("mesh_floor"),
+    transform = nvisii.transform.create("transform_floor"),
+    material = nvisii.material.create("material_floor")
 )
 floor.get_material().set_base_color((0.19,0.16,0.19)) 
 floor.get_material().set_metallic(0) 
@@ -42,13 +42,13 @@ floor.get_material().set_roughness(1)
 floor.get_transform().set_scale((5,5,1))
 
 # Teapot
-teapotahedron = visii.entity.create(
+teapotahedron = nvisii.entity.create(
     name="teapotahedron",
-    mesh = visii.mesh.create_teapotahedron("teapotahedron", segments = 32),
-    transform = visii.transform.create("teapotahedron"),
-    material = visii.material.create("teapotahedron")
+    mesh = nvisii.mesh.create_teapotahedron("teapotahedron", segments = 32),
+    transform = nvisii.transform.create("teapotahedron"),
+    material = nvisii.material.create("teapotahedron")
 )
-teapotahedron.get_transform().set_rotation(visii.angleAxis(visii.pi() / 4.0, (0,0,1)))
+teapotahedron.get_transform().set_rotation(nvisii.angleAxis(nvisii.pi() / 4.0, (0,0,1)))
 teapotahedron.get_transform().set_position((0,0,0.41))
 teapotahedron.get_transform().set_scale((0.4, 0.4, 0.4))
 teapotahedron.get_material().set_base_color((1.0,1.0,1.0))  
@@ -70,7 +70,7 @@ def rotateCamera(value):
     camera.get_transform().look_at(
         at = (0, 0, 0.9), # at position
         up = (0, 0, 1),   # up vector
-        eye = (5 * math.cos(value * 2 * visii.pi()), 5 * math.sin(value * 2 * visii.pi()), cam_pos[2])   # eye position
+        eye = (5 * math.cos(value * 2 * nvisii.pi()), 5 * math.sin(value * 2 * nvisii.pi()), cam_pos[2])   # eye position
     )
 rotateCamera(0)
 dial = QDial() 
@@ -88,7 +88,7 @@ def rotateCameraElevation(value):
         up = (0, 0, 1),   # up vector
         eye = (cam_pos[0], cam_pos[1], 0.1 + 6*value)   # eye position
     )
-    # print(value, 2 * math.cos(value * 2 * visii.pi()))
+    # print(value, 2 * math.cos(value * 2 * nvisii.pi()))
 
 slider = QSlider(Qt.Horizontal) 
 slider.valueChanged[int].connect(rotateCameraElevation)
@@ -102,19 +102,19 @@ def setColorHue(value):
     value = value / 100.0
     color[0] = value
     rgb = colorsys.hsv_to_rgb(color[0],color[1],color[2])
-    teapotahedron.get_material().set_base_color(visii.vec3(rgb[0],rgb[1],rgb[2]))
+    teapotahedron.get_material().set_base_color(nvisii.vec3(rgb[0],rgb[1],rgb[2]))
 
 def setColorSaturation(value):
     value = value / 100.0
     color[1] = value
     rgb = colorsys.hsv_to_rgb(color[0],color[1],color[2])
-    teapotahedron.get_material().set_base_color(visii.vec3(rgb[0],rgb[1],rgb[2]))
+    teapotahedron.get_material().set_base_color(nvisii.vec3(rgb[0],rgb[1],rgb[2]))
 
 def setColorValue(value):
     value = value / 100.0
     color[2] = value
     rgb = colorsys.hsv_to_rgb(color[0],color[1],color[2])
-    teapotahedron.get_material().set_base_color(visii.vec3(rgb[0],rgb[1],rgb[2]))
+    teapotahedron.get_material().set_base_color(nvisii.vec3(rgb[0],rgb[1],rgb[2]))
 
 setColorHue(int(color[0]*100))
 setColorSaturation(int(color[1]*100))
@@ -223,4 +223,4 @@ window.setLayout(layout)
 window.show() 
 app.exec_() 
 
-visii.deinitialize()
+nvisii.deinitialize()

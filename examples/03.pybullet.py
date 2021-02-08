@@ -1,5 +1,5 @@
 import os 
-import visii
+import nvisii
 import random
 import colorsys
 import subprocess 
@@ -27,16 +27,16 @@ else:
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # show an interactive window, and use "lazy" updates for faster object creation time 
-visii.initialize(headless=False, lazy_updates=True)
+nvisii.initialize(headless=False, lazy_updates=True)
 
 if not opt.noise is True: 
-    visii.enable_denoiser()
+    nvisii.enable_denoiser()
 
 # Create a camera
-camera = visii.entity.create(
+camera = nvisii.entity.create(
     name = "camera",
-    transform = visii.transform.create("camera"),
-    camera = visii.camera.create_from_fov(
+    transform = nvisii.transform.create("camera"),
+    camera = nvisii.camera.create_from_fov(
         name = "camera", 
         field_of_view = 0.85,
         aspect = float(opt.width)/float(opt.height)
@@ -47,7 +47,7 @@ camera.get_transform().look_at(
     up = (0,0,1),
     eye = (10,0,4),
 )
-visii.set_camera_entity(camera)
+nvisii.set_camera_entity(camera)
 
 # Setup bullet physics stuff
 seconds_per_step = 1.0 / 240.0
@@ -58,27 +58,27 @@ p.setGravity(0,0,-10)
 # Lets set the scene
 
 # Change the dome light intensity
-visii.set_dome_light_intensity(1.0)
+nvisii.set_dome_light_intensity(1.0)
 
 # atmospheric thickness makes the sky go orange, almost like a sunset
-visii.set_dome_light_sky(sun_position=(10,10,10), atmosphere_thickness=1.0, saturation=1.0)
+nvisii.set_dome_light_sky(sun_position=(10,10,10), atmosphere_thickness=1.0, saturation=1.0)
 
 # Lets add a sun light
-sun = visii.entity.create(
+sun = nvisii.entity.create(
     name = "sun",
-    mesh = visii.mesh.create_sphere("sphere"),
-    transform = visii.transform.create("sun"),
-    light = visii.light.create("sun")
+    mesh = nvisii.mesh.create_sphere("sphere"),
+    transform = nvisii.transform.create("sun"),
+    light = nvisii.light.create("sun")
 )
 sun.get_transform().set_position((10,10,10))
 sun.get_light().set_temperature(5780)
 sun.get_light().set_intensity(1000)
 
-floor = visii.entity.create(
+floor = nvisii.entity.create(
     name="floor",
-    mesh = visii.mesh.create_plane("floor"),
-    transform = visii.transform.create("floor"),
-    material = visii.material.create("floor")
+    mesh = nvisii.mesh.create_plane("floor"),
+    transform = nvisii.transform.create("floor"),
+    material = nvisii.material.create("floor")
 )
 floor.get_transform().set_position((0,0,0))
 floor.get_transform().set_scale((10, 10, 10))
@@ -112,31 +112,31 @@ p.createMultiBody(
 )    
 
 # lets create a bunch of objects 
-mesh = visii.mesh.create_teapotahedron('mesh')
+mesh = nvisii.mesh.create_teapotahedron('mesh')
 
 # set up for pybullet - here we will use indices for 
 # objects with holes 
 vertices = mesh.get_vertices()
 indices = mesh.get_triangle_indices()
 
-ids_pybullet_and_visii_names = []
+ids_pybullet_and_nvisii_names = []
 
 for i in range(opt.nb_objects):
     name = f"mesh_{i}"
-    obj= visii.entity.create(
+    obj= nvisii.entity.create(
         name = name,
-        transform = visii.transform.create(name),
-        material = visii.material.create(name)
+        transform = nvisii.transform.create(name),
+        material = nvisii.material.create(name)
     )
     obj.set_mesh(mesh)
 
     # transforms
-    pos = visii.vec3(
+    pos = nvisii.vec3(
         random.uniform(-4,4),
         random.uniform(-4,4),
         random.uniform(2,5)
     )
-    rot = visii.normalize(visii.quat(
+    rot = nvisii.normalize(nvisii.quat(
         random.uniform(-1,1),
         random.uniform(-1,1),
         random.uniform(-1,1),
@@ -173,10 +173,10 @@ for i in range(opt.nb_objects):
     )       
 
     # to keep track of the ids and names 
-    ids_pybullet_and_visii_names.append(
+    ids_pybullet_and_nvisii_names.append(
         {
             "pybullet_id":obj_col_id, 
-            "visii_id":name
+            "nvisii_id":name
         }
     )
 
@@ -221,20 +221,20 @@ for i in range (int(opt.nb_frames)):
     for j in range(steps_per_frame):
         p.stepSimulation()
 
-    # Lets update the pose of the objects in visii 
-    for ids in ids_pybullet_and_visii_names:
+    # Lets update the pose of the objects in nvisii 
+    for ids in ids_pybullet_and_nvisii_names:
 
         # get the pose of the objects
         pos, rot = p.getBasePositionAndOrientation(ids['pybullet_id'])
 
-        # get the visii entity for that object
-        obj_entity = visii.entity.get(ids['visii_id'])
+        # get the nvisii entity for that object
+        obj_entity = nvisii.entity.get(ids['nvisii_id'])
         obj_entity.get_transform().set_position(pos)
 
-        # visii quat expects w as the first argument
+        # nvisii quat expects w as the first argument
         obj_entity.get_transform().set_rotation(rot)
     print(f'rendering frame {str(i).zfill(5)}/{str(opt.nb_frames).zfill(5)}')
-    visii.render_to_file(
+    nvisii.render_to_file(
         width=int(opt.width), 
         height=int(opt.height), 
         samples_per_pixel=int(opt.spp),
@@ -242,6 +242,6 @@ for i in range (int(opt.nb_frames)):
     )
 
 p.disconnect()
-visii.deinitialize()
+nvisii.deinitialize()
 
 subprocess.call(['ffmpeg', '-y', '-framerate', '30', '-i', r"%05d.png",  '-vcodec', 'libx264', '-pix_fmt', 'yuv420p', '../output.mp4'], cwd=os.path.realpath(opt.outf))

@@ -1,4 +1,4 @@
-%module visii
+%module nvisii
 
 /* -------- Python Version Check --------------*/
 #if Python_VERSION_MAJOR == 3
@@ -99,16 +99,16 @@ import_array();
 %{
 #include <vector>
 #include <array>
-#include "visii/visii.h"
-#include "visii/camera.h"
-#include "visii/entity.h"
-#include "visii/light.h"
-#include "visii/texture.h"
-#include "visii/volume.h"
-#include "visii/transform.h"
-#include "visii/material.h"
-#include "visii/mesh.h"
-using namespace visii;
+#include "nvisii/nvisii.h"
+#include "nvisii/camera.h"
+#include "nvisii/entity.h"
+#include "nvisii/light.h"
+#include "nvisii/texture.h"
+#include "nvisii/volume.h"
+#include "nvisii/transform.h"
+#include "nvisii/material.h"
+#include "nvisii/mesh.h"
+using namespace nvisii;
 %}
 
 /* STD Vectors */
@@ -123,14 +123,14 @@ namespace std {
   %template(Float4Vector) vector<array<float, 4>>;
   %template(UINT32Vector) vector<uint32_t>;
   %template(StringVector) vector<string>;
-  %template(EntityVector) vector<visii::Entity*>;
-  %template(TransformVector) vector<visii::Transform*>;
-  %template(MeshVector) vector<visii::Mesh*>;
-  %template(CameraVector) vector<visii::Camera*>;
-  %template(TextureVector) vector<visii::Texture*>;
-  %template(LightVector) vector<visii::Light*>;
-  %template(MaterialVector) vector<visii::Material*>;
-  %template(VolumeVector) vector<visii::Volume*>;
+  %template(EntityVector) vector<nvisii::Entity*>;
+  %template(TransformVector) vector<nvisii::Transform*>;
+  %template(MeshVector) vector<nvisii::Mesh*>;
+  %template(CameraVector) vector<nvisii::Camera*>;
+  %template(TextureVector) vector<nvisii::Texture*>;
+  %template(LightVector) vector<nvisii::Light*>;
+  %template(MaterialVector) vector<nvisii::Material*>;
+  %template(VolumeVector) vector<nvisii::Volume*>;
 }
 
 /* STD Maps */
@@ -140,64 +140,64 @@ namespace std {
 }
 
 /* -------- Ignores --------------*/
-%ignore visii::Entity::Entity();
-%ignore visii::Entity::Entity(std::string name, uint32_t id);
-%ignore visii::Entity::initializeFactory();
-%ignore visii::Entity::getFront();
-%ignore visii::Entity::getFrontStruct();
-%ignore visii::Entity::isFactoryInitialized();
-%ignore visii::Entity::updateComponents();
-%ignore visii::Entity::getStruct();
-%ignore visii::Entity::getEditMutex();
-%ignore visii::Entity::isDirty();
-%ignore visii::Entity::isClean();
-%ignore visii::Entity::markDirty();
-%ignore visii::Entity::markClean();
+%ignore nvisii::Entity::Entity();
+%ignore nvisii::Entity::Entity(std::string name, uint32_t id);
+%ignore nvisii::Entity::initializeFactory();
+%ignore nvisii::Entity::getFront();
+%ignore nvisii::Entity::getFrontStruct();
+%ignore nvisii::Entity::isFactoryInitialized();
+%ignore nvisii::Entity::updateComponents();
+%ignore nvisii::Entity::getStruct();
+%ignore nvisii::Entity::getEditMutex();
+%ignore nvisii::Entity::isDirty();
+%ignore nvisii::Entity::isClean();
+%ignore nvisii::Entity::markDirty();
+%ignore nvisii::Entity::markClean();
 
-%ignore visii::Transform::Transform();
-%ignore visii::Transform::Transform(std::string name, uint32_t id);
-%ignore visii::Transform::initializeFactory();
-%ignore visii::Transform::getFront();
-%ignore visii::Transform::getFrontStruct();
-%ignore visii::Transform::isFactoryInitialized();
-%ignore visii::Transform::updateComponents();
-%ignore visii::Transform::getStruct();
-%ignore visii::Transform::getEditMutex();
-%ignore visii::Transform::isDirty();
-%ignore visii::Transform::isClean();
-%ignore visii::Transform::markDirty();
-%ignore visii::Transform::markClean();
+%ignore nvisii::Transform::Transform();
+%ignore nvisii::Transform::Transform(std::string name, uint32_t id);
+%ignore nvisii::Transform::initializeFactory();
+%ignore nvisii::Transform::getFront();
+%ignore nvisii::Transform::getFrontStruct();
+%ignore nvisii::Transform::isFactoryInitialized();
+%ignore nvisii::Transform::updateComponents();
+%ignore nvisii::Transform::getStruct();
+%ignore nvisii::Transform::getEditMutex();
+%ignore nvisii::Transform::isDirty();
+%ignore nvisii::Transform::isClean();
+%ignore nvisii::Transform::markDirty();
+%ignore nvisii::Transform::markClean();
 
-%ignore visii::Material::Material();
-%ignore visii::Material::Material(std::string name, uint32_t id);
-%ignore visii::Material::initializeFactory();
-%ignore visii::Material::getFront();
-%ignore visii::Material::getFrontStruct();
-%ignore visii::Material::isFactoryInitialized();
-%ignore visii::Material::updateComponents();
-%ignore visii::Material::getStruct();
-%ignore visii::Material::getEditMutex();
-%ignore visii::Material::isDirty();
-%ignore visii::Material::isClean();
-%ignore visii::Material::markDirty();
-%ignore visii::Material::markClean();
+%ignore nvisii::Material::Material();
+%ignore nvisii::Material::Material(std::string name, uint32_t id);
+%ignore nvisii::Material::initializeFactory();
+%ignore nvisii::Material::getFront();
+%ignore nvisii::Material::getFrontStruct();
+%ignore nvisii::Material::isFactoryInitialized();
+%ignore nvisii::Material::updateComponents();
+%ignore nvisii::Material::getStruct();
+%ignore nvisii::Material::getEditMutex();
+%ignore nvisii::Material::isDirty();
+%ignore nvisii::Material::isClean();
+%ignore nvisii::Material::markDirty();
+%ignore nvisii::Material::markClean();
 
-%ignore visii::Camera::Camera();
-%ignore visii::Camera::Camera(std::string name, uint32_t id);
+%ignore nvisii::Camera::Camera();
+%ignore nvisii::Camera::Camera(std::string name, uint32_t id);
 
-%ignore visii::Mesh::Mesh();
-%ignore visii::Mesh::Mesh(std::string name, uint32_t id);
+%ignore nvisii::Mesh::Mesh();
+%ignore nvisii::Mesh::Mesh(std::string name, uint32_t id);
 
-%ignore visii::Light::Light();
-%ignore visii::Light::Light(std::string name, uint32_t id);
+%ignore nvisii::Light::Light();
+%ignore nvisii::Light::Light(std::string name, uint32_t id);
 
-%ignore visii::Texture::Texture();
-%ignore visii::Texture::Texture(std::string name, uint32_t id);
-%ignore visii::Texture::~Texture();
+%ignore nvisii::Texture::Texture();
+%ignore nvisii::Texture::Texture(std::string name, uint32_t id);
+%ignore nvisii::Texture::~Texture();
 
-%ignore visii::Volume::Volume();
-%ignore visii::Volume::Volume(std::string name, uint32_t id);
-%ignore visii::Volume::~Volume();
+%ignore nvisii::Volume::Volume();
+%ignore nvisii::Volume::Volume(std::string name, uint32_t id);
+%ignore nvisii::Volume::~Volume();
 
 /* -------- Renames --------------*/
 %rename("%(undercase)s",%$isfunction) "";
@@ -266,18 +266,18 @@ namespace std {
   }
 }
 
-%include "visii/visii.h"
-%include "visii/utilities/static_factory.h"
-%include "visii/camera.h"
-%include "visii/entity.h"
-%include "visii/light.h"
-%include "visii/texture.h"
-%include "visii/volume.h"
-%include "visii/transform.h"
-%include "visii/material.h"
-%include "visii/mesh.h"
+%include "nvisii/nvisii.h"
+%include "nvisii/utilities/static_factory.h"
+%include "nvisii/camera.h"
+%include "nvisii/entity.h"
+%include "nvisii/light.h"
+%include "nvisii/texture.h"
+%include "nvisii/volume.h"
+%include "nvisii/transform.h"
+%include "nvisii/material.h"
+%include "nvisii/mesh.h"
 
-using namespace visii;
+using namespace nvisii;
 
 // void registerPreRenderCallback(std::function<void()> callback);
 // %feature("director") CallBack;

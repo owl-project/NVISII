@@ -1,14 +1,14 @@
 #pragma once
-#include <visii/entity.h>
-#include <visii/transform.h>
-#include <visii/material.h>
-#include <visii/mesh.h>
-#include <visii/camera.h>
-#include <visii/light.h>
-#include <visii/texture.h>
-#include <visii/volume.h>
+#include <nvisii/entity.h>
+#include <nvisii/transform.h>
+#include <nvisii/material.h>
+#include <nvisii/mesh.h>
+#include <nvisii/camera.h>
+#include <nvisii/light.h>
+#include <nvisii/texture.h>
+#include <nvisii/volume.h>
 
-namespace visii {
+namespace nvisii {
 
 /**
   * Deprecated. Please use initialize() instead.
@@ -44,9 +44,9 @@ void initializeHeadless(
   * 
   * @param headless If true, avoids using any OpenGL resources, to enable use on systems without displays.
   * @param window_on_top Keeps the window opened during an interactive session on top of any other windows. (assuming headless is False)
-  * @param lazy_updates If True, visii will only upload components to the GPU on call to 
+  * @param lazy_updates If True, nvisii will only upload components to the GPU on call to 
   * render/render_to_png/render_data for better scene editing performance. (assuming headless is False. Always on when headless is True)
-  * @param verbose If false, visii will avoid outputing any unneccessary text
+  * @param verbose If false, nvisii will avoid outputing any unneccessary text
   * @param max_entities The max number of creatable Entity components.
   * @param max_cameras The max number of creatable Camera components.
   * @param max_transforms The max number of creatable Transform components.
@@ -70,7 +70,7 @@ void initialize(
   uint32_t max_volumes = 1000);
 
 /**
-  * Removes any allocated components but keeps visii initialized.
+  * Removes any allocated components but keeps nvisii initialized.
   * Call this if you would like to clear the current scene.
 */
 void clearAll();

@@ -1,6 +1,6 @@
 #undef NDEBUG
 
-#include <visii/visii.h>
+#include <nvisii/nvisii.h>
 
 #include <algorithm>
 
@@ -9,7 +9,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <ImGuizmo.h>
-#include <visii/utilities/colors.h>
+#include <nvisii/utilities/colors.h>
 #include <owl/owl.h>
 #include <owl/helper/optix.h>
 #include <cuda.h>
@@ -21,8 +21,8 @@
 #include <devicecode/path_tracer.h>
 
 #define PBRLUT_IMPLEMENTATION
-#include <visii/utilities/ggx_lookup_tables.h>
-#include <visii/utilities/procedural_sky.h>
+#include <nvisii/utilities/ggx_lookup_tables.h>
+#include <nvisii/utilities/procedural_sky.h>
 
 #include <thread>
 #include <future>
@@ -54,7 +54,7 @@
 // #include <thrust/device_vector.h>
 // #include <thrust/device_ptr.h>
 
-namespace visii {
+namespace nvisii {
 
 // extern optixDenoiserSetModel;
 std::promise<void> exitSignal;
@@ -171,7 +171,7 @@ static struct OptixData {
 
 } OptixData;
 
-static struct ViSII {
+static struct NVISII {
     struct Command {
         std::function<void()> function;
         std::shared_ptr<std::promise<void>> promise;
@@ -185,7 +185,7 @@ static struct ViSII {
     std::function<void()> callback;
     std::recursive_mutex callbackMutex;
 
-} ViSII;
+} NVISII;
 
 void applyStyle()
 {
@@ -848,22 +848,22 @@ void initializeImgui()
 
 std::future<void> enqueueCommand(std::function<void()> function)
 {
-    // if (ViSII.render_thread_id != std::this_thread::get_id()) 
-    std::lock_guard<std::recursive_mutex> lock(ViSII.qMutex);
+    // if (NVISII.render_thread_id != std::this_thread::get_id()) 
+    std::lock_guard<std::recursive_mutex> lock(NVISII.qMutex);
 
-    ViSII::Command c;
+    NVISII::Command c;
     c.function = function;
     c.promise = std::make_shared<std::promise<void>>();
     auto new_future = c.promise->get_future();
-    ViSII.commandQueue.push(c);
+    NVISII.commandQueue.push(c);
     // cv.notify_one();
     return new_future;
 }
 
 void enqueueCommandAndWait(std::function<void()> function)
 {
-    if (ViSII.render_thread_id != std::this_thread::get_id()) {
-        if (ViSII.callback) {
+    if (NVISII.render_thread_id != std::this_thread::get_id()) {
+        if (NVISII.callback) {
             throw std::runtime_error(
                 std::string("Error: calling a blocking function while callback set, which would otherwise result in a ")
                 + std::string("deadlock. To work around this issue, either temporarily clear the callback, or ")
@@ -878,20 +878,20 @@ void enqueueCommandAndWait(std::function<void()> function)
 
 void processCommandQueue()
 {
-    std::lock_guard<std::recursive_mutex> lock(ViSII.qMutex);
-    while (!ViSII.commandQueue.empty()) {
-        auto item = ViSII.commandQueue.front();
+    std::lock_guard<std::recursive_mutex> lock(NVISII.qMutex);
+    while (!NVISII.commandQueue.empty()) {
+        auto item = NVISII.commandQueue.front();
         item.function();
         try {
             item.promise->set_value();
         }
         catch (std::future_error& e) {
             if (e.code() == std::make_error_condition(std::future_errc::promise_already_satisfied))
-                std::cout << "ViSII: [promise already satisfied]\n";
+                std::cout << "NVISII: [promise already satisfied]\n";
             else
-                std::cout << "ViSII: [unknown exception]\n";
+                std::cout << "NVISII: [unknown exception]\n";
         }
-        ViSII.commandQueue.pop();
+        NVISII.commandQueue.pop();
     }
 }
 
@@ -1812,12 +1812,12 @@ void resizeWindow(uint32_t width, uint32_t height)
 {
     width = (width <= 0) ? 1 : width;
     height = (height <= 0) ? 1 : height;
-    if (ViSII.headlessMode) return;
+    if (NVISII.headlessMode) return;
 
     enqueueCommand([width, height] () {
         using namespace Libraries;
         auto glfw = GLFW::Get();
-        glfw->resize_window("ViSII", width, height);
+        glfw->resize_window("NVISII", width, height);
         glViewport(0,0,width,height);
     });
 }
@@ -1844,7 +1844,7 @@ void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelP
         OptixData.enableNormalGuide = useNormalGuide;
         #ifdef USE_OPTIX70
         if (useKernelPrediction) {
-            throw std::runtime_error("Error: the current build of ViSII uses optix"
+            throw std::runtime_error("Error: the current build of NVISII uses optix"
             " 7.0, which does not support the kernel prediction denoiser.");
         }
         #endif
@@ -1940,12 +1940,12 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
     std::vector<float> frameBuffer(width * height * 4);
 
     enqueueCommandAndWait([&frameBuffer, width, height, samplesPerPixel, seed] () {
-        if (!ViSII.headlessMode) {
+        if (!NVISII.headlessMode) {
             if ((width != WindowData.currentSize.x) || (height != WindowData.currentSize.y))
             {
                 using namespace Libraries;
                 auto glfw = GLFW::Get();
-                glfw->resize_window("ViSII", width, height);
+                glfw->resize_window("NVISII", width, height);
                 initializeFrameBuffer(width, height);
             }
         }
@@ -1958,10 +1958,10 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
 
         for (uint32_t i = 0; i < samplesPerPixel; ++i) {
             // std::cout<<i<<std::endl;
-            if (!ViSII.headlessMode) {
+            if (!NVISII.headlessMode) {
                 auto glfw = Libraries::GLFW::Get();
                 glfw->poll_events();
-                glfw->swap_buffers("ViSII");
+                glfw->swap_buffers("NVISII");
                 glClearColor(1,1,1,1);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
@@ -1973,7 +1973,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
                 denoiseImage();
             }
 
-            if (!ViSII.headlessMode) {
+            if (!NVISII.headlessMode) {
                 drawFrameBufferToWindow();
                 glfwSetWindowTitle(WindowData.window, 
                     (std::to_string(i) + std::string("/") + std::to_string(samplesPerPixel)).c_str());
@@ -1983,7 +1983,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
                 std::cout<< "\r" << i << "/" << samplesPerPixel;
             }
         }      
-        if (!ViSII.headlessMode) {
+        if (!NVISII.headlessMode) {
             glfwSetWindowTitle(WindowData.window, 
                 (std::to_string(samplesPerPixel) + std::string("/") + std::to_string(samplesPerPixel) 
                 + std::string(" - done!")).c_str());
@@ -2017,12 +2017,12 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
     std::vector<float> frameBuffer(width * height * 4);
 
     enqueueCommandAndWait([&frameBuffer, width, height, startFrame, frameCount, bounce, _option, seed] () {
-        if (!ViSII.headlessMode) {
+        if (!NVISII.headlessMode) {
             if ((width != WindowData.currentSize.x) || (height != WindowData.currentSize.y))
             {
                 using namespace Libraries;
                 auto glfw = GLFW::Get();
-                glfw->resize_window("ViSII", width, height);
+                glfw->resize_window("NVISII", width, height);
                 initializeFrameBuffer(width, height);
             }
         }
@@ -2104,10 +2104,10 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
 
         for (uint32_t i = startFrame; i < frameCount; ++i) {
             // std::cout<<i<<std::endl;
-            if (!ViSII.headlessMode) {
+            if (!NVISII.headlessMode) {
                 auto glfw = Libraries::GLFW::Get();
                 glfw->poll_events();
-                glfw->swap_buffers("ViSII");
+                glfw->swap_buffers("NVISII");
                 glClearColor(1,1,1,1);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
@@ -2120,7 +2120,7 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
             //     denoiseImage();
             // }
 
-            if (!ViSII.headlessMode) {
+            if (!NVISII.headlessMode) {
                 drawFrameBufferToWindow();
             }
         }
@@ -2373,18 +2373,18 @@ void initializeInteractive(
     initialized = true;
     stopped = false;
     verbose = _verbose;
-    ViSII.callback = nullptr;
+    NVISII.callback = nullptr;
 
     initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures, maxVolumes);
 
     auto loop = [windowOnTop]() {
-        ViSII.render_thread_id = std::this_thread::get_id();
-        ViSII.headlessMode = false;
+        NVISII.render_thread_id = std::this_thread::get_id();
+        NVISII.headlessMode = false;
 
         auto glfw = Libraries::GLFW::Get();
-        WindowData.window = glfw->create_window("ViSII", 512, 512, windowOnTop, true, true);
+        WindowData.window = glfw->create_window("NVISII", 512, 512, windowOnTop, true, true);
         WindowData.currentSize = WindowData.lastSize = ivec2(512, 512);
-        glfw->make_context_current("ViSII");
+        glfw->make_context_current("NVISII");
         glfw->poll_events();
 
         initializeOptix(/*headless = */ false);
@@ -2395,13 +2395,13 @@ void initializeInteractive(
         {
             /* Poll events from the window */
             glfw->poll_events();
-            glfw->swap_buffers("ViSII");
+            glfw->swap_buffers("NVISII");
             glClearColor(1,1,1,1);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            if (ViSII.callback && ViSII.callbackMutex.try_lock()) {
-                ViSII.callback();
-                ViSII.callbackMutex.unlock();
+            if (NVISII.callback && NVISII.callbackMutex.try_lock()) {
+                NVISII.callback();
+                NVISII.callbackMutex.unlock();
             }
 
             static double start=0;
@@ -2447,7 +2447,7 @@ void initializeInteractive(
         }
 
         ImGui::DestroyContext();
-        if (glfw->does_window_exist("ViSII")) glfw->destroy_window("ViSII");
+        if (glfw->does_window_exist("NVISII")) glfw->destroy_window("NVISII");
 
         owlContextDestroy(OptixData.context);
     };
@@ -2482,20 +2482,20 @@ void initializeHeadless(
     initialized = true;
     stopped = false;
     verbose = _verbose;
-    ViSII.callback = nullptr;
+    NVISII.callback = nullptr;
 
     initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures, maxVolumes);
 
     auto loop = []() {
-        ViSII.render_thread_id = std::this_thread::get_id();
-        ViSII.headlessMode = true;
+        NVISII.render_thread_id = std::this_thread::get_id();
+        NVISII.headlessMode = true;
 
         initializeOptix(/*headless = */ true);
 
         while (!stopped)
         {
-            if(ViSII.callback){
-                ViSII.callback();
+            if(NVISII.callback){
+                NVISII.callback();
             }
             processCommandQueue();
             if (stopped) break;
@@ -2553,7 +2553,7 @@ void registerPreRenderCallback(std::function<void()> callback){
 }
 
 void registerCallback(std::function<void()> callback){
-    ViSII.callback = callback;
+    NVISII.callback = callback;
 }
 
 void clearAll()
@@ -2639,53 +2639,53 @@ void deinitialize()
 }
 
 bool isButtonPressed(std::string button) {
-    if (ViSII.headlessMode) return false;
+    if (NVISII.headlessMode) return false;
     auto glfw = Libraries::GLFW::Get();
     std::transform(button.data(), button.data() + button.size(), 
         std::addressof(button[0]), [](unsigned char c){ return std::toupper(c); });
     bool pressed, prevPressed;
     if (button.compare("MOUSE_LEFT") == 0) {
-        pressed = glfw->get_button_action("ViSII", 0) == 1;
-        prevPressed = glfw->get_button_action_prev("ViSII", 0) == 1;
+        pressed = glfw->get_button_action("NVISII", 0) == 1;
+        prevPressed = glfw->get_button_action_prev("NVISII", 0) == 1;
     }
     else if (button.compare("MOUSE_RIGHT") == 0) {
-        pressed = glfw->get_button_action("ViSII", 1) == 1;
-        prevPressed = glfw->get_button_action_prev("ViSII", 1) == 1;
+        pressed = glfw->get_button_action("NVISII", 1) == 1;
+        prevPressed = glfw->get_button_action_prev("NVISII", 1) == 1;
     }
     else if (button.compare("MOUSE_MIDDLE") == 0) {
-        pressed = glfw->get_button_action("ViSII", 2) == 1;
-        prevPressed = glfw->get_button_action_prev("ViSII", 2) == 1;
+        pressed = glfw->get_button_action("NVISII", 2) == 1;
+        prevPressed = glfw->get_button_action_prev("NVISII", 2) == 1;
     }
     else {
-        pressed = glfw->get_key_action("ViSII", glfw->get_key_code(button)) == 1;
-        prevPressed = glfw->get_key_action_prev("ViSII", glfw->get_key_code(button)) == 1;
+        pressed = glfw->get_key_action("NVISII", glfw->get_key_code(button)) == 1;
+        prevPressed = glfw->get_key_action_prev("NVISII", glfw->get_key_code(button)) == 1;
     }
     
     return pressed && !prevPressed;
 }
 
 bool isButtonHeld(std::string button) {
-    if (ViSII.headlessMode) return false;
+    if (NVISII.headlessMode) return false;
     auto glfw = Libraries::GLFW::Get();
     std::transform(button.data(), button.data() + button.size(), 
         std::addressof(button[0]), [](unsigned char c){ return std::toupper(c); });
-    if (button.compare("MOUSE_LEFT") == 0) return glfw->get_button_action("ViSII", 0) >= 1;
-    if (button.compare("MOUSE_RIGHT") == 0) return glfw->get_button_action("ViSII", 1) >= 1;
-    if (button.compare("MOUSE_MIDDLE") == 0) return glfw->get_button_action("ViSII", 2) >= 1;
-    return glfw->get_key_action("ViSII", glfw->get_key_code(button)) >= 1;
+    if (button.compare("MOUSE_LEFT") == 0) return glfw->get_button_action("NVISII", 0) >= 1;
+    if (button.compare("MOUSE_RIGHT") == 0) return glfw->get_button_action("NVISII", 1) >= 1;
+    if (button.compare("MOUSE_MIDDLE") == 0) return glfw->get_button_action("NVISII", 2) >= 1;
+    return glfw->get_key_action("NVISII", glfw->get_key_code(button)) >= 1;
 }
 
 vec2 getCursorPos()
 {
-    if (ViSII.headlessMode) return vec2(NAN, NAN);
+    if (NVISII.headlessMode) return vec2(NAN, NAN);
     auto glfw = Libraries::GLFW::Get();
-    auto pos = glfw->get_cursor_pos("ViSII");
+    auto pos = glfw->get_cursor_pos("NVISII");
     return vec2(pos[0], pos[1]);
 }
 
 void setCursorMode(std::string mode)
 {
-    if (ViSII.headlessMode) return;
+    if (NVISII.headlessMode) return;
     enqueueCommand([mode] () {
         std::string mode_ = mode;
         std::transform(mode_.data(), mode_.data() + mode_.size(), 
@@ -2700,15 +2700,15 @@ void setCursorMode(std::string mode)
 
 ivec2 getWindowSize()
 {
-    if (ViSII.headlessMode) return ivec2(NAN, NAN);
+    if (NVISII.headlessMode) return ivec2(NAN, NAN);
     return WindowData.currentSize;
 }
 
 bool shouldWindowClose()
 {
-    if (ViSII.headlessMode) return false;
+    if (NVISII.headlessMode) return false;
     auto glfw = Libraries::GLFW::Get();
-    return glfw->should_close("ViSII");
+    return glfw->should_close("NVISII");
 }
 
 void __test__(std::vector<std::string> args) {

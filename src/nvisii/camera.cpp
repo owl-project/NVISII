@@ -1,7 +1,7 @@
-#include <visii/camera.h>
+#include <nvisii/camera.h>
 #include <glm/gtx/matrix_transform_2d.hpp>
 
-namespace visii {
+namespace nvisii {
 
 std::vector<Camera> Camera::cameras;
 std::vector<CameraStruct> Camera::cameraStructs;

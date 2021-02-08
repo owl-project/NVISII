@@ -1,11 +1,11 @@
-Welcome to ViSII's documentation!
+Welcome to NVISII's documentation!
 =================================
 
 .. toctree::
    :maxdepth: 3
    :caption: Contents:
 
-   visii
+   nvisii
    entity
    transform
    material

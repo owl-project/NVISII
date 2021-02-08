@@ -3,7 +3,7 @@
 #include <owl/owl.h>
 #include <glm/glm.hpp>
 
-#include <visii/volume_struct.h>
+#include <nvisii/volume_struct.h>
 #include "./buffer.h"
 
 using namespace glm;

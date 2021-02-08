@@ -12,7 +12,7 @@
 #include <owl/common/math/random.h>
 #include <owl/common/math/box.h>
 
-#include "visii/utilities/procedural_sky.h"
+#include "nvisii/utilities/procedural_sky.h"
 
 #include <glm/gtx/matrix_interpolation.hpp>
 

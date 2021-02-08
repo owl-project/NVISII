@@ -1,7 +1,7 @@
-#include <visii/light.h>
-#include <visii/texture.h>
+#include <nvisii/light.h>
+#include <nvisii/texture.h>
 
-namespace visii {
+namespace nvisii {
 
 std::vector<Light> Light::lights;
 std::vector<LightStruct> Light::lightStructs;

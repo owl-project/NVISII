@@ -1,2 +1,2 @@
-add_subdirectory(visii)
+add_subdirectory(nvisii)
 set(HDR ${HDR} PARENT_SCOPE) 

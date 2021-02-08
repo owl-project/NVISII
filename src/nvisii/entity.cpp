@@ -1,13 +1,13 @@
-#include <visii/camera.h>
-#include <visii/entity.h>
-#include <visii/light.h>
-#include <visii/transform.h>
-#include <visii/material.h>
-#include <visii/mesh.h>
-#include <visii/volume.h>
-#include <visii/visii.h>
+#include <nvisii/camera.h>
+#include <nvisii/entity.h>
+#include <nvisii/light.h>
+#include <nvisii/transform.h>
+#include <nvisii/material.h>
+#include <nvisii/mesh.h>
+#include <nvisii/volume.h>
+#include <nvisii/nvisii.h>
 
-namespace visii {
+namespace nvisii {
 
 std::vector<Entity> Entity::entities;
 std::vector<EntityStruct> Entity::entityStructs;
@@ -352,7 +352,7 @@ void Entity::computeAabb()
 		entityStructs[id].bbmax = vec4(bbmax, 1.f);
 	}
 
-	visii::updateSceneAabb(this);
+	nvisii::updateSceneAabb(this);
 }
 
 void Entity::updateRenderables() 

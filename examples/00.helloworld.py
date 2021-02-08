@@ -3,10 +3,10 @@
 # This example will create a window where you 
 # should only see a gaussian noise pattern
 
-import visii
+import nvisii
 
-visii.initialize()
+nvisii.initialize()
 
-while (not visii.should_window_close()): pass
+while (not nvisii.should_window_close()): pass
 
-visii.deinitialize()
+nvisii.deinitialize()

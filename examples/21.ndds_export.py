@@ -1,4 +1,4 @@
-import visii
+import nvisii
 
 opt = lambda : None
 opt.spp = 100 
@@ -12,29 +12,29 @@ def add_cuboid(name, debug=False):
     """
     Add cuboid children to the transform tree to a given object for exporting
 
-    :param name: string name of the visii entity to add a cuboid
-    :param debug:   bool - add sphere on the visii entity to make sure the  
+    :param name: string name of the nvisii entity to add a cuboid
+    :param debug:   bool - add sphere on the nvisii entity to make sure the  
                     cuboid is located at the right place. 
 
     :return: return a list of cuboid in canonical space of the object. 
     """
 
-    obj = visii.entity.get(name)
+    obj = nvisii.entity.get(name)
 
     min_obj = obj.get_mesh().get_min_aabb_corner()
     max_obj = obj.get_mesh().get_max_aabb_corner()
     centroid_obj = obj.get_mesh().get_aabb_center()
 
     cuboid = [
-        visii.vec3(max_obj[0], max_obj[1], max_obj[2]),
-        visii.vec3(min_obj[0], max_obj[1], max_obj[2]),
-        visii.vec3(max_obj[0], min_obj[1], max_obj[2]),
-        visii.vec3(max_obj[0], max_obj[1], min_obj[2]),
-        visii.vec3(min_obj[0], min_obj[1], max_obj[2]),
-        visii.vec3(max_obj[0], min_obj[1], min_obj[2]),
-        visii.vec3(min_obj[0], max_obj[1], min_obj[2]),
-        visii.vec3(min_obj[0], min_obj[1], min_obj[2]),
-        visii.vec3(centroid_obj[0], centroid_obj[1], centroid_obj[2]), 
+        nvisii.vec3(max_obj[0], max_obj[1], max_obj[2]),
+        nvisii.vec3(min_obj[0], max_obj[1], max_obj[2]),
+        nvisii.vec3(max_obj[0], min_obj[1], max_obj[2]),
+        nvisii.vec3(max_obj[0], max_obj[1], min_obj[2]),
+        nvisii.vec3(min_obj[0], min_obj[1], max_obj[2]),
+        nvisii.vec3(max_obj[0], min_obj[1], min_obj[2]),
+        nvisii.vec3(min_obj[0], max_obj[1], min_obj[2]),
+        nvisii.vec3(min_obj[0], min_obj[1], min_obj[2]),
+        nvisii.vec3(centroid_obj[0], centroid_obj[1], centroid_obj[2]), 
     ]
 
     # change the ids to be like ndds / DOPE
@@ -42,19 +42,19 @@ def add_cuboid(name, debug=False):
                 cuboid[5],cuboid[4],cuboid[1],
                 cuboid[6],cuboid[7],cuboid[-1]]
 
-    cuboid.append(visii.vec3(centroid_obj[0], centroid_obj[1], centroid_obj[2]))
+    cuboid.append(nvisii.vec3(centroid_obj[0], centroid_obj[1], centroid_obj[2]))
         
     for i_p, p in enumerate(cuboid):
-        child_transform = visii.transform.create(f"{name}_cuboid_{i_p}")
+        child_transform = nvisii.transform.create(f"{name}_cuboid_{i_p}")
         child_transform.set_position(p)
-        child_transform.set_scale(visii.vec3(0.3))
+        child_transform.set_scale(nvisii.vec3(0.3))
         child_transform.set_parent(obj.get_transform())
         if debug: 
-            visii.entity.create(
+            nvisii.entity.create(
                 name = f"{name}_cuboid_{i_p}",
-                mesh = visii.mesh.create_sphere(f"{name}_cuboid_{i_p}"),
+                mesh = nvisii.mesh.create_sphere(f"{name}_cuboid_{i_p}"),
                 transform = child_transform, 
-                material = visii.material.create(f"{name}_cuboid_{i_p}")
+                material = nvisii.material.create(f"{name}_cuboid_{i_p}")
             )
     
     for i_v, v in enumerate(cuboid):
@@ -68,20 +68,20 @@ def get_cuboid_image_space(obj_id, camera_name = 'camera'):
     It assumes you already added the cuboid to the object 
 
     :obj_id: string for the name of the object of interest
-    :camera_name: string representing the camera name in visii
+    :camera_name: string representing the camera name in nvisii
 
     :return: cubdoid + centroid projected to the image, values [0..1]
     """
 
-    cam_matrix = visii.entity.get(camera_name).get_transform().get_world_to_local_matrix()
-    cam_proj_matrix = visii.entity.get(camera_name).get_camera().get_projection()
+    cam_matrix = nvisii.entity.get(camera_name).get_transform().get_world_to_local_matrix()
+    cam_proj_matrix = nvisii.entity.get(camera_name).get_camera().get_projection()
 
     points = []
     points_cam = []
     for i_t in range(9):
-        trans = visii.transform.get(f"{obj_id}_cuboid_{i_t}")
+        trans = nvisii.transform.get(f"{obj_id}_cuboid_{i_t}")
         mat_trans = trans.get_local_to_world_matrix()
-        pos_m = visii.vec4(
+        pos_m = nvisii.vec4(
             mat_trans[3][0],
             mat_trans[3][1],
             mat_trans[3][2],
@@ -90,9 +90,9 @@ def get_cuboid_image_space(obj_id, camera_name = 'camera'):
         p_cam = cam_matrix * pos_m 
 
         p_image = cam_proj_matrix * (cam_matrix * pos_m) 
-        p_image = visii.vec2(p_image) / p_image.w
-        p_image = p_image * visii.vec2(1,-1)
-        p_image = (p_image + visii.vec2(1,1)) * 0.5
+        p_image = nvisii.vec2(p_image) / p_image.w
+        p_image = p_image * nvisii.vec2(1,-1)
+        p_image = (p_image + nvisii.vec2(1,1)) * 0.5
 
         points.append([p_image[0],p_image[1]])
         points_cam.append([p_cam[0],p_cam[1],p_cam[2]])
@@ -114,11 +114,11 @@ def export_to_ndds_file(
     scene. 
 
     :filename: string for the json file you want to export, you have to include the extension
-    :obj_names: [string] each entry is a visii entity that has the cuboids attached to, these
+    :obj_names: [string] each entry is a nvisii entity that has the cuboids attached to, these
                 are the objects that are going to be exported. 
     :height: int height of the image size 
     :width: int width of the image size 
-    :camera_name: string for the camera name visii entity
+    :camera_name: string for the camera name nvisii entity
     :camera_struct: dictionary of the camera look at information. Expecting the following 
                     entries: 'at','eye','up'. All three has to be floating arrays of three entries.
                     This is an optional export. 
@@ -132,17 +132,17 @@ def export_to_ndds_file(
     import simplejson as json
 
     # assume we only use the view camera
-    cam_matrix = visii.entity.get(camera_name).get_transform().get_world_to_local_matrix()
+    cam_matrix = nvisii.entity.get(camera_name).get_transform().get_world_to_local_matrix()
     
     cam_matrix_export = []
     for row in cam_matrix:
         cam_matrix_export.append([row[0],row[1],row[2],row[3]])
     
-    cam_world_location = visii.entity.get(camera_name).get_transform().get_position()
-    cam_world_quaternion = visii.entity.get(camera_name).get_transform().get_rotation()
-    # cam_world_quaternion = visii.quat_cast(cam_matrix)
+    cam_world_location = nvisii.entity.get(camera_name).get_transform().get_position()
+    cam_world_quaternion = nvisii.entity.get(camera_name).get_transform().get_rotation()
+    # cam_world_quaternion = nvisii.quat_cast(cam_matrix)
 
-    cam_intrinsics = visii.entity.get(camera_name).get_camera().get_intrinsic_matrix(width, height)
+    cam_intrinsics = nvisii.entity.get(camera_name).get_camera().get_intrinsic_matrix(width, height)
 
     if camera_struct is None:
         camera_struct = {
@@ -197,7 +197,7 @@ def export_to_ndds_file(
             }
 
     # Segmentation id to export
-    id_keys_map = visii.entity.get_name_to_id_map()
+    id_keys_map = nvisii.entity.get_name_to_id_map()
 
     for obj_name in obj_names: 
 
@@ -209,10 +209,10 @@ def export_to_ndds_file(
 
         # Get the location and rotation of the object in the camera frame 
 
-        trans = visii.transform.get(obj_name)
-        quaternion_xyzw = visii.inverse(cam_world_quaternion) * trans.get_rotation()
+        trans = nvisii.transform.get(obj_name)
+        quaternion_xyzw = nvisii.inverse(cam_world_quaternion) * trans.get_rotation()
 
-        object_world = visii.vec4(
+        object_world = nvisii.vec4(
             trans.get_position()[0],
             trans.get_position()[1],
             trans.get_position()[2],
@@ -224,7 +224,7 @@ def export_to_ndds_file(
         visibility = -1
         bounding_box = [-1,-1,-1,-1]
 
-        segmentation_mask = visii.render_data(
+        segmentation_mask = nvisii.render_data(
             width=int(width), 
             height=int(height), 
             start_frame=0,
@@ -240,12 +240,12 @@ def export_to_ndds_file(
             for name in id_keys_map.keys():
                 if 'camera' in name.lower() or obj_name in name:
                     continue
-                trans_to_keep = visii.entity.get(name).get_transform()
+                trans_to_keep = nvisii.entity.get(name).get_transform()
                 transforms_to_keep[name]=trans_to_keep
-                visii.entity.get(name).clear_transform()
+                nvisii.entity.get(name).clear_transform()
 
             # Percentage visibility through full segmentation mask. 
-            segmentation_unique_mask = visii.render_data(
+            segmentation_unique_mask = nvisii.render_data(
                 width=int(width), 
                 height=int(height), 
                 start_frame=0,
@@ -262,7 +262,7 @@ def export_to_ndds_file(
             
             # set back the objects from remove
             for entity_name in transforms_to_keep.keys():
-                visii.entity.get(entity_name).set_transform(transforms_to_keep[entity_name])
+                nvisii.entity.get(entity_name).set_transform(transforms_to_keep[entity_name])
         else:
 
             if int(id_keys_map[obj_name]) in np.unique(segmentation_mask.astype(int)): 
@@ -277,7 +277,7 @@ def export_to_ndds_file(
         dict_out['objects'].append({
             'class':obj_name.split('_')[0],
             'name':obj_name,
-            'provenance':'visii',
+            'provenance':'nvisii',
             # TODO check the location
             'location_camera': [
                 pos_camera_frame[0],
@@ -311,14 +311,14 @@ def export_to_ndds_file(
         json.dump(dict_out, fp, indent=4, sort_keys=True)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize(headless=True, verbose=True)
+nvisii.initialize(headless=True, verbose=True)
 
-visii.enable_denoiser()
+nvisii.enable_denoiser()
 
-camera = visii.entity.create(
+camera = nvisii.entity.create(
     name = "camera",
-    transform = visii.transform.create("camera"),
-    camera = visii.camera.create(
+    transform = nvisii.transform.create("camera"),
+    camera = nvisii.camera.create(
         name = "camera",  
         aspect = float(opt.width)/float(opt.height)
     )
@@ -344,18 +344,18 @@ camera.get_transform().look_at(
 )
 
 
-visii.set_camera_entity(camera)
+nvisii.set_camera_entity(camera)
 
-visii.set_dome_light_sky(sun_position = (10, 10, 1), saturation = 2)
-visii.set_dome_light_exposure(1)
+nvisii.set_dome_light_sky(sun_position = (10, 10, 1), saturation = 2)
+nvisii.set_dome_light_exposure(1)
 
-mesh = visii.mesh.create_from_file("obj", "./content/dragon/dragon.obj")
+mesh = nvisii.mesh.create_from_file("obj", "./content/dragon/dragon.obj")
 
-obj_entity = visii.entity.create(
+obj_entity = nvisii.entity.create(
     name="obj_entity",
     mesh = mesh,
-    transform = visii.transform.create("obj_entity"),
-    material = visii.material.create("obj_entity")
+    transform = nvisii.transform.create("obj_entity"),
+    material = nvisii.material.create("obj_entity")
 )
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -380,7 +380,7 @@ obj_entity.get_material().set_sheen(1)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.render_to_file(
+nvisii.render_to_file(
     width=opt.width, 
     height=opt.height, 
     samples_per_pixel=opt.spp,
@@ -396,4 +396,4 @@ export_to_ndds_file(
     )
 
 # let's clean up GPU resources
-visii.deinitialize()
+nvisii.deinitialize()

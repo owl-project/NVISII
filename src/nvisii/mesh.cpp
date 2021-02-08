@@ -15,8 +15,8 @@
 
 #include <glm/gtx/vector_angle.hpp>
 
-#include <visii/mesh.h>
-#include <visii/entity.h>
+#include <nvisii/mesh.h>
+#include <nvisii/entity.h>
 
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -24,7 +24,7 @@
 
 #include <generator/generator.hpp>
 
-namespace visii {
+namespace nvisii {
 
 std::vector<Mesh> Mesh::meshes;
 std::vector<MeshStruct> Mesh::meshStructs;

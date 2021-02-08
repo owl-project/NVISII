@@ -16,7 +16,7 @@
 #include <array>
 #include <string.h>
 
-#include <visii/utilities/singleton.h>
+#include <nvisii/utilities/singleton.h>
 
 namespace Libraries {
     using namespace std;

@@ -1,6 +1,6 @@
 Visii
 =================================
-.. automodule:: visii
+.. automodule:: nvisii
     :members: 
         initialize, 
         clear_all,

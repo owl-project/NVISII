@@ -3,15 +3,15 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <visii/utilities/static_factory.h>
-#include <visii/volume_struct.h>
+#include <nvisii/utilities/static_factory.h>
+#include <nvisii/volume_struct.h>
 
 #include <nanovdb/NanoVDB.h>
 #include <nanovdb/util/GridHandle.h>
 #include <nanovdb/util/IO.h>
 #include <nanovdb/util/GridValidator.h>
 
-namespace visii {
+namespace nvisii {
 
 /**
  * The "Volume" component is essentially the dual of a mesh component. 

@@ -1,6 +1,6 @@
-import visii as v
+import nvisii as v
 
-import visii
+import nvisii
 import noise
 import random
 import numpy as np 
@@ -12,19 +12,19 @@ opt.height = 1024
 opt.out = "07_procedural_texture.png"
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize(headless=True, verbose=True)
+nvisii.initialize(headless=True, verbose=True)
 
-visii.enable_denoiser()
+nvisii.enable_denoiser()
 
-camera = visii.entity.create(
+camera = nvisii.entity.create(
     name = "camera",
-    transform = visii.transform.create("camera"),
-    camera = visii.camera.create(
+    transform = nvisii.transform.create("camera"),
+    camera = nvisii.camera.create(
         name = "camera", 
         aspect = float(opt.width)/float(opt.height)
     )
 )
-visii.set_camera_entity(camera)
+nvisii.set_camera_entity(camera)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -44,14 +44,14 @@ for i in range(img_shape[0]):
 
 # Going to create two textures, one for the noise,
 # and one for 1 - the noise
-noise = visii.texture.create_from_data(
+noise = nvisii.texture.create_from_data(
     'noise',
     img_shape[0],
     img_shape[1],
     1.0 - img.astype(np.float32)
 )    
 
-noise_inv = visii.texture.create_from_data(
+noise_inv = nvisii.texture.create_from_data(
     'noise_inv',
     img_shape[0],
     img_shape[1],
@@ -59,16 +59,16 @@ noise_inv = visii.texture.create_from_data(
 )    
 
 # Set the sky
-dome = visii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
-visii.set_dome_light_intensity(1)
-visii.set_dome_light_texture(dome)
+dome = nvisii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
+nvisii.set_dome_light_intensity(1)
+nvisii.set_dome_light_texture(dome)
 
 # Lets make some objects for our scene
-cylinder = visii.entity.create(
+cylinder = nvisii.entity.create(
     name = "cylinder",
-    mesh = visii.mesh.create_capped_cylinder("mesh_cylinder"),
-    transform = visii.transform.create("transform_cylinder"),
-    material = visii.material.create("material_cylinder")
+    mesh = nvisii.mesh.create_capped_cylinder("mesh_cylinder"),
+    transform = nvisii.transform.create("transform_cylinder"),
+    material = nvisii.material.create("material_cylinder")
 )
 cylinder.get_transform().set_scale((1.0, 1.0, .3))
 cylinder.get_transform().set_position((0.0, 0.0, -.3))
@@ -76,11 +76,11 @@ cylinder.get_transform().set_position((0.0, 0.0, -.3))
 # going to use the noise texture to create a marble-like base color
 cylinder.get_material().set_roughness_texture(noise)   
 
-teapot = visii.entity.create(
+teapot = nvisii.entity.create(
     name="teapot",
-    mesh = visii.mesh.create_teapotahedron("teapot", segments = 64),
-    transform = visii.transform.create("teapot"),
-    material = visii.material.create("teapot")
+    mesh = nvisii.mesh.create_teapotahedron("teapot", segments = 64),
+    transform = nvisii.transform.create("teapot"),
+    material = nvisii.material.create("teapot")
 )
 teapot.get_transform().set_position((0,0,0.0))
 teapot.get_transform().set_scale((0.2, 0.2, 0.2))
@@ -98,7 +98,7 @@ camera.get_transform().look_at(
 )
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.render_to_file(
+nvisii.render_to_file(
     width=opt.width, 
     height=opt.height, 
     samples_per_pixel=opt.spp,
@@ -106,4 +106,4 @@ visii.render_to_file(
 )
 
 # let's clean up the GPU
-visii.deinitialize()
+nvisii.deinitialize()

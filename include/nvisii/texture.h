@@ -3,10 +3,10 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <visii/utilities/static_factory.h>
-#include <visii/texture_struct.h>
+#include <nvisii/utilities/static_factory.h>
+#include <nvisii/texture_struct.h>
 
-namespace visii {
+namespace nvisii {
 
 /**
  * The "Texture" component describes a 2D pattern used to drive the "Material" component's parameters.

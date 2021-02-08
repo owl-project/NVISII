@@ -7,14 +7,14 @@
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtx/norm.hpp>
 
-#include <visii/entity_struct.h>
-#include <visii/transform_struct.h>
-#include <visii/material_struct.h>
-#include <visii/camera_struct.h>
-#include <visii/mesh_struct.h>
-#include <visii/light_struct.h>
-#include <visii/texture_struct.h>
-#include <visii/volume_struct.h>
+#include <nvisii/entity_struct.h>
+#include <nvisii/transform_struct.h>
+#include <nvisii/material_struct.h>
+#include <nvisii/camera_struct.h>
+#include <nvisii/mesh_struct.h>
+#include <nvisii/light_struct.h>
+#include <nvisii/texture_struct.h>
+#include <nvisii/volume_struct.h>
 
 #include "./buffer.h"
 

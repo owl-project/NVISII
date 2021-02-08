@@ -2,7 +2,7 @@
 # https://dsp.stackexchange.com/questions/26373/what-is-the-difference-between-a-range-image-and-a-depth-map
 
 import os
-import visii
+import nvisii
 import noise
 import random
 import numpy as np 
@@ -18,15 +18,15 @@ opt.noise = False
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.initialize(headless=True, verbose=True, lazy_updates = True)
+nvisii.initialize(headless=True, verbose=True, lazy_updates = True)
 
 if not opt.noise is True: 
-    visii.enable_denoiser()
+    nvisii.enable_denoiser()
 
-camera = visii.entity.create(
+camera = nvisii.entity.create(
     name = "camera",
-    transform = visii.transform.create("camera"),
-    camera = visii.camera.create(
+    transform = nvisii.transform.create("camera"),
+    camera = nvisii.camera.create(
         name = "camera", 
         aspect = float(opt.width)/float(opt.height)
     )
@@ -37,43 +37,43 @@ camera.get_transform().look_at(
     up = (0,0,1),
     eye = (0,1,1)
 )
-visii.set_camera_entity(camera)
+nvisii.set_camera_entity(camera)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # Create a scene to use for exporting segmentations
-floor = visii.entity.create(
+floor = nvisii.entity.create(
     name="floor",
-    mesh = visii.mesh.create_plane("floor"),
-    transform = visii.transform.create("floor"),
-    material = visii.material.create("floor")
+    mesh = nvisii.mesh.create_plane("floor"),
+    transform = nvisii.transform.create("floor"),
+    material = nvisii.material.create("floor")
 )
 
 floor.get_transform().set_scale((2,2,2))
 floor.get_material().set_roughness(1.0)
-areaLight1 = visii.entity.create(
+areaLight1 = nvisii.entity.create(
     name="areaLight1",
-    light = visii.light.create("areaLight1"),
-    transform = visii.transform.create("areaLight1"),
-    mesh = visii.mesh.create_plane("areaLight1"),
+    light = nvisii.light.create("areaLight1"),
+    transform = nvisii.transform.create("areaLight1"),
+    mesh = nvisii.mesh.create_plane("areaLight1"),
 )
-areaLight1.get_transform().set_rotation(visii.angleAxis(3.14, (1,0,0)))
+areaLight1.get_transform().set_rotation(nvisii.angleAxis(3.14, (1,0,0)))
 areaLight1.get_light().set_intensity(1)
 areaLight1.get_light().set_exposure(-3)
 areaLight1.get_light().set_temperature(8000)
 areaLight1.get_transform().set_position((0, 0, .6))
 areaLight1.get_transform().set_scale((.2, .2, .2))
 
-mesh1 = visii.entity.create(
+mesh1 = nvisii.entity.create(
     name="mesh1",
-    mesh = visii.mesh.create_teapotahedron("mesh1", segments=64),
-    transform = visii.transform.create("mesh1"),
-    material = visii.material.create("mesh1")
+    mesh = nvisii.mesh.create_teapotahedron("mesh1", segments=64),
+    transform = nvisii.transform.create("mesh1"),
+    material = nvisii.material.create("mesh1")
 )
 
-brick_base_color = visii.texture.create_from_file("bricks_base_color", "./content/Bricks051_2K_Color.jpg")
-brick_normal = visii.texture.create_from_file("bricks_normal", "./content/Bricks051_2K_Normal.jpg", linear=True)
-brick_roughness = visii.texture.create_from_file("bricks_roughness", "./content/Bricks051_2K_Roughness.jpg", linear=True)
+brick_base_color = nvisii.texture.create_from_file("bricks_base_color", "./content/Bricks051_2K_Color.jpg")
+brick_normal = nvisii.texture.create_from_file("bricks_normal", "./content/Bricks051_2K_Normal.jpg", linear=True)
+brick_roughness = nvisii.texture.create_from_file("bricks_roughness", "./content/Bricks051_2K_Roughness.jpg", linear=True)
 mesh1.get_material().set_roughness_texture(brick_roughness)
 mesh1.get_material().set_normal_map_texture(brick_normal)
 mesh1.get_material().set_base_color_texture(brick_base_color)
@@ -81,21 +81,21 @@ mesh1.get_material().set_base_color_texture(brick_base_color)
 mesh1.get_transform().set_position((0.0, 0.0, 0))
 mesh1.get_transform().set_scale((0.12, 0.12, 0.12))
 
-visii.set_dome_light_intensity(0)
+nvisii.set_dome_light_intensity(0)
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# visii offers different ways to export meta data
+# nvisii offers different ways to export meta data
 # these are exported as raw arrays of numbers
 
 # for many segmentations, it might be beneficial to only 
 # sample pixel centers instead of the whole pixel area.
 # to do so, call this function
-visii.sample_pixel_area(
+nvisii.sample_pixel_area(
     x_sample_interval = (.5,.5), 
     y_sample_interval = (.5, .5)
 )
 
-depth_array = visii.render_data(
+depth_array = nvisii.render_data(
     width=int(opt.width), 
     height=int(opt.height), 
     start_frame=0,
@@ -140,4 +140,4 @@ vis.run()
 vis.destroy_window()
 
 # let's clean up the GPU
-visii.deinitialize()
+nvisii.deinitialize()

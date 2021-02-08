@@ -5,7 +5,7 @@
 # └──────────────────────────────────────────────────────────────────┘
 cmake_minimum_required (VERSION 3.13)
 cmake_policy( VERSION 3.13...3.14 )
-project(ViSII CXX C)
+project(NVISII CXX C)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
@@ -73,7 +73,7 @@ foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
 endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
 
 # Default RPATH settings for *NIX distros
-# set(RPATHS "./;${CMAKE_INSTALL_PREFIX};${CMAKE_INSTALL_PREFIX}/visii;${CMAKE_INSTALL_PREFIX}/visii/lib;")
+# set(RPATHS "./;${CMAKE_INSTALL_PREFIX};${CMAKE_INSTALL_PREFIX}/nvisii;${CMAKE_INSTALL_PREFIX}/nvisii/lib;")
 # set(CMAKE_INSTALL_RPATH "${RPATHS}")
 set(CMAKE_INSTALL_RPATH $ORIGIN)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
@@ -413,7 +413,7 @@ include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/glm_bindings)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/externals/)
-include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/visii/)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/nvisii/)
 
 # defines a global ${HDR} variable containing a list of all project headers
 add_subdirectory(include) 
@@ -431,44 +431,44 @@ set(HDR ${HDR} ${Externals_HDR})
 cuda_compile_and_embed(ptxCode ${SRC_CU})
 
 # ┌──────────────────────────────────────────────────────────────────┐
-# │  ViSII Library                                                   │
+# │  NVISII Library                                                   │
 # └──────────────────────────────────────────────────────────────────┘
-cuda_add_library(visii_lib STATIC ${SRC} ${HDR} ${ptxCode} OPTIONS --expt-relaxed-constexpr -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
-set_target_properties(visii_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(visii_lib ${LIBRARIES})
-set_target_properties(visii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
-install(TARGETS visii_lib 
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/
-    RENAME "visii_lib"
+cuda_add_library(nvisii_lib STATIC ${SRC} ${HDR} ${ptxCode} OPTIONS --expt-relaxed-constexpr -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
+set_target_properties(nvisii_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(nvisii_lib ${LIBRARIES})
+set_target_properties(nvisii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+install(TARGETS nvisii_lib 
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/nvisii/
+    RENAME "nvisii_lib"
 )
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Setup Targets                                                   │
 # └──────────────────────────────────────────────────────────────────┘
-set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/visii.i)
+set(VISII_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/nvisii.i)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY CPLUSPLUS ON)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
 set_property(SOURCE ${VISII_INTERFACE} PROPERTY SWIG_FLAGS "-doxygen") # -builtin seems to remove kwargs...
-swig_add_library(visii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
+swig_add_library(nvisii TYPE SHARED LANGUAGE python SOURCES ${VISII_INTERFACE})
 if (WIN32) 
-set_property(TARGET visii PROPERTY SWIG_GENERATED_COMPILE_OPTIONS -bigobj)
+set_property(TARGET nvisii PROPERTY SWIG_GENERATED_COMPILE_OPTIONS -bigobj)
 endif()
-set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
+set_property(TARGET ${SWIG_MODULE_nvisii_REAL_NAME} PROPERTY SWIG_DEPENDS ${HDR} ${GLM_HDR})
 set(SWIG_DEFS 
 Python_VERSION_MAJOR=${Python_VERSION_MAJOR} 
 Python_VERSION_MINOR=${Python_VERSION_MINOR})
 set(SWIG_DEFS ${SWIG_DEFS} $<$<CONFIG:Debug>:Python_DEBUG>)
-set_property(TARGET ${SWIG_MODULE_visii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
+set_property(TARGET ${SWIG_MODULE_nvisii_REAL_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS ${SWIG_DEFS})
 
 if(WIN32)
-target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib)
+target_link_libraries(${SWIG_MODULE_nvisii_REAL_NAME} PUBLIC ${LIBRARIES} nvisii_lib)
 endif()
 
 if(UNIX)
 # On linux, in order to be complient with PEP 513, we cannot link against libpython.so. However, that results 
 # in undefined symbols. These symbols will be defined by the python interpreter before this module is imported,
 # so we're ignoring undefined symbols, making the assumption they'll be defined by the interpreter beforehand.
-target_link_libraries(${SWIG_MODULE_visii_REAL_NAME} PUBLIC ${LIBRARIES} visii_lib INTERFACE "-undefined dynamic_lookup")
+target_link_libraries(${SWIG_MODULE_nvisii_REAL_NAME} PUBLIC ${LIBRARIES} nvisii_lib INTERFACE "-undefined dynamic_lookup")
 endif()
 
 # ┌──────────────────────────────────────────────────────────────────┐
@@ -476,13 +476,13 @@ endif()
 # └──────────────────────────────────────────────────────────────────┘
 
 # Install
-install(FILES ${CMAKE_BINARY_DIR}/visii.py DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ RENAME __init__.py)
-install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL)
-install(FILES ${CMAKE_BINARY_DIR}/lib/_visii.so DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL)
-install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pyd CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL RENAME _visii_d.pyd)
-install(FILES ${CMAKE_BINARY_DIR}/bin/_visii.pdb CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/ OPTIONAL RENAME _visii_d.pdb)
+install(FILES ${CMAKE_BINARY_DIR}/nvisii.py DESTINATION ${CMAKE_INSTALL_PREFIX}/nvisii/ RENAME __init__.py)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_nvisii.pyd DESTINATION ${CMAKE_INSTALL_PREFIX}/nvisii/ OPTIONAL)
+install(FILES ${CMAKE_BINARY_DIR}/lib/_nvisii.so DESTINATION ${CMAKE_INSTALL_PREFIX}/nvisii/ OPTIONAL)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_nvisii.pyd CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX}/nvisii/ OPTIONAL RENAME _nvisii_d.pyd)
+install(FILES ${CMAKE_BINARY_DIR}/bin/_nvisii.pdb CONFIGURATIONS Debug DESTINATION ${CMAKE_INSTALL_PREFIX}/nvisii/ OPTIONAL RENAME _nvisii_d.pdb)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/python/setup.py DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/python/importers DESTINATION ${CMAKE_INSTALL_PREFIX}/visii/)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/python/importers DESTINATION ${CMAKE_INSTALL_PREFIX}/nvisii/)
 
 # # TBB DLL for windows
 # if (WIN32) 
@@ -490,7 +490,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/python/importers DESTINATION $
 # install(FILES ${PROJECT_SOURCE_DIR}/external/tbb/vc14/tbb_debug.dll DESTINATION ${CMAKE_INSTALL_PREFIX})
 # endif(WIN32)
 
-# If we want apps using visii to be able to also use OWL, we have to export these:
+# If we want apps using nvisii to be able to also use OWL, we have to export these:
 get_directory_property(hasParent PARENT_DIRECTORY)
 if(hasParent)
   set(OWL_INCLUDES ${OWL_INCLUDES} PARENT_SCOPE)

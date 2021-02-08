@@ -1,4 +1,4 @@
-#include <visii/volume.h>
+#include <nvisii/volume.h>
 
 #include <cstring>
 #include <algorithm>
@@ -10,7 +10,7 @@
 
 #include <sys/stat.h>
 
-namespace visii {
+namespace nvisii {
 
 std::vector<Volume> Volume::volumes;
 std::vector<VolumeStruct> Volume::volumeStructs;

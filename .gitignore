@@ -6,8 +6,8 @@ tests
 install
 .vscode
 imgui.ini
-include\visii\utilities\version.h
-include/visii/utilities/version.h
+include\nvisii\utilities\version.h
+include/nvisii/utilities/version.h
 *.png
 data
 *.obj

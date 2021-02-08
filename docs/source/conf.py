@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../../install/'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'ViSII'
+project = 'NVISII'
 copyright = '2020, Nate Morrical'
 author = 'Nate Morrical'
 

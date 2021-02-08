@@ -132,8 +132,8 @@ jobs:
           cd install
           
           # need to temporarily remove libcuda.so.1 from library
-          cd visii
-          patchelf --remove-needed libcuda.so.1 _visii.so
+          cd nvisii
+          patchelf --remove-needed libcuda.so.1 _nvisii.so
           cd ../
           
           # now make the bdistwheel
@@ -147,9 +147,9 @@ jobs:
           # add back on the libcuda.so.1 to the library
           cd wheelhouse
           unar -d *.whl
-          cd visii*
-          cd visii
-          patchelf --add-needed libcuda.so.1 _visii.so
+          cd nvisii*
+          cd nvisii
+          patchelf --add-needed libcuda.so.1 _nvisii.so
           cd ..
           cd ..
           rm *.whl
@@ -160,7 +160,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: visii-${{ matrix.os }}-python${{ matrix.python-version }}
+          name: nvisii-${{ matrix.os }}-python${{ matrix.python-version }}
           path: install/dist/wheelhouse/*.whl
           
   deploy:

@@ -1,5 +1,5 @@
 Transform
 =================================
-.. autoclass:: visii.transform
+.. autoclass:: nvisii.transform
     :members:
     :member-order: bysource

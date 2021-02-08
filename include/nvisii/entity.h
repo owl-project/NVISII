@@ -1,9 +1,9 @@
 #pragma once
 
-#include <visii/utilities/static_factory.h>
-#include <visii/entity_struct.h>
+#include <nvisii/utilities/static_factory.h>
+#include <nvisii/entity_struct.h>
 
-namespace visii {
+namespace nvisii {
 
 class Camera;
 class Light;

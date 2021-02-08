@@ -1,7 +1,7 @@
-#include <visii/material.h>
-#include <visii/texture.h>
+#include <nvisii/material.h>
+#include <nvisii/texture.h>
 
-namespace visii {
+namespace nvisii {
 
 std::vector<Material> Material::materials;
 std::vector<MaterialStruct> Material::materialStructs;

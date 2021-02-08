@@ -1,4 +1,4 @@
 Camera
 =================================
-.. autoclass:: visii.camera
+.. autoclass:: nvisii.camera
     :members:

@@ -1,8 +1,8 @@
-#include <visii/transform.h>
-#include <visii/entity.h>
+#include <nvisii/transform.h>
+#include <nvisii/entity.h>
 #include <glm/gtx/matrix_decompose.hpp>
 
-namespace visii {
+namespace nvisii {
 
 std::vector<Transform> Transform::transforms;
 std::vector<TransformStruct> Transform::transformStructs;

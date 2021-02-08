@@ -18,11 +18,11 @@
 
 /* Project includes */
 // #include "Foton/Tools/Options.hxx"
-#include <visii/utilities/static_factory.h>
-#include <visii/mesh_struct.h>
-#include <visii/utilities/hash_combiner.h>
+#include <nvisii/utilities/static_factory.h>
+#include <nvisii/mesh_struct.h>
+#include <nvisii/utilities/hash_combiner.h>
 
-namespace visii {
+namespace nvisii {
 
 /* Forward declarations */
 class Vertex
@@ -50,9 +50,9 @@ class Vertex
 namespace std
 {
 template <>
-struct hash<visii::Vertex>
+struct hash<nvisii::Vertex>
 {
-	size_t operator()(const visii::Vertex &k) const
+	size_t operator()(const nvisii::Vertex &k) const
 	{
 		std::size_t h = 0;
 		hash_combine(h, k.point.x, k.point.y, k.point.z,
@@ -65,7 +65,7 @@ struct hash<visii::Vertex>
 };
 } // namespace std
 
-namespace visii {
+namespace nvisii {
 
 /* Class declaration */
 class Mesh : public StaticFactory

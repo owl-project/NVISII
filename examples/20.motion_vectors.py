@@ -1,4 +1,4 @@
-import visii
+import nvisii
 import os
 import numpy as np 
 from math import acos
@@ -23,15 +23,15 @@ else:
     print(f'created folder {opt.outf}/')
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize(headless=True, verbose=True)
+nvisii.initialize(headless=True, verbose=True)
 
 if not opt.noise is True: 
-    visii.enable_denoiser()
+    nvisii.enable_denoiser()
 
-camera = visii.entity.create(
+camera = nvisii.entity.create(
     name = "camera",
-    transform = visii.transform.create("camera"),
-    camera = visii.camera.create(
+    transform = nvisii.transform.create("camera"),
+    camera = nvisii.camera.create(
         name = "camera",  
         aspect = float(opt.width)/float(opt.height)
     )
@@ -42,50 +42,50 @@ camera.get_transform().look_at(
     up = (0,0,1),
     eye = (0,3.0,0.2),
 )
-visii.set_camera_entity(camera)
+nvisii.set_camera_entity(camera)
 
-visii.set_dome_light_sky(sun_position = (10, 10, 1), saturation = 2)
-visii.set_dome_light_intensity(1.5)
+nvisii.set_dome_light_sky(sun_position = (10, 10, 1), saturation = 2)
+nvisii.set_dome_light_intensity(1.5)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-floor = visii.entity.create(
+floor = nvisii.entity.create(
     name = "floor",
-    mesh = visii.mesh.create_plane("floor", size = (10,10)),
-    material = visii.material.create("floor", base_color = (.5, .5, .5), roughness = 0.0, metallic = 1.0),
-    transform = visii.transform.create("floor", position = (0,0,-.3))
+    mesh = nvisii.mesh.create_plane("floor", size = (10,10)),
+    material = nvisii.material.create("floor", base_color = (.5, .5, .5), roughness = 0.0, metallic = 1.0),
+    transform = nvisii.transform.create("floor", position = (0,0,-.3))
 )
 
 # Next, let's load an obj
-mesh = visii.mesh.create_from_file("obj", opt.path_obj)
+mesh = nvisii.mesh.create_from_file("obj", opt.path_obj)
 
 # Now, lets make three instances of that mesh
-obj1 = visii.entity.create(
+obj1 = nvisii.entity.create(
     name="obj1",
     mesh = mesh,
-    transform = visii.transform.create("obj1"),
-    material = visii.material.create("obj1")
+    transform = nvisii.transform.create("obj1"),
+    material = nvisii.material.create("obj1")
 )
 
-obj2 = visii.entity.create(
+obj2 = nvisii.entity.create(
     name="obj2",
     mesh = mesh,
-    transform = visii.transform.create("obj2"),
-    material = visii.material.create("obj2")
+    transform = nvisii.transform.create("obj2"),
+    material = nvisii.material.create("obj2")
 )
 
-obj3 = visii.entity.create(
+obj3 = nvisii.entity.create(
     name="obj3",
     mesh = mesh,
-    transform = visii.transform.create("obj3"),
-    material = visii.material.create("obj3")
+    transform = nvisii.transform.create("obj3"),
+    material = nvisii.material.create("obj3")
 )
 
-obj4 = visii.entity.create(
+obj4 = nvisii.entity.create(
     name="obj4",
     mesh = mesh,
-    transform = visii.transform.create("obj4"),
-    material = visii.material.create("obj4")
+    transform = nvisii.transform.create("obj4"),
+    material = nvisii.material.create("obj4")
 )
 
 # place those objects into the scene
@@ -125,12 +125,12 @@ obj4.get_material().set_sheen(1)
 
 # need to remove the motion blur that adding previous transform will cause. 
 # We also want the motion from frame 0 to 1
-visii.sample_time_interval((0,0))
+nvisii.sample_time_interval((0,0))
 
 # make sure that raw sample the middle the of the pixel 
 # without this there will be noise on the motion segmentation
 
-visii.sample_pixel_area(
+nvisii.sample_pixel_area(
     x_sample_interval = (.5,.5), 
     y_sample_interval = (.5, .5)
 )
@@ -191,7 +191,7 @@ def generate_image_from_motion_vector(motion_vectors_array, use_magnitude=False)
 
 
 
-visii.render_to_file(
+nvisii.render_to_file(
     width=int(opt.width), 
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
@@ -199,15 +199,15 @@ visii.render_to_file(
 )
 
 obj1.get_transform().set_position(obj1.get_transform().get_position(),previous=True)
-obj1.get_transform().add_position(visii.vec3(0,0.5,0))
+obj1.get_transform().add_position(nvisii.vec3(0,0.5,0))
 
 obj2.get_transform().set_position(obj2.get_transform().get_position(),previous=True)
-obj2.get_transform().add_position(visii.vec3(0,0,0.5))
+obj2.get_transform().add_position(nvisii.vec3(0,0,0.5))
 
 obj3.get_transform().set_rotation(obj3.get_transform().get_rotation(),previous=True)
-obj3.get_transform().add_rotation(visii.quat(0,-1,0,0))
+obj3.get_transform().add_rotation(nvisii.quat(0,-1,0,0))
 
-motion_vectors_array = visii.render_data(
+motion_vectors_array = nvisii.render_data(
     width=int(opt.width), 
     height=int(opt.height), 
     start_frame=0,
@@ -223,8 +223,8 @@ cv2.imwrite(opt.outf + "20_motion_from_1_to_2.png",image*255)
 
 
 # frame now has to be set at 1 to have the current image, e.g., the transformed one
-visii.sample_time_interval((1,1))
-visii.render_to_file(
+nvisii.sample_time_interval((1,1))
+nvisii.render_to_file(
     width=int(opt.width), 
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
@@ -234,4 +234,4 @@ visii.render_to_file(
 
 
 # let's clean up the GPU
-visii.deinitialize()
+nvisii.deinitialize()

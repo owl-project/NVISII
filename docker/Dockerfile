@@ -28,7 +28,7 @@ RUN apt-get -qq update && apt-get -qq -y install curl bzip2 \
 
 ENV PATH /opt/conda/bin:$PATH
 
-RUN pip install visii
+RUN pip install nvisii
 
 COPY nvidia/* /usr/lib/x86_64-linux-gnu/
 

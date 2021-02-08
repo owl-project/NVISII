@@ -1,5 +1,5 @@
 Material
 =================================
-.. autoclass:: visii.material
+.. autoclass:: nvisii.material
     :members:
     :member-order: bysource

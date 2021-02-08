@@ -18,10 +18,10 @@
 #include <map>
 #include <mutex>
 
-#include <visii/utilities/static_factory.h>
-#include <visii/transform_struct.h>
+#include <nvisii/utilities/static_factory.h>
+#include <nvisii/transform_struct.h>
 
-namespace visii {
+namespace nvisii {
 
 /**
  * The "Transform" component places an entity into the scene.

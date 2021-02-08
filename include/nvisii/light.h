@@ -1,10 +1,10 @@
 
 #pragma once
 
-#include <visii/utilities/static_factory.h>
-#include <visii/light_struct.h>
+#include <nvisii/utilities/static_factory.h>
+#include <nvisii/light_struct.h>
 
-namespace visii {
+namespace nvisii {
 
 class Texture;
 

@@ -37,10 +37,10 @@ if optix_version:
 print(current_version)
 
 setup(
-    # This package is called visii
-    name='visii',
+    # This package is called nvisii
+    name='nvisii',
 
-    packages = ['visii', "visii.importers"], # include the package "visii" 
+    packages = ['nvisii', "nvisii.importers"], # include the package "nvisii" 
 
     # make sure the shared library is included
     package_data = {'': ("*.dll", "*.pyd", "*.so")},

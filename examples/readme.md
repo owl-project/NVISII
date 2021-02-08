@@ -1,14 +1,14 @@
 # ViSii examples
 
-This folder contains different examples showing different capabilities for visii. 
+This folder contains different examples showing different capabilities for nvisii. 
 The first example uses interactive mode, whereas the rest of the examples 
 use headless mode and save local images (look for `tmp.png` in the `examples/` 
 folder). 
-We also provide baseline outputs for what visii should be producing. 
+We also provide baseline outputs for what nvisii should be producing. 
 You can download them through `sh download_results.sh`. 
 
 There is also a python `requirements.txt` for different packages needed to run all the examples. 
-Some examples have minimal requirements, e.g., `visii` only whereas others use packages that 
+Some examples have minimal requirements, e.g., `nvisii` only whereas others use packages that 
 makes the final task easier. 
 
 Please note that if you have more than one GPU, you might run into problems if they 
@@ -25,7 +25,7 @@ This is simple script that opens up a window with gaussian noise displayed.
 
 ## 1.simple_scene.py
 This shows a sphere on top of a mirror floor. You should see how to set up a simple scene 
-with visii, the light is provided by the dome. 
+with nvisii, the light is provided by the dome. 
 
 
 ## 2.random_scene.py
@@ -44,7 +44,7 @@ You can also use your own obj file, see the arguments to the script.
 
 
 ## 5.lights.py
-This script presents how to add lights to your scenes. Lights in visii are meshes, 
+This script presents how to add lights to your scenes. Lights in nvisii are meshes, 
 so we show how to do different lights in this example. You can also check how the different 
 materials react to each other, e.g., the cube is transmissive (it is transparent). 
 
@@ -67,7 +67,7 @@ from a large obj scene.
 
 
 ## 9.meta_data_exporting.py
-This is a very simple scene showing different export that visii does naturally, e.g., normals. 
+This is a very simple scene showing different export that nvisii does naturally, e.g., normals. 
 
 
 ## 10.light_texture.py
@@ -95,12 +95,12 @@ A simple script that loads a texture, normal and roughness map and apply them to
 An interactive demo for controlling the camera similar to to a first person shooter control using `w,a,s,d` and `q` and `e` for up and down. Using the left click on the mouse you can rotate the camera. Here is an [example](https://imgur.com/VYda2UF) of the sort of motion you can generate.
 
 ## 16.create_mesh_from_data.py
-This example shows how to create a mesh using an external package (in this case, `open3d`) and render it with visii. 
+This example shows how to create a mesh using an external package (in this case, `open3d`) and render it with nvisii. 
 This is the exact same scene as `4.load_obj_file.py`. 
 
-## 17.materials_visii_interactive.py
+## 17.materials_nvisii_interactive.py
 Although not entirely realistic, alpha transparency is a useful feature for making objects "see-through" without necessarily bending rays due to refraction. This is commonly used to handle alpha cutouts (eg. for leaves) but is also used frequently when "visualizing" scientific data. 
-You can also explore the different material propreties in visii and see how they affect the mesh. 
+You can also explore the different material propreties in nvisii and see how they affect the mesh. 
 Here, we use PySide2 to demonstrate the difference between "alpha transparency" and "transmission.
 
 ## 18.materials.py

@@ -1,4 +1,4 @@
-import visii
+import nvisii
 
 import numpy as np 
 import open3d as o3d
@@ -13,15 +13,15 @@ opt.out = '16_create_mesh_from_data.png'
 opt.path_obj = 'content/dragon/dragon.obj'
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize(headless = True, verbose = True)
+nvisii.initialize(headless = True, verbose = True)
 
 if not opt.noise is True: 
-    visii.enable_denoiser()
+    nvisii.enable_denoiser()
 
-camera = visii.entity.create(
+camera = nvisii.entity.create(
     name = "camera",
-    transform = visii.transform.create("camera"),
-    camera = visii.camera.create(
+    transform = nvisii.transform.create("camera"),
+    camera = nvisii.camera.create(
         name = "camera",  
         aspect = float(opt.width)/float(opt.height)
     )
@@ -32,13 +32,13 @@ camera.get_transform().look_at(
     up = (0,0,1),
     eye = (0.2,0.2,0.2),
 )
-visii.set_camera_entity(camera)
+nvisii.set_camera_entity(camera)
 
-visii.set_dome_light_intensity(1)
+nvisii.set_dome_light_intensity(1)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Although ViSII has official support for stl files through mesh.create_from_file,
+# Although NVISII has official support for stl files through mesh.create_from_file,
 # let's open the STL from another library, and use the create_from_data interface. 
 
 # let load the object using open3d
@@ -50,7 +50,7 @@ if not mesh.has_vertex_normals():
 normals = np.array(mesh.vertex_normals).flatten().tolist()
 vertices = np.array(mesh.vertices).flatten().tolist()
 
-mesh = visii.mesh.create_from_data(
+mesh = nvisii.mesh.create_from_data(
     'stl_mesh',
     positions=vertices,
     normals=normals
@@ -58,13 +58,13 @@ mesh = visii.mesh.create_from_data(
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-obj_entity = visii.entity.create(
+obj_entity = nvisii.entity.create(
     name="obj_entity",
     mesh = mesh,
-    transform = visii.transform.create("obj_entity",
+    transform = nvisii.transform.create("obj_entity",
         scale=(0.3, 0.3, 0.3)
     ),
-    material = visii.material.create("obj_entity")
+    material = nvisii.material.create("obj_entity")
 )
 
 obj_entity.get_material().set_base_color((0.9,0.12,0.08))  
@@ -75,7 +75,7 @@ obj_entity.get_material().set_sheen(1)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-visii.render_to_file(
+nvisii.render_to_file(
     width=int(opt.width), 
     height=int(opt.height), 
     samples_per_pixel=int(opt.spp),
@@ -83,4 +83,4 @@ visii.render_to_file(
 )
 
 # let's clean up the GPU
-visii.deinitialize()
+nvisii.deinitialize()

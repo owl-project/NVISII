@@ -3,7 +3,7 @@
 # This example demonstrates the effects of different material parameters.
 # It also shows how to implement basic camera controls
 
-import visii
+import nvisii
 from colorsys import *
 import time
 
@@ -13,31 +13,31 @@ opt.width = 1920
 opt.height = 1080 
 opt.out = '18_materials.png'
 
-visii.initialize(headless = False, verbose = True)
+nvisii.initialize(headless = False, verbose = True)
 
 # Use a neural network to denoise ray traced
-visii.enable_denoiser()
+nvisii.enable_denoiser()
 
 # This is new, have the dome light use a texture
-dome = visii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
-visii.set_dome_light_texture(dome, enable_cdf=True)
-visii.resize_window(1920, 1080)
+dome = nvisii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
+nvisii.set_dome_light_texture(dome, enable_cdf=True)
+nvisii.resize_window(1920, 1080)
 
 # # Make a wall
-# wall = visii.entity.create(
+# wall = nvisii.entity.create(
 #     name = "wall",
-#     mesh = visii.mesh.create_plane("mesh_wall"),
-#     transform = visii.transform.create("transform_wall"),
-#     material = visii.material.create("material_wall")
+#     mesh = nvisii.mesh.create_plane("mesh_wall"),
+#     transform = nvisii.transform.create("transform_wall"),
+#     material = nvisii.material.create("material_wall")
 # )
 # wall.get_transform().set_scale((50,50,1))
-# wall.get_transform().set_rotation(visii.angleAxis(visii.pi() * .5, (1,0,0)))
+# wall.get_transform().set_rotation(nvisii.angleAxis(nvisii.pi() * .5, (1,0,0)))
 # wall.get_transform().set_position((0,-.5,0))
 
 # Make a sphere mesh that we'll make several instances of
-# sphere_mesh = visii.mesh.create_teapotahedron("sphere")
-sphere_mesh = visii.mesh.create_sphere("sphere", radius=1)
-box_mesh = visii.mesh.create_rounded_box("box")
+# sphere_mesh = nvisii.mesh.create_teapotahedron("sphere")
+sphere_mesh = nvisii.mesh.create_sphere("sphere", radius=1)
+box_mesh = nvisii.mesh.create_rounded_box("box")
 
 for x in range(20):
     for y in range(20):
@@ -46,10 +46,10 @@ for x in range(20):
         if y % 4 < 2:
             m = sphere_mesh
 
-        visii.entity.create(
+        nvisii.entity.create(
             name = name,
             mesh = m,
-            transform = visii.transform.create(
+            transform = nvisii.transform.create(
                 name = name, 
                 # position = (x * 1.3 + .33 * pow(-1, y), 0, y * .35),
                 position = (x * .25, 0, y * .25 * .7 + .02 * pow(-1, y)),
@@ -57,13 +57,13 @@ for x in range(20):
                 scale = ((y % 2) * .01 + .09, 
                          (y % 2) * .01 + .09, 
                          (y % 2) * .01 + .09),
-                rotation = visii.angleAxis(-.78, (1,0,0))
+                rotation = nvisii.angleAxis(-.78, (1,0,0))
             ),
-            material = visii.material.create(
+            material = nvisii.material.create(
                 name = name
             )
         )
-        mat = visii.material.get(name)
+        mat = nvisii.material.get(name)
         
         # The diffuse, metal, or glass surface color
         # mat.set_base_color(...)
@@ -128,22 +128,22 @@ for x in range(20):
             mat.set_alpha(x / 20.0)
         
 # Create a camera
-center = visii.get_scene_aabb_center()
-camera = visii.entity.create(
+center = nvisii.get_scene_aabb_center()
+camera = nvisii.entity.create(
     name = "camera",
-    transform = visii.transform.create(name = "camera_transform"),
-    camera = visii.camera.create(name = "camera_camera", aspect=opt.width / opt.height)
+    transform = nvisii.transform.create(name = "camera_transform"),
+    camera = nvisii.camera.create(name = "camera_camera", aspect=opt.width / opt.height)
 )
 camera.get_transform().look_at(at = (center.x, 0, center.z), up = (0, 0, 1), eye = (center.x, -5, center.z))
-visii.set_camera_entity(camera)
+nvisii.set_camera_entity(camera)
 
 # Render out the final image
 print("rendering to", opt.out)
-visii.render_to_file(
+nvisii.render_to_file(
     width = opt.width, 
     height = opt.height, 
     samples_per_pixel = opt.spp,   
     file_path = opt.out
 )
 
-visii.deinitialize()
+nvisii.deinitialize()

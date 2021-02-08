@@ -3,7 +3,7 @@
 # This shows how to generate a randomized scene using a couple built-in mesh 
 # types and some randomized materials. 
 
-import visii
+import nvisii
 from random import *
 import colorsys
 
@@ -14,11 +14,11 @@ opt.width = 1920
 opt.height = 1080 
 opt.out = '02_random_scene.png'
 
-# visii uses sets of components to represent a scene. 
+# nvisii uses sets of components to represent a scene. 
 # We can increase the max component limit here if necessary.
 # In this case, we'll need 16 meshes, a material for each object,
 # and finally a transform for each object as well as one more for the camera.
-visii.initialize(
+nvisii.initialize(
     headless = True, 
     verbose = True, 
     lazy_updates = True,
@@ -31,54 +31,54 @@ visii.initialize(
 )
 
 # Turn on the denoiser
-visii.enable_denoiser()
+nvisii.enable_denoiser()
 
 # Create a camera
-camera = visii.entity.create(
+camera = nvisii.entity.create(
     name = "camera",
-    transform = visii.transform.create("camera"),
-    camera = visii.camera.create(
+    transform = nvisii.transform.create("camera"),
+    camera = nvisii.camera.create(
         name = "camera",  
         aspect = float(opt.width)/float(opt.height)
     )
 )
 camera.get_transform().look_at(at = (0,0,0), up = (1,0,0), eye = (0,0,5))
-visii.set_camera_entity(camera)
+nvisii.set_camera_entity(camera)
 
 # Lets create a random scene. 
 
 # First lets pre-load some mesh components.
-visii.mesh.create_sphere('m_0')
-visii.mesh.create_torus_knot('m_1')
-visii.mesh.create_teapotahedron('m_2')
-visii.mesh.create_box('m_3')
-visii.mesh.create_capped_cone('m_4')
-visii.mesh.create_capped_cylinder('m_5')
-visii.mesh.create_capsule('m_6')
-visii.mesh.create_cylinder('m_7')
-visii.mesh.create_disk('m_8')
-visii.mesh.create_dodecahedron('m_9')
-visii.mesh.create_icosahedron('m_10')
-visii.mesh.create_icosphere('m_11')
-visii.mesh.create_rounded_box('m_12')
-visii.mesh.create_spring('m_13')
-visii.mesh.create_torus('m_14')
-visii.mesh.create_tube('m_15')
+nvisii.mesh.create_sphere('m_0')
+nvisii.mesh.create_torus_knot('m_1')
+nvisii.mesh.create_teapotahedron('m_2')
+nvisii.mesh.create_box('m_3')
+nvisii.mesh.create_capped_cone('m_4')
+nvisii.mesh.create_capped_cylinder('m_5')
+nvisii.mesh.create_capsule('m_6')
+nvisii.mesh.create_cylinder('m_7')
+nvisii.mesh.create_disk('m_8')
+nvisii.mesh.create_dodecahedron('m_9')
+nvisii.mesh.create_icosahedron('m_10')
+nvisii.mesh.create_icosphere('m_11')
+nvisii.mesh.create_rounded_box('m_12')
+nvisii.mesh.create_spring('m_13')
+nvisii.mesh.create_torus('m_14')
+nvisii.mesh.create_tube('m_15')
 
 def add_random_obj(name = "name"):
     # this function adds a random object that uses one of the pre-loaded mesh
     # components, assigning a random pose and random material to that object.
 
-    obj = visii.entity.create(
+    obj = nvisii.entity.create(
         name = name,
-        transform = visii.transform.create(name),
-        material = visii.material.create(name)
+        transform = nvisii.transform.create(name),
+        material = nvisii.material.create(name)
     )
 
     mesh_id = randint(0,15)
 
     # set the mesh. (Note that meshes can be shared, saving memory)
-    mesh = visii.mesh.get(f'm_{mesh_id}')
+    mesh = nvisii.mesh.get(f'm_{mesh_id}')
     obj.set_mesh(mesh)
 
     obj.get_transform().set_position((
@@ -147,11 +147,11 @@ for i in range(opt.nb_objs):
     print("\rcreating random object", i, end="")
 print(" - done!")
 
-visii.render_to_file(
+nvisii.render_to_file(
     width = opt.width, 
     height = opt.height, 
     samples_per_pixel = opt.spp,   
     file_path = opt.out
 )
 
-visii.deinitialize()
+nvisii.deinitialize()

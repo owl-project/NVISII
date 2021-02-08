@@ -1,4 +1,4 @@
 Full Reference
 =================================
-.. automodule:: visii
+.. automodule:: nvisii
     :members:

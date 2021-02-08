@@ -18,10 +18,10 @@
 #include <mutex>
 #include <string>
 
-#include <visii/utilities/static_factory.h>
-#include <visii/material_struct.h>
+#include <nvisii/utilities/static_factory.h>
+#include <nvisii/material_struct.h>
 
-namespace visii {
+namespace nvisii {
 
 class Texture;
 

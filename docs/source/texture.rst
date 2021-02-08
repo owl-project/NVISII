@@ -1,4 +1,4 @@
 Texture
 =================================
-.. autoclass:: visii.texture
+.. autoclass:: nvisii.texture
     :members:

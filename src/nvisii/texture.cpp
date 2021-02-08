@@ -1,6 +1,6 @@
-#include <visii/texture.h>
-#include <visii/light.h>
-#include <visii/material.h>
+#include <nvisii/texture.h>
+#include <nvisii/light.h>
+#include <nvisii/material.h>
 
 #include <stb_image.h>
 #include <stb_image_write.h>
@@ -14,7 +14,7 @@
 
 #include <glm/gtc/color_space.hpp>
 
-namespace visii {
+namespace nvisii {
 
 std::vector<Texture> Texture::textures;
 std::vector<TextureStruct> Texture::textureStructs;

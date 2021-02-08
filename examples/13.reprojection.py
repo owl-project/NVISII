@@ -1,6 +1,6 @@
 import os
 import math
-import visii
+import nvisii
 import noise
 import random
 import numpy as np 
@@ -23,12 +23,12 @@ else:
     print(f'created folder {opt.outf}/')
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
-visii.initialize(headless=False, verbose=True)
+nvisii.initialize(headless=False, verbose=True)
 
-camera = visii.entity.create(
+camera = nvisii.entity.create(
     name = "camera",
-    transform = visii.transform.create("camera"),
-    camera = visii.camera.create(
+    transform = nvisii.transform.create("camera"),
+    camera = nvisii.camera.create(
         name = "camera", 
         aspect = float(opt.width)/float(opt.height)
     )
@@ -43,7 +43,7 @@ camera.get_transform().look_at(
     previous = True
 )
 
-angle = -visii.pi() * .05
+angle = -nvisii.pi() * .05
 camera.get_transform().look_at(
     at = (0,0,.1),
     up = (0,0,1),
@@ -51,24 +51,24 @@ camera.get_transform().look_at(
     previous = False
 )
 
-visii.set_camera_entity(camera)
+nvisii.set_camera_entity(camera)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-floor = visii.entity.create(
+floor = nvisii.entity.create(
     name="floor",
-    mesh = visii.mesh.create_plane("floor"),
-    transform = visii.transform.create("floor"),
-    material = visii.material.create("floor")
+    mesh = nvisii.mesh.create_plane("floor"),
+    transform = nvisii.transform.create("floor"),
+    material = nvisii.material.create("floor")
 )
 
 floor.get_material().set_roughness(1.0)
 
-mesh1 = visii.entity.create(
+mesh1 = nvisii.entity.create(
     name="mesh1",
-    mesh = visii.mesh.create_teapotahedron("mesh1"),
-    transform = visii.transform.create("mesh1"),
-    material = visii.material.create("mesh1")
+    mesh = nvisii.mesh.create_teapotahedron("mesh1"),
+    transform = nvisii.transform.create("mesh1"),
+    material = nvisii.material.create("mesh1")
 )
 
 mesh1.get_material().set_roughness(1.0)
@@ -79,20 +79,20 @@ mesh1.get_transform().set_scale((0.1, 0.1, 0.1), previous = False)
 mesh1.get_transform().set_scale((0.1, 0.1, 0.1), previous = True)
 mesh1.get_transform().set_position((0.05, 0.0, 0), previous=False)
 
-tex = visii.texture.create_from_file("dome", "./content/teatro_massimo_2k.hdr")
-visii.set_dome_light_texture(tex, enable_cdf=True)
-visii.set_dome_light_intensity(0.8)
+tex = nvisii.texture.create_from_file("dome", "./content/teatro_massimo_2k.hdr")
+nvisii.set_dome_light_texture(tex, enable_cdf=True)
+nvisii.set_dome_light_intensity(0.8)
 
-visii.set_direct_lighting_clamp(10.0)
-visii.set_indirect_lighting_clamp(10.0)
-visii.set_max_bounce_depth(0, 0)
-visii.sample_pixel_area((.5, .5), (.5, .5))
+nvisii.set_direct_lighting_clamp(10.0)
+nvisii.set_indirect_lighting_clamp(10.0)
+nvisii.set_max_bounce_depth(0, 0)
+nvisii.sample_pixel_area((.5, .5), (.5, .5))
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 # First, let's render out the scene with motion blur to understand
 # how the object is moving
-visii.sample_time_interval((0.0, 1.0))
-visii.render_to_file(width=opt.width, height=opt.height, samples_per_pixel=opt.spp,
+nvisii.sample_time_interval((0.0, 1.0))
+nvisii.render_to_file(width=opt.width, height=opt.height, samples_per_pixel=opt.spp,
     file_path=f"{opt.outf}/motion_blur.png"
 )
 
@@ -101,8 +101,8 @@ def save_image(data, name):
     img.save(name)
 
 # Now let's render out the where the object is at time = 0 and time = 1
-visii.sample_time_interval((0.0, 0.0)) # only sample at t = 0
-t0_array = visii.render(
+nvisii.sample_time_interval((0.0, 0.0)) # only sample at t = 0
+t0_array = nvisii.render(
     width=opt.width, 
     height=opt.height, 
     samples_per_pixel=opt.spp, 
@@ -111,8 +111,8 @@ t0_array = visii.render(
 t0_array = np.array(t0_array).reshape(opt.height,opt.width,4)
 save_image(t0_array, f"{opt.outf}/t0.png")
 
-visii.sample_time_interval((1.0, 1.0)) # only sample at t = 1
-t1_array = visii.render(
+nvisii.sample_time_interval((1.0, 1.0)) # only sample at t = 1
+t1_array = nvisii.render(
     width=opt.width, 
     height=opt.height, 
     samples_per_pixel=8, 
@@ -123,8 +123,8 @@ save_image(t1_array, f"{opt.outf}/t1.png")
 
 # Next, let's obtain segmentation data for both
 # these timesteps to do the reprojection
-visii.sample_time_interval((0.0, 0.0))
-t0_base_colors_array = visii.render_data(
+nvisii.sample_time_interval((0.0, 0.0))
+t0_base_colors_array = nvisii.render_data(
     width=opt.width, 
     height=opt.height, 
     start_frame=0,
@@ -135,8 +135,8 @@ t0_base_colors_array = visii.render_data(
 t0_base_colors_array = np.array(t0_base_colors_array).reshape(opt.height,opt.width,4)
 save_image(t0_base_colors_array, f"{opt.outf}/t0_base_color.png")
 
-visii.sample_time_interval((1.0, 1.0))
-t1_base_colors_array = visii.render_data(
+nvisii.sample_time_interval((1.0, 1.0))
+t1_base_colors_array = nvisii.render_data(
     width=opt.width, 
     height=opt.height, 
     start_frame=0,
@@ -148,8 +148,8 @@ t1_base_colors_array = np.array(t1_base_colors_array).reshape(opt.height,opt.wid
 save_image(t1_base_colors_array, f"{opt.outf}/t1_base_color.png")
 
 # After that, get diffuse motion vectors at T1 to drive the reprojection
-visii.sample_time_interval((1.0, 1.0))
-t1_motion_vectors_array = visii.render_data_to_file(
+nvisii.sample_time_interval((1.0, 1.0))
+t1_motion_vectors_array = nvisii.render_data_to_file(
     width=opt.width, 
     height=opt.height, 
     start_frame=0,
@@ -158,7 +158,7 @@ t1_motion_vectors_array = visii.render_data_to_file(
     options="diffuse_motion_vectors",
     file_path= f"{opt.outf}/t1_motion_vectors.exr"
 )
-t1_motion_vectors_array = visii.render_data(
+t1_motion_vectors_array = nvisii.render_data(
     width=opt.width, 
     height=opt.height, 
     start_frame=0,
@@ -200,4 +200,4 @@ mixed_img = t0_reproj * mixing_mask[:,:,None] + (1-mixing_mask[:,:,None]) * t1_a
 save_image(mixed_img, f"{opt.outf}/mixed_img.png")
 
 # let's clean up the GPU
-visii.deinitialize()
+nvisii.deinitialize()
