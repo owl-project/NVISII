@@ -1697,7 +1697,7 @@ void denoiseImage() {
             scratchSizeInBytes));
     }
 
-    #ifndef USE_OPTIX70
+    #if !defined(USE_OPTIX70) && !defined(USE_OPTIX71)
     if (OD.enableKernelPrediction) {
         OPTIX_CHECK(optixDenoiserComputeAverageColor(
             OD.denoiser, 
@@ -1867,7 +1867,7 @@ void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelP
         else if (!useNormalGuide) options.inputKind = OPTIX_DENOISER_INPUT_RGB_ALBEDO;
         else options.inputKind = OPTIX_DENOISER_INPUT_RGB_ALBEDO_NORMAL;
 
-        #ifndef USE_OPTIX72
+        #ifdef USE_OPTIX70
         options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
         #endif
 
@@ -1878,7 +1878,7 @@ void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelP
         OPTIX_CHECK(optixDenoiserCreate(optixContext, &options, &OptixData.denoiser));
 
         OptixDenoiserModelKind kind;
-        #ifdef USE_OPTIX70
+        #if defined(USE_OPTIX70) || defined(USE_OPTIX71)
             kind = OPTIX_DENOISER_MODEL_KIND_HDR;
         #else
             if (OptixData.enableKernelPrediction) kind = OPTIX_DENOISER_MODEL_KIND_AOV;
