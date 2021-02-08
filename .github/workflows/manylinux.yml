@@ -22,7 +22,7 @@ jobs:
         optix-version: [70]
 
     container:
-      quay.io/pypa/manylinux2014_x86_64
+      quay.io/pypa/manylinux2014_x86_64:2021-01-12-c8250d8
     
     steps:
       - uses: actions/checkout@v2
