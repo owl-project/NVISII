@@ -61,6 +61,6 @@ setup(
     maintainer='',
     maintainer_email='',
     
-    python_requires = ">=2.7",
+    python_requires = ">=3.6",
     cmdclass={'install': InstallPlatlib},
 )
