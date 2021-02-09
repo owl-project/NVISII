@@ -49,7 +49,7 @@ jobs:
     - name: Download Dependencies
       run: |
         #choco install cuda --version=10.2.89.20191206  --execution-timeout=3000
-        wget https://developer.download.nvidia.com/compute/cuda/10.2/Prod/patches/2/cuda_10.2.2_win10.exe
+        Invoke-WebRequest https://developer.download.nvidia.com/compute/cuda/10.2/Prod/patches/2/cuda_10.2.2_win10.exe -OutFile cuda_10.2.2_win10.exe
         cuda_10.2.2_win10.exe -s nvcc_10.2 
         refreshenv
 
