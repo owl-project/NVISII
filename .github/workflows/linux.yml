@@ -108,7 +108,7 @@ jobs:
           echo $PYTHONXDOTYMU
 
           $PYEXEC -m pip install --upgrade pip
-          $PYEXEC -m pip install numpy==1.20.0
+          $PYEXEC -m pip install numpy==1.18.5
           $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
           $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
          
