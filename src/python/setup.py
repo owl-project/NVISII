@@ -23,7 +23,8 @@ class BinaryDistribution(dist.Distribution):
     def has_ext_modules(foo):
         return True
 
-
+# This gets the version from the most recent git tag, potentially concatinating 
+# a commit hash at the end.
 current_version = get_version(
     root = "..", 
     relative_to = __file__,
@@ -40,6 +41,8 @@ setup(
     # This package is called nvisii
     name='nvisii',
 
+    install_requires = ['numpy=1.20.1'],
+
     packages = ['nvisii', "nvisii.importers"], # include the package "nvisii" 
 
     # make sure the shared library is included
@@ -52,16 +55,6 @@ setup(
     distclass=BinaryDistribution,
 
     version = current_version,
-    # # This gets the version from the most recent git tag, potentially concatinating 
-    # # a commit hash at the end.
-    # use_scm_version={
-    #     'fallback_version': '0.0.0-dev0',
-    #     "root" : "..",
-    #     "relative_to" : __file__ 
-    # },
-
-    # Note, below might give "WARNING: The wheel package is not available." if wheel isnt installed
-    # setup_requires=['setuptools_scm'], # discouraged
 
     author='Nate Morrical',
     author_email='',
