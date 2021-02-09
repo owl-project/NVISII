@@ -41,7 +41,7 @@ setup(
     # This package is called nvisii
     name='nvisii',
 
-    install_requires = ['numpy=1.20.1'],
+    install_requires = ['numpy=1.20.0'],
 
     packages = ['nvisii', "nvisii.importers"], # include the package "nvisii" 
 
