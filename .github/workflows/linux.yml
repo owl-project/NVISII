@@ -130,6 +130,7 @@ jobs:
           -DPython_VERSION_MAJOR=${PY:2:1} \
           -DPython_VERSION_MINOR=${PY:3:1} \
           -DCMAKE_BUILD_TYPE=Release \
+          -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-10.2/ \
 
 
           $CMAKEEXEC --build . --config Release --target install
