@@ -121,9 +121,18 @@ jobs:
           # cd tmate-2.4.0-static-linux-amd64
           # ./tmate -F
           
+          ls -l /usr/local/cuda
+          ls -l /usr/local/cuda/bin
+          ls -l /usr/local/cuda/include
+          ls -l /usr/local/cuda/lib64
+          ls -l /usr/local/cuda/lib64/stubs
+          
           $CMAKEEXEC ../ \
           -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda/ \
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
+          -DCUDA_NVCC_EXECUTABLE=/usr/local/cuda/bin/nvcc \
+          -DCUDA_INCLUDE_DIRS=/usr/local/cuda/include \
+          -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/libcudart.so \
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
           -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYMU/ \
