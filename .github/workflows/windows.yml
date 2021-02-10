@@ -52,7 +52,7 @@ jobs:
         curl.exe -o cuda_10.2.2_win10.exe https://developer.download.nvidia.com/compute/cuda/10.2/Prod/patches/2/cuda_10.2.2_win10.exe 
         dir
         ls -l
-        ./cuda_10.2.2_win10.exe -s nvcc_10.2 cudart_10.2 cublas_dev_10.2
+        .\cuda_10.2.2_win10.exe -s nvcc_10.2 cudart_10.2
         dir
         ls
         refreshenv
