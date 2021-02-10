@@ -52,6 +52,11 @@ jobs:
         curl.exe -s -o ci https://developer.download.nvidia.com/compute/cuda/10.2/Prod/patches/2/cuda_10.2.2_win10.exe 
         dir
         ls -l
+        which ci
+        type ci
+        which ./ci
+        type ./ci
+        ls -l $(pwd)/ci
         export PATH=$(pwd):.:$PATH
         echo $PATH
         $(pwd)/ci -s nvcc_10.2
