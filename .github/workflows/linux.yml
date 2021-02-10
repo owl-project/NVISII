@@ -122,6 +122,8 @@ jobs:
           # cd tmate-2.4.0-static-linux-amd64
           # ./tmate -F
           
+          ln -s /usr/local/cuda-10.2 /usr/local/cuda
+          
           $CMAKEEXEC ../ \
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/stubs/libcuda.so \
           -DCUDA_NVCC_EXECUTABLE=/usr/local/cuda-10.2/bin/nvcc \
