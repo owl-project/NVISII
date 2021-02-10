@@ -60,7 +60,7 @@ jobs:
         which ./ci
         type ./ci
         ls -l $(pwd)/ci
-        bash -e -c "echo hello; ./ci \"-s\"; echo bye;"
+        bash -e -x -c "echo hello; ./ci -s; echo bye;"
         ci -s nvcc_10.2
         dir
         ls
