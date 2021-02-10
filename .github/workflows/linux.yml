@@ -15,7 +15,7 @@ jobs:
     strategy:	
       matrix:
         os:
-          - ubuntu-18.04
+          - ubuntu-20.04
         python-version: [cp36-cp36m, cp37-cp37m, cp38-cp38, cp39-cp39]
         optix-version: [70, 71, 72]
 
@@ -54,22 +54,23 @@ jobs:
             $CMAKEEXEC --version
             
             # Setuptools scm
-            /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm
+            /opt/python/${{ matrix.python-version }}/bin/pip install --upgrade pip
+            /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm numpy==1.19.5
             
             # Install CUDA
             yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             yum clean all
             yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
-            yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
-            yum -y install cuda-compiler-10-2 cuda-cudart-dev-10-2 cuda-minimal-build-10-2
-            yum -y install libXi-devel   
-            yum -y install xorg-x11-server-devel
-            yum -y install libXinerama-devel
-            yum -y install glfw-devel
-            yum -y install wget
-            yum -y install pcre-devel
-            yum -y install unar  
-            yum -y install zip      
+            yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++ \
+            cuda-compiler-10-2 cuda-cudart-dev-10-2 cuda-minimal-build-10-2 \
+            libXi-devel \
+            xorg-x11-server-devel \
+            libXinerama-devel \
+            glfw-devel \
+            wget \
+            pcre-devel \
+            unar \
+            zip      
             
             source /opt/rh/devtoolset-8/enable
     
@@ -108,8 +109,8 @@ jobs:
           PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
           echo $PYTHONXDOTYMU
 
-          $PYEXEC -m pip install --upgrade pip
-          $PYEXEC -m pip install numpy==1.19.5
+          #$PYEXEC -m pip install --upgrade pip
+          #$PYEXEC -m pip install numpy==1.19.5
           $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
           $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
          
@@ -120,13 +121,6 @@ jobs:
           # tar xf tmate-2.4.0-static-linux-amd64.tar.xz
           # cd tmate-2.4.0-static-linux-amd64
           # ./tmate -F
-          
-          ls -l /usr/local/cuda-10.2
-          ls -l /usr/local/cuda-10.2/bin
-          ls -l /usr/local/cuda-10.2/targets/x86_64-linux/include
-          ls -l /usr/local/cuda-10.2/targets/x86_64-linux/lib
-          ls -l /usr/local/cuda-10.2/targets/x86_64-linux/lib/stubs
-          ln -s /usr/local/cuda-10.2 /usr/local/cuda
           
           $CMAKEEXEC ../ \
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/stubs/libcuda.so \
