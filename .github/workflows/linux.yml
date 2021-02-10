@@ -126,6 +126,7 @@ jobs:
           ls -l /usr/local/cuda-10.2/targets/x86_64-linux/include
           ls -l /usr/local/cuda-10.2/targets/x86_64-linux/lib
           ls -l /usr/local/cuda-10.2/targets/x86_64-linux/lib/stubs
+          ln -s /usr/local/cuda-10.2 /usr/local/cuda
           
           $CMAKEEXEC ../ \
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/stubs/libcuda.so \
