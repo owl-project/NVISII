@@ -61,7 +61,7 @@ jobs:
             yum clean all
             yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
             yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
-            yum -y install cuda-compiler-10-2 cuda-cudart-dev-10-2 
+            yum -y install cuda-compiler-10-2 cuda-cudart-dev-10-2 cuda-runtime-10-2 cuda-minimal-build-10-2
             yum -y install libXi-devel   
             yum -y install xorg-x11-server-devel
             yum -y install libXinerama-devel
