@@ -9,7 +9,7 @@ A scene can be described in many ways, you can use our simple mesh definitions, 
 load a complex scene defined in an obj file.
 NVISII can be used to export metadata about the scene, _e.g._, object segmentation. 
 
-[Documentation](https://www.nvisii.com).
+[Documentation](https://nvisii.com).
 
 <!--
 This library provides a simple, primarily python-user targeted, interface to rendering images of a virtual scene. Its key cornerstones are:
@@ -37,7 +37,7 @@ If you need more information about how to install NVIDIA drivers on Ubuntu pleas
 ## Getting Started 
 
 We wrote different examples covering most of the functionalities of NVISII, [here](examples/). 
-You can also find more extensive documentation [here](https://www.nvisii.com).
+You can also find more extensive documentation [here](https://nvisii.com).
 
 ## Building 
 
