@@ -132,6 +132,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release \
           -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-10.2/ \
           -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs \
+          -DCUDA_CUDA_LIBRARY=/usr/local/cuda/lib64/stubs/libcuda.so \
 
 
           $CMAKEEXEC --build . --config Release --target install
