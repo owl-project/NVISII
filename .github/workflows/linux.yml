@@ -61,16 +61,16 @@ jobs:
             yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             yum clean all
             yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
-            yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++ \
-            cuda-compiler-10-2 cuda-cudart-dev-10-2 cuda-minimal-build-10-2 \
-            libXi-devel \
-            xorg-x11-server-devel \
-            libXinerama-devel \
-            glfw-devel \
-            wget \
-            pcre-devel \
-            unar \
-            zip      
+            yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++ 
+            yum -y install cuda-compiler-10-2 cuda-cudart-dev-10-2 cuda-minimal-build-10-2 
+            yum -y install libXi-devel 
+            yum -y install xorg-x11-server-devel 
+            yum -y install libXinerama-devel 
+            yum -y install glfw-devel 
+            yum -y install wget 
+            yum -y install pcre-devel 
+            yum -y install unar 
+            yum -y install zip      
             
             source /opt/rh/devtoolset-8/enable
     
