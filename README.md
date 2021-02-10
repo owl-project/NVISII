@@ -1,6 +1,6 @@
 # NVISII - NVIDIA Scene Imaging Interface
 
-![NNVISII examples](https://i.imgur.com/A3MDFzy.png)
+![NVISII examples](https://i.imgur.com/A3MDFzy.png)
 
 NVISII is a python-enabled ray tracing based renderer built on top of NVIDIA OptiX (C++/CUDA backend). 
 The tool allows you to define complex scenes: 3d meshes, object materials, lights, loading textures, _etc._, and render 
@@ -9,7 +9,7 @@ A scene can be described in many ways, you can use our simple mesh definitions, 
 load a complex scene defined in an obj file.
 NVISII can be used to export metadata about the scene, _e.g._, object segmentation. 
 
-[Documentation](https://www.nnvisii.com).
+[Documentation](https://www.nvisii.com).
 
 <!--
 This library provides a simple, primarily python-user targeted, interface to rendering images of a virtual scene. Its key cornerstones are:
@@ -37,14 +37,14 @@ If you need more information about how to install NVIDIA drivers on Ubuntu pleas
 ## Getting Started 
 
 We wrote different examples covering most of the functionalities of NVISII, [here](examples/). 
-You can also find more extensive documentation [here](https://www.nnvisii.com).
+You can also find more extensive documentation [here](https://www.nvisii.com).
 
 ## Building 
 
 Exact commands used to build NVISII can be found in .github/manylinux.yml and .github/windows.yml.
 More information on how to build will be added in the near future. 
 
-<!-- Although we do not recommend building nnvisii from scratch. Here are the rudimentary 
+<!-- Although we do not recommend building nvisii from scratch. Here are the rudimentary 
 requirements: 
 -->
 
@@ -76,7 +76,7 @@ This will save a `tmp.png` in the root folder.
 
 If you use this tool in your research project, please cite as follows:
 
-    @misc{Morrical20nnvisii,
+    @misc{Morrical20nvisii,
     author = {Nathan Morrical and Jonathan Tremblay and Stan Birchfield and Ingo Wald},
     note= {\url{ https://github.com/owl-project/NVISII/ }},
     title = {{NVISII}: NVIDIA Scene Imaging Interface},
