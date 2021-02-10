@@ -54,7 +54,7 @@ jobs:
         ls -l
         export PATH=$(pwd):.:$PATH
         echo $PATH
-        ci -s nvcc_10.2
+        $(pwd)/ci -s nvcc_10.2
         dir
         ls
         refreshenv
