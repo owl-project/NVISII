@@ -47,32 +47,31 @@ jobs:
         python -m pip install --upgrade pip setuptools setuptools_scm wheel
 
     - name: Download Dependencies
-      shell: bash
+      shell: powershell
+      env:
+        CUDA_VERSION_FULL: 10.2.89
+        CUDA_REPO_PKG_REMOTE: http://developer.download.nvidia.com/compute/cuda/10.2/Prod/network_installers/cuda_10.2.89_win10_network.exe
+        CUDA_REPO_PKG_LOCAL: cuda_10.2.89_win10_network.exe 
+        CUDA_PACKAGES: nvcc_10.2 cudart_10.2
       run: |
-        curl.exe -s -o ci https://developer.download.nvidia.com/compute/cuda/10.2/Prod/patches/2/cuda_10.2.2_win10.exe 
-        whoami
-        dir
-        ls -l
-        export PATH=$(pwd):.:$PATH
-        echo $PATH
-        which ci
-        type ci
-        chmod +x ./ci
-        which ./ci
-        type ./ci
-        ls -l $(pwd)/ci
-        bash -e -x -c "echo hello; runas \user:Administrator ./ci -s; echo bye;"
-        ci -s nvcc_10.2
-        dir
-        ls
-        refreshenv
-        dir "C:\Program Files"
-        dir "C:\Program Files\NVIDIA GPU Computing Toolkit"
-        dir "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA"
-        dir "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2"
-        dir "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\bin"
-        dir "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\include"
-        dir "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib"
+        Write-Output "Downloading CUDA Network Installer for $($CUDA_VERSION_FULL) from: $($CUDA_REPO_PKG_REMOTE)"
+        Invoke-WebRequest $CUDA_REPO_PKG_REMOTE -OutFile $CUDA_REPO_PKG_LOCAL | Out-Null
+        if(Test-Path -Path $CUDA_REPO_PKG_LOCAL){
+            Write-Output "Downloading Complete"
+        } else {
+            Write-Output "Error: Failed to download $($CUDA_REPO_PKG_LOCAL) from $($CUDA_REPO_PKG_REMOTE)"
+            exit 1
+        }
+
+        # Invoke silent install of CUDA (via network installer)
+        Write-Output "Installing CUDA $($CUDA_VERSION_FULL). Subpackages $($CUDA_PACKAGES)"
+        Start-Process -Wait -FilePath .\"$($CUDA_REPO_PKG_LOCAL)" -ArgumentList "-s $($CUDA_PACKAGES)"
+
+        # Check the return status of the CUDA installer.
+        if (!$?) {
+            Write-Output "Error: CUDA installer reported error. $($LASTEXITCODE)"
+            exit 1 
+        }
 
     - name: Windows configure/install cmake project
       run: |
