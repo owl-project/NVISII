@@ -50,6 +50,7 @@ jobs:
       shell: bash
       run: |
         curl.exe -s -o ci https://developer.download.nvidia.com/compute/cuda/10.2/Prod/patches/2/cuda_10.2.2_win10.exe 
+        whoami
         dir
         ls -l
         export PATH=$(pwd):.:$PATH
@@ -60,7 +61,7 @@ jobs:
         which ./ci
         type ./ci
         ls -l $(pwd)/ci
-        bash -e -x -c "echo hello; ./ci -s; echo bye;"
+        bash -e -x -c "echo hello; runas \user:Administrator ./ci -s; echo bye;"
         ci -s nvcc_10.2
         dir
         ls
