@@ -49,7 +49,7 @@ jobs:
     - name: Download Dependencies
       run: |
         curl.exe -o cuda_10.2.2_win10.exe https://developer.download.nvidia.com/compute/cuda/10.2/Prod/patches/2/cuda_10.2.2_win10.exe 
-        ./cuda_10.2.2_win10.exe nvcc_10.2 cudart_10.2 cublas_dev_10.2
+        cuda_10.2.2_win10.exe nvcc_10.2 cudart_10.2 cublas_dev_10.2
         refreshenv
         dir "C:\Program Files"
         dir "C:\Program Files\NVIDIA GPU Computing Toolkit"
