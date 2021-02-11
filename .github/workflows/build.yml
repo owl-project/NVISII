@@ -1,5 +1,4 @@
 # Unified workflow for building, (TODO, building docs), and conditionally deploying to PyPI for NVISII
-
 name: CI
 
 on:
@@ -12,32 +11,161 @@ on:
   # Triggers the workflow for when a new release is tagged (This will enable also deploying to PyPI)
   release:
     types: [ created ]
-
+  
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-  # Workflow always begins with a build on supported platforms
+  # This workflow always begins with a build on all supported platforms, defined by the matrix
   build:
-    name: Build - ${{ matrix.os }} - Python ${{ matrix.python-version }} - Optix ${{ matrix.optix-version }}
+    name: ${{ matrix.os }} - Python ${{ matrix.python-version }} - Optix ${{ matrix.optix-version }}
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     strategy:
       fail-fast: true
       matrix:
         os: [ubuntu-20.04, windows-2019]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: ['3.6', '3.7', '3.8', '3.9']
         optix-version: [70, 71, 72]
         include:
-          # Includes the value for matrix.container when the OS is Ubuntu.
-          # For Windows, matrix.container remains undefined.
+          # Includes the value for matrix.container when the OS is Ubuntu, to use manylinux complaint CentOS version.
+          # For Windows, matrix.container remains undefined and the build runs on the host VM instead of within a container.
           - os: ubuntu-20.04
             container: 'quay.io/pypa/manylinux2014_x86_64:2021-01-12-c8250d8'
     
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      
+      - name: Configure Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Linux Dependencies (CUDA, X, etc.)
+        if: runner.os == 'Linux'
+        run: |
+          # Install CUDA
+          yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
+          yum clean all
+          yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
+          yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
+          yum -y install cuda-compiler-10-2 cuda-cudart-dev-10-2 cuda-minimal-build-10-2 
+          yum -y install libXi-devel
+          yum -y install xorg-x11-server-devel
+          yum -y install libXinerama-devel
+          yum -y install glfw-devel
+          yum -y install wget
+          yum -y install pcre-devel
+          yum -y install unar  
+          yum -y install zip      
+          
+          # This symlink comes as a part of the cuda-10.2 package, which is being specifically avoided,
+          # but this symlink makes CMake's FindCUDA behave nicely.
+          ln -s /usr/local/cuda-10.2 /usr/local/cuda
+          
+          source /opt/rh/devtoolset-8/enable
+          
+          # Build a version of SWIG we can use
+          mkdir build
+          cd build
+          wget http://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz
+          tar xzf swig-4.0.2.tar.gz
+          cd swig-4.0.2
+          ./configure --prefix $(pwd)
+          make
+          make install
+          ls
+          cd ../
+      
+      - name: Windows Dependencies (CUDA)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $CUDA_VERSION_FULL = "10.2.89"
+          $CUDA_REPO_PKG_REMOTE = "http://developer.download.nvidia.com/compute/cuda/10.2/Prod/network_installers/cuda_10.2.89_win10_network.exe"
+          $CUDA_REPO_PKG_LOCAL = "cuda_10.2.89_win10_network.exe"
+          $CUDA_PACKAGES = "nvcc_10.2 cudart_10.2"
+          # Download the cuda network installer
+          Invoke-WebRequest $CUDA_REPO_PKG_REMOTE -OutFile $CUDA_REPO_PKG_LOCAL | Out-Null
+          # Invoke silent install of CUDA (via network installer)
+          Start-Process -Wait -FilePath .\"$($CUDA_REPO_PKG_LOCAL)" -ArgumentList "-s $($CUDA_PACKAGES)"
+      
+      - name: Common Dependencies (CMake, NumPy, etc.)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install setuptools setuptools_scm wheel cmake numpy==1.19.5
+      
+      - name: Windows Build
+        if: runner.os == 'Windows'
+        env:
+          OPTIX_VERSION: ${{ matrix.optix-version }}
+        run: |
+          mkdir build
+          cd build
+          cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
+          cmake --build . --config Release --target install 
+          cd ..
+          cd install
+          python setup.py bdist_wheel
+          
+      - name: Linux Build
+        if: runner.os == 'Linux'
+        env:
+          OPTIX_VERSION: ${{ matrix.optix-version }}
+        run: |
+          mkdir -p build
+          cd build 
+          
+          cmake ../ \
+          -DCUDA_CUDA_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/stubs/libcuda.so \
+          -DCUDA_NVCC_EXECUTABLE=/usr/local/cuda-10.2/bin/nvcc \
+          -DCUDA_INCLUDE_DIRS=/usr/local/cuda-10.2/targets/x86_64-linux/include \
+          -DCUDA_CUDART_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/libcudart.so \
+          -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
+          -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
+          -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYMU/ \
+          -DPython_NumPy_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/lib/$PYTHONXDOTY/site-packages/numpy/core/include/ \
+          -DPython_VERSION_MAJOR=${PY:2:1} \
+          -DPython_VERSION_MINOR=${PY:3:1} \
+          -DCMAKE_BUILD_TYPE=Release \
+           
+          cmake --build . --config Release --target install
+          cd ..
+          cd install
+          
+          # need to temporarily remove libcuda.so.1 from library
+          cd nvisii
+          patchelf --remove-needed libcuda.so.1 _nvisii.so
+          cd ../
+          
+          # now make the bdistwheel
+          python setup.py bdist_wheel
+          cd dist
+          
+          # audit the bdistwheel for use on all linux distros
+          # and use the same dir for both .py and .so files
+          auditwheel repair -L "" *.whl  
+          
+          # add back on the libcuda.so.1 to the library
+          cd wheelhouse
+          unar -d *.whl
+          cd nvisii*
+          cd nvisii
+          patchelf --add-needed libcuda.so.1 _nvisii.so
+          cd ..
+          cd ..
+          rm *.whl
+          NAME=$(ls -1 .)
+          cd ${NAME}
+          zip -r ../${NAME}.whl ./*
+      
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: nvisii-${{ matrix.os }}-python${{ matrix.python-version }}-optix${{ matrix.optix-version }}
+          path: install/dist/*.whl
+            
+            
+            
