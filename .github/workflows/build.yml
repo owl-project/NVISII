@@ -19,7 +19,7 @@ on:
 jobs:
   # Workflow always begins with a build on supported platforms
   build:
-    name: Build - ${{ runner.os }} - Python ${{ matrix.python-version }} - Optix ${{ matrix.optix-version }}
+    name: Build - ${{ matrix.os }} - Python ${{ matrix.python-version }} - Optix ${{ matrix.optix-version }}
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     strategy:
