@@ -47,7 +47,7 @@ jobs:
         run: |
           # Install Python Dependencies
           PY=${{ matrix.python-version }}
-          M=$(( ${PY:2:1} -lt 8) ? "m" : ""))
+          [[ ${PY:2:1} < 8 ]] && M=m || M=""
           PYEXEC=/opt/python/${PY:0:1}${PY:2:1}-${PY:0:1}${PY:2:1}${M}/bin/python
           echo $M
           echo #PYEXEC
@@ -101,7 +101,7 @@ jobs:
           source /opt/rh/devtoolset-8/enable
           
           PY=${{ matrix.python-version }}
-          M=$(( ${PY:2:1} -lt 8) ? "m" : ""))
+          [[ ${PY:2:1} < 8 ]] && M=m || M=""
           PYEXEC=/opt/python/${PY:0:1}${PY:2:1}-${PY:0:1}${PY:2:1}${M}/bin/python
           CMAKEEXEC=/opt/python/${PY:0:1}${PY:2:1}-${PY:0:1}${PY:2:1}${M}/bin/cmake 
           
