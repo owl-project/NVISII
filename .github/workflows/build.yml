@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [ubuntu-20.04, windows-2019]
         python-version: ['3.6', '3.7', '3.8', '3.9']
@@ -37,15 +37,28 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout Repository
         uses: actions/checkout@v2
-      
-      - name: Configure Python
-        uses: actions/setup-python@v2
+        # setuptools_scm requires history, so all commits are fetched by setting 0
         with:
-          python-version: ${{ matrix.python-version }}
+          fetch-depth: 0
       
-      - name: Linux Dependencies (CUDA, X, etc.)
+      - name: Linux Dependencies (CUDA, X, Python)
         if: runner.os == 'Linux'
+        shell: bash
         run: |
+          # Install Python Dependencies
+          PY=${{ matrix.python-version }}
+          M=$(( ${PY:2:1} -lt 8) ? "m" : ""))
+          PYEXEC=/opt/python/${PY:0:1}${PY:2:1}-${PY:0:1}${PY:2:1}${M}/bin/python
+          echo $M
+          echo #PYEXEC
+          $PYEXEC -m pip install --upgrade pip
+          $PYEXEC -m pip install setuptools setuptools_scm numpy==1.19.5
+          
+          # Install CMake
+          $PYEXEC -m pip install cmake
+          CMAKEEXEC=/opt/python/${PY:0:1}${PY:2:1}-${PY:0:1}${PY:2:1}${M}/bin/cmake 
+          $CMAKEEXEC --version          
+          
           # Install CUDA
           yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
           yum clean all
@@ -79,46 +92,22 @@ jobs:
           ls
           cd ../
       
-      - name: Windows Dependencies (CUDA)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $CUDA_VERSION_FULL = "10.2.89"
-          $CUDA_REPO_PKG_REMOTE = "http://developer.download.nvidia.com/compute/cuda/10.2/Prod/network_installers/cuda_10.2.89_win10_network.exe"
-          $CUDA_REPO_PKG_LOCAL = "cuda_10.2.89_win10_network.exe"
-          $CUDA_PACKAGES = "nvcc_10.2 cudart_10.2"
-          # Download the cuda network installer
-          Invoke-WebRequest $CUDA_REPO_PKG_REMOTE -OutFile $CUDA_REPO_PKG_LOCAL | Out-Null
-          # Invoke silent install of CUDA (via network installer)
-          Start-Process -Wait -FilePath .\"$($CUDA_REPO_PKG_LOCAL)" -ArgumentList "-s $($CUDA_PACKAGES)"
-      
-      - name: Common Dependencies (CMake, NumPy, etc.)
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install setuptools setuptools_scm wheel cmake numpy==1.19.5
-      
-      - name: Windows Build
-        if: runner.os == 'Windows'
-        env:
-          OPTIX_VERSION: ${{ matrix.optix-version }}
-        run: |
-          mkdir build
-          cd build
-          cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
-          cmake --build . --config Release --target install 
-          cd ..
-          cd install
-          python setup.py bdist_wheel
-          
       - name: Linux Build
         if: runner.os == 'Linux'
+        shell: bash
         env:
           OPTIX_VERSION: ${{ matrix.optix-version }}
         run: |
-          mkdir -p build
+          source /opt/rh/devtoolset-8/enable
+          
+          PY=${{ matrix.python-version }}
+          M=$(( ${PY:2:1} -lt 8) ? "m" : ""))
+          PYEXEC=/opt/python/${PY:0:1}${PY:2:1}-${PY:0:1}${PY:2:1}${M}/bin/python
+          CMAKEEXEC=/opt/python/${PY:0:1}${PY:2:1}-${PY:0:1}${PY:2:1}${M}/bin/cmake 
+          
           cd build 
           
-          cmake ../ \
+          $CMAKEEXEC ../ \
           -DCUDA_CUDA_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/stubs/libcuda.so \
           -DCUDA_NVCC_EXECUTABLE=/usr/local/cuda-10.2/bin/nvcc \
           -DCUDA_INCLUDE_DIRS=/usr/local/cuda-10.2/targets/x86_64-linux/include \
@@ -131,7 +120,7 @@ jobs:
           -DPython_VERSION_MINOR=${PY:3:1} \
           -DCMAKE_BUILD_TYPE=Release \
            
-          cmake --build . --config Release --target install
+          $CMAKEEXEC --build . --config Release --target install
           cd ..
           cd install
           
@@ -141,7 +130,7 @@ jobs:
           cd ../
           
           # now make the bdistwheel
-          python setup.py bdist_wheel
+          $PYEXEC setup.py bdist_wheel
           cd dist
           
           # audit the bdistwheel for use on all linux distros
@@ -161,11 +150,92 @@ jobs:
           cd ${NAME}
           zip -r ../${NAME}.whl ./*
       
+      # Python configuration by github is only valid on their VMs (not inside the manylinux container), so only run on windows.
+      - name: Configure Python on Windows
+        if: runner.os == 'Windows'
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Windows Dependencies (CUDA)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $CUDA_VERSION_FULL = "10.2.89"
+          $CUDA_REPO_PKG_REMOTE = "http://developer.download.nvidia.com/compute/cuda/10.2/Prod/network_installers/cuda_10.2.89_win10_network.exe"
+          $CUDA_REPO_PKG_LOCAL = "cuda_10.2.89_win10_network.exe"
+          $CUDA_PACKAGES = "nvcc_10.2 cudart_10.2"
+          # Download the cuda network installer
+          Invoke-WebRequest $CUDA_REPO_PKG_REMOTE -OutFile $CUDA_REPO_PKG_LOCAL | Out-Null
+          # Invoke silent install of CUDA (via network installer)
+          Start-Process -Wait -FilePath .\"$($CUDA_REPO_PKG_LOCAL)" -ArgumentList "-s $($CUDA_PACKAGES)"
+
+      - name: Windows Build
+        if: runner.os == 'Windows'
+        env:
+          OPTIX_VERSION: ${{ matrix.optix-version }}
+        run: |
+          pip install --upgrade pip setuptools setuptools_scm wheel numpy==1.19.5
+          mkdir build
+          cd build
+          cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
+          cmake --build . --config Release --target install 
+          cd ..
+          cd install
+          python setup.py bdist_wheel
+      
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: nvisii-${{ matrix.os }}-python${{ matrix.python-version }}-optix${{ matrix.optix-version }}
           path: install/dist/*.whl
-            
-            
-            
+  
+  docs:
+    needs: build
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: nvisii-ubuntu-20.04-python3.9-optix72
+      
+      - name: Display structure of downloaded files
+        run: ls -R
+      
+      - name: Build Docs
+        run: |
+          echo Build Docs here
+      # Upload to github pages branch?
+  
+  deploy:
+    needs: build
+    if: github.event_name == 'release' && github.event.action == 'created'
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+      
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      
+      - name: Install Dependencies (twine)
+        run: |
+          ls -R  # Show all downloaded artifacts
+          python -m pip install --upgrade pip
+          python -m pip install twine
+      
+      - name: Upload to test pypi
+        env:
+          TWINE_USERNAME: '__token__'
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+        run: |
+          twine upload --repository-url https://test.pypi.org/legacy/ */*.whl
+
+      - name: Upload to pypi
+        if: success() && !github.event.release.prerelease
+        env:
+          TWINE_USERNAME: '__token__'
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          twine upload */*.whl
