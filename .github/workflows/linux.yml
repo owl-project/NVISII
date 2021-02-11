@@ -54,22 +54,21 @@ jobs:
             $CMAKEEXEC --version
             
             # Setuptools scm
-            /opt/python/${{ matrix.python-version }}/bin/pip install --upgrade pip
-            /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm numpy==1.19.5
+            /opt/python/${{ matrix.python-version }}/bin/pip install setuptools_scm
             
             # Install CUDA
             yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
             yum clean all
             yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
-            yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++ 
+            yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
             yum -y install cuda-compiler-10-2 cuda-cudart-dev-10-2 cuda-minimal-build-10-2 
-            yum -y install libXi-devel 
-            yum -y install xorg-x11-server-devel 
-            yum -y install libXinerama-devel 
-            yum -y install glfw-devel 
-            yum -y install wget 
-            yum -y install pcre-devel 
-            yum -y install unar 
+            yum -y install libXi-devel
+            yum -y install xorg-x11-server-devel
+            yum -y install libXinerama-devel
+            yum -y install glfw-devel
+            yum -y install wget
+            yum -y install pcre-devel
+            yum -y install unar  
             yum -y install zip      
             
             source /opt/rh/devtoolset-8/enable
@@ -109,8 +108,8 @@ jobs:
           PYEXEC=/opt/python/${{ matrix.python-version }}/bin/python
           echo $PYTHONXDOTYMU
 
-          #$PYEXEC -m pip install --upgrade pip
-          #$PYEXEC -m pip install numpy==1.19.5
+          $PYEXEC -m pip install --upgrade pip
+          $PYEXEC -m pip install numpy==1.19.5
           $PYEXEC -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"         
           $PYEXEC -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
          
