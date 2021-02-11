@@ -117,8 +117,8 @@ jobs:
           -DCUDA_CUDART_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/libcudart.so \
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
-          -DPython_INCLUDE_DIRS=/opt/python/${PYVER}/include/python${PY:0:1}.${PY:1:1}${M}/ \
-          -DPython_NumPy_INCLUDE_DIRS=/opt/python/${PYVER}/lib/python${PY:0:1}.${PY:1:1}/site-packages/numpy/core/include/ \
+          -DPython_INCLUDE_DIRS=/opt/python/${PYVER}/include/python${PY:0:1}.${PY:2:1}${M}/ \
+          -DPython_NumPy_INCLUDE_DIRS=/opt/python/${PYVER}/lib/python${PY:0:1}.${PY:2:1}/site-packages/numpy/core/include/ \
           -DPython_VERSION_MAJOR=${PY:0:1} \
           -DPython_VERSION_MINOR=${PY:1:1} \
           -DCMAKE_BUILD_TYPE=Release \
