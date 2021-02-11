@@ -51,15 +51,14 @@ jobs:
           # Install Python Dependencies
           PY=${{ matrix.python-version }}
           [[ ${PY:2:1} < 8 ]] && M=m || M=""
-          PYEXEC=/opt/python/cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}/bin/python
-          echo $M
-          echo #PYEXEC
+          PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
+          PYEXEC=/opt/python/${PYVER}/bin/python
           $PYEXEC -m pip install --upgrade pip
           $PYEXEC -m pip install setuptools setuptools_scm numpy==1.19.5
           
           # Install CMake
           $PYEXEC -m pip install cmake
-          CMAKEEXEC=/opt/python/cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}/bin/cmake 
+          CMAKEEXEC=/opt/python/${PYVER}/bin/cmake 
           $CMAKEEXEC --version          
           
           # Install CUDA
@@ -105,8 +104,9 @@ jobs:
           
           PY=${{ matrix.python-version }}
           [[ ${PY:2:1} < 8 ]] && M=m || M=""
-          PYEXEC=/opt/python/cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}/bin/python
-          CMAKEEXEC=/opt/python/cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}/bin/cmake 
+          PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
+          PYEXEC=/opt/python/${PYVER}/bin/python
+          CMAKEEXEC=/opt/python/${PYVER}/bin/cmake 
           
           cd build 
           
@@ -117,10 +117,10 @@ jobs:
           -DCUDA_CUDART_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/libcudart.so \
           -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
           -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
-          -DPython_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/include/$PYTHONXDOTYMU/ \
-          -DPython_NumPy_INCLUDE_DIRS=/opt/python/${{ matrix.python-version }}/lib/$PYTHONXDOTY/site-packages/numpy/core/include/ \
-          -DPython_VERSION_MAJOR=${PY:2:1} \
-          -DPython_VERSION_MINOR=${PY:3:1} \
+          -DPython_INCLUDE_DIRS=/opt/python/${PYVER}/include/python${PY:0:1}.${PY:1:1}${M}/ \
+          -DPython_NumPy_INCLUDE_DIRS=/opt/python/${PYVER}/lib/python${PY:0:1}.${PY:1:1}/site-packages/numpy/core/include/ \
+          -DPython_VERSION_MAJOR=${PY:0:1} \
+          -DPython_VERSION_MINOR=${PY:1:1} \
           -DCMAKE_BUILD_TYPE=Release \
            
           $CMAKEEXEC --build . --config Release --target install
