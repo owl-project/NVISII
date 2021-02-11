@@ -18,7 +18,7 @@ on:
 jobs:
   # This workflow always begins with a build on all supported platforms, defined by the matrix
   build:
-    name: ${{ matrix.os }} - Python ${{ matrix.python-version }} - Optix ${{ matrix.optix-version }}
+    name: ${{ matrix.pretty }} - Python ${{ matrix.python-version }} - OptiX ${{ matrix.optix-version }}
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     strategy:
@@ -32,6 +32,9 @@ jobs:
           # For Windows, matrix.container remains undefined and the build runs on the host VM instead of within a container.
           - os: ubuntu-20.04
             container: 'quay.io/pypa/manylinux2014_x86_64:2021-01-12-c8250d8'
+            pretty: 'Linux'
+          - os: windows-2019
+            pretty: 'Windows'
     
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
