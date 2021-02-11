@@ -1,0 +1,43 @@
+# Unified workflow for building, (TODO, building docs), and conditionally deploying to PyPI for NVISII
+
+name: CI
+
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  
+  # Triggers the workflow for when a new release is tagged (This will enable also deploying to PyPI)
+  release:
+    types: [ created ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  # Workflow always begins with a build on supported platforms
+  build:
+    name: Build - ${{ runner.os }} - Python ${{ matrix.python-version }} - Optix ${{ matrix.optix-version }}
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-20.04, windows-2019]
+        python-version: [3.6, 3.7, 3.8, 3.9]
+        optix-version: [70, 71, 72]
+        include:
+          # Includes the value for matrix.container when the OS is Ubuntu.
+          # For Windows, matrix.container remains undefined.
+          - os: ubuntu-20.04
+            container: 'quay.io/pypa/manylinux2014_x86_64:2021-01-12-c8250d8'
+    
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello, world!
