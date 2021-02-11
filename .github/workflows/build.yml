@@ -48,7 +48,7 @@ jobs:
           # Install Python Dependencies
           PY=${{ matrix.python-version }}
           [[ ${PY:2:1} < 8 ]] && M=m || M=""
-          PYEXEC=/opt/python/${PY:0:1}${PY:2:1}-${PY:0:1}${PY:2:1}${M}/bin/python
+          PYEXEC=/opt/python/cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}/bin/python
           echo $M
           echo #PYEXEC
           $PYEXEC -m pip install --upgrade pip
@@ -56,7 +56,7 @@ jobs:
           
           # Install CMake
           $PYEXEC -m pip install cmake
-          CMAKEEXEC=/opt/python/${PY:0:1}${PY:2:1}-${PY:0:1}${PY:2:1}${M}/bin/cmake 
+          CMAKEEXEC=/opt/python/cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}/bin/cmake 
           $CMAKEEXEC --version          
           
           # Install CUDA
@@ -102,8 +102,8 @@ jobs:
           
           PY=${{ matrix.python-version }}
           [[ ${PY:2:1} < 8 ]] && M=m || M=""
-          PYEXEC=/opt/python/${PY:0:1}${PY:2:1}-${PY:0:1}${PY:2:1}${M}/bin/python
-          CMAKEEXEC=/opt/python/${PY:0:1}${PY:2:1}-${PY:0:1}${PY:2:1}${M}/bin/cmake 
+          PYEXEC=/opt/python/cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}/bin/python
+          CMAKEEXEC=/opt/python/cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}/bin/cmake 
           
           cd build 
           
