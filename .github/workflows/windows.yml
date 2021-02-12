@@ -1,0 +1,118 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Windows CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types: [created]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # container: 
+    #   image: nvidia/cuda:10.2-ubuntu...
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+    strategy:	
+      matrix:	
+        os:	
+          - windows-2019
+        python-version: [3.6, 3.7, 3.8, 3.9]
+        optix-version: [70, 71, 72]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    # Note, checkout v2 doesn't work with setuptools_scm
+    - uses: actions/checkout@v1
+      
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Display Python version
+      run: |
+        python -c "import sys; print(sys.version)"
+        echo ${pythonLocation}
+        echo %pythonLocation%
+        ls ${pythonLocation}
+        python -m pip install --upgrade pip setuptools setuptools_scm wheel
+
+    - name: Download Dependencies
+      shell: powershell
+      run: |
+        $CUDA_VERSION_FULL = "10.2.89"
+        $CUDA_REPO_PKG_REMOTE = "http://developer.download.nvidia.com/compute/cuda/10.2/Prod/network_installers/cuda_10.2.89_win10_network.exe"
+        $CUDA_REPO_PKG_LOCAL = "cuda_10.2.89_win10_network.exe"
+        $CUDA_PACKAGES = "nvcc_10.2 cudart_10.2"
+        # Download the cuda network installer
+        Invoke-WebRequest $CUDA_REPO_PKG_REMOTE -OutFile $CUDA_REPO_PKG_LOCAL | Out-Null
+        # Invoke silent install of CUDA (via network installer)
+        Start-Process -Wait -FilePath .\"$($CUDA_REPO_PKG_LOCAL)" -ArgumentList "-s $($CUDA_PACKAGES)"
+    
+    - name: Windows configure/install cmake project
+      run: |
+        pip install numpy==1.19.5
+        mkdir build
+        cd build
+        cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
+        cmake --build . --config Release --target install 
+        cd ..
+        cd install
+        python setup.py bdist_wheel
+      env:
+        OPTIX_VERSION: ${{ matrix.optix-version }} 
+
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: nvisii-${{ matrix.os }}-python${{ matrix.python-version }}-optix${{ matrix.optix-version }}
+        path: install/dist/*.whl
+          
+  deploy:
+    if: github.event_name == 'release' && github.event.action == 'created'
+    
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
+
+    - name: Display structure of downloaded files
+      run: ls -R
+  
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install twine
+    
+    - name: Upload to test pypi
+      env:
+        TWINE_USERNAME: '__token__'
+        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+      run: |
+        twine upload --repository-url https://test.pypi.org/legacy/ */*win*.whl
+        
+    - name: Upload to pypi
+      if: success() && !github.event.release.prerelease
+      env:
+        TWINE_USERNAME: '__token__'
+        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+      run: |
+        # Upload windows bdistwheels directly
+        twine upload */*win*.whl
