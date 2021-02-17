@@ -1575,6 +1575,80 @@ void updateLaunchParams()
     OptixData.LP.frameID ++;
 }
 
+// Different GPUs have different local framebuffers.
+// This function combines those framebuffers on the CPU, then uploads results to device 0.
+void mergeFrameBuffers() {
+    int deviceCount = getDeviceCount();
+    int width = OptixData.LP.frameSize.x;
+    int height = OptixData.LP.frameSize.y;
+    if (deviceCount <= 1) return;
+
+    // synchronizeDevices();
+
+    std::vector<glm::vec4> fb_h(width * height);
+    std::vector<glm::vec4> fba_h(width * height);
+    std::vector<glm::vec4> fbn_h(width * height);
+    std::vector<std::vector<glm::vec4>> fb_hd(deviceCount);
+    std::vector<std::vector<glm::vec4>> fba_hd(deviceCount);
+    std::vector<std::vector<glm::vec4>> fbn_hd(deviceCount);
+    for (uint32_t i = 0; i < deviceCount; ++i){
+        fb_hd[i] = std::vector<glm::vec4>(width * height);
+        fba_hd[i] = std::vector<glm::vec4>(width * height);
+        fbn_hd[i] = std::vector<glm::vec4>(width * height);
+        void* fb_d = (void*)owlBufferGetPointer(OptixData.frameBuffer,i);
+        void* fba_d = (void*)owlBufferGetPointer(OptixData.albedoBuffer,i);
+        void* fbn_d = (void*)owlBufferGetPointer(OptixData.normalBuffer,i);
+        cudaMemcpyAsync((void*)fb_hd[i].data(), (void*)fb_d, fb_h.size() * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
+        cudaMemcpyAsync((void*)fba_hd[i].data(), (void*)fba_d, fb_h.size() * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
+        cudaMemcpyAsync((void*)fbn_hd[i].data(), (void*)fbn_d, fb_h.size() * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
+    }
+    // synchronizeDevices();
+
+    // note, GPUs render 32xN strips
+    for (uint32_t y = 0; y < height; ++y) {
+        for (uint32_t x = 0; x < width; x += 32) {
+            if (x >= width) continue;
+            int deviceThatIsResponsible = (x>>5) % deviceCount;
+            {
+                glm::vec4* A = fb_h.data() + (y * width) + x;
+                glm::vec4* B = fb_hd[deviceThatIsResponsible].data() + (y * width) + x;
+                memcpy(A, B, min(32, int(width - x)) * sizeof(glm::vec4));
+            }
+            {
+                glm::vec4* A = fba_h.data() + (y * width) + x;
+                glm::vec4* B = fba_hd[deviceThatIsResponsible].data() + (y * width) + x;
+                memcpy(A, B, min(32, int(width - x)) * sizeof(glm::vec4));
+            }
+            {
+                glm::vec4* A = fbn_h.data() + (y * width) + x;
+                glm::vec4* B = fbn_hd[deviceThatIsResponsible].data() + (y * width) + x;
+                memcpy(A, B, min(32, int(width - x)) * sizeof(glm::vec4));
+            }
+        }
+    }
+
+    // // note, GPUs render 32xN strips
+    // for (uint32_t y = 0; y < height; ++y) {
+    //     for (uint32_t x = 0; x < width; x += 32) {
+    //         int deviceThatIsResponsible = (x>>5) % deviceCount;
+    //         glm::vec4* A = fb_h.data() + (y * width) + x;
+    //         glm::vec4* B = ((glm::vec4*)fb_d[deviceThatIsResponsible]) + (y * width) + x;
+    //         cudaMemcpyAsync((void*)A, (void*)B, min(32, int(width - x)) * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
+    //     }
+    // }
+
+
+    // cudaMemcpyAsync(fb_h.data(), fb_d[1], fb_h.size() * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
+    synchronizeDevices();
+    void* fb_d = (void*)owlBufferGetPointer(OptixData.frameBuffer,0);
+    void* fba_d = (void*)owlBufferGetPointer(OptixData.albedoBuffer,0);
+    void* fbn_d = (void*)owlBufferGetPointer(OptixData.normalBuffer,0);
+    cudaMemcpyAsync(fb_d, fb_h.data(), fb_h.size() * sizeof(glm::vec4), cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(fba_d, fba_h.data(), fba_h.size() * sizeof(glm::vec4), cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(fbn_d, fbn_h.data(), fbn_h.size() * sizeof(glm::vec4), cudaMemcpyHostToDevice);
+    // synchronizeDevices();
+}
+
 void denoiseImage() {
     synchronizeDevices();
 
@@ -1903,12 +1977,14 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
 
             updateLaunchParams();
             owlLaunch2D(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, OptixData.launchParams);
-            if (OptixData.enableDenoiser)
-            {
-                denoiseImage();
-            }
 
             if (!NVISII.headlessMode) {
+                mergeFrameBuffers();
+                if (OptixData.enableDenoiser)
+                {
+                    denoiseImage();
+                }
+
                 drawFrameBufferToWindow();
                 glfwSetWindowTitle(WindowData.window, 
                     (std::to_string(i) + std::string("/") + std::to_string(samplesPerPixel)).c_str());
@@ -1929,6 +2005,12 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
         }
 
         synchronizeDevices();
+
+        mergeFrameBuffers();
+        if (OptixData.enableDenoiser)
+        {
+            denoiseImage();
+        }
 
         const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
         cudaMemcpyAsync(frameBuffer.data(), fb, width * height * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
@@ -2049,6 +2131,7 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
 
             updateLaunchParams();
             owlLaunch2D(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, OptixData.launchParams);
+            mergeFrameBuffers();
             // Dont run denoiser to raw data rendering
             // if (OptixData.enableDenoiser)
             // {
@@ -2348,6 +2431,7 @@ void initializeInteractive(
                 updateComponents();
                 updateLaunchParams();
                 owlLaunch2D(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, OptixData.launchParams);
+                mergeFrameBuffers();
                 if (OptixData.enableDenoiser)
                 {
                     denoiseImage();
