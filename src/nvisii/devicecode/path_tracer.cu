@@ -940,6 +940,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     uint8_t transparencyDepth = 0;
     uint8_t transmissionDepth = 0;
     uint8_t volumeDepth = 0;
+    int sampledBsdf = -1;
+    bool useBRDF = true;
 
     // direct here is used for final image clamping
     float3 directIllum = make_float3(0.f);
@@ -1214,7 +1216,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         float3 irradiance = make_float3(0.f);
 
         // If we hit a volume, use hybrid scattering to determine whether or not to use a BRDF or a phase function.
-        bool useBRDF = true;
         if (volPayload.tHit >= 0.f) {
             float opacity = mat.alpha; // would otherwise be sampled from a transfer function
             float grad_len = uv.y;
@@ -1232,7 +1233,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // First, sample the BRDF / phase function so that we can use the sampled direction for MIS
         float3 w_i;
         float bsdfPDF;
-        int sampledBsdf = -1;
         float3 bsdf;
         if (useBRDF) {
             sample_disney_brdf(
@@ -1554,11 +1554,14 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // of terminating, just so that we don't get black regions in our glass
         if (transmissionDepth >= LP.maxTransmissionDepth) continue;
     } while (
-        diffuseDepth < LP.maxDiffuseDepth && 
-        glossyDepth < LP.maxGlossyDepth && 
-        // transmissionDepth < LP.maxTransmissionDepth &&  // see comment above
-        transparencyDepth < LP.maxTransparencyDepth && 
-        volumeDepth < LP.maxVolumeDepth
+        // Terminate the path if the sampled BRDF's corresponding bounce depth exceeds the max bounce for that bounce type minus the overall path depth.
+        // This prevents long tails that can otherwise occur from mixing BRDF events
+        (!(sampledBsdf == DISNEY_DIFFUSE_BRDF && diffuseDepth > (LP.maxDiffuseDepth - (depth - 1)))) &&
+        (!(sampledBsdf == DISNEY_GLOSSY_BRDF && glossyDepth > LP.maxGlossyDepth - (depth - 1)) ) &&
+        (!(sampledBsdf == DISNEY_CLEARCOAT_BRDF && glossyDepth > LP.maxGlossyDepth - (depth - 1)) ) &&
+        (!(useBRDF == false && volumeDepth > LP.maxVolumeDepth - (depth - 1))) &&
+        (!(transparencyDepth > LP.maxTransparencyDepth - (depth - 1)))
+        // (!(sampledBsdf == DISNEY_TRANSMISSION_BRDF && transmissionDepth < LP.maxTransmissionDepth - (depth - 1)) ) && // see comment above
     );   
 
     // For segmentations, save heatmap metadata
