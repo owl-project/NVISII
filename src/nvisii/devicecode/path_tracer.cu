@@ -644,7 +644,7 @@ float sampleTime(float xi) {
 }
 
 inline __device__
-owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transform, ivec2 pixelID, ivec2 frameSize, LCGRand &rng, float time)
+owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transform, int2 pixelID, float2 frameSize, LCGRand &rng, float time)
 {
     auto &LP = optixLaunchParams;
     /* Generate camera rays */    
@@ -665,7 +665,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
             -  vec2(LP.xPixelSamplingInterval[0], LP.yPixelSamplingInterval[0])
             ) * vec2(lcg_randomf(rng),lcg_randomf(rng));
 
-    vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(frameSize);
+    vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / make_vec2(frameSize);
     vec3 right = normalize(glm::column(viewinv, 0));
     vec3 up = normalize(glm::column(viewinv, 1));
     vec3 origin = glm::column(viewinv, 3);
@@ -885,23 +885,18 @@ bool debugging() {
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     const RayGenData &self = owl::getProgramData<RayGenData>();
-    cudaTextureObject_t envTex = getEnvironmentTexture();
-    
     auto &LP = optixLaunchParams;
     auto launchIndex = optixGetLaunchIndex().x;
     auto launchDim = optixGetLaunchDimensions().x;
-    auto pixelID = ivec2(launchIndex % LP.frameSize.x, launchIndex / LP.frameSize.x);
+    
+    GET(const int2 pixelID, int2, LP.sampleIndexBuffer, launchIndex);
+    
+    // Work distribution might assign tiles that cross over image boundary
+    if( pixelID.x > LP.frameSize.x-1 || pixelID.y > LP.frameSize.y-1 ) return;
+    
+    cudaTextureObject_t envTex = getEnvironmentTexture();    
     bool debug = (pixelID.x == int(LP.frameSize.x / 2) && pixelID.y == int(LP.frameSize.y / 2));
-
     float tmax = 1e20f; //todo: customize depending on scene bounds //glm::distance(LP.sceneBBMin, LP.sceneBBMax);
-
-    /* compute who is repsonible for a given group of pixels */
-    /* and if it's not us, just return. */
-    /* (some other device will compute these pixels) */
-    int deviceThatIsResponsible = (pixelID.x>>5) % self.deviceCount;
-    if (self.deviceIndex != deviceThatIsResponsible) {
-        return;
-    }
 
     auto dims = ivec2(LP.frameSize.x, LP.frameSize.x);
     uint64_t start_clock = clock();
@@ -924,7 +919,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     }
     
     // Trace an initial ray through the scene
-    surfRay = generateRay(camera, camera_transform, pixelID, LP.frameSize, rng, time);
+    surfRay = generateRay(camera, camera_transform, pixelID, make_float2(LP.frameSize), rng, time);
     surfRay.tmax = tmax;
 
     float3 accum_illum = make_float3(0.f);
@@ -1593,12 +1588,12 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     auto fbOfs = pixelID.x+LP.frameSize.x * ((LP.frameSize.y - 1) -  pixelID.y);
     float4* accumPtr = (float4*) LP.accumPtr;
     float4* fbPtr = (float4*) LP.frameBuffer;
-    float4* normalPtr = (float4*) LP.normalBuffer;
-    float4* albedoPtr = (float4*) LP.albedoBuffer;
+    // float4* normalPtr = (float4*) LP.normalBuffer;
+    // float4* albedoPtr = (float4*) LP.albedoBuffer;
 
     float4 prev_color = accumPtr[fbOfs];
-    float4 prev_normal = normalPtr[fbOfs];
-    float4 prev_albedo = albedoPtr[fbOfs];
+    // float4 prev_normal = normalPtr[fbOfs];
+    // float4 prev_albedo = albedoPtr[fbOfs];
     float4 accum_color;
 
     if (LP.renderDataMode == RenderDataFlags::NONE) 
@@ -1612,27 +1607,27 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     }
     
     
-    // compute screen space normal / albedo
-    vec4 oldAlbedo = make_vec4(prev_albedo);
-    vec4 oldNormal = make_vec4(prev_normal);
-    if (any(isnan(oldAlbedo))) oldAlbedo = vec4(0.f);
-    if (any(isnan(oldNormal))) oldNormal = vec4(0.f);
-    vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
-    vec4 accumAlbedo = (newAlbedo + float(LP.frameID) * oldAlbedo) / float(LP.frameID + 1);
-    vec4 newNormal = vec4(make_vec3(primaryNormal), 1.f);
-    if (!all(equal(make_vec3(primaryNormal), vec3(0.f, 0.f, 0.f)))) {
-        glm::quat r0 = glm::quat_cast(LP.viewT0);
-        glm::quat r1 = glm::quat_cast(LP.viewT1);
-        glm::quat rot = (glm::all(glm::equal(r0, r1))) ? r0 : glm::slerp(r0, r1, time);
-        vec3 tmp = normalize(glm::mat3_cast(rot) * make_vec3(primaryNormal));
-        tmp = normalize(vec3(LP.proj * vec4(tmp, 0.f)));
-        newNormal = vec4(tmp, 1.f);
-    }
-    vec4 accumNormal = (newNormal + float(LP.frameID) * oldNormal) / float(LP.frameID + 1);
+    // // compute screen space normal / albedo
+    // vec4 oldAlbedo = make_vec4(prev_albedo);
+    // vec4 oldNormal = make_vec4(prev_normal);
+    // if (any(isnan(oldAlbedo))) oldAlbedo = vec4(0.f);
+    // if (any(isnan(oldNormal))) oldNormal = vec4(0.f);
+    // vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
+    // vec4 accumAlbedo = (newAlbedo + float(LP.frameID) * oldAlbedo) / float(LP.frameID + 1);
+    // vec4 newNormal = vec4(make_vec3(primaryNormal), 1.f);
+    // if (!all(equal(make_vec3(primaryNormal), vec3(0.f, 0.f, 0.f)))) {
+    //     glm::quat r0 = glm::quat_cast(LP.viewT0);
+    //     glm::quat r1 = glm::quat_cast(LP.viewT1);
+    //     glm::quat rot = (glm::all(glm::equal(r0, r1))) ? r0 : glm::slerp(r0, r1, time);
+    //     vec3 tmp = normalize(glm::mat3_cast(rot) * make_vec3(primaryNormal));
+    //     tmp = normalize(vec3(LP.proj * vec4(tmp, 0.f)));
+    //     newNormal = vec4(tmp, 1.f);
+    // }
+    // vec4 accumNormal = (newNormal + float(LP.frameID) * oldNormal) / float(LP.frameID + 1);
 
     // save data to frame buffers
     accumPtr[fbOfs] = accum_color;
     fbPtr[fbOfs] = accum_color;
-    albedoPtr[fbOfs] = make_float4(accumAlbedo);
-    normalPtr[fbOfs] = make_float4(accumNormal);    
+    // albedoPtr[fbOfs] = make_float4(accumAlbedo);
+    // normalPtr[fbOfs] = make_float4(accumNormal);    
 }

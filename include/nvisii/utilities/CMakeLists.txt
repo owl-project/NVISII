@@ -14,4 +14,5 @@ set(Utilities_HDR
 	${CMAKE_CURRENT_SOURCE_DIR}/singleton.h
 	${CMAKE_CURRENT_SOURCE_DIR}/version.h
 	${CMAKE_CURRENT_SOURCE_DIR}/procedural_sky.h
+	${CMAKE_CURRENT_SOURCE_DIR}/work_distribution.h
 	PARENT_SCOPE)

@@ -19,10 +19,12 @@
 #include "./buffer.h"
 
 struct LaunchParams {
+    Buffer<int2> sampleIndexBuffer;
+
     glm::ivec2 frameSize;
     uint64_t frameID = 0;
     glm::vec4 *frameBuffer;
-    glm::vec4 *albedoBuffer;
+    uchar4 *albedoBuffer;
     glm::vec4 *normalBuffer;
     glm::vec4 *scratchBuffer;
     glm::vec4 *mvecBuffer;
