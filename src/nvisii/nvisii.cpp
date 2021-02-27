@@ -430,14 +430,13 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
     owlBufferResize(OD.scratchBuffer, width * height);
     owlBufferResize(OD.mvecBuffer, width * height);    
     owlBufferResize(OD.accumBuffer, width * height);
-    
-    owlBufferResize(OD.sampleIndexBuffer, NVISII.wd.numSamples());
+    owlBufferResize(OD.sampleIndexBuffer, width * height);
 
     for (uint32_t i = 0; i < numGPUs; ++i)
     {
         cudaSetDevice( i );
         fillSamplesCUDA(
-            NVISII.wd.numSamples(),
+            NVISII.wd.numSamples(i),
             owlContextGetStream(OD.context, i),
             i,
             numGPUs,
@@ -582,7 +581,7 @@ void initializeOptix(bool headless)
 
     NVISII.wd.setRasterSize( 512, 512 );
     NVISII.wd.setNumGPUs( owlGetDeviceCount(OD.context) );
-    OD.sampleIndexBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(int2), NVISII.wd.numSamples(), nullptr);
+    OD.sampleIndexBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(int2), 512*512, nullptr);
     owlParamsSetBuffer(OD.launchParams, "sampleIndexBuffer", OD.sampleIndexBuffer);
 
     OD.frameBuffer = owlHostPinnedBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512);
@@ -1993,7 +1992,10 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
             }
 
             updateLaunchParams();
-            owlLaunch2D(OptixData.rayGen, NVISII.wd.numSamples(), 1, OptixData.launchParams);
+            for (uint32_t deviceID = 0; deviceID < owlGetDeviceCount(OptixData.context); deviceID++) {
+                owlAsyncLaunch2DOnDevice(OptixData.rayGen, NVISII.wd.numSamples(deviceID), 1, deviceID, OptixData.launchParams);
+            }
+            owlLaunchSync(OptixData.launchParams);
 
             if (!NVISII.headlessMode) {
                 if (OptixData.enableDenoiser)
@@ -2145,7 +2147,12 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
             }
 
             updateLaunchParams();
-            owlLaunch2D(OptixData.rayGen, NVISII.wd.numSamples(), 1, OptixData.launchParams);
+
+            for (uint32_t deviceID = 0; deviceID < owlGetDeviceCount(OptixData.context); deviceID++) {
+                owlAsyncLaunch2DOnDevice(OptixData.rayGen, NVISII.wd.numSamples(deviceID), 1, deviceID, OptixData.launchParams);
+            }
+            owlLaunchSync(OptixData.launchParams);
+            
             // Dont run denoiser to raw data rendering
             // if (OptixData.enableDenoiser)
             // {
@@ -2444,7 +2451,11 @@ void initializeInteractive(
                 updateFrameBuffer();
                 updateComponents();
                 updateLaunchParams();
-                owlLaunch2D(OptixData.rayGen, NVISII.wd.numSamples(), 1, OptixData.launchParams);
+                for (uint32_t deviceID = 0; deviceID < owlGetDeviceCount(OptixData.context); deviceID++) {
+                    owlAsyncLaunch2DOnDevice(OptixData.rayGen, NVISII.wd.numSamples(deviceID), 1, deviceID, OptixData.launchParams);
+                }
+                owlLaunchSync(OptixData.launchParams);
+                
                 if (OptixData.enableDenoiser)
                 {
                     denoiseImage();

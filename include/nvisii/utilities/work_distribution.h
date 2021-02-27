@@ -30,7 +30,7 @@ public:
     }
 
 
-    SWD_INLINE SWD_HOSTDEVICE int32_t numSamples( )
+    SWD_INLINE SWD_HOSTDEVICE int32_t numSamples( int32_t gpu_idx )
     {
         const int tile_strip_width  = TILE_WIDTH*m_num_gpus;
         const int tile_strip_height = TILE_HEIGHT;
