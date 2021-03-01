@@ -19,7 +19,7 @@
 #include "./buffer.h"
 
 struct LaunchParams {
-    Buffer<int2> sampleIndexBuffer;
+    Buffer<float> assignmentBuffer;
 
     glm::ivec2 frameSize;
     uint64_t frameID = 0;
@@ -113,7 +113,8 @@ enum RenderDataFlags : uint32_t {
   TRANSMISSION_INDIRECT_LIGHTING = 17,
   RAY_DIRECTION = 18,
   HEATMAP = 19,
-  TEXTURE_COORDINATES = 20
+  TEXTURE_COORDINATES = 20,
+  DEVICE_ID = 21
 };
 
 #define MAX_LIGHT_SAMPLES 10
