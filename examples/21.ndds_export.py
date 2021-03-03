@@ -1,4 +1,5 @@
 import nvisii
+import numpy as np
 
 opt = lambda : None
 opt.spp = 100 
@@ -279,17 +280,12 @@ def export_to_ndds_file(
             'name':obj_name,
             'provenance':'nvisii',
             # TODO check the location
-            'location_camera': [
+            'location': [
                 pos_camera_frame[0],
                 pos_camera_frame[1],
                 pos_camera_frame[2]
             ],
-            'location_world': [
-                trans.get_position()[0],
-                trans.get_position()[1],
-                trans.get_position()[2]
-            ],
-            'quaternion_xyzw_camera':[
+            'quaternion_xyzw':[
                 quaternion_xyzw[0],
                 quaternion_xyzw[1],
                 quaternion_xyzw[2],
@@ -301,10 +297,26 @@ def export_to_ndds_file(
                 trans.get_rotation()[2],
                 trans.get_rotation()[3]
             ],
-            'projected_cuboid_image':projected_keypoints,
+
+
+            'projected_cuboid': projected_keypoints[0:8],
+            'projected_cuboid_centroid': projected_keypoints[8],
             'segmentation_id':id_keys_map[obj_name],
             'visibility_image':visibility,
-            'bounding_box_minx_maxx_miny_maxy_image':bounding_box
+            'bounding_box': {
+                'top_left':[
+                    bounding_box[0],
+                    bounding_box[2],
+                ], 
+                'bottom_right':[
+                    bounding_box[1],
+                    bounding_box[3],
+                ],
+                
+
+
+            },
+
         })
         
     with open(filename, 'w+') as fp:
