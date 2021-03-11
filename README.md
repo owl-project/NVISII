@@ -29,7 +29,8 @@ We highly recommend that you use the pre-built wheels for python as follow:
 ```
 pip install nvisii
 ```
-Also make sure your NVIDIA drivers are up to date (R435 or above).
+Also make sure your NVIDIA drivers are up to date (default set at R460). We offer different `nvisii` packages for different NVIDIA driver versions.
+R435 `pip install nvisii==1.0.70`, r450 `pip install nvisii==1.0.71`, or R460 `pip install nvisii==1.0.72` which is the default version. 
 If you need more information about how to install NVIDIA drivers on Ubuntu please consult
 [this](https://ingowald.blog/installing-the-latest-nvidia-driver-cuda-and-optix-on-linux-ubuntu-18-04/).
 
