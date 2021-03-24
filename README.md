@@ -60,7 +60,8 @@ sudo sh get_nvidia_libs.sh
 
 Since the CUDA docker image includes limited libs, this script adds the missing one for NVISII to run. 
 This could potentially cause problems if the docker image is deployed on a different system, 
-please make sure the NVIDIA drivers match on all your systems. 
+please make sure the NVIDIA drivers match on all your systems. This also implies that you should check which version 
+of NViSII to install, see above. 
 
 ```
 docker build . -t nvisii:07.20
