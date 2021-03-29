@@ -196,6 +196,8 @@ jobs:
   docs:
     needs: build
     runs-on: ubuntu-20.04
+    # Only build/commit new docs if this is an update to master (ignore runs triggered within pull request)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
@@ -205,10 +207,20 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R
       
+      - name: Setup Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+          architecture: 'x64'
+      
       - name: Build Docs
         run: |
           echo Build Docs here
-      # Upload to github pages branch?
+          python -m pip install sphinx
+          python -m pip install nvisii*.whl
+          cd docs
+          make html
+      # Upload to gh-pages branch
   
   deploy:
     needs: build
