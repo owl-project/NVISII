@@ -1,6 +1,6 @@
 # NVISII - NVIDIA Scene Imaging Interface
 
-![NNVISII examples](https://i.imgur.com/A3MDFzy.png)
+![NVISII examples](https://i.imgur.com/A3MDFzy.png)
 
 NVISII is a python-enabled ray tracing based renderer built on top of NVIDIA OptiX (C++/CUDA backend). 
 The tool allows you to define complex scenes: 3d meshes, object materials, lights, loading textures, _etc._, and render 
@@ -9,7 +9,7 @@ A scene can be described in many ways, you can use our simple mesh definitions, 
 load a complex scene defined in an obj file.
 NVISII can be used to export metadata about the scene, _e.g._, object segmentation. 
 
-[Documentation](https://www.nnvisii.com).
+[Documentation](https://nvisii.com).
 
 <!--
 This library provides a simple, primarily python-user targeted, interface to rendering images of a virtual scene. Its key cornerstones are:
@@ -29,7 +29,8 @@ We highly recommend that you use the pre-built wheels for python as follow:
 ```
 pip install nvisii
 ```
-Also make sure your NVIDIA drivers are up to date (R435 or above).
+Also make sure your NVIDIA drivers are up to date (default set at R460). We offer different `nvisii` packages for different NVIDIA driver versions.
+R435 `pip install nvisii==1.x.70`, r450 `pip install nvisii==1.x.71`, or R460 `pip install nvisii==1.x.72` which is the default version. 
 If you need more information about how to install NVIDIA drivers on Ubuntu please consult
 [this](https://ingowald.blog/installing-the-latest-nvidia-driver-cuda-and-optix-on-linux-ubuntu-18-04/).
 
@@ -37,14 +38,14 @@ If you need more information about how to install NVIDIA drivers on Ubuntu pleas
 ## Getting Started 
 
 We wrote different examples covering most of the functionalities of NVISII, [here](examples/). 
-You can also find more extensive documentation [here](https://www.nnvisii.com).
+You can also find more extensive documentation [here](https://nvisii.com).
 
 ## Building 
 
 Exact commands used to build NVISII can be found in .github/manylinux.yml and .github/windows.yml.
 More information on how to build will be added in the near future. 
 
-<!-- Although we do not recommend building nnvisii from scratch. Here are the rudimentary 
+<!-- Although we do not recommend building nvisii from scratch. Here are the rudimentary 
 requirements: 
 -->
 
@@ -59,7 +60,8 @@ sudo sh get_nvidia_libs.sh
 
 Since the CUDA docker image includes limited libs, this script adds the missing one for NVISII to run. 
 This could potentially cause problems if the docker image is deployed on a different system, 
-please make sure the NVIDIA drivers match on all your systems. 
+please make sure the NVIDIA drivers match on all your systems. This also implies that you should [check](https://github.com/owl-project/NVISII/blob/master/docker/Dockerfile#L31) which version 
+of NViSII to install, see above. 
 
 ```
 docker build . -t nvisii:07.20
@@ -76,7 +78,7 @@ This will save a `tmp.png` in the root folder.
 
 If you use this tool in your research project, please cite as follows:
 
-    @misc{Morrical20nnvisii,
+    @misc{Morrical20nvisii,
     author = {Nathan Morrical and Jonathan Tremblay and Stan Birchfield and Ingo Wald},
     note= {\url{ https://github.com/owl-project/NVISII/ }},
     title = {{NVISII}: NVIDIA Scene Imaging Interface},
