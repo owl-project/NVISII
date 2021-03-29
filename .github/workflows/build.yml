@@ -24,9 +24,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-2019]
-        python-version: ['3.6', '3.7', '3.8', '3.9']
-        optix-version: [70, 71, 72]
+        os: [ubuntu-20.04] #[ubuntu-20.04, windows-2019]
+        python-version: ['3.6'] #['3.6', '3.7', '3.8', '3.9']
+        optix-version: [72] #[70, 71, 72]
         include:
           # Includes the value for matrix.container when the OS is Ubuntu, to use manylinux complaint CentOS version.
           # For Windows, matrix.container remains undefined and the build runs on the host VM instead of within a container.
@@ -216,7 +216,7 @@ jobs:
       - name: Build Docs
         run: |
           echo Build Docs here
-          python -m pip install sphinx
+          python -m pip install sphinx sphinx_rtd_theme
           python -m pip install nvisii*.whl
           cd docs
           make html
