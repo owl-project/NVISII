@@ -225,7 +225,15 @@ jobs:
         run: ls -R
         
       # Upload to gh-pages branch
-  
+      - name: Push html pages to gh-pages branch
+        run: |
+          mv -R ./docs/build/html/* /./docs
+          git config user.name github-actions
+          git config usernemail github-actions@github.com
+          git add ./docs/
+          git commit -m "Update docs from master"
+          git push master:gh-pages
+      
   deploy:
     needs: build
     if: github.event_name == 'release' && github.event.action == 'created'
