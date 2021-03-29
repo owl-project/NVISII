@@ -202,15 +202,15 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
         with:
-          name: nvisii-ubuntu-20.04-python3.6-optix72
+          name: nvisii-ubuntu-20.04-python3.9-optix72
       
       - name: Display structure of downloaded files
         run: ls -R
       
-      - name: Setup Python 3.6
+      - name: Setup Python 3.9
         uses: actions/setup-python@v2
         with:
-          python-version: '3.6'
+          python-version: '3.9'
           architecture: 'x64'
       
       - name: Build Docs
@@ -220,6 +220,10 @@ jobs:
           python -m pip install nvisii*.whl
           cd docs
           make html
+      
+      - name: Display structure of downloaded files
+        run: ls -R
+        
       # Upload to gh-pages branch
   
   deploy:
