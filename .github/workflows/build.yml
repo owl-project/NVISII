@@ -25,7 +25,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04] #[ubuntu-20.04, windows-2019]
-        python-version: ['3.6'] #['3.6', '3.7', '3.8', '3.9']
+        python-version: ['3.9'] #['3.6', '3.7', '3.8', '3.9']
         optix-version: [72] #[70, 71, 72]
         include:
           # Includes the value for matrix.container when the OS is Ubuntu, to use manylinux complaint CentOS version.
@@ -120,7 +120,7 @@ jobs:
           -DPython_INCLUDE_DIRS=/opt/python/${PYVER}/include/python${PY:0:1}.${PY:2:1}${M}/ \
           -DPython_NumPy_INCLUDE_DIRS=/opt/python/${PYVER}/lib/python${PY:0:1}.${PY:2:1}/site-packages/numpy/core/include/ \
           -DPython_VERSION_MAJOR=${PY:0:1} \
-          -DPython_VERSION_MINOR=${PY:1:1} \
+          -DPython_VERSION_MINOR=${PY:2:2} \
           -DCMAKE_BUILD_TYPE=Release \
            
           $CMAKEEXEC --build . --config Release --target install
