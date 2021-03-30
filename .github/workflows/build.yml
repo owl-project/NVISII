@@ -226,7 +226,7 @@ jobs:
           ./tmate -F
           make html
       
-      - name: Display structure of downloaded files
+      - name: Display structure of built files
         run: |
           ls -R
         
