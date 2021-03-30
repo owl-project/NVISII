@@ -229,7 +229,7 @@ jobs:
         run: |
           mv ./docs/build/html/* ./docs/
           git config user.name github-actions
-          git config usernemail github-actions@github.com
+          git config user.email github-actions@github.com
           git add ./docs/
           git commit -m "Update docs from master"
           git push master:gh-pages
