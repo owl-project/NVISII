@@ -225,12 +225,12 @@ jobs:
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
           sudo apt-get update
           sudo apt-get -y install cuda
-          #tmate for debugging
-          wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
-          tar xf tmate-2.4.0-static-linux-amd64.tar.xz
-          cd tmate-2.4.0-static-linux-amd64
-          ./tmate -F
-          make html
+          # tmate for debugging
+          #wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+          #tar xf tmate-2.4.0-static-linux-amd64.tar.xz
+          #cd tmate-2.4.0-static-linux-amd64
+          #./tmate -F
+          LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libcuda.so make html
       
       - name: Display structure of built files
         run: |
