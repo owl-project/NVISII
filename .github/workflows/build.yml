@@ -232,7 +232,7 @@ jobs:
           git config user.email github-actions@github.com
           git add ./docs/
           git commit -m "Update docs from master"
-          git push master:gh-pages
+          git push origin master:gh-pages
       
   deploy:
     needs: build
