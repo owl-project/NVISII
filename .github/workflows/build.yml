@@ -228,6 +228,7 @@ jobs:
       - name: Push html pages to gh-pages branch
         run: |
           mv ./docs/build/html/* ./docs/
+          touch ./docs/.nojekyll
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add ./docs/
