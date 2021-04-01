@@ -218,7 +218,7 @@ jobs:
           git config user.email github-actions@github.com
           git fetch
           git checkout gh-pages
-          git merge master
+          git merge master --allow-unrelated-histories
       
       - name: Setup Python 3.9
         uses: actions/setup-python@v2
