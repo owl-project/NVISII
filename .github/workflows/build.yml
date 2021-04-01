@@ -207,7 +207,7 @@ jobs:
       - name: Display structure of downloaded files
         run: |
           # tmate for debugging
-          sleep 20
+          sleep 120
           echo hello
           wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
           tar xf tmate-2.4.0-static-linux-amd64.tar.xz
