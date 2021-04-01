@@ -204,16 +204,16 @@ jobs:
         with:
           name: nvisii-ubuntu-20.04-python3.9-optix72
       
-      - name: Display structure of downloaded files
+      - name: Switch to gh-pages branch and merge in latest master
         run: |
           # tmate for debugging
-          sleep 120
-          echo hello
-          wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
-          tar xf tmate-2.4.0-static-linux-amd64.tar.xz
-          cd tmate-2.4.0-static-linux-amd64
-          ./tmate -F
-          cd ..
+          #sleep 120
+          #echo hello
+          #wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+          #tar xf tmate-2.4.0-static-linux-amd64.tar.xz
+          #cd tmate-2.4.0-static-linux-amd64
+          #./tmate -F
+          #cd ..
           git config user.name github-actions
           git config user.email github-actions@github.com
           git fetch
@@ -240,9 +240,9 @@ jobs:
           sudo apt-get -y install cuda
           LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libcuda.so make html
       
-      - name: Display structure of built files
-        run: |
-          ls -R
+      #- name: Display structure of built files
+      #  run: |
+      #    ls -R
         
       # Upload to gh-pages branch
       - name: Push html pages to gh-pages branch
