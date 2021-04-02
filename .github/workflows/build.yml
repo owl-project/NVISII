@@ -24,17 +24,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04] #[ubuntu-20.04, windows-2019]
-        python-version: ['3.9'] #['3.6', '3.7', '3.8', '3.9']
-        optix-version: [72] #[70, 71, 72]
+        os: [ubuntu-20.04, windows-2019]
+        python-version: ['3.6', '3.7', '3.8', '3.9']
+        optix-version: [70, 71, 72]
         include:
           # Includes the value for matrix.container when the OS is Ubuntu, to use manylinux complaint CentOS version.
           # For Windows, matrix.container remains undefined and the build runs on the host VM instead of within a container.
           - os: ubuntu-20.04
             container: 'quay.io/pypa/manylinux2014_x86_64:2021-01-12-c8250d8'
             pretty: 'Linux'
-#           - os: windows-2019
-#             pretty: 'Windows'
+          - os: windows-2019
+            pretty: 'Windows'
     
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -219,7 +219,6 @@ jobs:
           #cd ..
           git config user.name github-actions
           git config user.email github-actions@github.com
-          #git fetch
           git checkout gh-pages
           git merge master
       
