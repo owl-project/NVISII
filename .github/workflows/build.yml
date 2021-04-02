@@ -200,6 +200,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      
       - uses: actions/download-artifact@v2
         with:
           name: nvisii-ubuntu-20.04-python3.9-optix72
@@ -216,9 +219,9 @@ jobs:
           #cd ..
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git fetch
+          #git fetch
           git checkout gh-pages
-          git merge master --allow-unrelated-histories
+          git merge master
       
       - name: Setup Python 3.9
         uses: actions/setup-python@v2
