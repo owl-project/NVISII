@@ -24,3 +24,8 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+.. git_commit_detail::
+    :commit:
+    :sha_length: 10
