@@ -11,6 +11,8 @@ Welcome to NVISII's documentation!
    material
    mesh
    texture
+   light
+   volume
    camera
    all
 
