@@ -1948,6 +1948,9 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
     if ((width < 1) || (height < 1)) throw std::runtime_error("Error, invalid width/height");
     std::vector<float> frameBuffer(width * height * 4);
 
+    // flush command queue
+    enqueueCommandAndWait([](){});
+
     enqueueCommandAndWait([&frameBuffer, width, height, samplesPerPixel, seed] () {
         if (!NVISII.headlessMode) {
             if ((width != WindowData.currentSize.x) || (height != WindowData.currentSize.y))
@@ -2032,6 +2035,8 @@ std::string trim(const std::string& line)
 std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string _option, uint32_t seed)
 {
     std::vector<float> frameBuffer(width * height * 4);
+
+    enqueueCommandAndWait([](){});
 
     enqueueCommandAndWait([&frameBuffer, width, height, startFrame, frameCount, bounce, _option, seed] () {
         if (!NVISII.headlessMode) {
