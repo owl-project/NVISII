@@ -1290,12 +1290,11 @@ void updateComponents()
 
             OD.volumeHandles[v->getAddress()] = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint8_t), gridHdlPtr.get()->size(), nullptr);
             owlBufferUpload(OD.volumeHandles[v->getAddress()], gridHdlPtr.get()->data());
-            printf("%hhx\n",gridHdlPtr.get()->data()[0]);
+            // printf("%hhx\n",gridHdlPtr.get()->data()[0]);
             const void* d_gridData = owlBufferGetPointer(OD.volumeHandles[v->getAddress()], 0);
             uint8_t first_byte;
             cudaMemcpy((void*)&first_byte, d_gridData, 1, cudaMemcpyDeviceToHost);
-            printf("%hhx\n",first_byte);
-
+            // printf("%hhx\n",first_byte);
 
             // Create geometry and build BLAS
             uint32_t volumeID = v->getAddress();
@@ -1321,12 +1320,14 @@ void updateComponents()
         std::vector<OWLGroup> surfaceInstances;
         std::vector<glm::mat4> t0SurfaceTransforms;
         std::vector<glm::mat4> t1SurfaceTransforms;
+        std::vector<uint8_t> surfaceMasks;
         std::vector<uint32_t> surfaceInstanceToEntity;
         
         // Volume instances
         std::vector<OWLGroup> volumeInstances;
         std::vector<glm::mat4> t0VolumeTransforms;
         std::vector<glm::mat4> t1VolumeTransforms;
+        std::vector<uint8_t> volumeMasks;
         std::vector<uint32_t> volumeInstanceToEntity;
 
         // Todo: curves...
@@ -1362,6 +1363,7 @@ void updateComponents()
                 surfaceInstanceToEntity.push_back(eid);
                 t0SurfaceTransforms.push_back(prevLocalToWorld);
                 t1SurfaceTransforms.push_back(localToWorld);
+                surfaceMasks.push_back(entities[eid].getStruct().flags);
             }
             
             // Add any instanced volume geometry to the list
@@ -1376,11 +1378,14 @@ void updateComponents()
                 volumeInstanceToEntity.push_back(eid);
                 t0VolumeTransforms.push_back(prevLocalToWorld);
                 t1VolumeTransforms.push_back(localToWorld);
+                volumeMasks.push_back(entities[eid].getStruct().flags);
             }     
         }
 
+        std::vector<uint8_t>     owlSurfaceVisibilityMasks;
         std::vector<owl4x3f>     t0OwlSurfaceTransforms;
         std::vector<owl4x3f>     t1OwlSurfaceTransforms;
+        std::vector<uint8_t>     owlVolumeVisibilityMasks;
         std::vector<owl4x3f>     t0OwlVolumeTransforms;
         std::vector<owl4x3f>     t1OwlVolumeTransforms;
         auto oldSurfaceIAS = OD.surfacesIAS;
@@ -1409,9 +1414,11 @@ void updateComponents()
                 instanceGroupSetChild(OD.surfacesIAS, iid, surfaceInstances[iid]);                 
                 t0OwlSurfaceTransforms.push_back(glmToOWL(t0SurfaceTransforms[iid]));
                 t1OwlSurfaceTransforms.push_back(glmToOWL(t1SurfaceTransforms[iid]));
+                owlSurfaceVisibilityMasks.push_back(surfaceMasks[iid]);
             }            
             owlInstanceGroupSetTransforms(OD.surfacesIAS,0,(const float*)t0OwlSurfaceTransforms.data());
             owlInstanceGroupSetTransforms(OD.surfacesIAS,1,(const float*)t1OwlSurfaceTransforms.data());
+            owlInstanceGroupSetVisibilityMasks(OD.surfacesIAS, owlSurfaceVisibilityMasks.data());
             owlBufferResize(OD.surfaceInstanceToEntityBuffer, surfaceInstanceToEntity.size());
             owlBufferUpload(OD.surfaceInstanceToEntityBuffer, surfaceInstanceToEntity.data());
         }       
@@ -1423,9 +1430,11 @@ void updateComponents()
                 instanceGroupSetChild(OD.volumesIAS, iid, volumeInstances[iid]);                 
                 t0OwlVolumeTransforms.push_back(glmToOWL(t0VolumeTransforms[iid]));
                 t1OwlVolumeTransforms.push_back(glmToOWL(t1VolumeTransforms[iid]));
+                owlVolumeVisibilityMasks.push_back(volumeMasks[iid]);
             }            
             owlInstanceGroupSetTransforms(OD.volumesIAS,0,(const float*)t0OwlVolumeTransforms.data());
             owlInstanceGroupSetTransforms(OD.volumesIAS,1,(const float*)t1OwlVolumeTransforms.data());
+            owlInstanceGroupSetVisibilityMasks(OD.volumesIAS, owlVolumeVisibilityMasks.data());
             owlBufferResize(OD.volumeInstanceToEntityBuffer, volumeInstanceToEntity.size());
             owlBufferUpload(OD.volumeInstanceToEntityBuffer, volumeInstanceToEntity.data());
         }
