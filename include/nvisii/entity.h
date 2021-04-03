@@ -211,9 +211,21 @@ public:
 
 	/**
 	 * Objects can be set to be invisible to particular ray types:
-	 * @param camera Makes the object visible to camera rays
+	 * @param camera Makes the object visible to camera rays (the first rays to be traced from the camera).
+	 * @param diffuse (todo...) Makes the object visible to diffuse rays (eg for diffuse GI)
+	 * @param glossy (todo...) Makes the object visible to glossy rays (eg in reflections)
+	 * @param transmission (todo...) Makes the object visible to transmission rays (eg from inside glass)
+	 * @param volume_scatter (todo...) Makes the object visible to volume scatter rays (eg from light simulation inside a volume)
+	 * @param shadow Enables the object to cast shadows.
 	*/
-	void setVisibility(bool camera = true);
+	void setVisibility(
+		bool camera = true, 
+		bool diffuse = true, 
+		bool glossy = true, 
+		bool transmission = true, 
+		bool volume_scatter = true, 
+		bool shadow = true
+	);
 
 	/** @returns the minimum axis aligned bounding box position. Requires a transform and mesh component to be attached. */
 	glm::vec3 getMinAabbCorner();

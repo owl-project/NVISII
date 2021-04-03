@@ -253,7 +253,14 @@ Mesh* Entity::getMesh()
 	return &mesh;
 }
 
-void Entity::setVisibility(bool camera)
+void Entity::setVisibility(
+	bool camera, 
+	bool diffuse, 
+	bool glossy, 
+	bool transmission, 
+	bool volume_scatter, 
+	bool shadow
+)
 {
 	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 	
@@ -262,6 +269,36 @@ void Entity::setVisibility(bool camera)
 		entity.flags |= ENTITY_VISIBILITY_CAMERA_RAYS;
 	} else {
 		entity.flags &= (~ENTITY_VISIBILITY_CAMERA_RAYS);
+	}
+
+	if (diffuse) {
+		entity.flags |= ENTITY_VISIBILITY_DIFFUSE_RAYS;
+	} else {
+		entity.flags &= (~ENTITY_VISIBILITY_DIFFUSE_RAYS);
+	}
+
+	if (glossy) {
+		entity.flags |= ENTITY_VISIBILITY_GLOSSY_RAYS;
+	} else {
+		entity.flags &= (~ENTITY_VISIBILITY_GLOSSY_RAYS);
+	}
+
+	if (transmission) {
+		entity.flags |= ENTITY_VISIBILITY_TRANSMISSION_RAYS;
+	} else {
+		entity.flags &= (~ENTITY_VISIBILITY_TRANSMISSION_RAYS);
+	}
+
+	if (volume_scatter) {
+		entity.flags |= ENTITY_VISIBILITY_VOLUME_SCATTER_RAYS;
+	} else {
+		entity.flags &= (~ENTITY_VISIBILITY_VOLUME_SCATTER_RAYS);
+	}
+
+	if (shadow) {
+		entity.flags |= ENTITY_VISIBILITY_SHADOW_RAYS;
+	} else {
+		entity.flags &= (~ENTITY_VISIBILITY_SHADOW_RAYS);
 	}
 	markDirty();
 }
