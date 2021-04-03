@@ -1,0 +1,705 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>NVISII &mdash; NVISII 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Entity" href="entity.html" />
+    <link rel="prev" title="Welcome to NVISII’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> NVISII
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">NVISII</a></li>
+<li class="toctree-l1"><a class="reference internal" href="entity.html">Entity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transform.html">Transform</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mesh.html">Mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="texture.html">Texture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="light.html">Light</a></li>
+<li class="toctree-l1"><a class="reference internal" href="volume.html">Volume</a></li>
+<li class="toctree-l1"><a class="reference internal" href="camera.html">Camera</a></li>
+<li class="toctree-l1"><a class="reference internal" href="all.html">Full Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">NVISII</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>NVISII</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/nvisii.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-nvisii">
+<span id="nvisii"></span><h1>NVISII<a class="headerlink" href="#module-nvisii" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="nvisii.clear_all">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">clear_all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.clear_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes any allocated components but keeps nvisii initialized.
+Call this if you would like to clear the current scene.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.clear_dome_light_texture">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">clear_dome_light_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.clear_dome_light_texture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnects the dome light texture, reverting back to any existing constant dome light color</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.deinitialize">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">deinitialize</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.deinitialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the interactive window, and shuts down any running backend systems.
+Call this function at the end of your script.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.disable_denoiser">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">disable_denoiser</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.disable_denoiser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables the Optix denoiser.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.disable_updates">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">disable_updates</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.disable_updates" title="Permalink to this definition">¶</a></dt>
+<dd><p>If disabled, the interactive window image will only show scene changes on call to render, render_to_png, and render_data.
+Bulk component edits will be much faster when disabled, as all component edits can be done without the renderer
+locking them for upload to the GPU.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.enable_denoiser">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">enable_denoiser</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.enable_denoiser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables the Optix denoiser.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.enable_updates">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">enable_updates</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.enable_updates" title="Permalink to this definition">¶</a></dt>
+<dd><p>If enabled, the interactive window image will change asynchronously as scene components are altered.
+However, bulk component edits will slow down, as each component edit will individually cause the renderer to
+temporarily lock components while being uploaded to the GPU.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.get_cursor_pos">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">get_cursor_pos</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.get_cursor_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>If in interactive mode, returns the position of the cursor relative to the window.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.get_scene_aabb_center">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">get_scene_aabb_center</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.get_scene_aabb_center" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the center of the aligned bounding box for the axis aligned bounding box containing all scene geometry</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.get_scene_max_aabb_corner">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">get_scene_max_aabb_corner</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.get_scene_max_aabb_corner" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the maximum axis aligned bounding box position for the axis aligned bounding box containing all scene geometry</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.get_scene_min_aabb_corner">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">get_scene_min_aabb_corner</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.get_scene_min_aabb_corner" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the minimum axis aligned bounding box position for the axis aligned bounding box containing all scene geometry</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.get_window_size">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">get_window_size</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.get_window_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>If in interactive mode, returns size of the window</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.import_scene">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">import_scene</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.import_scene" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports a file containing scene data.</p>
+<p>Supported file formats include: AMF 3DS AC ASE ASSBIN B3D BVH COLLADA DXF
+CSM HMP IRRMESH IRR LWO LWS M3D MD2 MD3 MD5 MDC MDL NFF NDO OFF OBJ OGRE
+OPENGEX PLY MS3D COB BLEND IFC XGL FBX Q3D Q3BSP RAW SIB SMD STL
+TERRAGEN 3D X X3D GLTF 3MF MMD</p>
+<p>First, any materials described by the file are used to generate Material components.
+Next, any textures required by those materials will be loaded.
+After that, all shapes will be separated by material.
+For each separated shape, an entity is created to attach a transform, mesh, and material component together.
+These shapes are then translated so that the transform component is centered at the centroid of the shape.
+Finally, any specified position, scale, and/or rotation are applied to the generated transforms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filepath</strong> – The path for the file to load</p></li>
+<li><p><strong>position</strong> (<a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>, optional) – A change in position to apply to all entities generated by this function</p></li>
+<li><p><strong>position</strong> – A change in scale to apply to all entities generated by this function</p></li>
+<li><p><strong>position</strong> – A change in rotation to apply to all entities generated by this function</p></li>
+<li><p><strong>args</strong> (<em>std::vector&lt; std::string</em><em>,</em><em>std::allocator&lt; std::string &gt; &gt;</em><em>, </em><em>optional</em>) – A list of optional arguments that can effect the importer.
+Possible options include:
+“verbose” - print out information related to loading the scene.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.initialize">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">initialize</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">headless</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_on_top</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lazy_updates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_entities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cameras</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_transforms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_meshes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_materials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_lights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_textures</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_volumes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes various backend systems required to render scene data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>headless</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, avoids using any OpenGL resources, to enable use on systems without displays.</p></li>
+<li><p><strong>window_on_top</strong> (<em>boolean</em><em>, </em><em>optional</em>) – Keeps the window opened during an interactive session on top of any other windows. (assuming headless is False)</p></li>
+<li><p><strong>lazy_updates</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If True, nvisii will only upload components to the GPU on call to
+render/render_to_png/render_data for better scene editing performance. (assuming headless is False. Always on when headless is True)</p></li>
+<li><p><strong>verbose</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If false, nvisii will avoid outputing any unneccessary text</p></li>
+<li><p><strong>max_entities</strong> (<em>int</em><em>, </em><em>optional</em>) – The max number of creatable Entity components.</p></li>
+<li><p><strong>max_cameras</strong> (<em>int</em><em>, </em><em>optional</em>) – The max number of creatable Camera components.</p></li>
+<li><p><strong>max_transforms</strong> (<em>int</em><em>, </em><em>optional</em>) – The max number of creatable Transform components.</p></li>
+<li><p><strong>max_meshes</strong> (<em>int</em><em>, </em><em>optional</em>) – The max number of creatable Mesh components.</p></li>
+<li><p><strong>max_materials</strong> (<em>int</em><em>, </em><em>optional</em>) – The max number of creatable Material components.</p></li>
+<li><p><strong>max_lights</strong> (<em>int</em><em>, </em><em>optional</em>) – The max number of creatable Light components.</p></li>
+<li><p><strong>max_textures</strong> (<em>int</em><em>, </em><em>optional</em>) – The max number of creatable Texture components.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.is_button_held">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">is_button_held</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">button</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.is_button_held" title="Permalink to this definition">¶</a></dt>
+<dd><p>If in interactive mode, returns True if the specified button is held down.
+:param The: button to check. Not case sensitive. Possible options include:</p>
+<blockquote>
+<div><p>SPACE, APOSTROPHE, COMMA, MINUS, PERIOD, SLASH, SEMICOLON, EQUAL, UP, DOWN, LEFT, RIGHT
+0-9, A-&gt;Z, [, ], , <a href="#id1"><span class="problematic" id="id2">`</span></a>, ESCAPE, ENTER, TAB, BACKSPACE, INSERT, DELETE, PAGE_UP, PAGE_DOWN, HOME,
+CAPS_LOCK, SCROLL_LOCK, NUM_LOCK, PRINT_SCREEN, PAUSE, F1 -&gt; F25, KP_0 -&gt; KP_9,
+KP_DECIMAL, KP_DIVIDE, KP_MULTIPLY, KP_SUBTRACT, KP_ADD, KP_ENTER, KP_EQUAL,
+LEFT_SHIFT, LEFT_CONTROL, LEFT_ALT, LEFT_SUPER, RIGHT_SHIFT, RIGHT_CONTROL, RIGHT_ALT, RIGHT_SUPER,
+MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.is_button_pressed">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">is_button_pressed</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">button</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.is_button_pressed" title="Permalink to this definition">¶</a></dt>
+<dd><p>If in interactive mode, returns True if the specified button is pressed but not held.
+:param The: button to check. Not case sensitive. Possible options include:</p>
+<blockquote>
+<div><p>SPACE, APOSTROPHE, COMMA, MINUS, PERIOD, SLASH, SEMICOLON, EQUAL, UP, DOWN, LEFT, RIGHT
+0-9, A-&gt;Z, [, ], , <a href="#id3"><span class="problematic" id="id4">`</span></a>, ESCAPE, ENTER, TAB, BACKSPACE, INSERT, DELETE, PAGE_UP, PAGE_DOWN, HOME,
+CAPS_LOCK, SCROLL_LOCK, NUM_LOCK, PRINT_SCREEN, PAUSE, F1 -&gt; F25, KP_0 -&gt; KP_9,
+KP_DECIMAL, KP_DIVIDE, KP_MULTIPLY, KP_SUBTRACT, KP_ADD, KP_ENTER, KP_EQUAL,
+LEFT_SHIFT, LEFT_CONTROL, LEFT_ALT, LEFT_SUPER, RIGHT_SHIFT, RIGHT_CONTROL, RIGHT_ALT, RIGHT_SUPER,
+MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.render">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">render</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples_per_pixel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.render" title="Permalink to this definition">¶</a></dt>
+<dd><p>Renders the current scene, returning the resulting framebuffer back to the user directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> (<em>int</em>) – The width of the image to render</p></li>
+<li><p><strong>height</strong> (<em>int</em>) – The height of the image to render</p></li>
+<li><p><strong>samples_per_pixel</strong> (<em>int</em>) – The number of rays to trace and accumulate per pixel.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – A seed used to initialize the random number generator.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.render_data">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">render_data</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_count</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounce</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.render_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Renders out metadata used to render the current scene, returning the resulting framebuffer back to the user directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> (<em>int</em>) – The width of the image to render</p></li>
+<li><p><strong>height</strong> (<em>int</em>) – The height of the image to render</p></li>
+<li><p><strong>start_frame</strong> (<em>int</em>) – The start seed to feed into the random number generator</p></li>
+<li><p><strong>frame_count</strong> (<em>int</em>) – The number of frames to accumulate the resulting framebuffers by. For ID data, this should be set to 0.</p></li>
+<li><p><strong>bounce</strong> (<em>int</em>) – The number of bounces required to reach the vertex whose metadata result should come from. A value of 0
+would save data for objects directly visible to the camera, a value of 1 would save reflections/refractions, etc.</p></li>
+<li><p><strong>options</strong> (<em>string</em>) – Indicates the data to return. Current possible values include
+“none” for rendering out raw path traced data, “depth” to render the distance between the previous path vertex to the current one,
+“position” for rendering out the world space position of the path vertex, “normal” for rendering out the world space normal of the
+path vertex, “entity_id” for rendering out the entity ID whose surface the path vertex hit, “denoise_normal” for rendering out
+the normal buffer supplied to the Optix denoiser, and “denoise_albedo” for rendering out the albedo supplied to the Optix denoiser.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – A seed used to initialize the random number generator.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.render_data_to_file">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">render_data_to_file</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_count</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounce</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.render_data_to_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Renders out metadata used to render the current scene, returning the resulting framebuffer back to the user directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> (<em>int</em>) – The width of the image to render</p></li>
+<li><p><strong>height</strong> (<em>int</em>) – The height of the image to render</p></li>
+<li><p><strong>start_frame</strong> (<em>int</em>) – The start seed to feed into the random number generator</p></li>
+<li><p><strong>frame_count</strong> (<em>int</em>) – The number of frames to accumulate the resulting framebuffers by. For ID data, this should be set to 0.</p></li>
+<li><p><strong>bounce</strong> (<em>int</em>) – The number of bounces required to reach the vertex whose metadata result should come from. A value of 0
+would save data for objects directly visible to the camera, a value of 1 would save reflections/refractions, etc.</p></li>
+<li><p><strong>options</strong> (<em>string</em>) – Indicates the data to return. Current possible values include
+“none” for rendering out raw path traced data, “depth” to render the distance between the previous path vertex to the current one,
+“position” for rendering out the world space position of the path vertex, “normal” for rendering out the world space normal of the
+path vertex, “entity_id” for rendering out the entity ID whose surface the path vertex hit, “denoise_normal” for rendering out
+the normal buffer supplied to the Optix denoiser, and “denoise_albedo” for rendering out the albedo supplied to the Optix denoiser.</p></li>
+<li><p><strong>file_path</strong> (<em>string</em>) – The path to use to save the file, including the extension. Supported extensions are EXR, HDR, and PNG</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – A seed used to initialize the random number generator.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.render_to_hdr">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">render_to_hdr</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples_per_pixel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.render_to_hdr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deprecated. Please use renderToFile.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.render_to_png">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">render_to_png</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples_per_pixel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.render_to_png" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deprecated. Please use renderToFile.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.resize_window">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">resize_window</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.resize_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>If using interactive mode, resizes the window to the specified dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> (<em>int</em>) – The width to resize the window to</p></li>
+<li><p><strong>height</strong> (<em>int</em>) – The height to resize the window to</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.sample_pixel_area">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">sample_pixel_area</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.sample_pixel_area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the region of the pixel where rays should sample. By default, rays sample the entire
+pixel area between [0,1]. Rays can instead sample a specific location of the pixel, like the pixel center,
+by specifying a specific location within the pixel area, eg [.5, .5].
+This allows for enabling or disabling antialiasing, possibly at the cost of noise in intermediate data buffers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_sample_interval</strong> (<a class="reference internal" href="all.html#nvisii.vec2" title="nvisii.vec2"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec2</span></code></a>, optional) – The interval to sample rays within along the x axis. A value of [0,1] will sample the entire pixel x axis.</p></li>
+<li><p><strong>y_sample_interval</strong> (<a class="reference internal" href="all.html#nvisii.vec2" title="nvisii.vec2"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec2</span></code></a>, optional) – The interval to sample rays within along the y axis. A value of [0,1] will sample the entire pixel y axis.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.sample_time_interval">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">sample_time_interval</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.sample_time_interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the interval of time that rays should sample. By default, rays sample the entire
+time interval befween the current frame and the next, [0,1]. Rays can instead sample a specific point in time,
+like the end-of-frame time, by specifying a specific location within the time interval, eg [1.0, 1.0] or [0.0, 0.0].
+This allows for enabling or disabling motion blur, while still preserving motion vectors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>time_sample_interval</strong> (<a class="reference internal" href="all.html#nvisii.vec2" title="nvisii.vec2"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec2</span></code></a>, optional) – The interval to sample rays within along in time. A value of [0,1] will result in motion blur across the entire frame.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_camera_entity">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_camera_entity</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_entity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_camera_entity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tells the renderer which camera entity to use for rendering. The transform
+component of this camera entity places the camera into the world, and the
+camera component of this camera entity describes the perspective to use, the
+field of view, the depth of field, and other “analog” camera properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>camera_entity</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Entity</span></code>) – The entity containing a camera and transform component, to use for rendering.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_cursor_mode">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_cursor_mode</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_cursor_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>If in interactive mode, sets the mode of the cursor.
+:type mode: string
+:param mode: Can be one of the following:</p>
+<blockquote>
+<div><p>NORMAL - makes the cursor visible and beaving normally
+HIDDEN makes the cursor invisible when it is over the content area of the window,
+but does not restrict the cursor from leaving.
+DISABLED - hides and grabs the cursor, providing virtual and unlimited cursor movement.
+This is useful for implementing for example 3D camera controls.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_direct_lighting_clamp">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_direct_lighting_clamp</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clamp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_direct_lighting_clamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clamps the direct light intensity during progressive image refinement.
+This reduces fireflies from direct lighting, but also removes energy, and biases the resulting image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>clamp</strong> (<em>float</em>) – The maximum intensity that direct lighting can contribute per frame. A value of 0 disables direct light clamping.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_dome_light_color">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_dome_light_color</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_dome_light_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the color which this dome light will emit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>The</strong> – RGB color emitted that this dome light should emit.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_dome_light_exposure">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_dome_light_exposure</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exposure</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_dome_light_exposure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Modifies the intensity, or brightness, that the dome light (aka environment light) will emit it’s color.
+Increasing the exposure by 1 will double the energy emitted by the light.
+An exposure of 0 produces an unmodified intensity.
+An exposure of -1 cuts the intensity of the light in half.
+light_intensity = intensity * pow(2, exposureExposure)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>exposure</strong> (<em>float</em>) – How powerful the light source is in emitting light.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_dome_light_intensity">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_dome_light_intensity</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_dome_light_intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the intensity, or brightness, that the dome light (aka environment light) will emit it’s color.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>intensity</strong> (<em>float</em>) – How powerful the dome light is in emitting light</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_dome_light_rotation">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_dome_light_rotation</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rotation</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_dome_light_rotation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the rotation to apply to the dome light (aka the environment).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>rotation</strong> (<a class="reference internal" href="all.html#nvisii.quat" title="nvisii.quat"><code class="xref py py-class docutils literal notranslate"><span class="pre">quat</span></code></a>) – The rotation to apply to the dome light</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_dome_light_sky">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_dome_light_sky</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_dome_light_sky" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configures the procedural sky for the dome light (aka the environment).
+:type sun_position: <a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>
+:param sun_position: The position of the sun relative to [0,0,0]. As the sun</p>
+<blockquote>
+<div><p>goes down (in Z), Rayleigh scattering will cause the sky to change colors.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sky_tint</strong> (<a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a>, optional) – controls the relative color of the sky before Rayleigh scattering.</p></li>
+<li><p><strong>atmosphere_thickness</strong> (<em>float</em><em>, </em><em>optional</em>) – effects Rayleigh scattering. Thin atmospheres look more
+like space, and thick atmospheres see more Rayleigh scattering.</p></li>
+<li><p><strong>saturation</strong> (<em>float</em><em>, </em><em>optional</em>) – causes the sky to appear more or less “vibrant”</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_dome_light_texture">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_dome_light_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_cdf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_dome_light_texture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the texture used to color the dome light (aka the environment).
+Textures are sampled using a 2D to 3D latitude/longitude strategy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>texture</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code>) – The texture to sample for the dome light.</p></li>
+<li><p><strong>enable_cdf</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If True, reduces noise of sampling a dome light texture,
+but at the expense of frame rate. Useful for dome lights with bright lights
+that should cast shadows.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_indirect_lighting_clamp">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_indirect_lighting_clamp</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clamp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_indirect_lighting_clamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clamps the indirect light intensity during progressive image refinement.
+This reduces fireflies from indirect lighting, but also removes energy, and biases the resulting image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>clamp</strong> (<em>float</em>) – The maximum intensity that indirect lighting can contribute per frame. A value of 0 disables indirect light clamping.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_light_sample_count">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_light_sample_count</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">count</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_light_sample_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the number of light samples to take per path vertex. A higher number of samples will reduce noise per frame, but
+also reduces frames per second.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>count</strong> (<em>int</em>) – The number of light samples to take per path vertex. Currently constrained to a maximum of 10 samples per vertex.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.set_max_bounce_depth">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">set_max_bounce_depth</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diffuse_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">glossy_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transparency_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transmission_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.set_max_bounce_depth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the maximum number of times that a ray originating from the camera can bounce through the scene to accumulate light.
+For scenes containing only rough surfaces, this max bounce depth can be set to lower values.
+For scenes containing complex transmissive or reflective objects like glass or metals, this
+max bounce depth might need to be increased to accurately render these objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>diffuse_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of diffuse bounces allowed per ray.
+Higher counts will increase global illumination effects.</p></li>
+<li><p><strong>glossy_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of glossy (reflection) bounces allowed per ray.
+Increases recursion in setups with mirrors, shiny surfaces, metals, etc</p></li>
+<li><p><strong>transparency_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of transparency (alpha) bounces allowed per ray.
+Used for alpha cutouts of folliage and alpha transparent objects.</p></li>
+<li><p><strong>transmission_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of transmission (refraction) bounces allowed per ray.
+For scenes containing glass, higher transmission depths result in more realistic refractions.</p></li>
+<li><p><strong>volume_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of volume bounces allowed per ray.
+At 0, volumes are single-scattering. Higher values result in multiple scattering.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="nvisii.should_window_close">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">should_window_close</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.should_window_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>If in interactive mode, returns true if the close button on the window was clicked.</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="entity.html" class="btn btn-neutral float-right" title="Entity" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to NVISII’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020, Nate Morrical.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

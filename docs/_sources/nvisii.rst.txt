@@ -1,4 +1,4 @@
-Visii
+NVISII
 =================================
 .. automodule:: nvisii
     :members: 
