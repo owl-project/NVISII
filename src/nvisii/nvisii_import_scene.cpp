@@ -101,7 +101,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         nvisiiScene.materials.push_back(mat);
         material_light_map[mat] = nullptr;
         aiString Path;
-        
+
         // Diffuse/specular workflow
         if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
             if (material->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
@@ -204,6 +204,62 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         auto name = std::string(material->GetName().C_Str());
         auto mat = nvisiiScene.materials[materialIdx];
         aiString Path;
+
+        if (verbose) std::cout<<"Creating material : " << name << std::endl;             
+
+        aiColor3D color (0.f,0.f,0.f);
+        if(AI_SUCCESS == material->Get(AI_MATKEY_COLOR_DIFFUSE, color)) {
+            mat->setBaseColor(glm::vec3(color.r, color.g, color.b));
+            if (verbose) std::cout<<"Assigning base color : " << color.r << " " << color.g << " " << color.b << std::endl;            
+        }
+        if(AI_SUCCESS == material->Get(AI_MATKEY_COLOR_EMISSIVE, color)) {
+            if (color.r > 0.f || color.g > 0.f || color.b > 0.f) {
+                if (verbose) std::cout<<"Assigning base color : " << color.r << " " << color.g << " " << color.b << std::endl;            
+                if (Light::get(mat->getName()) == nullptr) {
+                    Light::create(mat->getName());
+                    nvisiiScene.lights.push_back(material_light_map[mat]);
+                }
+                material_light_map[mat] = Light::get(mat->getName());
+                material_light_map[mat]->setColor(glm::vec3(color.r, color.g, color.b));
+            }
+        }
+        if(AI_SUCCESS == material->Get(AI_MATKEY_COLOR_SPECULAR, color)) {
+            if (color.r == color.b && color.r == color.g) {
+                if (verbose) std::cout<<"Setting constant specular: " << color.r << std::endl;
+                mat->setSpecular(color.r);
+            }
+            else if (verbose) {
+                std::cout<<"Error, colored specular found (not supported)" << std::endl;
+            }
+        }
+
+        float scalar;
+        if(AI_SUCCESS == material->Get(AI_MATKEY_SHININESS, scalar)) {
+            if (scalar != 0.f) {
+                if (verbose) std::cout<<"Interpreting shininess as 2/roughness^4 - 2: " << powf(2.f / (scalar + 2.f), 1.f/4.f) << std::endl;
+                mat->setRoughness(powf(2.f / (scalar + 2.f), 1.f/4.f));
+            }
+        }
+        float ior = 1.f;
+        if(AI_SUCCESS == material->Get(AI_MATKEY_REFRACTI, ior)) {
+            if (verbose) std::cout<<"Assigning index of refraction " << ior << std::endl;
+            mat->setIor(ior);
+        }
+
+        if(AI_SUCCESS == material->Get(AI_MATKEY_OPACITY, scalar)) {
+            if (scalar != 1.f) {
+                if (ior == 1) {
+                    if (verbose) std::cout<<"Assigning opacity " << scalar << std::endl;
+                    mat->setAlpha(scalar);
+                }
+                else {
+                    if (verbose) std::cout<<"IOR != 1.0, interpreting dissolve as transmission " << scalar << std::endl;
+                    mat->setTransmission(scalar);
+                }
+            }
+        }
+
+        
         
         // todo, add texture paths to map above, load later and connect
         if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
@@ -236,9 +292,12 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 std::string path = directory + "/" + std::string(Path.C_Str());
                 std::replace(path.begin(), path.end(), '\\', '/');
                 if (texture_map[path]) {
-                    material_light_map[mat] = Light::create(mat->getName());
+                    if (Light::get(mat->getName()) == nullptr) {
+                        Light::create(mat->getName());
+                        nvisiiScene.lights.push_back(material_light_map[mat]);
+                    }
+                    material_light_map[mat] = Light::get(mat->getName());
                     material_light_map[mat]->setColorTexture(texture_map[path]);
-                    nvisiiScene.lights.push_back(material_light_map[mat]);
                 }
             }
         }  
