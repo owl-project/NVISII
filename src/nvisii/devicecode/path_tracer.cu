@@ -644,7 +644,7 @@ float sampleTime(float xi) {
 }
 
 inline __device__
-owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transform, ivec2 pixelID, ivec2 frameSize, LCGRand &rng, float time)
+owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transform, int2 pixelID, float2 frameSize, LCGRand &rng, float time)
 {
     auto &LP = optixLaunchParams;
     /* Generate camera rays */    
@@ -665,7 +665,7 @@ owl::Ray generateRay(const CameraStruct &camera, const TransformStruct &transfor
             -  vec2(LP.xPixelSamplingInterval[0], LP.yPixelSamplingInterval[0])
             ) * vec2(lcg_randomf(rng),lcg_randomf(rng));
 
-    vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / vec2(frameSize);
+    vec2 inUV = (vec2(pixelID.x, pixelID.y) + aa) / make_vec2(frameSize);
     vec3 right = normalize(glm::column(viewinv, 0));
     vec3 up = normalize(glm::column(viewinv, 1));
     vec3 origin = glm::column(viewinv, 3);
@@ -873,6 +873,18 @@ void saveHeatmapRenderData(
 }
 
 __device__
+void saveDeviceAssignment(
+    float3 &renderData, 
+    int bounce,
+    uint32_t deviceIndex
+)
+{
+    auto &LP = optixLaunchParams;
+    if (LP.renderDataMode != RenderDataFlags::DEVICE_ID) return;
+    renderData = make_float3(deviceIndex);
+}
+
+__device__
 bool debugging() {
     #ifndef DEBUGGING
     return false;
@@ -885,23 +897,28 @@ bool debugging() {
 OPTIX_RAYGEN_PROGRAM(rayGen)()
 {
     const RayGenData &self = owl::getProgramData<RayGenData>();
-    cudaTextureObject_t envTex = getEnvironmentTexture();
-    
     auto &LP = optixLaunchParams;
     auto launchIndex = optixGetLaunchIndex().x;
     auto launchDim = optixGetLaunchDimensions().x;
-    auto pixelID = ivec2(launchIndex % LP.frameSize.x, launchIndex / LP.frameSize.x);
+    auto pixelID = make_int2(launchIndex % LP.frameSize.x, launchIndex / LP.frameSize.x);
+
+    // Terminate thread if current pixel not assigned to this device
+    GET(float start, float, LP.assignmentBuffer, self.deviceIndex);
+    GET(float stop, float, LP.assignmentBuffer, self.deviceIndex + 1);
+    start *= (LP.frameSize.x * LP.frameSize.y);
+    stop *= (LP.frameSize.x * LP.frameSize.y);
+
+    // if (launchIndex == 0) {
+    //     printf("device %d start %f stop %f\n", self.deviceIndex, start, stop);
+    // }
+
+    if( pixelID.x > LP.frameSize.x-1 || pixelID.y > LP.frameSize.y-1 ) return;
+    if( (launchIndex < start) || (stop <= launchIndex) ) return;
+    // if (self.deviceIndex == 1) return;
+    
+    cudaTextureObject_t envTex = getEnvironmentTexture();    
     bool debug = (pixelID.x == int(LP.frameSize.x / 2) && pixelID.y == int(LP.frameSize.y / 2));
-
     float tmax = 1e20f; //todo: customize depending on scene bounds //glm::distance(LP.sceneBBMin, LP.sceneBBMax);
-
-    /* compute who is repsonible for a given group of pixels */
-    /* and if it's not us, just return. */
-    /* (some other device will compute these pixels) */
-    int deviceThatIsResponsible = (pixelID.x>>5) % self.deviceCount;
-    if (self.deviceIndex != deviceThatIsResponsible) {
-        return;
-    }
 
     auto dims = ivec2(LP.frameSize.x, LP.frameSize.x);
     uint64_t start_clock = clock();
@@ -924,7 +941,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     }
     
     // Trace an initial ray through the scene
-    surfRay = generateRay(camera, camera_transform, pixelID, LP.frameSize, rng, time);
+    surfRay = generateRay(camera, camera_transform, pixelID, make_float2(LP.frameSize), rng, time);
     surfRay.tmax = tmax;
 
     float3 accum_illum = make_float3(0.f);
@@ -1566,6 +1583,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     // For segmentations, save heatmap metadata
     saveHeatmapRenderData(renderData, depth, start_clock);
+
+    // Device assignment data
+    saveDeviceAssignment(renderData, depth, self.deviceIndex);
 
     // clamp out any extreme fireflies
     glm::vec3 gillum = vec3(illum.x, illum.y, illum.z);

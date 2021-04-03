@@ -300,10 +300,20 @@ void renderToFile(uint32_t width, uint32_t height, uint32_t samples_per_pixel, s
  * @param bounce The number of bounces required to reach the vertex whose metadata result should come from. A value of 0
  * would save data for objects directly visible to the camera, a value of 1 would save reflections/refractions, etc.
  * @param options Indicates the data to return. Current possible values include 
- * "none" for rendering out raw path traced data, "depth" to render the distance between the previous path vertex to the current one,
- * "position" for rendering out the world space position of the path vertex, "normal" for rendering out the world space normal of the 
- * path vertex, "entity_id" for rendering out the entity ID whose surface the path vertex hit, "denoise_normal" for rendering out
- * the normal buffer supplied to the Optix denoiser, and "denoise_albedo" for rendering out the albedo supplied to the Optix denoiser.   
+ * "none" for rendering out raw path traced data, 
+ * "depth" to render the distance between the previous path vertex to the current one,
+ * "ray_direction" to render the direction that the ray was traced in world space,
+ * "position" for rendering out the world space position of the path vertex, 
+ * "normal" for rendering out the world space normal of the path vertex, 
+ * "entity_id" for rendering out the entity ID whose surface the path vertex hit, 
+ * "base_color" for rendering out the surface base color, 
+ * "texture_coordinates" for rendering out the texture coordinates of the hit surface, 
+ * "screen_space_normal" for rendering out the normals of the hit surface in screen space, 
+ * "diffuse_motion_vectors" for rendering out screen space motion vectors for moving objects, 
+ * "denoise_normal" for rendering out the normal buffer supplied to the Optix denoiser, 
+ * "denoise_albedo" for rendering out the albedo supplied to the Optix denoiser,
+ * "heatmap" for rendering out the time it takes to render out each pixel,
+ * "device_id" for determining which GPU was used to render what pixel.
  * @param seed A seed used to initialize the random number generator.
 */
 std::vector<float> renderData(
@@ -319,10 +329,20 @@ std::vector<float> renderData(
  * @param bounce The number of bounces required to reach the vertex whose metadata result should come from. A value of 0
  * would save data for objects directly visible to the camera, a value of 1 would save reflections/refractions, etc.
  * @param options Indicates the data to return. Current possible values include 
- * "none" for rendering out raw path traced data, "depth" to render the distance between the previous path vertex to the current one,
- * "position" for rendering out the world space position of the path vertex, "normal" for rendering out the world space normal of the 
- * path vertex, "entity_id" for rendering out the entity ID whose surface the path vertex hit, "denoise_normal" for rendering out
- * the normal buffer supplied to the Optix denoiser, and "denoise_albedo" for rendering out the albedo supplied to the Optix denoiser.   
+ * "none" for rendering out raw path traced data, 
+ * "depth" to render the distance between the previous path vertex to the current one,
+ * "ray_direction" to render the direction that the ray was traced in world space,
+ * "position" for rendering out the world space position of the path vertex, 
+ * "normal" for rendering out the world space normal of the path vertex, 
+ * "entity_id" for rendering out the entity ID whose surface the path vertex hit, 
+ * "base_color" for rendering out the surface base color, 
+ * "texture_coordinates" for rendering out the texture coordinates of the hit surface, 
+ * "screen_space_normal" for rendering out the normals of the hit surface in screen space, 
+ * "diffuse_motion_vectors" for rendering out screen space motion vectors for moving objects, 
+ * "denoise_normal" for rendering out the normal buffer supplied to the Optix denoiser, 
+ * "denoise_albedo" for rendering out the albedo supplied to the Optix denoiser,
+ * "heatmap" for rendering out the time it takes to render out each pixel,
+ * "device_id" for determining which GPU was used to render what pixel.
  * @param file_path The path to use to save the file, including the extension. Supported extensions are EXR, HDR, and PNG
  * @param seed A seed used to initialize the random number generator.
 */

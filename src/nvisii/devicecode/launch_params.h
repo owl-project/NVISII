@@ -19,10 +19,12 @@
 #include "./buffer.h"
 
 struct LaunchParams {
+    Buffer<float> assignmentBuffer;
+
     glm::ivec2 frameSize;
     uint64_t frameID = 0;
     glm::vec4 *frameBuffer;
-    glm::vec4 *albedoBuffer;
+    uchar4 *albedoBuffer;
     glm::vec4 *normalBuffer;
     glm::vec4 *scratchBuffer;
     glm::vec4 *mvecBuffer;
@@ -111,7 +113,8 @@ enum RenderDataFlags : uint32_t {
   TRANSMISSION_INDIRECT_LIGHTING = 17,
   RAY_DIRECTION = 18,
   HEATMAP = 19,
-  TEXTURE_COORDINATES = 20
+  TEXTURE_COORDINATES = 20,
+  DEVICE_ID = 21
 };
 
 #define MAX_LIGHT_SAMPLES 10

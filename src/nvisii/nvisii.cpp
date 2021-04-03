@@ -89,12 +89,19 @@ static struct OptixData {
     LaunchParams LP;
     GLuint imageTexID = -1;
     cudaGraphicsResource_t cudaResourceTex;
+    bool resourceSharingSuccessful = true;
+    OWLBuffer assignmentBuffer;
+
     OWLBuffer frameBuffer;
     OWLBuffer normalBuffer;
     OWLBuffer albedoBuffer;
     OWLBuffer scratchBuffer;
     OWLBuffer mvecBuffer;
     OWLBuffer accumBuffer;
+
+    OWLBuffer combinedFrameBuffer;
+    OWLBuffer combinedNormalBuffer;
+    OWLBuffer combinedAlbedoBuffer;
 
     OWLBuffer entityBuffer;
     OWLBuffer transformBuffer;
@@ -185,6 +192,9 @@ static struct NVISII {
     std::function<void()> callback;
     std::recursive_mutex callbackMutex;
 
+    std::vector<std::pair<cudaEvent_t, cudaEvent_t>> events;
+    std::vector<float> times;
+    std::vector<float> weights;
 } NVISII;
 
 void applyStyle()
@@ -344,38 +354,14 @@ owl4x3f glmToOWL(glm::mat4 &xfm){
     return oxfm;
 }
 
-OWLLaunchParams launchParamsCreate(OWLContext context, size_t size, OWLVarDecl *vars, size_t numVars)
-{
-    return owlParamsCreate(context, size, vars, numVars);
-}
-
-void launchParamsSetBuffer(OWLLaunchParams params, const char* varName, OWLBuffer buffer)
-{
-    owlParamsSetBuffer(params, varName, buffer);
-}
-
-void launchParamsSetRaw(OWLLaunchParams params, const char* varName, const void* data)
-{
-    owlParamsSetRaw(params, varName, data);
-}
-
-void launchParamsSetTexture(OWLLaunchParams params, const char* varName, OWLTexture texture)
-{
-    owlParamsSetTexture(params, varName, texture);
-}
-
-void launchParamsSetGroup(OWLLaunchParams params, const char *varName, OWLGroup group) {
-    owlParamsSetGroup(params, varName, group);
-}
-
-void synchronizeDevices()
+void synchronizeDevices(std::string error_string = "")
 {
     for (int i = 0; i < getDeviceCount(); i++) {
         cudaSetDevice(i);
         cudaDeviceSynchronize();
         cudaError_t err = cudaPeekAtLastError();
         if (err != 0) {
-            std::cout<< "ERROR: " << cudaGetErrorString(err)<<std::endl;
+            std::cout<< "ERROR " << error_string << ": " << cudaGetErrorString(err)<<std::endl;
             throw std::runtime_error(std::string("ERROR: ") + cudaGetErrorString(err));
         }
     }
@@ -394,13 +380,18 @@ void checkForErrors()
 }
 
 void initializeFrameBuffer(int fbWidth, int fbHeight) {
+    cudaSetDevice(0);
+
     fbWidth = glm::max(fbWidth, 1);
     fbHeight = glm::max(fbHeight, 1);
     synchronizeDevices();
 
     auto &OD = OptixData;
     if (OD.imageTexID != -1) {
-        cudaGraphicsUnregisterResource(OD.cudaResourceTex);
+        if (OptixData.cudaResourceTex && OptixData.resourceSharingSuccessful) {
+            cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
+            OptixData.cudaResourceTex = 0;
+        }
         glDeleteTextures(1, &OD.imageTexID);
     }
     
@@ -421,15 +412,33 @@ void initializeFrameBuffer(int fbWidth, int fbHeight) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     //Registration with CUDA
-    cudaGraphicsGLRegisterImage(&OD.cudaResourceTex, OD.imageTexID, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone);
-    
+    static bool renderToHDRDeprecatedShown = false;
+    cudaError_t rc = cudaGraphicsGLRegisterImage(&OD.cudaResourceTex, OD.imageTexID, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone);
+    if (rc != cudaSuccess) {
+        std::string err = cudaGetErrorString(cudaGetLastError());
+        if (verbose && !renderToHDRDeprecatedShown) {
+            std::cout
+                  << "Warning: Could not do CUDA graphics resource sharing "
+                  << "for the display buffer texture ("
+                  << err
+                  << ")... falling back to slower path"
+                  << std::endl;
+            renderToHDRDeprecatedShown = true;
+        }
+        OD.resourceSharingSuccessful = false;
+        if (OD.cudaResourceTex) {
+          cudaGraphicsUnregisterResource(OD.cudaResourceTex);
+          OD.cudaResourceTex = 0;
+        }
+    } else {
+        OD.resourceSharingSuccessful = true;
+    }
     synchronizeDevices();
 }
 
 void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
 {
     auto &OD = OptixData;
-
     OD.LP.frameSize.x = width;
     OD.LP.frameSize.y = height;
     owlBufferResize(OD.frameBuffer, width * height);
@@ -438,7 +447,11 @@ void resizeOptixFrameBuffer(uint32_t width, uint32_t height)
     owlBufferResize(OD.scratchBuffer, width * height);
     owlBufferResize(OD.mvecBuffer, width * height);    
     owlBufferResize(OD.accumBuffer, width * height);
-    
+
+    owlBufferResize(OD.combinedFrameBuffer, width * height);
+    owlBufferResize(OD.combinedNormalBuffer, width * height);
+    owlBufferResize(OD.combinedAlbedoBuffer, width * height);
+
     // Reconfigure denoiser
     optixDenoiserComputeMemoryResources(OD.denoiser, OD.LP.frameSize.x, OD.LP.frameSize.y, &OD.denoiserSizes);
     uint64_t scratchSizeInBytes;
@@ -499,6 +512,7 @@ void initializeOptix(bool headless)
     
     /* Setup Optix Launch Params */
     OWLVarDecl launchParamVars[] = {
+        { "assignmentBuffer",        OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, assignmentBuffer)},
         { "frameSize",               OWL_USER_TYPE(glm::ivec2),         OWL_OFFSETOF(LaunchParams, frameSize)},
         { "frameID",                 OWL_USER_TYPE(uint64_t),           OWL_OFFSETOF(LaunchParams, frameID)},
         { "frameBuffer",             OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, frameBuffer)},
@@ -563,27 +577,48 @@ void initializeOptix(bool headless)
         { "enableDomeSampling", OWL_USER_TYPE(bool),               OWL_OFFSETOF(LaunchParams, enableDomeSampling)},
         { /* sentinel to mark end of list */ }
     };
-    OD.launchParams = launchParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
+    OD.launchParams = owlParamsCreate(OD.context, sizeof(LaunchParams), launchParamVars, -1);
     
     /* Create AOV Buffers */
     if (!headless) {
         initializeFrameBuffer(512, 512);        
     }
 
-    OD.frameBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.normalBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.albedoBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.scratchBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
-    OD.mvecBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.assignmentBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(float), owlGetDeviceCount(OD.context) + 1, nullptr);
+    owlParamsSetBuffer(OD.launchParams, "assignmentBuffer", OD.assignmentBuffer);
+
+    // If we only have one GPU, framebuffer pixels can stay on device 0. 
+    if (numGPUsFound == 1) {
+        OD.frameBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.accumBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.normalBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.albedoBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.scratchBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+        OD.mvecBuffer = owlDeviceBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    }
+    // Otherwise, multiple GPUs must use host pinned memory to merge partial framebuffers together
+    else {
+        OD.frameBuffer = owlHostPinnedBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512);
+        OD.accumBuffer = owlHostPinnedBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512);
+        OD.normalBuffer = owlHostPinnedBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512);
+        OD.albedoBuffer = owlHostPinnedBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512);
+        OD.scratchBuffer = owlHostPinnedBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512);
+        OD.mvecBuffer = owlHostPinnedBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512);
+    }
+
+    // For multiGPU denoising, its best to denoise using something other than zero-copy memory.
+    OD.combinedFrameBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.combinedNormalBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+    OD.combinedAlbedoBuffer = owlManagedMemoryBufferCreate(OD.context,OWL_USER_TYPE(glm::vec4),512*512, nullptr);
+
     OD.LP.frameSize = glm::ivec2(512, 512);
-    launchParamsSetBuffer(OD.launchParams, "frameBuffer", OD.frameBuffer);
-    launchParamsSetBuffer(OD.launchParams, "normalBuffer", OD.normalBuffer);
-    launchParamsSetBuffer(OD.launchParams, "albedoBuffer", OD.albedoBuffer);
-    launchParamsSetBuffer(OD.launchParams, "scratchBuffer", OD.scratchBuffer);
-    launchParamsSetBuffer(OD.launchParams, "mvecBuffer", OD.mvecBuffer);
-    launchParamsSetBuffer(OD.launchParams, "accumPtr", OD.accumBuffer);
-    launchParamsSetRaw(OD.launchParams, "frameSize", &OD.LP.frameSize);
+    owlParamsSetBuffer(OD.launchParams, "frameBuffer", OD.frameBuffer);
+    owlParamsSetBuffer(OD.launchParams, "normalBuffer", OD.normalBuffer);
+    owlParamsSetBuffer(OD.launchParams, "albedoBuffer", OD.albedoBuffer);
+    owlParamsSetBuffer(OD.launchParams, "scratchBuffer", OD.scratchBuffer);
+    owlParamsSetBuffer(OD.launchParams, "mvecBuffer", OD.mvecBuffer);
+    owlParamsSetBuffer(OD.launchParams, "accumPtr", OD.accumBuffer);
+    owlParamsSetRaw(OD.launchParams, "frameSize", &OD.LP.frameSize);
 
     /* Create Component Buffers */
     // note, extra textures reserved for internal use
@@ -606,24 +641,24 @@ void initializeOptix(bool headless)
     OD.indexListsBuffer          = owlDeviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.textureObjectsBuffer      = owlDeviceBufferCreate(OD.context, OWL_TEXTURE,                        Texture::getCount() + NUM_MAT_PARAMS * Material::getCount(),   nullptr);
 
-    launchParamsSetBuffer(OD.launchParams, "entities",             OD.entityBuffer);
-    launchParamsSetBuffer(OD.launchParams, "transforms",           OD.transformBuffer);
-    launchParamsSetBuffer(OD.launchParams, "cameras",              OD.cameraBuffer);
-    launchParamsSetBuffer(OD.launchParams, "materials",            OD.materialBuffer);
-    launchParamsSetBuffer(OD.launchParams, "meshes",               OD.meshBuffer);
-    launchParamsSetBuffer(OD.launchParams, "lights",               OD.lightBuffer);
-    launchParamsSetBuffer(OD.launchParams, "textures",             OD.textureBuffer);
-    launchParamsSetBuffer(OD.launchParams, "volumes",              OD.volumeBuffer);
-    launchParamsSetBuffer(OD.launchParams, "lightEntities",        OD.lightEntitiesBuffer);
-    launchParamsSetBuffer(OD.launchParams, "surfaceInstanceToEntity",  OD.surfaceInstanceToEntityBuffer);
-    launchParamsSetBuffer(OD.launchParams, "volumeInstanceToEntity",  OD.volumeInstanceToEntityBuffer);
-    launchParamsSetBuffer(OD.launchParams, "vertexLists",          OD.vertexListsBuffer);
-    launchParamsSetBuffer(OD.launchParams, "normalLists",          OD.normalListsBuffer);
-    launchParamsSetBuffer(OD.launchParams, "tangentLists",          OD.tangentListsBuffer);
-    launchParamsSetBuffer(OD.launchParams, "texCoordLists",        OD.texCoordListsBuffer);
-    launchParamsSetBuffer(OD.launchParams, "indexLists",           OD.indexListsBuffer);
-    launchParamsSetBuffer(OD.launchParams, "textureObjects",       OD.textureObjectsBuffer);
-    launchParamsSetBuffer(OD.launchParams, "volumeHandles",       OD.volumeHandlesBuffer);
+    owlParamsSetBuffer(OD.launchParams, "entities",             OD.entityBuffer);
+    owlParamsSetBuffer(OD.launchParams, "transforms",           OD.transformBuffer);
+    owlParamsSetBuffer(OD.launchParams, "cameras",              OD.cameraBuffer);
+    owlParamsSetBuffer(OD.launchParams, "materials",            OD.materialBuffer);
+    owlParamsSetBuffer(OD.launchParams, "meshes",               OD.meshBuffer);
+    owlParamsSetBuffer(OD.launchParams, "lights",               OD.lightBuffer);
+    owlParamsSetBuffer(OD.launchParams, "textures",             OD.textureBuffer);
+    owlParamsSetBuffer(OD.launchParams, "volumes",              OD.volumeBuffer);
+    owlParamsSetBuffer(OD.launchParams, "lightEntities",        OD.lightEntitiesBuffer);
+    owlParamsSetBuffer(OD.launchParams, "surfaceInstanceToEntity",  OD.surfaceInstanceToEntityBuffer);
+    owlParamsSetBuffer(OD.launchParams, "volumeInstanceToEntity",  OD.volumeInstanceToEntityBuffer);
+    owlParamsSetBuffer(OD.launchParams, "vertexLists",          OD.vertexListsBuffer);
+    owlParamsSetBuffer(OD.launchParams, "normalLists",          OD.normalListsBuffer);
+    owlParamsSetBuffer(OD.launchParams, "tangentLists",          OD.tangentListsBuffer);
+    owlParamsSetBuffer(OD.launchParams, "texCoordLists",        OD.texCoordListsBuffer);
+    owlParamsSetBuffer(OD.launchParams, "indexLists",           OD.indexListsBuffer);
+    owlParamsSetBuffer(OD.launchParams, "textureObjects",       OD.textureObjectsBuffer);
+    owlParamsSetBuffer(OD.launchParams, "volumeHandles",       OD.volumeHandlesBuffer);
 
     uint32_t meshCount = Mesh::getCount();
     OD.vertexLists.resize(meshCount);
@@ -647,13 +682,13 @@ void initializeOptix(bool headless)
 
     OD.LP.environmentMapID = -1;
     OD.LP.environmentMapRotation = glm::quat(1,0,0,0);
-    launchParamsSetRaw(OD.launchParams, "environmentMapID", &OD.LP.environmentMapID);
-    launchParamsSetRaw(OD.launchParams, "environmentMapRotation", &OD.LP.environmentMapRotation);
+    owlParamsSetRaw(OD.launchParams, "environmentMapID", &OD.LP.environmentMapID);
+    owlParamsSetRaw(OD.launchParams, "environmentMapRotation", &OD.LP.environmentMapRotation);
 
-    launchParamsSetBuffer(OD.launchParams, "environmentMapRows", OD.environmentMapRowsBuffer);
-    launchParamsSetBuffer(OD.launchParams, "environmentMapCols", OD.environmentMapColsBuffer);
-    launchParamsSetRaw(OD.launchParams, "environmentMapWidth", &OD.LP.environmentMapWidth);
-    launchParamsSetRaw(OD.launchParams, "environmentMapHeight", &OD.LP.environmentMapHeight);
+    owlParamsSetBuffer(OD.launchParams, "environmentMapRows", OD.environmentMapRowsBuffer);
+    owlParamsSetBuffer(OD.launchParams, "environmentMapCols", OD.environmentMapColsBuffer);
+    owlParamsSetRaw(OD.launchParams, "environmentMapWidth", &OD.LP.environmentMapWidth);
+    owlParamsSetRaw(OD.launchParams, "environmentMapHeight", &OD.LP.environmentMapHeight);
 
     // OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
     //                         OWL_TEXEL_FORMAT_R32F,
@@ -673,22 +708,22 @@ void initializeOptix(bool headless)
     // launchParamsSetTexture(OD.launchParams, "GGX_E_LOOKUP",     GGX_E_LOOKUP);
     
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
-    launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
-    launchParamsSetRaw(OD.launchParams, "domeLightIntensity", &OD.LP.domeLightIntensity);
-    launchParamsSetRaw(OD.launchParams, "domeLightExposure", &OD.LP.domeLightExposure);
-    launchParamsSetRaw(OD.launchParams, "domeLightColor", &OD.LP.domeLightColor);
-    launchParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
-    launchParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
-    launchParamsSetRaw(OD.launchParams, "maxDiffuseDepth", &OD.LP.maxDiffuseDepth);
-    launchParamsSetRaw(OD.launchParams, "maxGlossyDepth", &OD.LP.maxGlossyDepth);
-    launchParamsSetRaw(OD.launchParams, "maxTransparencyDepth", &OD.LP.maxTransparencyDepth);
-    launchParamsSetRaw(OD.launchParams, "maxTransmissionDepth", &OD.LP.maxTransmissionDepth);
-    launchParamsSetRaw(OD.launchParams, "maxVolumeDepth", &OD.LP.maxVolumeDepth);
-    launchParamsSetRaw(OD.launchParams, "numLightSamples", &OD.LP.numLightSamples);
-    launchParamsSetRaw(OD.launchParams, "seed", &OD.LP.seed);
-    launchParamsSetRaw(OD.launchParams, "xPixelSamplingInterval", &OD.LP.xPixelSamplingInterval);
-    launchParamsSetRaw(OD.launchParams, "yPixelSamplingInterval", &OD.LP.yPixelSamplingInterval);
-    launchParamsSetRaw(OD.launchParams, "timeSamplingInterval", &OD.LP.timeSamplingInterval);
+    owlParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
+    owlParamsSetRaw(OD.launchParams, "domeLightIntensity", &OD.LP.domeLightIntensity);
+    owlParamsSetRaw(OD.launchParams, "domeLightExposure", &OD.LP.domeLightExposure);
+    owlParamsSetRaw(OD.launchParams, "domeLightColor", &OD.LP.domeLightColor);
+    owlParamsSetRaw(OD.launchParams, "directClamp", &OD.LP.directClamp);
+    owlParamsSetRaw(OD.launchParams, "indirectClamp", &OD.LP.indirectClamp);
+    owlParamsSetRaw(OD.launchParams, "maxDiffuseDepth", &OD.LP.maxDiffuseDepth);
+    owlParamsSetRaw(OD.launchParams, "maxGlossyDepth", &OD.LP.maxGlossyDepth);
+    owlParamsSetRaw(OD.launchParams, "maxTransparencyDepth", &OD.LP.maxTransparencyDepth);
+    owlParamsSetRaw(OD.launchParams, "maxTransmissionDepth", &OD.LP.maxTransmissionDepth);
+    owlParamsSetRaw(OD.launchParams, "maxVolumeDepth", &OD.LP.maxVolumeDepth);
+    owlParamsSetRaw(OD.launchParams, "numLightSamples", &OD.LP.numLightSamples);
+    owlParamsSetRaw(OD.launchParams, "seed", &OD.LP.seed);
+    owlParamsSetRaw(OD.launchParams, "xPixelSamplingInterval", &OD.LP.xPixelSamplingInterval);
+    owlParamsSetRaw(OD.launchParams, "yPixelSamplingInterval", &OD.LP.yPixelSamplingInterval);
+    owlParamsSetRaw(OD.launchParams, "timeSamplingInterval", &OD.LP.timeSamplingInterval);
 
     OWLVarDecl trianglesGeomVars[] = {{/* sentinel to mark end of list */}};
     OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
@@ -738,7 +773,7 @@ void initializeOptix(bool headless)
     OWLGroup surfacesIAS = instanceGroupCreate(OD.context, 1);
     instanceGroupSetChild(surfacesIAS, 0, OD.placeholderGroup); 
     groupBuildAccel(surfacesIAS);
-    launchParamsSetGroup(OD.launchParams, "surfacesIAS", surfacesIAS);
+    owlParamsSetGroup(OD.launchParams, "surfacesIAS", surfacesIAS);
 
     OWLGeom userGeom = owlGeomCreate(OD.context, OD.volumeGeomType);
     owlGeomSetPrimCount(userGeom, 1);
@@ -751,7 +786,7 @@ void initializeOptix(bool headless)
     OWLGroup volumesIAS = instanceGroupCreate(OD.context, 1);
     instanceGroupSetChild(volumesIAS, 0, OD.placeholderUserGroup); 
     groupBuildAccel(volumesIAS);
-    launchParamsSetGroup(OD.launchParams, "volumesIAS", volumesIAS);
+    owlParamsSetGroup(OD.launchParams, "volumesIAS", volumesIAS);
 
     // Build *SBT* required to trace the groups   
     owlBuildPipeline(OD.context);
@@ -765,6 +800,19 @@ void initializeOptix(bool headless)
     setDomeLightSky(glm::vec3(0,0,10));
 
     OptixData.LP.sceneBBMin = OptixData.LP.sceneBBMax = glm::vec3(0.f);
+
+    // To measure how long each card takes to trace for load balancing
+    int numGPUs = owlGetDeviceCount(OptixData.context);
+    for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
+        cudaSetDevice(deviceID);
+        cudaEvent_t start, stop;
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop);
+        NVISII.events.push_back({start, stop});
+        NVISII.times.push_back(1.f);
+        NVISII.weights.push_back(1.f / float(numGPUs));
+    }
+    cudaSetDevice(0);
 }
 
 void initializeImgui()
@@ -828,6 +876,41 @@ void processCommandQueue()
         }
         NVISII.commandQueue.pop();
     }
+}
+
+void updateGPUWeights()
+{
+    int num_gpus = owlGetDeviceCount(OptixData.context);
+    float target = 1.f / float(num_gpus);
+    
+    std::vector<float> signals(num_gpus);
+    float total_time = 0.f;
+    for (uint32_t i = 0; i < num_gpus; ++i) total_time += NVISII.times[i];
+    for (uint32_t i = 0; i < num_gpus; ++i) signals[i] = NVISII.times[i] / float(total_time);
+
+    std::vector<float> p_error(num_gpus);
+    for (uint32_t i = 0; i < num_gpus; ++i) p_error[i] = target - signals[i];
+
+    // update weights 
+    float pK = 1.f;
+    for (uint32_t i = 0; i < num_gpus; ++i) {
+        NVISII.weights[i] = max(NVISII.weights[i] + p_error[i], .001f);
+    }
+
+    std::vector<float> scan;
+    for (size_t i = 0; i <= num_gpus; ++i) {
+        if (i == 0) scan.push_back(0.f);
+        else scan.push_back(scan[i - 1] + NVISII.weights[i - 1]);
+    }
+
+    // std::cout<<"Scan: ";
+    for (size_t i = 0; i <= num_gpus; ++i) {
+        scan[i] /= scan[num_gpus];
+        // std::cout<<scan[i] << " ";
+    }
+    // std::cout<<std::endl;
+
+    owlBufferUpload(OptixData.assignmentBuffer, scan.data());
 }
 
 void setCameraEntity(Entity* camera_entity)
@@ -1037,7 +1120,7 @@ void setIndirectLightingClamp(float clamp)
 {
     clamp = std::max(float(clamp), float(0.f));
     OptixData.LP.indirectClamp = clamp;
-    launchParamsSetRaw(OptixData.launchParams, "indirectClamp", &OptixData.LP.indirectClamp);
+    owlParamsSetRaw(OptixData.launchParams, "indirectClamp", &OptixData.LP.indirectClamp);
     resetAccumulation();
 }
 
@@ -1045,7 +1128,7 @@ void setDirectLightingClamp(float clamp)
 {
     clamp = std::max(float(clamp), float(0.f));
     OptixData.LP.directClamp = clamp;
-    launchParamsSetRaw(OptixData.launchParams, "directClamp", &OptixData.LP.directClamp);
+    owlParamsSetRaw(OptixData.launchParams, "directClamp", &OptixData.LP.directClamp);
     resetAccumulation();
 }
 
@@ -1062,11 +1145,11 @@ void setMaxBounceDepth(
     OptixData.LP.maxTransmissionDepth = transmissionDepth;
     OptixData.LP.maxVolumeDepth = volumeDepth;
     
-    launchParamsSetRaw(OptixData.launchParams, "maxDiffuseDepth", &OptixData.LP.maxDiffuseDepth);
-    launchParamsSetRaw(OptixData.launchParams, "maxGlossyDepth", &OptixData.LP.maxGlossyDepth);
-    launchParamsSetRaw(OptixData.launchParams, "maxTransparencyDepth", &OptixData.LP.maxTransparencyDepth);
-    launchParamsSetRaw(OptixData.launchParams, "maxTransmissionDepth", &OptixData.LP.maxTransmissionDepth);
-    launchParamsSetRaw(OptixData.launchParams, "maxVolumeDepth", &OptixData.LP.maxVolumeDepth);
+    owlParamsSetRaw(OptixData.launchParams, "maxDiffuseDepth", &OptixData.LP.maxDiffuseDepth);
+    owlParamsSetRaw(OptixData.launchParams, "maxGlossyDepth", &OptixData.LP.maxGlossyDepth);
+    owlParamsSetRaw(OptixData.launchParams, "maxTransparencyDepth", &OptixData.LP.maxTransparencyDepth);
+    owlParamsSetRaw(OptixData.launchParams, "maxTransmissionDepth", &OptixData.LP.maxTransmissionDepth);
+    owlParamsSetRaw(OptixData.launchParams, "maxVolumeDepth", &OptixData.LP.maxVolumeDepth);
     resetAccumulation();
 }
 
@@ -1081,7 +1164,7 @@ void setLightSampleCount(uint32_t count)
             std::string("Error: number of light samples must be between 1 and ") 
             + std::to_string(MAX_LIGHT_SAMPLES));
     OptixData.LP.numLightSamples = count;
-    launchParamsSetRaw(OptixData.launchParams, "numLightSamples", &OptixData.LP.numLightSamples);
+    owlParamsSetRaw(OptixData.launchParams, "numLightSamples", &OptixData.LP.numLightSamples);
     resetAccumulation();
 }
 
@@ -1089,15 +1172,15 @@ void samplePixelArea(vec2 xSampleInterval, vec2 ySampleInterval)
 {
     OptixData.LP.xPixelSamplingInterval = xSampleInterval;
     OptixData.LP.yPixelSamplingInterval = ySampleInterval;
-    launchParamsSetRaw(OptixData.launchParams, "xPixelSamplingInterval", &OptixData.LP.xPixelSamplingInterval);
-    launchParamsSetRaw(OptixData.launchParams, "yPixelSamplingInterval", &OptixData.LP.yPixelSamplingInterval);
+    owlParamsSetRaw(OptixData.launchParams, "xPixelSamplingInterval", &OptixData.LP.xPixelSamplingInterval);
+    owlParamsSetRaw(OptixData.launchParams, "yPixelSamplingInterval", &OptixData.LP.yPixelSamplingInterval);
     resetAccumulation();
 }
 
 void sampleTimeInterval(vec2 sampleTimeInterval)
 {
     OptixData.LP.timeSamplingInterval = sampleTimeInterval;
-    launchParamsSetRaw(OptixData.launchParams, "timeSamplingInterval", &OptixData.LP.timeSamplingInterval);
+    owlParamsSetRaw(OptixData.launchParams, "timeSamplingInterval", &OptixData.LP.timeSamplingInterval);
     resetAccumulation();
 }
 
@@ -1349,9 +1432,9 @@ void updateComponents()
 
         // Build IAS
         groupBuildAccel(OD.volumesIAS);
-        launchParamsSetGroup(OD.launchParams, "volumesIAS", OD.volumesIAS);
+        owlParamsSetGroup(OD.launchParams, "volumesIAS", OD.volumesIAS);
         groupBuildAccel(OD.surfacesIAS);
-        launchParamsSetGroup(OD.launchParams, "surfacesIAS", OD.surfacesIAS);
+        owlParamsSetGroup(OD.launchParams, "surfacesIAS", OD.surfacesIAS);
 
         // Now that IAS have changed, we need to rebuild SBT
         owlBuildSBT(OD.context);
@@ -1372,7 +1455,7 @@ void updateComponents()
         owlBufferResize(OptixData.lightEntitiesBuffer, OD.lightEntities.size());
         owlBufferUpload(OptixData.lightEntitiesBuffer, OD.lightEntities.data());
         OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
-        launchParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
+        owlParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
 
         // Finally, upload entity structs to the GPU.
         Entity::updateComponents();
@@ -1549,104 +1632,48 @@ void updateComponents()
 
 void updateLaunchParams()
 {
-    launchParamsSetRaw(OptixData.launchParams, "frameID", &OptixData.LP.frameID);
-    launchParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
-    launchParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
-    launchParamsSetRaw(OptixData.launchParams, "domeLightIntensity", &OptixData.LP.domeLightIntensity);
-    launchParamsSetRaw(OptixData.launchParams, "domeLightExposure", &OptixData.LP.domeLightExposure);
-    launchParamsSetRaw(OptixData.launchParams, "domeLightColor", &OptixData.LP.domeLightColor);
-    launchParamsSetRaw(OptixData.launchParams, "renderDataMode", &OptixData.LP.renderDataMode);
-    launchParamsSetRaw(OptixData.launchParams, "renderDataBounce", &OptixData.LP.renderDataBounce);
-    launchParamsSetRaw(OptixData.launchParams, "enableDomeSampling", &OptixData.LP.enableDomeSampling);
-    launchParamsSetRaw(OptixData.launchParams, "seed", &OptixData.LP.seed);
-    launchParamsSetRaw(OptixData.launchParams, "proj", &OptixData.LP.proj);
-    launchParamsSetRaw(OptixData.launchParams, "viewT0", &OptixData.LP.viewT0);
-    launchParamsSetRaw(OptixData.launchParams, "viewT1", &OptixData.LP.viewT1);
+    owlParamsSetRaw(OptixData.launchParams, "frameID", &OptixData.LP.frameID);
+    owlParamsSetRaw(OptixData.launchParams, "frameSize", &OptixData.LP.frameSize);
+    owlParamsSetRaw(OptixData.launchParams, "cameraEntity", &OptixData.LP.cameraEntity);
+    owlParamsSetRaw(OptixData.launchParams, "domeLightIntensity", &OptixData.LP.domeLightIntensity);
+    owlParamsSetRaw(OptixData.launchParams, "domeLightExposure", &OptixData.LP.domeLightExposure);
+    owlParamsSetRaw(OptixData.launchParams, "domeLightColor", &OptixData.LP.domeLightColor);
+    owlParamsSetRaw(OptixData.launchParams, "renderDataMode", &OptixData.LP.renderDataMode);
+    owlParamsSetRaw(OptixData.launchParams, "renderDataBounce", &OptixData.LP.renderDataBounce);
+    owlParamsSetRaw(OptixData.launchParams, "enableDomeSampling", &OptixData.LP.enableDomeSampling);
+    owlParamsSetRaw(OptixData.launchParams, "seed", &OptixData.LP.seed);
+    owlParamsSetRaw(OptixData.launchParams, "proj", &OptixData.LP.proj);
+    owlParamsSetRaw(OptixData.launchParams, "viewT0", &OptixData.LP.viewT0);
+    owlParamsSetRaw(OptixData.launchParams, "viewT1", &OptixData.LP.viewT1);
 
-    launchParamsSetRaw(OptixData.launchParams, "environmentMapID", &OptixData.LP.environmentMapID);
-    launchParamsSetRaw(OptixData.launchParams, "environmentMapRotation", &OptixData.LP.environmentMapRotation);
-    launchParamsSetBuffer(OptixData.launchParams, "environmentMapRows", OptixData.environmentMapRowsBuffer);
-    launchParamsSetBuffer(OptixData.launchParams, "environmentMapCols", OptixData.environmentMapColsBuffer);
-    launchParamsSetRaw(OptixData.launchParams, "environmentMapWidth", &OptixData.LP.environmentMapWidth);
-    launchParamsSetRaw(OptixData.launchParams, "environmentMapHeight", &OptixData.LP.environmentMapHeight);
-    launchParamsSetRaw(OptixData.launchParams, "sceneBBMin", &OptixData.LP.sceneBBMin);
-    launchParamsSetRaw(OptixData.launchParams, "sceneBBMax", &OptixData.LP.sceneBBMax);
+    owlParamsSetRaw(OptixData.launchParams, "environmentMapID", &OptixData.LP.environmentMapID);
+    owlParamsSetRaw(OptixData.launchParams, "environmentMapRotation", &OptixData.LP.environmentMapRotation);
+    owlParamsSetBuffer(OptixData.launchParams, "environmentMapRows", OptixData.environmentMapRowsBuffer);
+    owlParamsSetBuffer(OptixData.launchParams, "environmentMapCols", OptixData.environmentMapColsBuffer);
+    owlParamsSetRaw(OptixData.launchParams, "environmentMapWidth", &OptixData.LP.environmentMapWidth);
+    owlParamsSetRaw(OptixData.launchParams, "environmentMapHeight", &OptixData.LP.environmentMapHeight);
+    owlParamsSetRaw(OptixData.launchParams, "sceneBBMin", &OptixData.LP.sceneBBMin);
+    owlParamsSetRaw(OptixData.launchParams, "sceneBBMax", &OptixData.LP.sceneBBMax);
 
     OptixData.LP.frameID ++;
 }
 
-// Different GPUs have different local framebuffers.
-// This function combines those framebuffers on the CPU, then uploads results to device 0.
+// Update: This is still prohibitively slow. Official OptiX samples use host pinned memory. 
+// Moving to that approach...
+// // Different GPUs have different local framebuffers.
+// // This function combines those framebuffers on the CPU, then uploads results to device 0.
 void mergeFrameBuffers() {
-    int deviceCount = getDeviceCount();
-    int width = OptixData.LP.frameSize.x;
-    int height = OptixData.LP.frameSize.y;
-    if (deviceCount <= 1) return;
-
-    // synchronizeDevices();
-
-    std::vector<glm::vec4> fb_h(width * height);
-    std::vector<glm::vec4> fba_h(width * height);
-    std::vector<glm::vec4> fbn_h(width * height);
-    std::vector<std::vector<glm::vec4>> fb_hd(deviceCount);
-    std::vector<std::vector<glm::vec4>> fba_hd(deviceCount);
-    std::vector<std::vector<glm::vec4>> fbn_hd(deviceCount);
-    for (uint32_t i = 0; i < deviceCount; ++i){
-        fb_hd[i] = std::vector<glm::vec4>(width * height);
-        fba_hd[i] = std::vector<glm::vec4>(width * height);
-        fbn_hd[i] = std::vector<glm::vec4>(width * height);
-        void* fb_d = (void*)owlBufferGetPointer(OptixData.frameBuffer,i);
-        void* fba_d = (void*)owlBufferGetPointer(OptixData.albedoBuffer,i);
-        void* fbn_d = (void*)owlBufferGetPointer(OptixData.normalBuffer,i);
-        cudaMemcpyAsync((void*)fb_hd[i].data(), (void*)fb_d, fb_h.size() * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
-        cudaMemcpyAsync((void*)fba_hd[i].data(), (void*)fba_d, fb_h.size() * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
-        cudaMemcpyAsync((void*)fbn_hd[i].data(), (void*)fbn_d, fb_h.size() * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
-    }
-    // synchronizeDevices();
-
-    // note, GPUs render 32xN strips
-    for (uint32_t y = 0; y < height; ++y) {
-        for (uint32_t x = 0; x < width; x += 32) {
-            if (x >= width) continue;
-            int deviceThatIsResponsible = (x>>5) % deviceCount;
-            {
-                glm::vec4* A = fb_h.data() + (y * width) + x;
-                glm::vec4* B = fb_hd[deviceThatIsResponsible].data() + (y * width) + x;
-                memcpy(A, B, min(32, int(width - x)) * sizeof(glm::vec4));
-            }
-            {
-                glm::vec4* A = fba_h.data() + (y * width) + x;
-                glm::vec4* B = fba_hd[deviceThatIsResponsible].data() + (y * width) + x;
-                memcpy(A, B, min(32, int(width - x)) * sizeof(glm::vec4));
-            }
-            {
-                glm::vec4* A = fbn_h.data() + (y * width) + x;
-                glm::vec4* B = fbn_hd[deviceThatIsResponsible].data() + (y * width) + x;
-                memcpy(A, B, min(32, int(width - x)) * sizeof(glm::vec4));
-            }
-        }
+    // For multigpu setups, we currently render to zero-copy memory to merge on the host.
+    // So for now, just upload those results to device 0's combined unified frame buffers on the device
+    owlBufferUpload(OptixData.combinedFrameBuffer, owlBufferGetPointer(OptixData.frameBuffer, 0));
+    
+    if (OptixData.enableAlbedoGuide) {
+        owlBufferUpload(OptixData.combinedAlbedoBuffer, owlBufferGetPointer(OptixData.albedoBuffer, 0));
     }
 
-    // // note, GPUs render 32xN strips
-    // for (uint32_t y = 0; y < height; ++y) {
-    //     for (uint32_t x = 0; x < width; x += 32) {
-    //         int deviceThatIsResponsible = (x>>5) % deviceCount;
-    //         glm::vec4* A = fb_h.data() + (y * width) + x;
-    //         glm::vec4* B = ((glm::vec4*)fb_d[deviceThatIsResponsible]) + (y * width) + x;
-    //         cudaMemcpyAsync((void*)A, (void*)B, min(32, int(width - x)) * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
-    //     }
-    // }
-
-
-    // cudaMemcpyAsync(fb_h.data(), fb_d[1], fb_h.size() * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
-    synchronizeDevices();
-    void* fb_d = (void*)owlBufferGetPointer(OptixData.frameBuffer,0);
-    void* fba_d = (void*)owlBufferGetPointer(OptixData.albedoBuffer,0);
-    void* fbn_d = (void*)owlBufferGetPointer(OptixData.normalBuffer,0);
-    cudaMemcpyAsync(fb_d, fb_h.data(), fb_h.size() * sizeof(glm::vec4), cudaMemcpyHostToDevice);
-    cudaMemcpyAsync(fba_d, fba_h.data(), fba_h.size() * sizeof(glm::vec4), cudaMemcpyHostToDevice);
-    cudaMemcpyAsync(fbn_d, fbn_h.data(), fbn_h.size() * sizeof(glm::vec4), cudaMemcpyHostToDevice);
-    // synchronizeDevices();
+    if (OptixData.enableNormalGuide) {
+        owlBufferUpload(OptixData.combinedNormalBuffer, owlBufferGetPointer(OptixData.normalBuffer, 0));
+    }
 }
 
 void denoiseImage() {
@@ -1655,8 +1682,6 @@ void denoiseImage() {
     auto &OD = OptixData;
     auto cudaStream = owlContextGetStream(OD.context, 0);
 
-    CUdeviceptr frameBuffer = (CUdeviceptr) owlBufferGetPointer(OD.frameBuffer, 0);
-
     std::vector<OptixImage2D> inputLayers;
     OptixImage2D colorLayer;
     colorLayer.width = OD.LP.frameSize.x;
@@ -1664,7 +1689,7 @@ void denoiseImage() {
     colorLayer.format = OPTIX_PIXEL_FORMAT_FLOAT4;
     colorLayer.pixelStrideInBytes = 4 * sizeof(float);
     colorLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
-    colorLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.frameBuffer, 0);
+    colorLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.combinedFrameBuffer, 0);
     inputLayers.push_back(colorLayer);
 
     OptixImage2D albedoLayer;
@@ -1673,7 +1698,7 @@ void denoiseImage() {
     albedoLayer.format = OPTIX_PIXEL_FORMAT_FLOAT4;
     albedoLayer.pixelStrideInBytes = 4 * sizeof(float);
     albedoLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
-    albedoLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.albedoBuffer, 0);
+    albedoLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.combinedAlbedoBuffer, 0);
     if (OD.enableAlbedoGuide) inputLayers.push_back(albedoLayer);
 
     OptixImage2D normalLayer;
@@ -1682,7 +1707,7 @@ void denoiseImage() {
     normalLayer.format = OPTIX_PIXEL_FORMAT_FLOAT4;
     normalLayer.pixelStrideInBytes = 4 * sizeof(float);
     normalLayer.rowStrideInBytes   = OD.LP.frameSize.x * 4 * sizeof(float);
-    normalLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.normalBuffer, 0);
+    normalLayer.data   = (CUdeviceptr) owlBufferGetPointer(OD.combinedNormalBuffer, 0);
     if (OD.enableNormalGuide) inputLayers.push_back(normalLayer);
 
     OptixImage2D outputLayer = colorLayer; // can I get away with this?
@@ -1739,23 +1764,88 @@ void denoiseImage() {
         (CUdeviceptr) owlBufferGetPointer(OD.denoiserScratchBuffer, 0),
         scratchSizeInBytes
     ));
-
-    synchronizeDevices();
 }
+
+inline const char* getGLErrorString( GLenum error )
+{
+    switch( error )
+    {
+    case GL_NO_ERROR:            return "No error";
+    case GL_INVALID_ENUM:        return "Invalid enum";
+    case GL_INVALID_VALUE:       return "Invalid value";
+    case GL_INVALID_OPERATION:   return "Invalid operation";
+        //case GL_STACK_OVERFLOW:      return "Stack overflow";
+        //case GL_STACK_UNDERFLOW:     return "Stack underflow";
+    case GL_OUT_OF_MEMORY:       return "Out of memory";
+        //case GL_TABLE_TOO_LARGE:     return "Table too large";
+    default:                     return "Unknown GL error";
+    }
+}
+
+#define DO_GL_CHECK
+#ifdef DO_GL_CHECK
+#    define GL_CHECK( call )                                            \
+    do                                                                  \
+      {                                                                 \
+        call;                                                           \
+        GLenum err = glGetError();                                      \
+        if( err != GL_NO_ERROR )                                        \
+          {                                                             \
+            std::stringstream ss;                                       \
+            ss << "GL error " <<  getGLErrorString( err ) << " at "     \
+               << __FILE__  << "(" <<  __LINE__  << "): " << #call      \
+               << std::endl;                                            \
+            std::cerr << ss.str() << std::endl;                         \
+            throw std::runtime_error( ss.str().c_str() );               \
+          }                                                             \
+      }                                                                 \
+    while (0)
+
+
+#    define GL_CHECK_ERRORS( )                                          \
+    do                                                                  \
+      {                                                                 \
+        GLenum err = glGetError();                                      \
+        if( err != GL_NO_ERROR )                                        \
+          {                                                             \
+            std::stringstream ss;                                       \
+            ss << "GL error " <<  getGLErrorString( err ) << " at "     \
+               << __FILE__  << "(" <<  __LINE__  << ")";                \
+            std::cerr << ss.str() << std::endl;                         \
+            throw std::runtime_error( ss.str().c_str() );               \
+          }                                                             \
+      }                                                                 \
+    while (0)
+
+#else
+#    define GL_CHECK( call )   do { call; } while(0)
+#    define GL_CHECK_ERRORS( ) do { ;     } while(0)
+#endif
 
 void drawFrameBufferToWindow()
 {
     synchronizeDevices();
     glFlush();
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     auto &OD = OptixData;
-    cudaGraphicsMapResources(1, &OD.cudaResourceTex);
-    const void* fbdevptr = owlBufferGetPointer(OD.frameBuffer,0);
-    cudaArray_t array;
-    cudaGraphicsSubResourceGetMappedArray(&array, OD.cudaResourceTex, 0, 0);
-    cudaMemcpyToArray(array, 0, 0, fbdevptr, OD.LP.frameSize.x *  OD.LP.frameSize.y  * sizeof(glm::vec4), cudaMemcpyDeviceToDevice);
-    cudaGraphicsUnmapResources(1, &OD.cudaResourceTex);
-    
+    const void* fbdevptr = owlBufferGetPointer(OD.combinedFrameBuffer,0);
+
+    if (OD.resourceSharingSuccessful) {
+        cudaGraphicsMapResources(1, &OD.cudaResourceTex);
+        cudaArray_t array;
+        cudaGraphicsSubResourceGetMappedArray(&array, OD.cudaResourceTex, 0, 0);
+        cudaMemcpyToArray(array, 0, 0, fbdevptr, OD.LP.frameSize.x *  OD.LP.frameSize.y  * sizeof(glm::vec4), cudaMemcpyDeviceToDevice);
+        cudaGraphicsUnmapResources(1, &OD.cudaResourceTex);
+    } else {
+        GL_CHECK(glBindTexture(GL_TEXTURE_2D, OD.imageTexID));
+        glEnable(GL_TEXTURE_2D);
+        GL_CHECK(glTexSubImage2D(GL_TEXTURE_2D,0,
+                                    0, 0,
+                                    OD.LP.frameSize.x, OD.LP.frameSize.y,
+                                    GL_RGBA, GL_FLOAT, fbdevptr));    
+    }
+
     // Draw pixels from optix frame buffer
     glEnable(GL_FRAMEBUFFER_SRGB); 
     glViewport(0, 0, OD.LP.frameSize.x, OD.LP.frameSize.y);
@@ -1768,7 +1858,6 @@ void drawFrameBufferToWindow()
     glOrtho(0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
             
     glDisable(GL_DEPTH_TEST);    
-    glBindTexture(GL_TEXTURE_2D, OD.imageTexID);
     
     // Draw texture to screen via immediate mode
     glEnable(GL_TEXTURE_2D);
@@ -1967,6 +2056,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
         resizeOptixFrameBuffer(width, height);
         resetAccumulation();
         updateComponents();
+        int numGPUs = owlGetDeviceCount(OptixData.context);
 
         for (uint32_t i = 0; i < samplesPerPixel; ++i) {
             // std::cout<<i<<std::endl;
@@ -1979,10 +2069,20 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
             }
 
             updateLaunchParams();
-            owlLaunch2D(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, OptixData.launchParams);
+            for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
+                cudaSetDevice(deviceID);
+                cudaEventRecord(NVISII.events[deviceID].first);
+                owlAsyncLaunch2DOnDevice(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, deviceID, OptixData.launchParams);
+                cudaEventRecord(NVISII.events[deviceID].second);
+            }
+            for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
+                cudaEventSynchronize(NVISII.events[deviceID].second);
+                cudaEventElapsedTime(&NVISII.times[deviceID], NVISII.events[deviceID].first, NVISII.events[deviceID].second);
+            }
+            updateGPUWeights();
+            mergeFrameBuffers();
 
             if (!NVISII.headlessMode) {
-                mergeFrameBuffers();
                 if (OptixData.enableDenoiser)
                 {
                     denoiseImage();
@@ -2007,18 +2107,14 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
             std::cout<<"\r "<< samplesPerPixel << "/" << samplesPerPixel <<" - done!" << std::endl;
         }
 
-        synchronizeDevices();
-
-        mergeFrameBuffers();
         if (OptixData.enableDenoiser)
         {
             denoiseImage();
         }
 
+        synchronizeDevices();
         const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
         cudaMemcpyAsync(frameBuffer.data(), fb, width * height * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
-
-        synchronizeDevices();
     });
 
     return frameBuffer;
@@ -2113,6 +2209,9 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         else if (option == std::string("heatmap")) {
             OptixData.LP.renderDataMode = RenderDataFlags::HEATMAP;
         }
+        else if (option == std::string("device_id")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::DEVICE_ID;
+        }
         else {
             throw std::runtime_error(std::string("Error, unknown option : \"") + _option + std::string("\". ")
             + std::string("See documentation for available options"));
@@ -2123,6 +2222,7 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         OptixData.LP.renderDataBounce = bounce;
         OptixData.LP.seed = seed;
         updateComponents();
+        int numGPUs = owlGetDeviceCount(OptixData.context);
 
         for (uint32_t i = startFrame; i < frameCount; ++i) {
             // std::cout<<i<<std::endl;
@@ -2135,8 +2235,20 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
             }
 
             updateLaunchParams();
-            owlLaunch2D(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, OptixData.launchParams);
+
+            for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
+                cudaSetDevice(deviceID);
+                cudaEventRecord(NVISII.events[deviceID].first);
+                owlAsyncLaunch2DOnDevice(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, deviceID, OptixData.launchParams);
+                cudaEventRecord(NVISII.events[deviceID].second);
+            }
+            for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
+                cudaEventSynchronize(NVISII.events[deviceID].second);
+                cudaEventElapsedTime(&NVISII.times[deviceID], NVISII.events[deviceID].first, NVISII.events[deviceID].second);
+            }
+            updateGPUWeights();
             mergeFrameBuffers();
+            
             // Dont run denoiser to raw data rendering
             // if (OptixData.enableDenoiser)
             // {
@@ -2411,8 +2523,9 @@ void initializeInteractive(
         glfw->poll_events();
 
         initializeOptix(/*headless = */ false);
-
         initializeImgui();
+
+        int numGPUs = owlGetDeviceCount(OptixData.context);
 
         while (!stopped)
         {
@@ -2435,12 +2548,23 @@ void initializeInteractive(
                 updateFrameBuffer();
                 updateComponents();
                 updateLaunchParams();
-                owlLaunch2D(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, OptixData.launchParams);
+
+                for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
+                    cudaSetDevice(deviceID);
+                    cudaEventRecord(NVISII.events[deviceID].first, owlParamsGetCudaStream(OptixData.launchParams, deviceID));
+                    owlAsyncLaunch2DOnDevice(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, deviceID, OptixData.launchParams);
+                    cudaEventRecord(NVISII.events[deviceID].second, owlParamsGetCudaStream(OptixData.launchParams, deviceID));
+                }
+                owlLaunchSync(OptixData.launchParams);
+                for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
+                    cudaEventElapsedTime(&NVISII.times[deviceID], NVISII.events[deviceID].first, NVISII.events[deviceID].second);
+                }
+                updateGPUWeights();
                 mergeFrameBuffers();
-                if (OptixData.enableDenoiser)
-                {
+
+                if (OptixData.enableDenoiser) {
                     denoiseImage();
-                }        
+                }
             }
             // glm::vec4* samplePtr = (glm::vec4*) owlBufferGetPointer(OptixData.accumBuffer,0);
             // glm::vec4* mvecPtr = (glm::vec4*) owlBufferGetPointer(OptixData.mvecBuffer,0);
@@ -2466,7 +2590,10 @@ void initializeInteractive(
             OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
 
         if (OptixData.imageTexID != -1) {
-            cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
+            if (OptixData.cudaResourceTex) {
+                cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
+                OptixData.cudaResourceTex = 0;
+            }
             glDeleteTextures(1, &OptixData.imageTexID);
         }
 
@@ -2628,12 +2755,12 @@ void updateSceneAabb(Entity* entity)
 
 void enableUpdates()
 {
-    enqueueCommand([] () { lazyUpdatesEnabled = false; });
+    enqueueCommandAndWait([] () { lazyUpdatesEnabled = false; });
 }
 
 void disableUpdates()
 {
-    enqueueCommand([] () { lazyUpdatesEnabled = true; });
+    enqueueCommandAndWait([] () { lazyUpdatesEnabled = true; });
 }
 
 bool areUpdatesEnabled()
@@ -2799,6 +2926,9 @@ void __test__(std::vector<std::string> args) {
     }
     else if (option == std::string("heatmap")) {
         OptixData.LP.renderDataMode = RenderDataFlags::HEATMAP;
+    }
+    else if (option == std::string("device_id")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::DEVICE_ID;
     }
     else {
         throw std::runtime_error(std::string("Error, unknown option : \"") + option + std::string("\". ")
