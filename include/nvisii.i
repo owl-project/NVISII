@@ -6,7 +6,9 @@
 #else
 %pythonbegin %{_built_major_version = 2%}
 #endif
-#if Python_VERSION_MINOR == 8
+#if Python_VERSION_MINOR == 9
+%pythonbegin %{_built_minor_version = 9%}
+#elif Python_VERSION_MINOR == 8
 %pythonbegin %{_built_minor_version = 8%}
 #elif Python_VERSION_MINOR == 7
 %pythonbegin %{_built_minor_version = 7%}
