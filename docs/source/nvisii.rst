@@ -22,6 +22,7 @@ NVISII
         sample_time_interval,
         enable_denoiser,
         disable_denoiser,
+        configure_denoiser,
         render,
         render_to_hdr,
         render_to_png,
