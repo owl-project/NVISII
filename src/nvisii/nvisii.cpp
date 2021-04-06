@@ -1946,7 +1946,7 @@ void configureDenoiser(bool useAlbedoGuide, bool useNormalGuide, bool useKernelP
             "If normal guide is enabled, albedo guide must also be enabled.");
     }
 
-    enqueueCommand([useAlbedoGuide, useNormalGuide, useKernelPrediction](){
+    enqueueCommandAndWait([useAlbedoGuide, useNormalGuide, useKernelPrediction](){
         OptixData.enableAlbedoGuide = useAlbedoGuide;
         OptixData.enableNormalGuide = useNormalGuide;
         #ifdef USE_OPTIX70
