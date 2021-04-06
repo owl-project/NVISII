@@ -180,6 +180,27 @@ Call this if you would like to clear the current scene.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt id="nvisii.configure_denoiser">
+<code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">configure_denoiser</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_albedo_guide</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_normal_guide</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_kernel_prediction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.configure_denoiser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Controls what guides and modes are used to denoise the image.
+:type use_albedo_guide: boolean, optional
+:param use_albedo_guide: If True, uses albedo to guide the denoiser. Useful for scenes with</p>
+<blockquote>
+<div><p>textures or large uniformly colored sections. Can cause issues when denoising motion blur.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>use_normal_guide</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If True, uses surface normals to guide the denoiser. Useful for
+scenes where geometrically complex objects do not have distinct albedo (eg walls, uniformly colored objects, etc)</p></li>
+<li><p><strong>use_kernel_prediction</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If True, uses the OptiX kernel prediction model for denoising, which avoids intensity
+shifts and false color prediction by instead predicting a normalized kernel.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt id="nvisii.deinitialize">
 <code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">deinitialize</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.deinitialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Closes the interactive window, and shuts down any running backend systems.
