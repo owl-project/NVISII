@@ -24,3 +24,6 @@ unzip bmw.zip -d bmw/
 rm bmw.zip
 
 wget https://www.dropbox.com/s/76gumyy7j0f3cyj/dragon.stl
+
+wget https://www.dropbox.com/s/runlp60bjjf3dpu/bunny_cloud.zip
+unzip bunny_cloud.zip
