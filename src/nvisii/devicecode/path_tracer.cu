@@ -967,7 +967,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     RayPayload surfPayload;
     surfPayload.tHit = -1.f;
     surfRay.time = time;    
-    owl::traceRay(  /*accel to trace against*/ LP.surfacesIAS,
+    owl::traceRay(  /*accel to trace against*/ LP.IAS,
                     /*the ray to trace*/ surfRay,
                     /*prd*/ surfPayload,
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
@@ -980,7 +980,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     volPayload.t0 = volRay.tmin;
     volPayload.t1 = volRay.tmax;
     volPayload.primitiveID = (debug) ? -2 : -1;
-    owl::traceRay(  /*accel to trace against*/ LP.volumesIAS,
+    owl::traceRay(  /*accel to trace against*/ LP.IAS,
                     /*the ray to trace*/ volRay,
                     /*prd*/ volPayload,
                     OPTIX_RAY_FLAG_DISABLE_ANYHIT);
@@ -1020,8 +1020,8 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
         // Load the object we hit.
         int entityID;
-        if (isVolume) { GET(entityID, int, LP.volumeInstanceToEntity, volPayload.instanceID); }
-        else { GET(entityID, int, LP.surfaceInstanceToEntity, surfPayload.instanceID); }
+        if (isVolume) { GET(entityID, int, LP.instanceToEntity, volPayload.instanceID); }
+        else { GET(entityID, int, LP.instanceToEntity, surfPayload.instanceID); }
 
         GET(EntityStruct entity, EntityStruct, LP.entities, entityID);
         GET(TransformStruct transform, TransformStruct, LP.transforms, entity.transform_id);
@@ -1035,7 +1035,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             surfRay.origin = surfRay.origin + surfRay.direction * (surfPayload.tHit + EPSILON);
             surfPayload.tHit = -1.f;
             surfRay.time = time;
-            owl::traceRay( LP.surfacesIAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+            owl::traceRay( LP.IAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
             volRay = surfRay;
             volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
@@ -1044,7 +1044,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             volPayload.t0 = volRay.tmin;
             volPayload.t1 = volRay.tmax;
             volPayload.primitiveID = (debug) ? -3 : -1;
-            owl::traceRay( LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+            owl::traceRay( LP.IAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
             transparencyDepth++;
             if (transparencyDepth > LP.maxTransparencyDepth) break;
             continue;
@@ -1190,7 +1190,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 surfRay.origin = surfRay.origin + surfRay.direction * (surfPayload.tHit + EPSILON);
                 surfPayload.tHit = -1.f;
                 surfRay.time = time;
-                owl::traceRay( LP.surfacesIAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+                owl::traceRay( LP.IAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
                 volRay = surfRay;
                 volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
@@ -1199,7 +1199,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 volPayload.t0 = volRay.tmin;
                 volPayload.t1 = volRay.tmax;
                 volPayload.primitiveID = (debug) ? -4 : -1;
-                owl::traceRay( LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+                owl::traceRay( LP.IAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
                 
                 ++depth;     
                 transparencyDepth++;
@@ -1289,7 +1289,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             surfRay.origin = surfRay.origin + surfRay.direction * (surfPayload.tHit + EPSILON);
             surfPayload.tHit = -1.f;
             surfRay.time = time;
-            owl::traceRay( LP.surfacesIAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+            owl::traceRay( LP.IAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
             volRay = surfRay;
             volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
@@ -1298,7 +1298,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             volPayload.t0 = volRay.tmin;
             volPayload.t1 = volRay.tmax;
             volPayload.primitiveID = (debug) ? -4 : -1;
-            owl::traceRay( LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+            owl::traceRay( LP.IAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
             
             // Count this as a "transparent" bounce.
             ++depth;     
@@ -1432,13 +1432,13 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.tmin = EPSILON * 10.f; ray.tmax = lightDistance + EPSILON; // needs to be distance to light, else anyhit logic breaks.
             ray.origin = hit_p; ray.direction = lightDir;
             ray.time = time;
-            owl::traceRay( LP.surfacesIAS, ray, surfPayload, occlusion_flags);
+            owl::traceRay( LP.IAS, ray, surfPayload, occlusion_flags);
             ray.tmax = (surfPayload.instanceID == -2) ? ray.tmax : surfPayload.tHit;
             volPayload.rng = rng;
             volPayload.t0 = volRay.tmin;
             volPayload.t1 = volRay.tmax;
             volPayload.primitiveID = (debug) ? -5 : -1;
-            owl::traceRay( LP.volumesIAS, ray, volPayload, occlusion_flags);
+            owl::traceRay( LP.IAS, ray, volPayload, occlusion_flags);
             bool visible;
             if (randomID == numLights) {
                 //  If we sampled the dome light, just check to see if we hit anything
@@ -1447,7 +1447,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 // If we sampled a light source, then check to see if we hit something other than the light
                 int surfEntity;
                 if (surfPayload.instanceID == -2) surfEntity = -1;
-                else { GET(surfEntity, int, LP.surfaceInstanceToEntity, surfPayload.instanceID); }
+                else { GET(surfEntity, int, LP.instanceToEntity, surfPayload.instanceID); }
                 visible = (volPayload.instanceID == -2) && (surfPayload.instanceID == -2 || surfEntity == sampledLightID);
             }
             if (visible) {
@@ -1475,7 +1475,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         surfPayload.instanceID = -1;
         surfPayload.tHit = -1.f;
         surfRay.time = sampleTime(lcg_randomf(rng));
-        owl::traceRay(LP.surfacesIAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+        owl::traceRay(LP.IAS, surfRay, surfPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
         volRay = surfRay;
         volRay.tmax = (surfPayload.tHit == -1.f) ? volRay.tmax : surfPayload.tHit;
@@ -1483,7 +1483,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         volPayload.t0 = volRay.tmin;
         volPayload.t1 = volRay.tmax;
         volPayload.primitiveID = (debug) ? -6 : -1;
-        owl::traceRay(LP.volumesIAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
+        owl::traceRay(LP.IAS, volRay, volPayload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
         // Check if we hit any of the previously sampled lights
         bool hitLight = false;
@@ -1506,7 +1506,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             // else if by sampling the brdf we also hit an area light
             // TODO: consider hitting emissive voxels?
             else if (surfPayload.instanceID != -1 && volPayload.instanceID == -1) {
-                GET(int entityID, int, LP.surfaceInstanceToEntity, surfPayload.instanceID);
+                GET(int entityID, int, LP.instanceToEntity, surfPayload.instanceID);
                 bool visible = (entityID == sampledLightID);
                 // We hit the light we sampled previously
                 if (visible) {

@@ -29,8 +29,7 @@ struct LaunchParams {
     glm::vec4 *scratchBuffer;
     glm::vec4 *mvecBuffer;
     glm::vec4 *accumPtr;
-    OptixTraversableHandle surfacesIAS;
-    OptixTraversableHandle volumesIAS;
+    OptixTraversableHandle IAS;
     float domeLightIntensity = 1.f;
     float domeLightExposure = 0.f;
     glm::vec3 domeLightColor = glm::vec3(-1.f);
@@ -60,8 +59,7 @@ struct LaunchParams {
     Buffer<TextureStruct> textures;
     Buffer<VolumeStruct> volumes;
     Buffer<uint32_t> lightEntities;
-    Buffer<uint32_t> surfaceInstanceToEntity;
-    Buffer<uint32_t> volumeInstanceToEntity;
+    Buffer<uint32_t> instanceToEntity;
     uint32_t         numLightEntities = 0;
 
     Buffer<Buffer<float3>> vertexLists;
