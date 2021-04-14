@@ -2029,7 +2029,7 @@ std::vector<float> readFrameBuffer() {
         int num_devices = getDeviceCount();
         synchronizeDevices();
 
-        const glm::vec4 *fb = (const glm::vec4*)owlBufferGetPointer(OptixData.frameBuffer,0);
+        const glm::vec4 *fb = (const glm::vec4*)owlBufferGetPointer(OptixData.combinedFrameBuffer,0);
         for (uint32_t test = 0; test < frameBuffer.size(); test += 4) {
             frameBuffer[test + 0] = fb[test / 4].r;
             frameBuffer[test + 1] = fb[test / 4].g;
@@ -2045,9 +2045,6 @@ std::vector<float> readFrameBuffer() {
 std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPixel, uint32_t seed) {
     if ((width < 1) || (height < 1)) throw std::runtime_error("Error, invalid width/height");
     std::vector<float> frameBuffer(width * height * 4);
-
-    // flush command queue
-    enqueueCommandAndWait([](){});
 
     enqueueCommandAndWait([&frameBuffer, width, height, samplesPerPixel, seed] () {
         if (!NVISII.headlessMode) {
@@ -2122,7 +2119,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
         }
 
         synchronizeDevices();
-        const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
+        const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.combinedFrameBuffer,0);
         cudaMemcpyAsync(frameBuffer.data(), fb, width * height * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
     });
 
@@ -2271,7 +2268,7 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
 
         synchronizeDevices();
 
-        const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
+        const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.combinedFrameBuffer,0);
         cudaMemcpyAsync(frameBuffer.data(), fb, width * height * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
 
         OptixData.LP.renderDataMode = 0;
