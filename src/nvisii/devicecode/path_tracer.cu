@@ -1067,17 +1067,6 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (!isVolume) { GET(mesh, MeshStruct, LP.meshes, entity.mesh_id); }
         else { GET(volume, VolumeStruct, LP.volumes, entity.volume_id); }
         
-        // Skip forward if the hit object is invisible for this ray type, skip it.
-        if (((entity.flags & ENTITY_VISIBILITY_CAMERA_RAYS) == 0)) {
-            ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
-            payload.tHit = -1.f;
-            ray.time = time;
-            owl::traceRay( LP.IAS, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
-            transparencyDepth++;
-            if (transparencyDepth > LP.maxTransparencyDepth) break;
-            continue;
-        }
-
         // Set new outgoing light direction and hit position.
         const float3 w_o = -ray.direction;
         float3 hit_p = ray.origin + payload.tHit * ray.direction;
@@ -1216,6 +1205,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
                 ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
                 payload.tHit = -1.f;
                 ray.time = time;
+                // ray.visibilityMask reuses the last visibility mask here
                 owl::traceRay( LP.IAS, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);                
                 ++depth;     
                 transparencyDepth++;
@@ -1305,6 +1295,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.origin = ray.origin + ray.direction * (payload.tHit + EPSILON);
             payload.tHit = -1.f;
             ray.time = time;
+            // ray.visibilityMask reuses the last visibility mask here
             owl::traceRay( LP.IAS, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
             
             // Count this as a "transparent" bounce.
@@ -1439,6 +1430,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             ray.tmin = EPSILON * 10.f; ray.tmax = lightDistance + EPSILON; // needs to be distance to light, else anyhit logic breaks.
             ray.origin = hit_p; ray.direction = lightDir;
             ray.time = time;
+            ray.visibilityMask = ENTITY_VISIBILITY_SHADOW_RAYS;
             owl::traceRay( LP.IAS, ray, payload, occlusion_flags);
             ray.tmax = (payload.instanceID == -2) ? ray.tmax : payload.tHit;
             bool visible;
@@ -1477,6 +1469,11 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         payload.instanceID = -1;
         payload.tHit = -1.f;
         ray.time = sampleTime(lcg_randomf(rng));
+        if (isVolume) ray.visibilityMask = ENTITY_VISIBILITY_VOLUME_SCATTER_RAYS;
+        else if (sampledBsdf == DISNEY_TRANSMISSION_BRDF) ray.visibilityMask = ENTITY_VISIBILITY_TRANSMISSION_RAYS;
+        else if (sampledBsdf == DISNEY_DIFFUSE_BRDF) ray.visibilityMask = ENTITY_VISIBILITY_DIFFUSE_RAYS;
+        else if (sampledBsdf == DISNEY_GLOSSY_BRDF) ray.visibilityMask = ENTITY_VISIBILITY_GLOSSY_RAYS;
+        else if (sampledBsdf == DISNEY_CLEARCOAT_BRDF) ray.visibilityMask = ENTITY_VISIBILITY_GLOSSY_RAYS;
         owl::traceRay(LP.IAS, ray, payload, OPTIX_RAY_FLAG_DISABLE_ANYHIT);
 
         // Check if we hit any of the previously sampled lights
