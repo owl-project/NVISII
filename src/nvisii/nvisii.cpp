@@ -1375,7 +1375,8 @@ void updateComponents()
 
     // Manage textures and materials
     if (Texture::areAnyDirty() || Material::areAnyDirty()) {
-        std::lock_guard<std::recursive_mutex> material_lock(Material::areAnyDirty()   ? *Material::getEditMutex().get() : dummyMutex);
+        std::lock_guard<std::recursive_mutex> material_lock(*Material::getEditMutex().get());
+        std::lock_guard<std::recursive_mutex> texture_lock(*Texture::getEditMutex().get());
 
         // Allocate cuda textures for all texture components
         auto dirtyTextures = Texture::getDirtyTextures();
@@ -1421,7 +1422,6 @@ void updateComponents()
                     colorSpace
                 );
             }
-            
         }
 
         // Create additional cuda textures for material constants
@@ -1934,6 +1934,8 @@ std::vector<float> readFrameBuffer() {
 std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPixel, uint32_t seed) {
     if ((width < 1) || (height < 1)) throw std::runtime_error("Error, invalid width/height");
     std::vector<float> frameBuffer(width * height * 4);
+
+    enqueueCommandAndWait([](){});
 
     enqueueCommandAndWait([&frameBuffer, width, height, samplesPerPixel, seed] () {
         if (!NVISII.headlessMode) {
