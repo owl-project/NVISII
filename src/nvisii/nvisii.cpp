@@ -1220,15 +1220,12 @@ void updateComponents()
             // Next, allocate resources for the new volume.
             auto gridHdlPtr = v->getNanoVDBGridHandle();
             const nanovdb::FloatGrid* grid = reinterpret_cast<nanovdb::FloatGrid*>(gridHdlPtr.get()->data());
-            std::cout<<grid->checksum()<<std::endl;
             nanovdb::isValid(*grid, true, true);
 
             // auto acc = grid->tree().getAccessor();
             // auto bbox = tree.root().bbox();
             auto bbox = grid->tree().bbox().asReal<float>();
             // int nodecount = grid->tree().nodeCount(3);
-            // std::cout<<nodecount<<std::endl;
-            std::cout<<bbox.min()[0]<<bbox.min()[1]<<bbox.min()[2]<<bbox.max()[0]<<bbox.max()[1]<<bbox.max()[2]<<std::endl;
 
             OD.volumeHandles[v->getAddress()] = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint8_t), gridHdlPtr.get()->size(), nullptr);
             owlBufferUpload(OD.volumeHandles[v->getAddress()], gridHdlPtr.get()->data());
