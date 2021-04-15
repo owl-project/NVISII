@@ -9,3 +9,4 @@ https://www.dropbox.com/s/22bug1he354oqpt/bmw.zip
 https://www.dropbox.com/s/76gumyy7j0f3cyj/dragon.stl
 https://www.dropbox.com/s/runlp60bjjf3dpu/bunny_cloud.zip
 https://www.dropbox.com/s/nim7jsjiumei4f9/boston_teapot_256x256x178_uint8.zip
+https://www.dropbox.com/s/yybckz6sawq5nbw/TestNormalMap.png
