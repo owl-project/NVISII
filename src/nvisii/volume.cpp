@@ -188,10 +188,11 @@ Volume *Volume::createTorus(std::string name)
 	}
 }
 
-Volume *Volume::createBox(std::string name)
+Volume *Volume::createBox(std::string name,
+    glm::vec3 size, glm::vec3 center, float halfWidth)
 {
-    auto create = [] (Volume* v) {
-        nanovdb::GridHandle<> gridHdl = nanovdb::createFogVolumeBox();
+    auto create = [size, center, halfWidth] (Volume* v) {
+        nanovdb::GridHandle<> gridHdl = nanovdb::createFogVolumeBox(size.x, size.y, size.z, ((nanovdb::Vec3R)(0)), 1.0f, halfWidth);
         v->gridHdlPtr = std::make_shared<nanovdb::GridHandle<>>(std::move(gridHdl));
         v->markDirty();
     };

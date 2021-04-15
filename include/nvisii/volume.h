@@ -78,8 +78,15 @@ class Volume : public StaticFactory
 	 * is 0 and inactive, the interior is active with values varying
 	 * smoothly from 0 at the surface of the box to 1 at the half width
 	 * and interior of the box.
+	 * @param name The name of the volume to create.
+	 * @param size The width, height, and depth of the box in local units.
+	 * @param center The center of the box in local units
+	 * @param half_width The half-width of the narrow band in voxel units
 	 */
-	static Volume *createBox(std::string name);
+	static Volume *createBox(std::string name, 
+		glm::vec3 size = glm::vec3(100.f), 
+		glm::vec3 center = glm::vec3(0.f), 
+		float half_width = 3.f);
 	
 	/**
 	 * Creates a sparse fog volume of an octahedron such that the exterior
