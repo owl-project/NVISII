@@ -32,6 +32,7 @@ Entity::Entity(std::string name, uint32_t id) {
 	entity.material_id = -1;
 	entity.light_id = -1;
 	entity.mesh_id = -1;
+	entity.flags = (uint32_t)-1;
 }
 
 std::string Entity::toString()

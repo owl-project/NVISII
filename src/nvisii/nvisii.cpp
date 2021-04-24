@@ -112,8 +112,7 @@ static struct OptixData {
     OWLBuffer textureBuffer;
     OWLBuffer volumeBuffer;
     OWLBuffer lightEntitiesBuffer;
-    OWLBuffer surfaceInstanceToEntityBuffer;
-    OWLBuffer volumeInstanceToEntityBuffer;
+    OWLBuffer instanceToEntityBuffer;
     OWLBuffer vertexListsBuffer;
     OWLBuffer normalListsBuffer;
     OWLBuffer tangentListsBuffer;
@@ -144,8 +143,7 @@ static struct OptixData {
     std::vector<OWLGeom> volumeGeomList;
     std::vector<OWLGroup> volumeBlasList;
 
-    OWLGroup surfacesIAS = nullptr;
-    OWLGroup volumesIAS = nullptr;
+    OWLGroup IAS = nullptr;
 
     std::vector<uint32_t> lightEntities;
 
@@ -521,8 +519,7 @@ void initializeOptix(bool headless)
         { "scratchBuffer",           OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, scratchBuffer)},
         { "mvecBuffer",              OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, mvecBuffer)},
         { "accumPtr",                OWL_BUFPTR,                        OWL_OFFSETOF(LaunchParams, accumPtr)},
-        { "surfacesIAS",             OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, surfacesIAS)},
-        { "volumesIAS",              OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, volumesIAS)},
+        { "IAS",                     OWL_GROUP,                         OWL_OFFSETOF(LaunchParams, IAS)},
         { "cameraEntity",            OWL_USER_TYPE(EntityStruct),       OWL_OFFSETOF(LaunchParams, cameraEntity)},
         { "entities",                OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, entities)},
         { "transforms",              OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, transforms)},
@@ -539,8 +536,7 @@ void initializeOptix(bool headless)
         { "texCoordLists",           OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, texCoordLists)},
         { "indexLists",              OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, indexLists)},
         { "numLightEntities",        OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, numLightEntities)},
-        { "surfaceInstanceToEntity", OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, surfaceInstanceToEntity)},
-        { "volumeInstanceToEntity",  OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, volumeInstanceToEntity)},
+        { "instanceToEntity",        OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, instanceToEntity)},
         { "domeLightIntensity",      OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
         { "domeLightExposure",       OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightExposure)},
         { "domeLightColor",          OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, domeLightColor)},
@@ -632,8 +628,7 @@ void initializeOptix(bool headless)
     OD.volumeBuffer              = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(VolumeStruct),        Volume::getCount(),   nullptr);
     OD.volumeHandlesBuffer       = owlDeviceBufferCreate(OD.context, OWL_BUFFER,                         Volume::getCount(),   nullptr);
     OD.lightEntitiesBuffer       = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
-    OD.surfaceInstanceToEntityBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
-    OD.volumeInstanceToEntityBuffer = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
+    OD.instanceToEntityBuffer    = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint32_t),            1,              nullptr);
     OD.vertexListsBuffer         = owlDeviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.normalListsBuffer         = owlDeviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
     OD.tangentListsBuffer        = owlDeviceBufferCreate(OD.context, OWL_BUFFER,                         Mesh::getCount(),     nullptr);
@@ -650,15 +645,14 @@ void initializeOptix(bool headless)
     owlParamsSetBuffer(OD.launchParams, "textures",             OD.textureBuffer);
     owlParamsSetBuffer(OD.launchParams, "volumes",              OD.volumeBuffer);
     owlParamsSetBuffer(OD.launchParams, "lightEntities",        OD.lightEntitiesBuffer);
-    owlParamsSetBuffer(OD.launchParams, "surfaceInstanceToEntity",  OD.surfaceInstanceToEntityBuffer);
-    owlParamsSetBuffer(OD.launchParams, "volumeInstanceToEntity",  OD.volumeInstanceToEntityBuffer);
+    owlParamsSetBuffer(OD.launchParams, "instanceToEntity",     OD.instanceToEntityBuffer);
     owlParamsSetBuffer(OD.launchParams, "vertexLists",          OD.vertexListsBuffer);
     owlParamsSetBuffer(OD.launchParams, "normalLists",          OD.normalListsBuffer);
-    owlParamsSetBuffer(OD.launchParams, "tangentLists",          OD.tangentListsBuffer);
+    owlParamsSetBuffer(OD.launchParams, "tangentLists",         OD.tangentListsBuffer);
     owlParamsSetBuffer(OD.launchParams, "texCoordLists",        OD.texCoordListsBuffer);
     owlParamsSetBuffer(OD.launchParams, "indexLists",           OD.indexListsBuffer);
     owlParamsSetBuffer(OD.launchParams, "textureObjects",       OD.textureObjectsBuffer);
-    owlParamsSetBuffer(OD.launchParams, "volumeHandles",       OD.volumeHandlesBuffer);
+    owlParamsSetBuffer(OD.launchParams, "volumeHandles",        OD.volumeHandlesBuffer);
 
     uint32_t meshCount = Mesh::getCount();
     OD.vertexLists.resize(meshCount);
@@ -689,24 +683,7 @@ void initializeOptix(bool headless)
     owlParamsSetBuffer(OD.launchParams, "environmentMapCols", OD.environmentMapColsBuffer);
     owlParamsSetRaw(OD.launchParams, "environmentMapWidth", &OD.LP.environmentMapWidth);
     owlParamsSetRaw(OD.launchParams, "environmentMapHeight", &OD.LP.environmentMapHeight);
-
-    // OWLTexture GGX_E_AVG_LOOKUP = owlTexture2DCreate(OD.context,
-    //                         OWL_TEXEL_FORMAT_R32F,
-    //                         GGX_E_avg_size,1,
-    //                         GGX_E_avg,
-    //                         OWL_TEXTURE_LINEAR,
-    //                         OWL_COLOR_SPACE_LINEAR,
-    //                         OWL_TEXTURE_CLAMP);
-    // OWLTexture GGX_E_LOOKUP = owlTexture2DCreate(OD.context,
-    //                         OWL_TEXEL_FORMAT_R32F,
-    //                         GGX_E_size[0],GGX_E_size[1],
-    //                         GGX_E,
-    //                         OWL_TEXTURE_LINEAR,
-    //                         OWL_TEXTURE_CLAMP,
-    //                         OWL_COLOR_SPACE_LINEAR);
-    // launchParamsSetTexture(OD.launchParams, "GGX_E_AVG_LOOKUP", GGX_E_AVG_LOOKUP);
-    // launchParamsSetTexture(OD.launchParams, "GGX_E_LOOKUP",     GGX_E_LOOKUP);
-    
+   
     OD.LP.numLightEntities = uint32_t(OD.lightEntities.size());
     owlParamsSetRaw(OD.launchParams, "numLightEntities", &OD.LP.numLightEntities);
     owlParamsSetRaw(OD.launchParams, "domeLightIntensity", &OD.LP.domeLightIntensity);
@@ -770,10 +747,10 @@ void initializeOptix(bool headless)
     groupBuildAccel(OD.placeholderGroup);
 
     // build IAS
-    OWLGroup surfacesIAS = instanceGroupCreate(OD.context, 1);
-    instanceGroupSetChild(surfacesIAS, 0, OD.placeholderGroup); 
-    groupBuildAccel(surfacesIAS);
-    owlParamsSetGroup(OD.launchParams, "surfacesIAS", surfacesIAS);
+    OWLGroup IAS = instanceGroupCreate(OD.context, 1);
+    instanceGroupSetChild(IAS, 0, OD.placeholderGroup); 
+    groupBuildAccel(IAS);
+    owlParamsSetGroup(OD.launchParams, "IAS", IAS);
 
     OWLGeom userGeom = owlGeomCreate(OD.context, OD.volumeGeomType);
     owlGeomSetPrimCount(userGeom, 1);
@@ -782,11 +759,6 @@ void initializeOptix(bool headless)
     owlGeomSetRaw(userGeom, "bbmax", &tmpbbmax);
     OD.placeholderUserGroup = owlUserGeomGroupCreate(OD.context, 1, &userGeom);
     groupBuildAccel(OD.placeholderUserGroup);
-
-    OWLGroup volumesIAS = instanceGroupCreate(OD.context, 1);
-    instanceGroupSetChild(volumesIAS, 0, OD.placeholderUserGroup); 
-    groupBuildAccel(volumesIAS);
-    owlParamsSetGroup(OD.launchParams, "volumesIAS", volumesIAS);
 
     // Build *SBT* required to trace the groups   
     owlBuildPipeline(OD.context);
@@ -1011,36 +983,6 @@ void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float
         }
         OptixData.proceduralSkyTexture = owlTexture2DCreate(OptixData.context, OWL_TEXEL_FORMAT_RGBA32F, width, height, texels.data());
         owlParamsSetTexture(OptixData.launchParams, "proceduralSkyTexture", OptixData.proceduralSkyTexture);
-
-        // float invWidth = 1.f / float(width);
-        // float invHeight = 1.f / float(height);
-        // float invjacobian = width * height / float(4 * M_PI);
-
-        // auto rows = std::vector<float>(height);
-        // auto cols = std::vector<float>(width * height);
-        // for (int y = 0, i = 0; y < height; y++) {
-        //     for (int x = 0; x < width; x++, i++) {
-        //         cols[i] = std::max(texels[i].r, std::max(texels[i].g, texels[i].b)) + ((x > 0) ? cols[i - 1] : 0.f);
-        //     }
-        //     rows[y] = cols[i - 1] + ((y > 0) ? rows[y - 1] : 0.0f);
-        //     // normalize the pdf for this scanline (if it was non-zero)
-        //     if (cols[i - 1] > 0) {
-        //         for (int x = 0; x < width; x++) {
-        //             cols[i - width + x] /= cols[i - 1];
-        //         }
-        //     }
-        // }
-
-        // // normalize the pdf across all scanlines
-        // for (int y = 0; y < height; y++)
-        //     rows[y] /= rows[height - 1];
-        
-        // if (OptixData.environmentMapRowsBuffer) owlBufferRelease(OptixData.environmentMapRowsBuffer);
-        // if (OptixData.environmentMapColsBuffer) owlBufferRelease(OptixData.environmentMapColsBuffer);
-        // OptixData.environmentMapRowsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), height, rows.data());
-        // OptixData.environmentMapColsBuffer = owlDeviceBufferCreate(OptixData.context, OWL_USER_TYPE(float), width * height, cols.data());
-        // OptixData.LP.environmentMapWidth = width;
-        // OptixData.LP.environmentMapHeight = height;  
 
         OptixData.LP.environmentMapWidth = 0;
         OptixData.LP.environmentMapHeight = 0;  
@@ -1278,15 +1220,12 @@ void updateComponents()
             // Next, allocate resources for the new volume.
             auto gridHdlPtr = v->getNanoVDBGridHandle();
             const nanovdb::FloatGrid* grid = reinterpret_cast<nanovdb::FloatGrid*>(gridHdlPtr.get()->data());
-            std::cout<<grid->checksum()<<std::endl;
             nanovdb::isValid(*grid, true, true);
 
             // auto acc = grid->tree().getAccessor();
             // auto bbox = tree.root().bbox();
             auto bbox = grid->tree().bbox().asReal<float>();
             // int nodecount = grid->tree().nodeCount(3);
-            // std::cout<<nodecount<<std::endl;
-            std::cout<<bbox.min()[0]<<bbox.min()[1]<<bbox.min()[2]<<bbox.max()[0]<<bbox.max()[1]<<bbox.max()[2]<<std::endl;
 
             OD.volumeHandles[v->getAddress()] = owlDeviceBufferCreate(OD.context, OWL_USER_TYPE(uint8_t), gridHdlPtr.get()->size(), nullptr);
             owlBufferUpload(OD.volumeHandles[v->getAddress()], gridHdlPtr.get()->data());
@@ -1316,21 +1255,11 @@ void updateComponents()
     // Manage Entities: Build / Rebuild TLAS
     auto dirtyEntities = Entity::getDirtyEntities();
     if (dirtyEntities.size() > 0) {
-        // Surface instances
-        std::vector<OWLGroup> surfaceInstances;
-        std::vector<glm::mat4> t0SurfaceTransforms;
-        std::vector<glm::mat4> t1SurfaceTransforms;
-        std::vector<uint8_t> surfaceMasks;
-        std::vector<uint32_t> surfaceInstanceToEntity;
-        
-        // Volume instances
-        std::vector<OWLGroup> volumeInstances;
-        std::vector<glm::mat4> t0VolumeTransforms;
-        std::vector<glm::mat4> t1VolumeTransforms;
-        std::vector<uint8_t> volumeMasks;
-        std::vector<uint32_t> volumeInstanceToEntity;
-
-        // Todo: curves...
+        std::vector<OWLGroup> instances;
+        std::vector<glm::mat4> t0Transforms;
+        std::vector<glm::mat4> t1Transforms;
+        std::vector<uint8_t> masks;
+        std::vector<uint32_t> instanceToEntity;
 
         // Aggregate instanced geometry and transformations 
         Entity* entities = Entity::getFront();
@@ -1349,6 +1278,14 @@ void updateComponents()
             // Get instance transformation
             glm::mat4 prevLocalToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */true);
             glm::mat4 localToWorld = entities[eid].getTransform()->getLocalToWorldMatrix(/*previous = */false);
+            t0Transforms.push_back(prevLocalToWorld);
+            t1Transforms.push_back(localToWorld);
+
+            // Get instance mask
+            masks.push_back(entities[eid].getStruct().flags);
+
+            // Indirection from instance back to entity ID
+            instanceToEntity.push_back(eid);
 
             // Add any instanced mesh geometry to the list
             if (entities[eid].getMesh()) {
@@ -1359,98 +1296,63 @@ void updateComponents()
                     // Mark it as dirty. It should be available in a subsequent frame
                     entities[eid].getMesh()->markDirty(); return; 
                 }
-                surfaceInstances.push_back(blas);
-                surfaceInstanceToEntity.push_back(eid);
-                t0SurfaceTransforms.push_back(prevLocalToWorld);
-                t1SurfaceTransforms.push_back(localToWorld);
-                surfaceMasks.push_back(entities[eid].getStruct().flags);
+                instances.push_back(blas);
             }
             
             // Add any instanced volume geometry to the list
-            if (entities[eid].getVolume()) {
+            else if (entities[eid].getVolume()) {
                 uint32_t address = entities[eid].getVolume()->getAddress();
                 OWLGroup blas = OD.volumeBlasList[address];
                 if (!blas) {
                     // Same as meshes, if BLAS doesn't exist, force BLAS build and try again.
                     entities[eid].getMesh()->markDirty(); return; 
                 }
-                volumeInstances.push_back(blas);
-                volumeInstanceToEntity.push_back(eid);
-                t0VolumeTransforms.push_back(prevLocalToWorld);
-                t1VolumeTransforms.push_back(localToWorld);
-                volumeMasks.push_back(entities[eid].getStruct().flags);
-            }     
+                instances.push_back(blas);
+            } 
+            
+            else {
+                throw std::runtime_error("Internal Error, renderable entity has no mesh or volume components!?");
+            }   
         }
 
-        std::vector<uint8_t>     owlSurfaceVisibilityMasks;
-        std::vector<owl4x3f>     t0OwlSurfaceTransforms;
-        std::vector<owl4x3f>     t1OwlSurfaceTransforms;
-        std::vector<uint8_t>     owlVolumeVisibilityMasks;
-        std::vector<owl4x3f>     t0OwlVolumeTransforms;
-        std::vector<owl4x3f>     t1OwlVolumeTransforms;
-        auto oldSurfaceIAS = OD.surfacesIAS;
-        auto oldVolumeIAS = OD.volumesIAS;
+        std::vector<uint8_t>     owlVisibilityMasks;
+        std::vector<owl4x3f>     t0OwlTransforms;
+        std::vector<owl4x3f>     t1OwlTransforms;
+        auto oldIAS = OD.IAS;
         
-        // If no surfaces instanced, insert an unhittable placeholder.
+        // If no objects are instanced, insert an unhittable placeholder.
         // (required for certain older driver versions)
-        if (surfaceInstances.size() == 0) {
-            OD.surfacesIAS = instanceGroupCreate(OD.context, 1);
-            instanceGroupSetChild(OD.surfacesIAS, 0, OD.placeholderGroup); 
-            groupBuildAccel(OD.surfacesIAS);
+        if (instances.size() == 0) {
+            OD.IAS = instanceGroupCreate(OD.context, 1);
+            instanceGroupSetChild(OD.IAS, 0, OD.placeholderGroup); 
+            groupBuildAccel(OD.IAS);
         }
 
-        // If no volumes instanced, insert an unhittable placeholder.
-        // (required for certain older driver versions)
-        if (volumeInstances.size() == 0) {
-            OD.volumesIAS = instanceGroupCreate(OD.context, 1);
-            instanceGroupSetChild(OD.volumesIAS, 0, OD.placeholderUserGroup); 
-            groupBuildAccel(OD.volumesIAS);
-        }
-
-        // Set surface transforms to IAS, upload surface instance to entity map
-        if (surfaceInstances.size() > 0) {
-            OD.surfacesIAS = instanceGroupCreate(OD.context, surfaceInstances.size());
-            for (uint32_t iid = 0; iid < surfaceInstances.size(); ++iid) {
-                instanceGroupSetChild(OD.surfacesIAS, iid, surfaceInstances[iid]);                 
-                t0OwlSurfaceTransforms.push_back(glmToOWL(t0SurfaceTransforms[iid]));
-                t1OwlSurfaceTransforms.push_back(glmToOWL(t1SurfaceTransforms[iid]));
-                owlSurfaceVisibilityMasks.push_back(surfaceMasks[iid]);
+        // Set instance transforms and masks, upload instance to entity map
+        if (instances.size() > 0) {
+            OD.IAS = instanceGroupCreate(OD.context, instances.size());
+            for (uint32_t iid = 0; iid < instances.size(); ++iid) {
+                instanceGroupSetChild(OD.IAS, iid, instances[iid]);                 
+                t0OwlTransforms.push_back(glmToOWL(t0Transforms[iid]));
+                t1OwlTransforms.push_back(glmToOWL(t1Transforms[iid]));
+                owlVisibilityMasks.push_back(masks[iid]);
             }            
-            owlInstanceGroupSetTransforms(OD.surfacesIAS,0,(const float*)t0OwlSurfaceTransforms.data());
-            owlInstanceGroupSetTransforms(OD.surfacesIAS,1,(const float*)t1OwlSurfaceTransforms.data());
-            owlInstanceGroupSetVisibilityMasks(OD.surfacesIAS, owlSurfaceVisibilityMasks.data());
-            owlBufferResize(OD.surfaceInstanceToEntityBuffer, surfaceInstanceToEntity.size());
-            owlBufferUpload(OD.surfaceInstanceToEntityBuffer, surfaceInstanceToEntity.data());
+            owlInstanceGroupSetTransforms(OD.IAS,0,(const float*)t0OwlTransforms.data());
+            owlInstanceGroupSetTransforms(OD.IAS,1,(const float*)t1OwlTransforms.data());
+            owlInstanceGroupSetVisibilityMasks(OD.IAS, owlVisibilityMasks.data());
+            owlBufferResize(OD.instanceToEntityBuffer, instanceToEntity.size());
+            owlBufferUpload(OD.instanceToEntityBuffer, instanceToEntity.data());
         }       
 
-        // Set volume transforms to IAS, upload volume instance to entity map
-        if (volumeInstances.size() > 0) {
-            OD.volumesIAS = instanceGroupCreate(OD.context, volumeInstances.size());
-            for (uint32_t iid = 0; iid < volumeInstances.size(); ++iid) {
-                instanceGroupSetChild(OD.volumesIAS, iid, volumeInstances[iid]);                 
-                t0OwlVolumeTransforms.push_back(glmToOWL(t0VolumeTransforms[iid]));
-                t1OwlVolumeTransforms.push_back(glmToOWL(t1VolumeTransforms[iid]));
-                owlVolumeVisibilityMasks.push_back(volumeMasks[iid]);
-            }            
-            owlInstanceGroupSetTransforms(OD.volumesIAS,0,(const float*)t0OwlVolumeTransforms.data());
-            owlInstanceGroupSetTransforms(OD.volumesIAS,1,(const float*)t1OwlVolumeTransforms.data());
-            owlInstanceGroupSetVisibilityMasks(OD.volumesIAS, owlVolumeVisibilityMasks.data());
-            owlBufferResize(OD.volumeInstanceToEntityBuffer, volumeInstanceToEntity.size());
-            owlBufferUpload(OD.volumeInstanceToEntityBuffer, volumeInstanceToEntity.data());
-        }
-
         // Build IAS
-        groupBuildAccel(OD.volumesIAS);
-        owlParamsSetGroup(OD.launchParams, "volumesIAS", OD.volumesIAS);
-        groupBuildAccel(OD.surfacesIAS);
-        owlParamsSetGroup(OD.launchParams, "surfacesIAS", OD.surfacesIAS);
-
+        groupBuildAccel(OD.IAS);
+        owlParamsSetGroup(OD.launchParams, "IAS", OD.IAS);
+        
         // Now that IAS have changed, we need to rebuild SBT
         owlBuildSBT(OD.context);
 
         // Release any old IAS (TODO, don't rebuild if entity edit doesn't effect IAS...)
-        if (oldSurfaceIAS) {owlGroupRelease(oldSurfaceIAS);}
-        if (oldVolumeIAS) {owlGroupRelease(oldVolumeIAS);}
+        if (oldIAS) {owlGroupRelease(oldIAS);}
     
         // Aggregate entities that are light sources (todo: consider emissive volumes...)
         OD.lightEntities.resize(0);
@@ -1473,7 +1375,8 @@ void updateComponents()
 
     // Manage textures and materials
     if (Texture::areAnyDirty() || Material::areAnyDirty()) {
-        std::lock_guard<std::recursive_mutex> material_lock(Material::areAnyDirty()   ? *Material::getEditMutex().get() : dummyMutex);
+        std::lock_guard<std::recursive_mutex> material_lock(*Material::getEditMutex().get());
+        std::lock_guard<std::recursive_mutex> texture_lock(*Texture::getEditMutex().get());
 
         // Allocate cuda textures for all texture components
         auto dirtyTextures = Texture::getDirtyTextures();
@@ -1519,7 +1422,6 @@ void updateComponents()
                     colorSpace
                 );
             }
-            
         }
 
         // Create additional cuda textures for material constants
@@ -1608,19 +1510,6 @@ void updateComponents()
     auto dirtyTransforms = Transform::getDirtyTransforms();
     if (dirtyTransforms.size() > 0) {
         Transform::updateComponents();
-        
-        // // for each device
-        // for (uint32_t id = 0; id < owlGetDeviceCount(OptixData.context); ++id)
-        // {
-        //     cudaSetDevice(id);
-
-        //     TransformStruct* devTransforms = (TransformStruct*)owlBufferGetPointer(OptixData.transformBuffer, id);
-        //     TransformStruct* transformStructs = Transform::getFrontStruct();
-        //     for (auto &t : dirtyTransforms) {
-        //         if (!t->isInitialized()) continue;
-        //         CUDA_CHECK(cudaMemcpy(&devTransforms[t->getAddress()], &transformStructs[t->getAddress()], sizeof(TransformStruct), cudaMemcpyHostToDevice));
-        //     }
-        // }
 
         // cudaSetDevice(0);
         owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
@@ -2029,7 +1918,7 @@ std::vector<float> readFrameBuffer() {
         int num_devices = getDeviceCount();
         synchronizeDevices();
 
-        const glm::vec4 *fb = (const glm::vec4*)owlBufferGetPointer(OptixData.frameBuffer,0);
+        const glm::vec4 *fb = (const glm::vec4*)owlBufferGetPointer(OptixData.combinedFrameBuffer,0);
         for (uint32_t test = 0; test < frameBuffer.size(); test += 4) {
             frameBuffer[test + 0] = fb[test / 4].r;
             frameBuffer[test + 1] = fb[test / 4].g;
@@ -2046,7 +1935,6 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
     if ((width < 1) || (height < 1)) throw std::runtime_error("Error, invalid width/height");
     std::vector<float> frameBuffer(width * height * 4);
 
-    // flush command queue
     enqueueCommandAndWait([](){});
 
     enqueueCommandAndWait([&frameBuffer, width, height, samplesPerPixel, seed] () {
@@ -2122,7 +2010,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
         }
 
         synchronizeDevices();
-        const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
+        const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.combinedFrameBuffer,0);
         cudaMemcpyAsync(frameBuffer.data(), fb, width * height * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
     });
 
@@ -2271,7 +2159,7 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
 
         synchronizeDevices();
 
-        const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
+        const glm::vec4 *fb = (const glm::vec4*) owlBufferGetPointer(OptixData.combinedFrameBuffer,0);
         cudaMemcpyAsync(frameBuffer.data(), fb, width * height * sizeof(glm::vec4), cudaMemcpyDeviceToHost);
 
         OptixData.LP.renderDataMode = 0;
@@ -2452,20 +2340,6 @@ void renderToFile(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std
         stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
     }
 }
-
-// void renderDataToPNG(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string field, std::string imagePath)
-// {
-//     std::vector<float> fb = renderData(width, height, startFrame, frameCount, bounce, field);
-//     std::vector<uint8_t> colors(4 * width * height);
-//     for (size_t i = 0; i < (width * height); ++i) {       
-//         colors[i * 4 + 0] = uint8_t(glm::clamp(fb[i * 4 + 0] * 255.f, 0.f, 255.f));
-//         colors[i * 4 + 1] = uint8_t(glm::clamp(fb[i * 4 + 1] * 255.f, 0.f, 255.f));
-//         colors[i * 4 + 2] = uint8_t(glm::clamp(fb[i * 4 + 2] * 255.f, 0.f, 255.f));
-//         colors[i * 4 + 3] = uint8_t(glm::clamp(fb[i * 4 + 3] * 255.f, 0.f, 255.f));
-//     }
-//     stbi_flip_vertically_on_write(true);
-//     stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
-// }
 
 void initializeComponentFactories(
     uint32_t maxEntities, 
