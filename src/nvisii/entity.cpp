@@ -318,6 +318,13 @@ glm::vec3 Entity::getAabbCenter()
 	return entityStructs[id].bbmin + (entityStructs[id].bbmax - entityStructs[id].bbmin) * .5f;
 }
 
+glm::vec3 Entity::getCenter()
+{
+	if (!getTransform()) throw std::runtime_error("Error: no transform attached to entity");
+	if (!getMesh()) throw std::runtime_error("Error: no mesh attached to entity");
+	return glm::vec3(getTransform()->getLocalToWorldMatrix() * glm::vec4(getMesh()->getCenter(), 1.f));
+}
+
 void Entity::initializeFactory(uint32_t max_components)
 {
 	if (isFactoryInitialized()) return;

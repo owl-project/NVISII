@@ -236,6 +236,12 @@ public:
 	/** @returns the center of the aligned bounding box. Requires a transform and mesh component to be attached. */
 	glm::vec3 getAabbCenter();
 
+	/** 
+	 * @returns the average of the vertices of the mesh in world space, which will lay roughly in the center. Requires 
+	 * a transform and mesh component to be attached. 
+	 */
+	glm::vec3 getCenter();
+
 	/** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
 	static std::shared_ptr<std::recursive_mutex> getEditMutex();
 

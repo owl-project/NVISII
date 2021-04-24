@@ -141,7 +141,7 @@ void Mesh::computeMetadata()
 	this->meshStructs[id].numVerts = uint32_t(positions.size());
 }
 
-glm::vec3 Mesh::getCentroid()
+glm::vec3 Mesh::getCenter()
 {
 	return vec3(meshStructs[id].center);
 }

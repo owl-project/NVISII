@@ -843,8 +843,8 @@ class Mesh : public StaticFactory
         // /* TODO: Explain this */
         // void save_tetrahedralization(float quality_bound, float maximum_volume);
 
-        /** @returns the last computed mesh centroid. */
-        glm::vec3 getCentroid();
+        /** @returns the average of the vertices of the mesh, which will lay roughly in the center. */
+        glm::vec3 getCenter();
 
         /** @returns the minimum axis aligned bounding box position */
         glm::vec3 getMinAabbCorner();
