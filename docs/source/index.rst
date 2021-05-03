@@ -1,6 +1,8 @@
 Welcome to NVISII's documentation!
 =================================
 
+`Check out the latest examples here <https://github.com/owl-project/NVISII/tree/master/examples>`_
+
 .. toctree::
    :maxdepth: 3
    :caption: Contents:
