@@ -14,6 +14,8 @@ NVISII
         set_dome_light_texture,
         clear_dome_light_texture,
         set_dome_light_rotation,
+        enable_dome_light_sampling,
+        disable_dome_light_sampling,
         set_indirect_lighting_clamp,
         set_direct_lighting_clamp,
         set_max_bounce_depth,
