@@ -1,4 +1,4 @@
-# Unified workflow for building, (TODO, building docs), and conditionally deploying to PyPI for NVISII
+# Unified workflow for building, building docs, and conditionally deploying to PyPI for NVISII
 name: CI
 
 on:
