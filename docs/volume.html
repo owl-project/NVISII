@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -167,8 +170,8 @@
   <div class="section" id="volume">
 <h1>Volume<a class="headerlink" href="#volume" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="nvisii.volume">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">volume</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">nvisii.</span></span><span class="sig-name descname"><span class="pre">volume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>The “Volume” component is essentially the dual of a mesh component.
 As a result, entities can have a mesh component or a volume component attached,
 but not both.</p>
@@ -178,21 +181,21 @@ With a Volume component, that’s reversed. Voxels are used to explicitly repres
 the density of particles in space, and surfaces are implicitly defined in areas
 where particles are dense.</p>
 <dl class="py method">
-<dt id="nvisii.volume.are_any_dirty">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">are_any_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.are_any_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.are_any_dirty">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">are_any_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.are_any_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates whether or not any entities are “out of date” and need to be
 updated through the “update components” function</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.clear_all">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">clear_all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.clear_all" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.clear_all">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">clear_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.clear_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears any existing Volume components.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.create_box">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_box</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_box" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.create_box">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_box" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a sparse fog volume of a box such that the exterior
 is 0 and inactive, the interior is active with values varying
 smoothly from 0 at the surface of the box to 1 at the half width
@@ -200,8 +203,8 @@ and interior of the box.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.create_from_data">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_data</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_from_data" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.create_from_data">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_from_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a Volume with the given name from custom user data.
 :type name: string
 :param name: The name of the volume to create.
@@ -225,8 +228,8 @@ as “empty”. This is used to “sparcify” the volume and save memory.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.create_from_file">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_file</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_from_file" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.create_from_file">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_from_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a Volume with the given name from a file.
 :type name: string
 :param name: The name of the volume to create.</p>
@@ -247,8 +250,8 @@ as “empty”. This is used to “sparcify” the volume and save memory.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.create_octahedron">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_octahedron</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_octahedron" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.create_octahedron">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_octahedron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_octahedron" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a sparse fog volume of an octahedron such that the exterior
 is 0 and inactive, the interior is active with values varying
 smoothly from 0 at the surface of the octahedron to 1 at the half width
@@ -256,8 +259,8 @@ and interior of the octahedron</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.create_sphere">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_sphere</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_sphere" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.create_sphere">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_sphere</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_sphere" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a sparse fog volume of a sphere such that the exterior
 is 0 and inactive, the interior is active with values varying
 smoothly from 0 at the surface of the sphere to 1 at the half
@@ -265,8 +268,8 @@ width and interior of the sphere.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.create_torus">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_torus</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_torus" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.create_torus">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_torus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.create_torus" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a sparse fog volume of a torus in the xz-plane such
 that the exterior is 0 and inactive, the interior is active with
 values varying smoothly from 0 at the surface of the torus to 1
@@ -274,8 +277,8 @@ at the half width and interior of the torus.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the Volume to get</p>
@@ -290,8 +293,8 @@ at the half width and interior of the torus.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_aabb_center">
-<code class="sig-name descname"><span class="pre">get_aabb_center</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_aabb_center" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_aabb_center">
+<span class="sig-name descname"><span class="pre">get_aabb_center</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_aabb_center" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -309,8 +312,8 @@ at the half width and interior of the torus.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_count">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_count</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_count" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_count">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_count" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -322,8 +325,8 @@ at the half width and interior of the torus.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_dirty_volumes">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_dirty_volumes</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_dirty_volumes" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_dirty_volumes">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_dirty_volumes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_dirty_volumes" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::set&lt; nvisii::Volume * &gt;</p>
@@ -336,15 +339,15 @@ frame</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_edit_mutex">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_edit_mutex</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_edit_mutex" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_edit_mutex">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_edit_mutex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_edit_mutex" title="Permalink to this definition">¶</a></dt>
 <dd><p>For internal use. Returns the mutex used to lock entities for processing
 by the renderer.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_front">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_front</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_front" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_front">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_front</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_front" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Volume</span></code></p>
@@ -356,8 +359,8 @@ by the renderer.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_front_struct">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_front_struct</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_front_struct" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_front_struct">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_front_struct</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_front_struct" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>VolumeStruct</p>
@@ -369,8 +372,8 @@ by the renderer.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_grid_type">
-<code class="sig-name descname"><span class="pre">get_grid_type</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_grid_type" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_grid_type">
+<span class="sig-name descname"><span class="pre">get_grid_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_grid_type" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -382,8 +385,8 @@ by the renderer.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_id">
-<code class="sig-name descname"><span class="pre">get_id</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_id">
+<span class="sig-name descname"><span class="pre">get_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_id" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -395,14 +398,14 @@ by the renderer.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_max">
-<code class="sig-name descname"><span class="pre">get_max</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_max" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_max">
+<span class="sig-name descname"><span class="pre">get_max</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_max" title="Permalink to this definition">¶</a></dt>
 <dd><p>todo… document</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_max_aabb_corner">
-<code class="sig-name descname"><span class="pre">get_max_aabb_corner</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_max_aabb_corner" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_max_aabb_corner">
+<span class="sig-name descname"><span class="pre">get_max_aabb_corner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_max_aabb_corner" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -420,8 +423,8 @@ by the renderer.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_min_aabb_corner">
-<code class="sig-name descname"><span class="pre">get_min_aabb_corner</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_min_aabb_corner" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_min_aabb_corner">
+<span class="sig-name descname"><span class="pre">get_min_aabb_corner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_min_aabb_corner" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -439,8 +442,8 @@ by the renderer.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_name">
-<code class="sig-name descname"><span class="pre">get_name</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_name" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -452,8 +455,8 @@ by the renderer.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_name_to_id_map">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_name_to_id_map</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_name_to_id_map">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_name_to_id_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::map&lt; std::string,uint32_t,std::less&lt; std::string &gt;,std::allocator&lt; std::pair&lt; std::string const,uint32_t &gt; &gt; &gt;</p>
@@ -466,8 +469,8 @@ that volume</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_nano_vdbgrid_handle">
-<code class="sig-name descname"><span class="pre">get_nano_vdbgrid_handle</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_nano_vdbgrid_handle" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_nano_vdbgrid_handle">
+<span class="sig-name descname"><span class="pre">get_nano_vdbgrid_handle</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_nano_vdbgrid_handle" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::shared_ptr&lt; nanovdb::GridHandle&lt; &gt; &gt;</p>
@@ -479,8 +482,8 @@ that volume</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.get_node_count">
-<code class="sig-name descname"><span class="pre">get_node_count</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_node_count" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.get_node_count">
+<span class="sig-name descname"><span class="pre">get_node_count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.get_node_count" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>level</strong> (<em>int</em>) – The level of nodes being referenced (0-&gt;3 = leaf -&gt; root)</p>
@@ -496,14 +499,14 @@ that volume</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.initialize_factory">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">initialize_factory</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.initialize_factory" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.initialize_factory">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">initialize_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.initialize_factory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allocates the tables used to store all Volume components</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.is_factory_initialized">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">is_factory_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.is_factory_initialized">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">is_factory_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -516,8 +519,8 @@ allocated, and False otherwise</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.is_initialized">
-<code class="sig-name descname"><span class="pre">is_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.is_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.is_initialized">
+<span class="sig-name descname"><span class="pre">is_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.is_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -530,14 +533,14 @@ False if the Volume was cleared or removed.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.mark_dirty">
-<code class="sig-name descname"><span class="pre">mark_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.mark_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.mark_dirty">
+<span class="sig-name descname"><span class="pre">mark_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.mark_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tags the current component as being modified since the previous frame.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.remove">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">remove</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.remove" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.remove">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.remove" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the Volume to remove</p>
@@ -546,38 +549,38 @@ False if the Volume was cleared or removed.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.set_absorption">
-<code class="sig-name descname"><span class="pre">set_absorption</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">absorption</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.set_absorption" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.set_absorption">
+<span class="sig-name descname"><span class="pre">set_absorption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">absorption</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.set_absorption" title="Permalink to this definition">¶</a></dt>
 <dd><p>todo… document</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.set_gradient_factor">
-<code class="sig-name descname"><span class="pre">set_gradient_factor</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.set_gradient_factor" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.set_gradient_factor">
+<span class="sig-name descname"><span class="pre">set_gradient_factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.set_gradient_factor" title="Permalink to this definition">¶</a></dt>
 <dd><p>todo… document</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.set_scale">
-<code class="sig-name descname"><span class="pre">set_scale</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">units</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.set_scale" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.set_scale">
+<span class="sig-name descname"><span class="pre">set_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">units</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.set_scale" title="Permalink to this definition">¶</a></dt>
 <dd><p>todo… document</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.set_scattering">
-<code class="sig-name descname"><span class="pre">set_scattering</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scattering</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.set_scattering" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.set_scattering">
+<span class="sig-name descname"><span class="pre">set_scattering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scattering</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.set_scattering" title="Permalink to this definition">¶</a></dt>
 <dd><p>todo… document</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="nvisii.volume.thisown">
-<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">thisown</span></code><a class="headerlink" href="#nvisii.volume.thisown" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="nvisii.volume.thisown">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">thisown</span></span><a class="headerlink" href="#nvisii.volume.thisown" title="Permalink to this definition">¶</a></dt>
 <dd><p>The membership flag</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.to_string">
-<code class="sig-name descname"><span class="pre">to_string</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.to_string" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.to_string" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -589,8 +592,8 @@ False if the Volume was cleared or removed.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.volume.update_components">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">update_components</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.update_components" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.volume.update_components">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">update_components</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.volume.update_components" title="Permalink to this definition">¶</a></dt>
 <dd><p>Iterates through all components, updating any component struct fields
 and marking components as clean.</p>
 </dd></dl>

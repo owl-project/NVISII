@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -167,28 +170,28 @@
   <div class="section" id="camera">
 <h1>Camera<a class="headerlink" href="#camera" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="nvisii.camera">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">camera</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">nvisii.</span></span><span class="sig-name descname"><span class="pre">camera</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera" title="Permalink to this definition">¶</a></dt>
 <dd><p>The “Camera” component describes the perspective of an entity.
 It lens properties, like depth of field, focal length, field of view, and so on.
 It also describes the target render resolution.
 By connecting a camera component to an entity with a transform, that entity
 can be used to render the scene from a position in space.</p>
 <dl class="py method">
-<dt id="nvisii.camera.are_any_dirty">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">are_any_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.are_any_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.are_any_dirty">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">are_any_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.are_any_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates whether or not any cameras are “out of date” and need to be updated through the “update components” function</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.clear_all">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">clear_all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.clear_all" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.clear_all">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">clear_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.clear_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears any existing camera components.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.create">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.785398</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.create">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.785398</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a camera component.
 :type name: string
 :param name: A unique name for this camera.
@@ -201,8 +204,8 @@ can be used to render the scene from a position in space.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.create_from_focal_length">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_focal_length</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focal_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create_from_focal_length" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.create_from_focal_length">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_focal_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focal_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create_from_focal_length" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a camera component from a focal length.
 The focal length controls the amount of zoom, i.e. the amount of the scene
 which is visible all at once. Longer focal lengths result in a smaller field of view (more zoom),
@@ -226,8 +229,8 @@ while short focal lengths allow you to see more of the scene at once (larger FOV
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.create_from_fov">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_fov</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create_from_fov" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.create_from_fov">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_fov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create_from_fov" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a camera component from a field of view.
 The field of view controls the amount of zoom, i.e. the amount of the scene
 which is visible all at once. A smaller field of view results in a longer focal length (more zoom),
@@ -250,8 +253,8 @@ while larger field of view allow you to see more of the scene at once (shorter f
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.create_from_intrinsics">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_intrinsics</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">near</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">far</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create_from_intrinsics" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.create_from_intrinsics">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_intrinsics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">near</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">far</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create_from_intrinsics" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a camera component from a set of intrinsic properties.
 These properties are common in computer-vision setups.</p>
 <dl class="field-list simple">
@@ -278,20 +281,20 @@ These properties are common in computer-vision setups.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.create_perspective_from_focal_length">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_perspective_from_focal_length</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focal_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create_perspective_from_focal_length" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.create_perspective_from_focal_length">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_perspective_from_focal_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focal_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create_perspective_from_focal_length" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deprecated in favor of create_from_focal_length</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.create_perspective_from_fov">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_perspective_from_fov</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create_perspective_from_fov" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.create_perspective_from_fov">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_perspective_from_fov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.create_perspective_from_fov" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deprecated in favor of either create or create_from_fov</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.get">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.get">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the camera to get</p>
@@ -306,8 +309,8 @@ These properties are common in computer-vision setups.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.get_count">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_count</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_count" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.get_count">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_count" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -319,14 +322,14 @@ These properties are common in computer-vision setups.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.get_edit_mutex">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_edit_mutex</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_edit_mutex" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.get_edit_mutex">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_edit_mutex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_edit_mutex" title="Permalink to this definition">¶</a></dt>
 <dd><p>For internal use. Returns the mutex used to lock cameras for processing by the renderer.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.get_front">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_front</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_front" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.get_front">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_front</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_front" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Camera</span></code></p>
@@ -338,8 +341,8 @@ These properties are common in computer-vision setups.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.get_front_struct">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_front_struct</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_front_struct" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.get_front_struct">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_front_struct</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_front_struct" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>CameraStruct</p>
@@ -351,8 +354,8 @@ These properties are common in computer-vision setups.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.get_intrinsic_matrix">
-<code class="sig-name descname"><span class="pre">get_intrinsic_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_intrinsic_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.get_intrinsic_matrix">
+<span class="sig-name descname"><span class="pre">get_intrinsic_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_intrinsic_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>The intrinsic matrix is a 3x3 matrix that transforms 3D (non-homogeneous) cooordinates in camera space into 2D (homogeneous) image coordinates.
 These types of matrices are commonly used for computer vision applications, but are less common in computer graphics.
 :type width: float
@@ -364,8 +367,8 @@ These types of matrices are commonly used for computer vision applications, but 
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.get_name">
-<code class="sig-name descname"><span class="pre">get_name</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_name" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -377,8 +380,8 @@ These types of matrices are commonly used for computer vision applications, but 
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.get_name_to_id_map">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_name_to_id_map</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.get_name_to_id_map">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_name_to_id_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::map&lt; std::string,uint32_t,std::less&lt; std::string &gt;,std::allocator&lt; std::pair&lt; std::string const,uint32_t &gt; &gt; &gt;</p>
@@ -390,8 +393,8 @@ These types of matrices are commonly used for computer vision applications, but 
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.get_projection">
-<code class="sig-name descname"><span class="pre">get_projection</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_projection" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.get_projection">
+<span class="sig-name descname"><span class="pre">get_projection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_projection" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.mat4" title="nvisii.mat4"><code class="xref py py-class docutils literal notranslate"><span class="pre">mat4</span></code></a></p>
@@ -405,20 +408,20 @@ an orthographic view.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.get_struct">
-<code class="sig-name descname"><span class="pre">get_struct</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_struct" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.get_struct">
+<span class="sig-name descname"><span class="pre">get_struct</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.get_struct" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the simplified struct used to represent the current component</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.initialize_factory">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">initialize_factory</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.initialize_factory" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.initialize_factory">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">initialize_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.initialize_factory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allocates the tables used to store all Camera components</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.is_clean">
-<code class="sig-name descname"><span class="pre">is_clean</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.is_clean" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.is_clean">
+<span class="sig-name descname"><span class="pre">is_clean</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.is_clean" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -430,8 +433,8 @@ an orthographic view.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.is_dirty">
-<code class="sig-name descname"><span class="pre">is_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.is_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.is_dirty">
+<span class="sig-name descname"><span class="pre">is_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.is_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -443,8 +446,8 @@ an orthographic view.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.is_factory_initialized">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">is_factory_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.is_factory_initialized">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">is_factory_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -456,8 +459,8 @@ an orthographic view.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.is_initialized">
-<code class="sig-name descname"><span class="pre">is_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.is_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.is_initialized">
+<span class="sig-name descname"><span class="pre">is_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.is_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -469,20 +472,20 @@ an orthographic view.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.mark_clean">
-<code class="sig-name descname"><span class="pre">mark_clean</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.mark_clean" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.mark_clean">
+<span class="sig-name descname"><span class="pre">mark_clean</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.mark_clean" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tags the current component as being unmodified since the previous frame.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.mark_dirty">
-<code class="sig-name descname"><span class="pre">mark_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.mark_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.mark_dirty">
+<span class="sig-name descname"><span class="pre">mark_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.mark_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tags the current component as being modified since the previous frame.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.remove">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">remove</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.remove" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.remove">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.remove" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the camera to remove</p>
@@ -491,8 +494,8 @@ an orthographic view.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.set_aperture_diameter">
-<code class="sig-name descname"><span class="pre">set_aperture_diameter</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diameter</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_aperture_diameter" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.set_aperture_diameter">
+<span class="sig-name descname"><span class="pre">set_aperture_diameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diameter</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_aperture_diameter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Real-world cameras transmit light through a lens that bends and focuses it onto the sensor.
 Because of this, objects that are a certain distance away are in focus, but objects in front
 and behind that are blurred.</p>
@@ -504,8 +507,8 @@ and behind that are blurred.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.set_focal_distance">
-<code class="sig-name descname"><span class="pre">set_focal_distance</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distance</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_focal_distance" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.set_focal_distance">
+<span class="sig-name descname"><span class="pre">set_focal_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distance</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_focal_distance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Real-world cameras transmit light through a lens that bends and focuses it onto the sensor.
 Because of this, objects that are a certain distance away are in focus, but objects in front
 and behind that are blurred.</p>
@@ -519,8 +522,8 @@ and has no effect on the perspective of a camera.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.set_focal_length">
-<code class="sig-name descname"><span class="pre">set_focal_length</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">focal_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_focal_length" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.set_focal_length">
+<span class="sig-name descname"><span class="pre">set_focal_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">focal_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_focal_length" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tells the current camera component to use a projection matrix constructed from a focal length.
 The focal length controls the amount of zoom, i.e. the amount of the scene
 which is visible all at once. Longer focal lengths result in a smaller field of view (more zoom),
@@ -538,8 +541,8 @@ NOTE: not to be confused with set_focal_distance</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.set_fov">
-<code class="sig-name descname"><span class="pre">set_fov</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_fov" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.set_fov">
+<span class="sig-name descname"><span class="pre">set_fov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_fov" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tells the current camera component to use a projection matrix constructed from a field of view.
 The field of view controls the amount of zoom, i.e. the amount of the scene
 which is visible all at once. A smaller field of view results in a longer focal length (more zoom),
@@ -555,8 +558,8 @@ while larger field of view allow you to see more of the scene at once (shorter f
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.set_intrinsics">
-<code class="sig-name descname"><span class="pre">set_intrinsics</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">near</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">far</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_intrinsics" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.set_intrinsics">
+<span class="sig-name descname"><span class="pre">set_intrinsics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">near</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">far</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_intrinsics" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Constructs a projection matrix using custom intrinsics.</p>
 </div></blockquote>
@@ -577,23 +580,23 @@ while larger field of view allow you to see more of the scene at once (shorter f
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.set_projection">
-<code class="sig-name descname"><span class="pre">set_projection</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">projection</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_projection" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.set_projection">
+<span class="sig-name descname"><span class="pre">set_projection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">projection</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.set_projection" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Sets the projection matrix used to achieve a perspective (eg a vanishing point), or for scaling</p>
 </div></blockquote>
 <p>an orthographic view</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="nvisii.camera.thisown">
-<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">thisown</span></code><a class="headerlink" href="#nvisii.camera.thisown" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="nvisii.camera.thisown">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">thisown</span></span><a class="headerlink" href="#nvisii.camera.thisown" title="Permalink to this definition">¶</a></dt>
 <dd><p>The membership flag</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.to_string">
-<code class="sig-name descname"><span class="pre">to_string</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.to_string" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.to_string" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -605,8 +608,8 @@ while larger field of view allow you to see more of the scene at once (shorter f
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.camera.update_components">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">update_components</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.update_components" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.camera.update_components">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">update_components</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.camera.update_components" title="Permalink to this definition">¶</a></dt>
 <dd><p>Iterates through all components, updating any component struct fields and marking components as clean.</p>
 </dd></dl>
 

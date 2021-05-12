@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -167,20 +170,20 @@
   <div class="section" id="material">
 <h1>Material<a class="headerlink" href="#material" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="nvisii.material">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">material</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">nvisii.</span></span><span class="sig-name descname"><span class="pre">material</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material" title="Permalink to this definition">¶</a></dt>
 <dd><p>The “Material” component describes the surface properties of an entity.
 This material follows a physically based workflow, more specifically the
 Blender principled shader, and is very similar to the Disney material model.</p>
-<dl class="py method">
-<dt id="nvisii.material.thisown">
-<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">thisown</span></code><a class="headerlink" href="#nvisii.material.thisown" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="nvisii.material.thisown">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">thisown</span></span><a class="headerlink" href="#nvisii.material.thisown" title="Permalink to this definition">¶</a></dt>
 <dd><p>The membership flag</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.create">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.create" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.create">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a material with the given name.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -216,8 +219,8 @@ Blender principled shader, and is very similar to the Disney material model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets a material by name</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -233,8 +236,8 @@ Blender principled shader, and is very similar to the Disney material model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_count">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_count</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_count" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_count">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_count" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -246,8 +249,8 @@ Blender principled shader, and is very similar to the Disney material model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_name">
-<code class="sig-name descname"><span class="pre">get_name</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_name" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -259,8 +262,8 @@ Blender principled shader, and is very similar to the Disney material model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_name_to_id_map">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_name_to_id_map</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_name_to_id_map">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_name_to_id_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::map&lt; std::string,uint32_t,std::less&lt; std::string &gt;,std::allocator&lt; std::pair&lt; std::string const,uint32_t &gt; &gt; &gt;</p>
@@ -272,8 +275,8 @@ Blender principled shader, and is very similar to the Disney material model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.remove">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">remove</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.remove" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.remove">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.remove" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the material to remove</p>
@@ -282,14 +285,14 @@ Blender principled shader, and is very similar to the Disney material model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.initialize_factory">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">initialize_factory</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.initialize_factory" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.initialize_factory">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">initialize_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.initialize_factory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allocates the tables used to store all material components</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.is_initialized">
-<code class="sig-name descname"><span class="pre">is_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.is_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.is_initialized">
+<span class="sig-name descname"><span class="pre">is_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.is_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -301,14 +304,14 @@ Blender principled shader, and is very similar to the Disney material model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_all">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">clear_all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_all" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_all">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">clear_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears any existing material components.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.are_any_dirty">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">are_any_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.are_any_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.are_any_dirty">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">are_any_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.are_any_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -320,14 +323,14 @@ Blender principled shader, and is very similar to the Disney material model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.to_string">
-<code class="sig-name descname"><span class="pre">to_string</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.to_string" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.to_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a json string representation of the current component</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_base_color">
-<code class="sig-name descname"><span class="pre">set_base_color</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_base_color" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_base_color">
+<span class="sig-name descname"><span class="pre">set_base_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_base_color" title="Permalink to this definition">¶</a></dt>
 <dd><p>The diffuse or metal surface color. Ignored if a base color texture is set.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -337,8 +340,8 @@ Blender principled shader, and is very similar to the Disney material model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_base_color_texture">
-<code class="sig-name descname"><span class="pre">set_base_color_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_base_color_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_base_color_texture">
+<span class="sig-name descname"><span class="pre">set_base_color_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_base_color_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>The diffuse or metal surface color. Texture is expected to be RGB. Overrides any existing constant base color.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -348,14 +351,14 @@ Blender principled shader, and is very similar to the Disney material model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_base_color_texture">
-<code class="sig-name descname"><span class="pre">clear_base_color_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_base_color_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_base_color_texture">
+<span class="sig-name descname"><span class="pre">clear_base_color_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_base_color_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the base color texture, reverting back to any existing constant base color</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_base_color">
-<code class="sig-name descname"><span class="pre">get_base_color</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_base_color" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_base_color">
+<span class="sig-name descname"><span class="pre">get_base_color</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_base_color" title="Permalink to this definition">¶</a></dt>
 <dd><p>The diffuse or metal surface color. Ignored if a base color texture is set.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -368,8 +371,8 @@ Blender principled shader, and is very similar to the Disney material model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_subsurface">
-<code class="sig-name descname"><span class="pre">set_subsurface</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subsurface</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_subsurface">
+<span class="sig-name descname"><span class="pre">set_subsurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subsurface</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mix between diffuse and subsurface scattering.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -380,8 +383,8 @@ this value controls a multiplier for the Subsurface Radius.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_subsurface_texture">
-<code class="sig-name descname"><span class="pre">set_subsurface_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_subsurface_texture">
+<span class="sig-name descname"><span class="pre">set_subsurface_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mix between diffuse and subsurface scattering. Overrides any existing constant subsurface</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -394,14 +397,14 @@ this value controls a multiplier for the Subsurface Radius.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_subsurface_texture">
-<code class="sig-name descname"><span class="pre">clear_subsurface_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_subsurface_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_subsurface_texture">
+<span class="sig-name descname"><span class="pre">clear_subsurface_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_subsurface_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the subsurface texture, reverting back to any existing constant subsurface</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_subsurface">
-<code class="sig-name descname"><span class="pre">get_subsurface</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_subsurface" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_subsurface">
+<span class="sig-name descname"><span class="pre">get_subsurface</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_subsurface" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mix between diffuse and subsurface scattering.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -414,8 +417,8 @@ this value controls a multiplier for the Subsurface Radius.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_subsurface_radius">
-<code class="sig-name descname"><span class="pre">set_subsurface_radius</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subsurfaceRadius</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface_radius" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_subsurface_radius">
+<span class="sig-name descname"><span class="pre">set_subsurface_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subsurfaceRadius</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface_radius" title="Permalink to this definition">¶</a></dt>
 <dd><p>Average distance that light scatters below the surface. Higher radius gives a softer appearance,
 as light bleeds into shadows and through the object. The scattering distance is specified separately
 for the RGB channels, to render materials such as skin where red light scatters deeper.</p>
@@ -427,8 +430,8 @@ for the RGB channels, to render materials such as skin where red light scatters 
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_subsurface_radius_texture">
-<code class="sig-name descname"><span class="pre">set_subsurface_radius_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface_radius_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_subsurface_radius_texture">
+<span class="sig-name descname"><span class="pre">set_subsurface_radius_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface_radius_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Average distance that light scatters below the surface. Higher radius gives a softer appearance,
 as light bleeds into shadows and through the object. Overrides any existing constant subsurface radius</p>
 <dl class="field-list simple">
@@ -439,14 +442,14 @@ as light bleeds into shadows and through the object. Overrides any existing cons
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_subsurface_radius_texture">
-<code class="sig-name descname"><span class="pre">clear_subsurface_radius_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_subsurface_radius_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_subsurface_radius_texture">
+<span class="sig-name descname"><span class="pre">clear_subsurface_radius_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_subsurface_radius_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the subsurface radius texture, reverting back to any existing constant subsurface radius</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_subsurface_radius">
-<code class="sig-name descname"><span class="pre">get_subsurface_radius</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_subsurface_radius" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_subsurface_radius">
+<span class="sig-name descname"><span class="pre">get_subsurface_radius</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_subsurface_radius" title="Permalink to this definition">¶</a></dt>
 <dd><p>Average distance that light scatters below the surface. Higher radius gives a softer appearance,
 as light bleeds into shadows and through the object.</p>
 <dl class="field-list simple">
@@ -460,8 +463,8 @@ as light bleeds into shadows and through the object.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_subsurface_color">
-<code class="sig-name descname"><span class="pre">set_subsurface_color</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface_color" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_subsurface_color">
+<span class="sig-name descname"><span class="pre">set_subsurface_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface_color" title="Permalink to this definition">¶</a></dt>
 <dd><p>The subsurface scattering base color.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -471,8 +474,8 @@ as light bleeds into shadows and through the object.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_subsurface_color_texture">
-<code class="sig-name descname"><span class="pre">set_subsurface_color_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface_color_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_subsurface_color_texture">
+<span class="sig-name descname"><span class="pre">set_subsurface_color_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_subsurface_color_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>The subsurface scattering base color. Overrides any existing constant subsurface color</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -482,14 +485,14 @@ as light bleeds into shadows and through the object.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_subsurface_color_texture">
-<code class="sig-name descname"><span class="pre">clear_subsurface_color_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_subsurface_color_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_subsurface_color_texture">
+<span class="sig-name descname"><span class="pre">clear_subsurface_color_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_subsurface_color_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the subsurface color texture, reverting back to any existing constant subsurface color</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_metallic">
-<code class="sig-name descname"><span class="pre">set_metallic</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metallic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_metallic" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_metallic">
+<span class="sig-name descname"><span class="pre">set_metallic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metallic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_metallic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blends between a non-metallic and metallic material model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -502,8 +505,8 @@ with a specular reflection layer on top.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_metallic_texture">
-<code class="sig-name descname"><span class="pre">set_metallic_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_metallic_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_metallic_texture">
+<span class="sig-name descname"><span class="pre">set_metallic_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_metallic_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blends between a non-metallic and metallic material model. Overrides any existing constant metallic</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -518,14 +521,14 @@ consists of a diffuse or transmissive base layer, with a specular reflection lay
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_metallic_texture">
-<code class="sig-name descname"><span class="pre">clear_metallic_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_metallic_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_metallic_texture">
+<span class="sig-name descname"><span class="pre">clear_metallic_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_metallic_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the metallic texture, reverting back to any existing constant metallic</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_metallic">
-<code class="sig-name descname"><span class="pre">get_metallic</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_metallic" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_metallic">
+<span class="sig-name descname"><span class="pre">get_metallic</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_metallic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blends between a non-metallic and metallic material model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -538,8 +541,8 @@ consists of a diffuse or transmissive base layer, with a specular reflection lay
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_specular">
-<code class="sig-name descname"><span class="pre">set_specular</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">specular</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_specular" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_specular">
+<span class="sig-name descname"><span class="pre">set_specular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">specular</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_specular" title="Permalink to this definition">¶</a></dt>
 <dd><p>The amount of dielectric specular reflection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -549,8 +552,8 @@ consists of a diffuse or transmissive base layer, with a specular reflection lay
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_specular_texture">
-<code class="sig-name descname"><span class="pre">set_specular_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_specular_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_specular_texture">
+<span class="sig-name descname"><span class="pre">set_specular_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_specular_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>The amount of dielectric specular reflection. Overrides any existing constant specular</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -563,14 +566,14 @@ consists of a diffuse or transmissive base layer, with a specular reflection lay
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_specular_texture">
-<code class="sig-name descname"><span class="pre">clear_specular_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_specular_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_specular_texture">
+<span class="sig-name descname"><span class="pre">clear_specular_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_specular_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the specular texture, reverting back to any existing constant specular</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_specular">
-<code class="sig-name descname"><span class="pre">get_specular</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_specular" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_specular">
+<span class="sig-name descname"><span class="pre">get_specular</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_specular" title="Permalink to this definition">¶</a></dt>
 <dd><p>The amount of dielectric specular reflection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -583,8 +586,8 @@ consists of a diffuse or transmissive base layer, with a specular reflection lay
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_specular_tint">
-<code class="sig-name descname"><span class="pre">set_specular_tint</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">specularTint</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_specular_tint" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_specular_tint">
+<span class="sig-name descname"><span class="pre">set_specular_tint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">specularTint</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_specular_tint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tints the facing specular reflection using the base color, while glancing reflection remains white.
 Normal dielectrics have colorless reflection, so this parameter is not technically physically correct
 and is provided for faking the appearance of materials with complex surface structure.</p>
@@ -596,8 +599,8 @@ and is provided for faking the appearance of materials with complex surface stru
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_specular_tint_texture">
-<code class="sig-name descname"><span class="pre">set_specular_tint_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_specular_tint_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_specular_tint_texture">
+<span class="sig-name descname"><span class="pre">set_specular_tint_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_specular_tint_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tints the facing specular reflection using the base color, while glancing reflection remains white. Overrides any existing constant specular tint</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -610,14 +613,14 @@ and is provided for faking the appearance of materials with complex surface stru
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_specular_tint_texture">
-<code class="sig-name descname"><span class="pre">clear_specular_tint_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_specular_tint_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_specular_tint_texture">
+<span class="sig-name descname"><span class="pre">clear_specular_tint_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_specular_tint_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the specular tint texture, reverting back to any existing constant specular tint</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_specular_tint">
-<code class="sig-name descname"><span class="pre">get_specular_tint</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_specular_tint" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_specular_tint">
+<span class="sig-name descname"><span class="pre">get_specular_tint</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_specular_tint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tints the facing specular reflection using the base color, while glancing reflection remains white.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -630,8 +633,8 @@ and is provided for faking the appearance of materials with complex surface stru
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_roughness">
-<code class="sig-name descname"><span class="pre">set_roughness</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roughness</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_roughness" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_roughness">
+<span class="sig-name descname"><span class="pre">set_roughness</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roughness</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_roughness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Microfacet roughness of the surface for diffuse and specular reflection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -641,8 +644,8 @@ and is provided for faking the appearance of materials with complex surface stru
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_roughness_texture">
-<code class="sig-name descname"><span class="pre">set_roughness_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_roughness_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_roughness_texture">
+<span class="sig-name descname"><span class="pre">set_roughness_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_roughness_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Microfacet roughness of the surface for diffuse and specular reflection. Overrides any existing constant roughness</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -655,14 +658,14 @@ and is provided for faking the appearance of materials with complex surface stru
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_roughness_texture">
-<code class="sig-name descname"><span class="pre">clear_roughness_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_roughness_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_roughness_texture">
+<span class="sig-name descname"><span class="pre">clear_roughness_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_roughness_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the roughness texture, reverting back to any existing constant roughness</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_roughness">
-<code class="sig-name descname"><span class="pre">get_roughness</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_roughness" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_roughness">
+<span class="sig-name descname"><span class="pre">get_roughness</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_roughness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Microfacet roughness of the surface for diffuse and specular reflection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -675,8 +678,8 @@ and is provided for faking the appearance of materials with complex surface stru
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_alpha">
-<code class="sig-name descname"><span class="pre">set_alpha</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_alpha" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_alpha">
+<span class="sig-name descname"><span class="pre">set_alpha</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_alpha" title="Permalink to this definition">¶</a></dt>
 <dd><p>The transparency of the surface, independent of transmission.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -686,8 +689,8 @@ and is provided for faking the appearance of materials with complex surface stru
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_alpha_texture">
-<code class="sig-name descname"><span class="pre">set_alpha_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_alpha_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_alpha_texture">
+<span class="sig-name descname"><span class="pre">set_alpha_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_alpha_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>The transparency of the surface, independent of transmission. Overrides any existing constant alpha</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -701,14 +704,14 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_alpha_texture">
-<code class="sig-name descname"><span class="pre">clear_alpha_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_alpha_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_alpha_texture">
+<span class="sig-name descname"><span class="pre">clear_alpha_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_alpha_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the alpha texture, reverting back to any existing constant alpha</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_alpha">
-<code class="sig-name descname"><span class="pre">get_alpha</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_alpha" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_alpha">
+<span class="sig-name descname"><span class="pre">get_alpha</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_alpha" title="Permalink to this definition">¶</a></dt>
 <dd><p>The transparency of the surface, independent of transmission.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -721,8 +724,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_anisotropic">
-<code class="sig-name descname"><span class="pre">set_anisotropic</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">anisotropic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_anisotropic" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_anisotropic">
+<span class="sig-name descname"><span class="pre">set_anisotropic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">anisotropic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_anisotropic" title="Permalink to this definition">¶</a></dt>
 <dd><p>The amount of anisotropy for specular reflection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -732,8 +735,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_anisotropic_texture">
-<code class="sig-name descname"><span class="pre">set_anisotropic_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_anisotropic_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_anisotropic_texture">
+<span class="sig-name descname"><span class="pre">set_anisotropic_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_anisotropic_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>The amount of anisotropy for specular reflection. Overrides any existing constant anisotropy</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -746,14 +749,14 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_anisotropic_texture">
-<code class="sig-name descname"><span class="pre">clear_anisotropic_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_anisotropic_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_anisotropic_texture">
+<span class="sig-name descname"><span class="pre">clear_anisotropic_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_anisotropic_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the anisotropic texture, reverting back to any existing constant anisotropy</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_anisotropic">
-<code class="sig-name descname"><span class="pre">get_anisotropic</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_anisotropic" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_anisotropic">
+<span class="sig-name descname"><span class="pre">get_anisotropic</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_anisotropic" title="Permalink to this definition">¶</a></dt>
 <dd><p>The amount of anisotropy for specular reflection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -766,15 +769,15 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_anisotropic_rotation">
-<code class="sig-name descname"><span class="pre">set_anisotropic_rotation</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">anisotropicRotation</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_anisotropic_rotation" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_anisotropic_rotation">
+<span class="sig-name descname"><span class="pre">set_anisotropic_rotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">anisotropicRotation</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_anisotropic_rotation" title="Permalink to this definition">¶</a></dt>
 <dd><p>The angle of anisotropy.
 :param anisotropic_rotation: Rotates the angle of anisotropy, with 1.0 going full circle.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_anisotropic_rotation_texture">
-<code class="sig-name descname"><span class="pre">set_anisotropic_rotation_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_anisotropic_rotation_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_anisotropic_rotation_texture">
+<span class="sig-name descname"><span class="pre">set_anisotropic_rotation_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_anisotropic_rotation_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>The angle of anisotropy. Overrides any existing constant anisotropic rotation</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -787,14 +790,14 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_anisotropic_rotation_texture">
-<code class="sig-name descname"><span class="pre">clear_anisotropic_rotation_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_anisotropic_rotation_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_anisotropic_rotation_texture">
+<span class="sig-name descname"><span class="pre">clear_anisotropic_rotation_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_anisotropic_rotation_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the anisotropic rotation texture, reverting back to any existing constant anisotropic rotation</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_anisotropic_rotation">
-<code class="sig-name descname"><span class="pre">get_anisotropic_rotation</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_anisotropic_rotation" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_anisotropic_rotation">
+<span class="sig-name descname"><span class="pre">get_anisotropic_rotation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_anisotropic_rotation" title="Permalink to this definition">¶</a></dt>
 <dd><p>The angle of anisotropy.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -807,8 +810,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_sheen">
-<code class="sig-name descname"><span class="pre">set_sheen</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sheen</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_sheen" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_sheen">
+<span class="sig-name descname"><span class="pre">set_sheen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sheen</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_sheen" title="Permalink to this definition">¶</a></dt>
 <dd><p>Amount of soft velvet like reflection near edges, for simulating materials such as cloth.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -818,8 +821,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_sheen_texture">
-<code class="sig-name descname"><span class="pre">set_sheen_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_sheen_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_sheen_texture">
+<span class="sig-name descname"><span class="pre">set_sheen_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_sheen_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Amount of soft velvet like reflection near edges, for simulating materials such as cloth. Overrides any existing constant sheen</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -832,14 +835,14 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_sheen_texture">
-<code class="sig-name descname"><span class="pre">clear_sheen_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_sheen_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_sheen_texture">
+<span class="sig-name descname"><span class="pre">clear_sheen_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_sheen_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the sheen texture, reverting back to any existing constant sheen</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_sheen">
-<code class="sig-name descname"><span class="pre">get_sheen</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_sheen" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_sheen">
+<span class="sig-name descname"><span class="pre">get_sheen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_sheen" title="Permalink to this definition">¶</a></dt>
 <dd><p>Amount of soft velvet like reflection near edges, for simulating materials such as cloth.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -852,8 +855,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_sheen_tint">
-<code class="sig-name descname"><span class="pre">set_sheen_tint</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sheenTint</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_sheen_tint" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_sheen_tint">
+<span class="sig-name descname"><span class="pre">set_sheen_tint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sheenTint</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_sheen_tint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mix between white and using base color for sheen reflection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -863,8 +866,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_sheen_tint_texture">
-<code class="sig-name descname"><span class="pre">set_sheen_tint_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_sheen_tint_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_sheen_tint_texture">
+<span class="sig-name descname"><span class="pre">set_sheen_tint_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_sheen_tint_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mix between white and using base color for sheen reflection. Overrides any existing constant sheen tint</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -877,14 +880,14 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_sheen_tint_texture">
-<code class="sig-name descname"><span class="pre">clear_sheen_tint_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_sheen_tint_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_sheen_tint_texture">
+<span class="sig-name descname"><span class="pre">clear_sheen_tint_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_sheen_tint_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the sheen tint texture, reverting back to any existing constant sheen tint</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_sheen_tint">
-<code class="sig-name descname"><span class="pre">get_sheen_tint</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_sheen_tint" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_sheen_tint">
+<span class="sig-name descname"><span class="pre">get_sheen_tint</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_sheen_tint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mix between white and using base color for sheen reflection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -897,8 +900,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_clearcoat">
-<code class="sig-name descname"><span class="pre">set_clearcoat</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clearcoat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_clearcoat" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_clearcoat">
+<span class="sig-name descname"><span class="pre">set_clearcoat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clearcoat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_clearcoat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extra white specular layer on top of others. This is useful for materials like car paint and the like.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -908,8 +911,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_clearcoat_texture">
-<code class="sig-name descname"><span class="pre">set_clearcoat_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_clearcoat_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_clearcoat_texture">
+<span class="sig-name descname"><span class="pre">set_clearcoat_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_clearcoat_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extra white specular layer on top of others. Overrides any existing constant clearcoat</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -922,14 +925,14 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_clearcoat_texture">
-<code class="sig-name descname"><span class="pre">clear_clearcoat_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_clearcoat_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_clearcoat_texture">
+<span class="sig-name descname"><span class="pre">clear_clearcoat_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_clearcoat_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the clearcoat texture, reverting back to any existing constant clearcoat</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_clearcoat">
-<code class="sig-name descname"><span class="pre">get_clearcoat</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_clearcoat" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_clearcoat">
+<span class="sig-name descname"><span class="pre">get_clearcoat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_clearcoat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extra white specular layer on top of others. This is useful for materials like car paint and the like.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -942,8 +945,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_clearcoat_roughness">
-<code class="sig-name descname"><span class="pre">set_clearcoat_roughness</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clearcoatRoughness</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_clearcoat_roughness" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_clearcoat_roughness">
+<span class="sig-name descname"><span class="pre">set_clearcoat_roughness</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clearcoatRoughness</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_clearcoat_roughness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Microfacet surface roughness of clearcoat specular.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -953,8 +956,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_clearcoat_roughness_texture">
-<code class="sig-name descname"><span class="pre">set_clearcoat_roughness_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_clearcoat_roughness_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_clearcoat_roughness_texture">
+<span class="sig-name descname"><span class="pre">set_clearcoat_roughness_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_clearcoat_roughness_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Microfacet surface roughness of clearcoat specular. Overrides any existing constant clearcoat roughness</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -967,14 +970,14 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_clearcoat_roughness_texture">
-<code class="sig-name descname"><span class="pre">clear_clearcoat_roughness_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_clearcoat_roughness_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_clearcoat_roughness_texture">
+<span class="sig-name descname"><span class="pre">clear_clearcoat_roughness_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_clearcoat_roughness_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the clearcoat roughness texture, reverting back to any existing constant clearcoat roughness</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_clearcoat_roughness">
-<code class="sig-name descname"><span class="pre">get_clearcoat_roughness</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_clearcoat_roughness" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_clearcoat_roughness">
+<span class="sig-name descname"><span class="pre">get_clearcoat_roughness</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_clearcoat_roughness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Microfacet surface roughness of clearcoat specular.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -987,8 +990,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_ior">
-<code class="sig-name descname"><span class="pre">set_ior</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ior</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_ior" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_ior">
+<span class="sig-name descname"><span class="pre">set_ior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ior</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_ior" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of refraction used for transmission events.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -998,8 +1001,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_ior_texture">
-<code class="sig-name descname"><span class="pre">set_ior_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_ior_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_ior_texture">
+<span class="sig-name descname"><span class="pre">set_ior_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_ior_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of refraction used for transmission events. Overrides any existing constant ior.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1012,14 +1015,14 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_ior_texture">
-<code class="sig-name descname"><span class="pre">clear_ior_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_ior_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_ior_texture">
+<span class="sig-name descname"><span class="pre">clear_ior_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_ior_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the ior texture, reverting back to any existing constant ior</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_ior">
-<code class="sig-name descname"><span class="pre">get_ior</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_ior" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_ior">
+<span class="sig-name descname"><span class="pre">get_ior</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_ior" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of refraction used for transmission events.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -1032,8 +1035,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_transmission">
-<code class="sig-name descname"><span class="pre">set_transmission</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transmission</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_transmission" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_transmission">
+<span class="sig-name descname"><span class="pre">set_transmission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transmission</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_transmission" title="Permalink to this definition">¶</a></dt>
 <dd><p>Controls how much the surface looks like glass. Note, metallic takes precedence.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1043,8 +1046,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_transmission_texture">
-<code class="sig-name descname"><span class="pre">set_transmission_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_transmission_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_transmission_texture">
+<span class="sig-name descname"><span class="pre">set_transmission_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_transmission_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Controls how much the surface looks like glass. Note, metallic takes precedence. Overrides any existing constant transmission.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1057,14 +1060,14 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_transmission_texture">
-<code class="sig-name descname"><span class="pre">clear_transmission_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_transmission_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_transmission_texture">
+<span class="sig-name descname"><span class="pre">clear_transmission_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_transmission_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the transmission texture, reverting back to any existing constant transmission</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_transmission">
-<code class="sig-name descname"><span class="pre">get_transmission</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_transmission" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_transmission">
+<span class="sig-name descname"><span class="pre">get_transmission</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_transmission" title="Permalink to this definition">¶</a></dt>
 <dd><p>Controls how much the surface looks like glass. Note, metallic takes precedence.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -1077,8 +1080,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_transmission_roughness">
-<code class="sig-name descname"><span class="pre">set_transmission_roughness</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transmissionRoughness</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_transmission_roughness" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_transmission_roughness">
+<span class="sig-name descname"><span class="pre">set_transmission_roughness</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transmissionRoughness</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_transmission_roughness" title="Permalink to this definition">¶</a></dt>
 <dd><p>The roughness of the interior surface used for transmitted light.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1088,8 +1091,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_transmission_roughness_texture">
-<code class="sig-name descname"><span class="pre">set_transmission_roughness_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_transmission_roughness_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_transmission_roughness_texture">
+<span class="sig-name descname"><span class="pre">set_transmission_roughness_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_transmission_roughness_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>The roughness of the interior surface used for transmitted light. Overrides any existing constant transmission roughness</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1102,14 +1105,14 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_transmission_roughness_texture">
-<code class="sig-name descname"><span class="pre">clear_transmission_roughness_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_transmission_roughness_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_transmission_roughness_texture">
+<span class="sig-name descname"><span class="pre">clear_transmission_roughness_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_transmission_roughness_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the TransmissionRoughness texture, reverting back to any existing constant TransmissionRoughness</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.get_transmission_roughness">
-<code class="sig-name descname"><span class="pre">get_transmission_roughness</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_transmission_roughness" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.get_transmission_roughness">
+<span class="sig-name descname"><span class="pre">get_transmission_roughness</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.get_transmission_roughness" title="Permalink to this definition">¶</a></dt>
 <dd><p>The roughness of the interior surface used for transmitted light.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -1122,8 +1125,8 @@ being fully transparent.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.set_normal_map_texture">
-<code class="sig-name descname"><span class="pre">set_normal_map_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_normal_map_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.set_normal_map_texture">
+<span class="sig-name descname"><span class="pre">set_normal_map_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.set_normal_map_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>A normal map texture used to displace surface normals.
 Note that we expect R=X+, G=Y+, and B=Z+ (Matches Blender / OpenGL).
 Textures imported as “.dds” are an exception, and use R=X+, G=Y-, and B=Z+ (Matches DirectX style)</p>
@@ -1135,8 +1138,8 @@ Textures imported as “.dds” are an exception, and use R=X+, G=Y-, and B=Z+ (
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.material.clear_normal_map_texture">
-<code class="sig-name descname"><span class="pre">clear_normal_map_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_normal_map_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.material.clear_normal_map_texture">
+<span class="sig-name descname"><span class="pre">clear_normal_map_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.material.clear_normal_map_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects the normal map texture</p>
 </dd></dl>
 

@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -167,24 +170,24 @@
   <div class="section" id="texture">
 <h1>Texture<a class="headerlink" href="#texture" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="nvisii.texture">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">nvisii.</span></span><span class="sig-name descname"><span class="pre">texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>The “Texture” component describes a 2D pattern used to drive the “Material” component’s parameters.</p>
 <dl class="py method">
-<dt id="nvisii.texture.are_any_dirty">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">are_any_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.are_any_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.are_any_dirty">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">are_any_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.are_any_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates whether or not any entities are “out of date” and need to be updated through the “update components” function</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.clear_all">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">clear_all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.clear_all" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.clear_all">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">clear_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.clear_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears any existing Texture components.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.create_add">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_add</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_add" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.create_add">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_add" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a Texture with the given name that adds two different textures together.
 :type name: string
 :param name: The name of the texture to create.
@@ -199,8 +202,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.create_from_data">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_data</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_from_data" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.create_from_data">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_from_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a Texture with the given name from custom user data.
 :type name: string
 :param name: The name of the texture to create.
@@ -219,8 +222,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.create_from_file">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_file</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_from_file" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.create_from_file">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_from_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a Texture with the given name from a file.
 :type name: string
 :param name: The name of the texture to create.</p>
@@ -244,14 +247,14 @@
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.create_from_image">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_image</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_from_image" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.create_from_image">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_from_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deprecated. Please use createFromFile.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.create_hsv">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_hsv</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saturation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_hsv" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.create_hsv">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_hsv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saturation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_hsv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a Texture with the given name by applying a color transformation on the HSV space to an existing texture.
 :type name: string
 :param name: The name of the texture to create.
@@ -281,8 +284,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.create_mix">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_mix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_mix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.create_mix">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_mix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_mix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a Texture with the given name that mixes two different textures together.
 :type name: string
 :param name: The name of the texture to create.
@@ -299,8 +302,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.create_multiply">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_multiply</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_multiply" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.create_multiply">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_multiply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.create_multiply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a Texture with the given name that multiplies two different textures together.
 :type name: string
 :param name: The name of the texture to create.
@@ -315,8 +318,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the Texture to get</p>
@@ -331,8 +334,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_byte_texels">
-<code class="sig-name descname"><span class="pre">get_byte_texels</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_byte_texels" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_byte_texels">
+<span class="sig-name descname"><span class="pre">get_byte_texels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_byte_texels" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::vector&lt; u8vec4,std::allocator&lt; u8vec4 &gt; &gt;</p>
@@ -344,8 +347,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_count">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_count</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_count" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_count">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_count" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -357,8 +360,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_dirty_textures">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_dirty_textures</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_dirty_textures" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_dirty_textures">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_dirty_textures</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_dirty_textures" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::set&lt; nvisii::Texture * &gt;</p>
@@ -370,14 +373,14 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_edit_mutex">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_edit_mutex</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_edit_mutex" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_edit_mutex">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_edit_mutex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_edit_mutex" title="Permalink to this definition">¶</a></dt>
 <dd><p>For internal use. Returns the mutex used to lock entities for processing by the renderer.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_float_texels">
-<code class="sig-name descname"><span class="pre">get_float_texels</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_float_texels" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_float_texels">
+<span class="sig-name descname"><span class="pre">get_float_texels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_float_texels" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::vector&lt; vec4,std::allocator&lt; vec4 &gt; &gt;</p>
@@ -389,8 +392,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_front">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_front</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_front" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_front">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_front</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_front" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></p>
@@ -402,8 +405,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_front_struct">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_front_struct</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_front_struct" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_front_struct">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_front_struct</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_front_struct" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>TextureStruct</p>
@@ -415,8 +418,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_height">
-<code class="sig-name descname"><span class="pre">get_height</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_height" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_height">
+<span class="sig-name descname"><span class="pre">get_height</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_height" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -428,8 +431,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_id">
-<code class="sig-name descname"><span class="pre">get_id</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_id">
+<span class="sig-name descname"><span class="pre">get_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_id" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -441,8 +444,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_name">
-<code class="sig-name descname"><span class="pre">get_name</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_name" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -454,8 +457,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_name_to_id_map">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_name_to_id_map</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_name_to_id_map">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_name_to_id_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::map&lt; std::string,uint32_t,std::less&lt; std::string &gt;,std::allocator&lt; std::pair&lt; std::string const,uint32_t &gt; &gt; &gt;</p>
@@ -467,8 +470,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.get_width">
-<code class="sig-name descname"><span class="pre">get_width</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_width" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.get_width">
+<span class="sig-name descname"><span class="pre">get_width</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.get_width" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -480,14 +483,14 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.initialize_factory">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">initialize_factory</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.initialize_factory" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.initialize_factory">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">initialize_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.initialize_factory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allocates the tables used to store all Texture components</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.is_factory_initialized">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">is_factory_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.is_factory_initialized">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">is_factory_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -499,8 +502,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.is_hdr">
-<code class="sig-name descname"><span class="pre">is_hdr</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.is_hdr" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.is_hdr">
+<span class="sig-name descname"><span class="pre">is_hdr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.is_hdr" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -512,8 +515,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.is_initialized">
-<code class="sig-name descname"><span class="pre">is_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.is_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.is_initialized">
+<span class="sig-name descname"><span class="pre">is_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.is_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -525,8 +528,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.is_linear">
-<code class="sig-name descname"><span class="pre">is_linear</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.is_linear" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.is_linear">
+<span class="sig-name descname"><span class="pre">is_linear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.is_linear" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -538,14 +541,14 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.mark_dirty">
-<code class="sig-name descname"><span class="pre">mark_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.mark_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.mark_dirty">
+<span class="sig-name descname"><span class="pre">mark_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.mark_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tags the current component as being modified since the previous frame.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.remove">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">remove</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.remove" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.remove">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.remove" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the Texture to remove</p>
@@ -554,8 +557,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.sample_byte_texels">
-<code class="sig-name descname"><span class="pre">sample_byte_texels</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uv</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.sample_byte_texels" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.sample_byte_texels">
+<span class="sig-name descname"><span class="pre">sample_byte_texels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uv</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.sample_byte_texels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sample the texture at the given texture coordinates
 :type uv: vec2
 :param uv: A pair of values between [0,0] and [1,1]
@@ -564,8 +567,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.sample_float_texels">
-<code class="sig-name descname"><span class="pre">sample_float_texels</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uv</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.sample_float_texels" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.sample_float_texels">
+<span class="sig-name descname"><span class="pre">sample_float_texels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uv</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.sample_float_texels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sample the texture at the given texture coordinates
 :type uv: vec2
 :param uv: A pair of values between [0,0] and [1,1]
@@ -574,8 +577,8 @@ A shift greater than 1.0 increases saturation.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.set_scale">
-<code class="sig-name descname"><span class="pre">set_scale</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.set_scale" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.set_scale">
+<span class="sig-name descname"><span class="pre">set_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.set_scale" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the “scale” of a texture. Useful for patterns that repeat, eg tiles.
 Under the hood, this scales the texture coordinates of the object this texture influences.
 :type scale: <a class="reference internal" href="all.html#nvisii.vec2" title="nvisii.vec2"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec2</span></code></a>
@@ -586,15 +589,15 @@ to repeat in a pattern. Textures can be flipped in either U and/or V using negat
 </div></blockquote>
 </dd></dl>
 
-<dl class="py method">
-<dt id="nvisii.texture.thisown">
-<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">thisown</span></code><a class="headerlink" href="#nvisii.texture.thisown" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="nvisii.texture.thisown">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">thisown</span></span><a class="headerlink" href="#nvisii.texture.thisown" title="Permalink to this definition">¶</a></dt>
 <dd><p>The membership flag</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.to_string">
-<code class="sig-name descname"><span class="pre">to_string</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.to_string" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.to_string" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -606,8 +609,8 @@ to repeat in a pattern. Textures can be flipped in either U and/or V using negat
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.texture.update_components">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">update_components</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.update_components" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.texture.update_components">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">update_components</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.texture.update_components" title="Permalink to this definition">¶</a></dt>
 <dd><p>Iterates through all components, updating any component struct fields and marking components as clean.</p>
 </dd></dl>
 

@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -167,8 +170,8 @@
   <div class="section" id="entity">
 <h1>Entity<a class="headerlink" href="#entity" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="nvisii.entity">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">entity</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">nvisii.</span></span><span class="sig-name descname"><span class="pre">entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity" title="Permalink to this definition">¶</a></dt>
 <dd><p>An “Entity” is a component that is used to connect other component types together.</p>
 <p>If you’d like to place an object in the scene, an Entity would be used to
 connect a Mesh component, a Transform component, and a Material component together.</p>
@@ -179,15 +182,15 @@ component can be referenced by many entities, with each entity having a unique
 material. This is essentially a form of “instancing”. Alternatively, many
 different entities can share the same Material component, such that any adjustments
 to that material component effect a collection of objects instead of just one.</p>
-<dl class="py method">
-<dt id="nvisii.entity.thisown">
-<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">thisown</span></code><a class="headerlink" href="#nvisii.entity.thisown" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="nvisii.entity.thisown">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">thisown</span></span><a class="headerlink" href="#nvisii.entity.thisown" title="Permalink to this definition">¶</a></dt>
 <dd><p>The membership flag</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.create">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">light</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.create" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.create">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">light</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs an Entity with the given name.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -215,8 +218,8 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the entity to get</p>
@@ -231,8 +234,8 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_count">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_count</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_count" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_count">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_count" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -244,8 +247,8 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_name">
-<code class="sig-name descname"><span class="pre">get_name</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_name" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -257,8 +260,8 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_id">
-<code class="sig-name descname"><span class="pre">get_id</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_id">
+<span class="sig-name descname"><span class="pre">get_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_id" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -270,8 +273,8 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_name_to_id_map">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_name_to_id_map</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_name_to_id_map">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_name_to_id_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::map&lt; std::string,uint32_t,std::less&lt; std::string &gt;,std::allocator&lt; std::pair&lt; std::string const,uint32_t &gt; &gt; &gt;</p>
@@ -283,8 +286,8 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.remove">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">remove</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.remove" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.remove">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.remove" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the Entity to remove</p>
@@ -293,14 +296,14 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.initialize_factory">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">initialize_factory</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.initialize_factory" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.initialize_factory">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">initialize_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.initialize_factory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allocates the tables used to store all Entity components</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.is_initialized">
-<code class="sig-name descname"><span class="pre">is_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.is_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.is_initialized">
+<span class="sig-name descname"><span class="pre">is_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.is_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -312,14 +315,14 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.clear_all">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">clear_all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_all" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.clear_all">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">clear_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears any existing entity components. This function can be used to reset a scene.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.to_string">
-<code class="sig-name descname"><span class="pre">to_string</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.to_string" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.to_string" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -331,8 +334,8 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.are_any_dirty">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">are_any_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.are_any_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.are_any_dirty">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">are_any_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.are_any_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -344,8 +347,8 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_dirty_entities">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_dirty_entities</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_dirty_entities" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_dirty_entities">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_dirty_entities</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_dirty_entities" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::set&lt; nvisii::Entity * &gt;</p>
@@ -357,8 +360,8 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_renderable_entities">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_renderable_entities</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_renderable_entities" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_renderable_entities">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_renderable_entities</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_renderable_entities" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::set&lt; nvisii::Entity * &gt;</p>
@@ -370,20 +373,20 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.set_transform">
-<code class="sig-name descname"><span class="pre">set_transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transform</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_transform" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.set_transform">
+<span class="sig-name descname"><span class="pre">set_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transform</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_transform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Connects a transform component to the current entity</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.clear_transform">
-<code class="sig-name descname"><span class="pre">clear_transform</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_transform" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.clear_transform">
+<span class="sig-name descname"><span class="pre">clear_transform</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_transform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects any transform component from the current entity</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_transform">
-<code class="sig-name descname"><span class="pre">get_transform</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_transform" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_transform">
+<span class="sig-name descname"><span class="pre">get_transform</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_transform" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></p>
@@ -395,20 +398,20 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.set_camera">
-<code class="sig-name descname"><span class="pre">set_camera</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_camera" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.set_camera">
+<span class="sig-name descname"><span class="pre">set_camera</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_camera" title="Permalink to this definition">¶</a></dt>
 <dd><p>Connects a camera component to the current entity</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.clear_camera">
-<code class="sig-name descname"><span class="pre">clear_camera</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_camera" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.clear_camera">
+<span class="sig-name descname"><span class="pre">clear_camera</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_camera" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects any camera component from the current entity</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_camera">
-<code class="sig-name descname"><span class="pre">get_camera</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_camera" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_camera">
+<span class="sig-name descname"><span class="pre">get_camera</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_camera" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Camera</span></code></p>
@@ -420,20 +423,20 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.set_material">
-<code class="sig-name descname"><span class="pre">set_material</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">material</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_material" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.set_material">
+<span class="sig-name descname"><span class="pre">set_material</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">material</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_material" title="Permalink to this definition">¶</a></dt>
 <dd><p>Connects a material component to the current entity</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.clear_material">
-<code class="sig-name descname"><span class="pre">clear_material</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_material" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.clear_material">
+<span class="sig-name descname"><span class="pre">clear_material</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_material" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects any material component from the current entity</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_material">
-<code class="sig-name descname"><span class="pre">get_material</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_material" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_material">
+<span class="sig-name descname"><span class="pre">get_material</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_material" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Material</span></code></p>
@@ -445,20 +448,20 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.set_light">
-<code class="sig-name descname"><span class="pre">set_light</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">light</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_light" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.set_light">
+<span class="sig-name descname"><span class="pre">set_light</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">light</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_light" title="Permalink to this definition">¶</a></dt>
 <dd><p>Connects a light component to the current entity</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.clear_light">
-<code class="sig-name descname"><span class="pre">clear_light</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_light" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.clear_light">
+<span class="sig-name descname"><span class="pre">clear_light</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_light" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects any light component from the current entity</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_light">
-<code class="sig-name descname"><span class="pre">get_light</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_light" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_light">
+<span class="sig-name descname"><span class="pre">get_light</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_light" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Light</span></code></p>
@@ -470,21 +473,21 @@ Note: Cannot be assigned if a “mesh” component is also assigned.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.set_mesh">
-<code class="sig-name descname"><span class="pre">set_mesh</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_mesh" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.set_mesh">
+<span class="sig-name descname"><span class="pre">set_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_mesh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Connects a mesh component to the current entity.
 Note: a mesh component cannot be attached if a volume component is currently attached.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.clear_mesh">
-<code class="sig-name descname"><span class="pre">clear_mesh</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_mesh" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.clear_mesh">
+<span class="sig-name descname"><span class="pre">clear_mesh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_mesh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects any mesh component from the current entity</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_mesh">
-<code class="sig-name descname"><span class="pre">get_mesh</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_mesh" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_mesh">
+<span class="sig-name descname"><span class="pre">get_mesh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_mesh" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
@@ -496,21 +499,21 @@ Note: a mesh component cannot be attached if a volume component is currently att
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.set_volume">
-<code class="sig-name descname"><span class="pre">set_volume</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">volume</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_volume" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.set_volume">
+<span class="sig-name descname"><span class="pre">set_volume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">volume</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Connects a volume component to the current entity.
 Note: a volume component cannot be attached if a mesh component is currently attached.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.clear_volume">
-<code class="sig-name descname"><span class="pre">clear_volume</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_volume" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.clear_volume">
+<span class="sig-name descname"><span class="pre">clear_volume</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.clear_volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnects any volume component from the current entity</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_volume">
-<code class="sig-name descname"><span class="pre">get_volume</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_volume" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_volume">
+<span class="sig-name descname"><span class="pre">get_volume</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_volume" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Volume</span></code></p>
@@ -522,16 +525,16 @@ Note: a volume component cannot be attached if a mesh component is currently att
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.set_visibility">
-<code class="sig-name descname"><span class="pre">set_visibility</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_visibility" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.set_visibility">
+<span class="sig-name descname"><span class="pre">set_visibility</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.set_visibility" title="Permalink to this definition">¶</a></dt>
 <dd><p>Objects can be set to be invisible to particular ray types:
 :type camera: boolean, optional
 :param camera: Makes the object visible to camera rays</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_min_aabb_corner">
-<code class="sig-name descname"><span class="pre">get_min_aabb_corner</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_min_aabb_corner" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_min_aabb_corner">
+<span class="sig-name descname"><span class="pre">get_min_aabb_corner</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_min_aabb_corner" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
@@ -543,8 +546,8 @@ Note: a volume component cannot be attached if a mesh component is currently att
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_max_aabb_corner">
-<code class="sig-name descname"><span class="pre">get_max_aabb_corner</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_max_aabb_corner" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_max_aabb_corner">
+<span class="sig-name descname"><span class="pre">get_max_aabb_corner</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_max_aabb_corner" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
@@ -556,8 +559,8 @@ Note: a volume component cannot be attached if a mesh component is currently att
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.get_aabb_center">
-<code class="sig-name descname"><span class="pre">get_aabb_center</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_aabb_center" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.get_aabb_center">
+<span class="sig-name descname"><span class="pre">get_aabb_center</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.get_aabb_center" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
@@ -569,14 +572,14 @@ Note: a volume component cannot be attached if a mesh component is currently att
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.compute_aabb">
-<code class="sig-name descname"><span class="pre">compute_aabb</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.compute_aabb" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.compute_aabb">
+<span class="sig-name descname"><span class="pre">compute_aabb</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.compute_aabb" title="Permalink to this definition">¶</a></dt>
 <dd><p>For internal use.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.entity.update_renderables">
-<code class="sig-name descname"><span class="pre">update_renderables</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.update_renderables" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.entity.update_renderables">
+<span class="sig-name descname"><span class="pre">update_renderables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.entity.update_renderables" title="Permalink to this definition">¶</a></dt>
 <dd><p>For internal use.</p>
 </dd></dl>
 

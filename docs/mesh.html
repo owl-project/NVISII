@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -167,30 +170,30 @@
   <div class="section" id="mesh">
 <h1>Mesh<a class="headerlink" href="#mesh" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="nvisii.mesh">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">mesh</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">nvisii.</span></span><span class="sig-name descname"><span class="pre">mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
-<dt id="nvisii.mesh.are_any_dirty">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">are_any_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.are_any_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.are_any_dirty">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">are_any_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.are_any_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates whether or not any meshes are “out of date” and need to be updated through the “update components” function</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.clear_all">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">clear_all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.clear_all" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.clear_all">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">clear_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.clear_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears any existing Mesh components.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.compute_metadata">
-<code class="sig-name descname"><span class="pre">compute_metadata</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.compute_metadata" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.compute_metadata">
+<span class="sig-name descname"><span class="pre">compute_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.compute_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the average of all vertex positions. (centroid)
 as well as min/max bounds and bounding sphere data.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_box">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_box</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_box" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_box">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_box" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a rectangular box centered at the origin aligned along the x, y, and z axis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -212,8 +215,8 @@ direction are not genereted. If more than one is zero the mesh is empty.</p></li
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_capped_cone">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_capped_cone</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_capped_cone" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_capped_cone">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_capped_cone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_capped_cone" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a cone with a cap centered at the origin and pointing towards the positive z-axis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -238,8 +241,8 @@ direction are not genereted. If more than one is zero the mesh is empty.</p></li
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_capped_cylinder">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_capped_cylinder</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_capped_cylinder" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_capped_cylinder">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_capped_cylinder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_capped_cylinder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a cylinder with a cap centered at the origin and aligned along the z-axis</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -264,8 +267,8 @@ direction are not genereted. If more than one is zero the mesh is empty.</p></li
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_capped_tube">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_capped_tube</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_capped_tube" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_capped_tube">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_capped_tube</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_capped_tube" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a tube (a cylinder with thickness) with caps on both ends, centered at the origin and aligned along the z-axis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -291,8 +294,8 @@ direction are not genereted. If more than one is zero the mesh is empty.</p></li
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_capsule">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_capsule</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_capsule" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_capsule">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_capsule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_capsule" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a capsule (a cylinder with spherical caps) centered at the origin and aligned along the z-axis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -317,8 +320,8 @@ direction are not genereted. If more than one is zero the mesh is empty.</p></li
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_cone">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_cone</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_cone" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_cone">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_cone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_cone" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a cone centered at the origin, and whose tip points towards the z-axis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -342,8 +345,8 @@ direction are not genereted. If more than one is zero the mesh is empty.</p></li
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_convex_polygon">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_convex_polygon</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_convex_polygon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_convex_polygon">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_convex_polygon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_convex_polygon" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a convex polygon from a set of corner vertices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -364,8 +367,8 @@ direction are not genereted. If more than one is zero the mesh is empty.</p></li
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_convex_polygon_from_circle">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_convex_polygon_from_circle</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_convex_polygon_from_circle" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_convex_polygon_from_circle">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_convex_polygon_from_circle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_convex_polygon_from_circle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a convex polygonal disk with an arbitrary number of corners.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -387,8 +390,8 @@ direction are not genereted. If more than one is zero the mesh is empty.</p></li
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_cylinder">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_cylinder</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_cylinder" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_cylinder">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_cylinder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_cylinder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an uncapped cylinder centered at the origin and aligned along the z-axis</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -412,8 +415,8 @@ direction are not genereted. If more than one is zero the mesh is empty.</p></li
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_disk">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_disk</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_disk" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_disk">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_disk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_disk" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a circular disk centered at the origin and along the xy-plane</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -437,8 +440,8 @@ direction are not genereted. If more than one is zero the mesh is empty.</p></li
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_dodecahedron">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_dodecahedron</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_dodecahedron" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_dodecahedron">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_dodecahedron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_dodecahedron" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a regular dodecahedron centered at the origin and with a given radius.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -460,8 +463,8 @@ Each face is optionally subdivided along the edges and/or radius.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_from_data">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_data</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_from_data" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_from_data">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_from_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a mesh component from a set of positions, optional normals, optional colors, optional texture coordinates,
 and optional indices. If anything other than positions is supplied (eg normals), that list must be the same length
 as the point list. If indicies are supplied, indices must be a multiple of 3 (triangles). Otherwise, all other
@@ -491,8 +494,8 @@ supplied per vertex data must be a multiple of 3 in length.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_from_file">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_file</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_from_file" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_from_file">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_from_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a mesh component from a file (ignoring any associated materials)</p>
 <p>Supported file formats include: AMF 3DS AC ASE ASSBIN B3D BVH COLLADA DXF
 CSM HMP IRRMESH IRR LWO LWS M3D MD2 MD3 MD5 MDC MDL NFF NDO OFF OBJ OGRE
@@ -509,14 +512,14 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_from_obj">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_obj</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_from_obj" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_from_obj">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_obj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_from_obj" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deprecated. Please use create_from_file instead.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_icosahedron">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_icosahedron</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_icosahedron" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_icosahedron">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_icosahedron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_icosahedron" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a regular icosahedron centered at the origin and with a given radius.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -536,8 +539,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_icosphere">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_icosphere</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_icosphere" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_icosphere">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_icosphere</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_icosphere" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an icosphere, otherwise known as a spherical subdivided icosahedron.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -557,8 +560,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_line">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_line</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_line" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_line">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_line" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a line from a circle extruded linearly between the specified start and stop positions.</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -603,8 +606,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_plane">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_plane</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_plane" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_plane">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_plane</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_plane" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a plane (a regular grid) on the xy-plane whose normal points towards the z-axis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -625,8 +628,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_rectangle_tube_from_polyline">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_rectangle_tube_from_polyline</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_rectangle_tube_from_polyline" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_rectangle_tube_from_polyline">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_rectangle_tube_from_polyline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_rectangle_tube_from_polyline" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a tube from a rounded rectangle extruded linearly along the specified path.</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -665,8 +668,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_rounded_box">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_rounded_box</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_rounded_box" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_rounded_box">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_rounded_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_rounded_box" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a rectangular box with rounded edges, centered at the origin and aligned along the x, y, and z axis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -688,8 +691,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_rounded_rectangle_tube_from_polyline">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_rounded_rectangle_tube_from_polyline</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_rounded_rectangle_tube_from_polyline" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_rounded_rectangle_tube_from_polyline">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_rounded_rectangle_tube_from_polyline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_rounded_rectangle_tube_from_polyline" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a tube from a rounded rectangle extruded linearly along the specified path.</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -740,8 +743,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_sphere">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_sphere</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_sphere" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_sphere">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_sphere</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_sphere" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a sphere of the given radius, centered around the origin, subdivided around the z-axis in slices and along the z-axis in segments.</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -804,8 +807,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_spherical_cone">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_spherical_cone</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_spherical_cone" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_spherical_cone">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_spherical_cone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_spherical_cone" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Creates a cone with a spherical cap, centered at the origin and whose tip points towards the z-axis.</dt><dd><p>Each point on the cap has equal distance from the tip.</p>
 <dl class="field-list simple">
@@ -869,8 +872,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_spherical_triangle_from_sphere">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_spherical_triangle_from_sphere</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_spherical_triangle_from_sphere" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_spherical_triangle_from_sphere">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_spherical_triangle_from_sphere</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_spherical_triangle_from_sphere" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a triangular region on the surface of a sphere.</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -903,8 +906,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_spherical_triangle_from_triangle">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_spherical_triangle_from_triangle</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_spherical_triangle_from_triangle" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_spherical_triangle_from_triangle">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_spherical_triangle_from_triangle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_spherical_triangle_from_triangle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a triangular region on the surface of a sphere.</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -949,8 +952,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_spring">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_spring</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_spring" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_spring">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_spring</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_spring" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a spring aligned along the z-axis and with a counter-clockwise winding.</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -1013,8 +1016,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_teapotahedron">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_teapotahedron</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_teapotahedron" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_teapotahedron">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_teapotahedron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_teapotahedron" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Creates the Utah Teapot using the original b-spline surface data. (<a class="reference external" href="https://en.wikipedia.org/wiki/Utah_teapot">https://en.wikipedia.org/wiki/Utah_teapot</a>)</dt><dd><p>The lid is points towards the z axis and the spout points towards the x axis.</p>
 <dl class="field-list simple">
@@ -1042,8 +1045,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_torus">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_torus</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_torus" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_torus">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_torus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_torus" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a torus centered at the origin and along the xy-plane.</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -1112,8 +1115,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_torus_knot">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_torus_knot</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">96</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_torus_knot" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_torus_knot">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_torus_knot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">96</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_torus_knot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a circle extruded along the path of a knot. (<a class="reference external" href="https://en.wikipedia.org/wiki/Torus_knot">https://en.wikipedia.org/wiki/Torus_knot</a>)</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -1158,8 +1161,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_triangle">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_triangle</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_triangle" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_triangle">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_triangle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_triangle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a triangle from the specified vertices</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -1204,8 +1207,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_triangle_from_circumscribed_circle">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_triangle_from_circumscribed_circle</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_triangle_from_circumscribed_circle" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_triangle_from_circumscribed_circle">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_triangle_from_circumscribed_circle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_triangle_from_circumscribed_circle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a triangle centered at the origin and contained within the circumscribed circle.</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -1238,8 +1241,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_tube">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_tube</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_tube" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_tube">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_tube</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_tube" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an uncapped tube (a cylinder with thickness) centered at the origin and aligned along the z-axis.</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -1302,8 +1305,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_tube_from_polyline">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_tube_from_polyline</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_tube_from_polyline" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_tube_from_polyline">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_tube_from_polyline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_tube_from_polyline" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a tube from a circle extruded linearly along the specified path.</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -1342,8 +1345,8 @@ TERRAGEN 3D X X3D GLTF 3MF MMD</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.create_wireframe_bounding_box">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_wireframe_bounding_box</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_wireframe_bounding_box" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.create_wireframe_bounding_box">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_wireframe_bounding_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.create_wireframe_bounding_box" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a wireframe bounding box spanning the region between the minimum corner to
 the maximum corner, and aligned along the x, y, and z axis.</p>
 <dl class="field-list simple">
@@ -1366,16 +1369,16 @@ the maximum corner, and aligned along the x, y, and z axis.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.generate_smooth_normals">
-<code class="sig-name descname"><span class="pre">generate_smooth_normals</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.generate_smooth_normals" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.generate_smooth_normals">
+<span class="sig-name descname"><span class="pre">generate_smooth_normals</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.generate_smooth_normals" title="Permalink to this definition">¶</a></dt>
 <dd><p>Replaces any existing normals with per-vertex smooth normals computed by
 averaging neighboring geometric face normals together.
 Note that this does not take into account the surface area of each triangular face.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the Mesh to get</p>
@@ -1390,8 +1393,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_aabb_center">
-<code class="sig-name descname"><span class="pre">get_aabb_center</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_aabb_center" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_aabb_center">
+<span class="sig-name descname"><span class="pre">get_aabb_center</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_aabb_center" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
@@ -1403,8 +1406,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_bounding_sphere_radius">
-<code class="sig-name descname"><span class="pre">get_bounding_sphere_radius</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_bounding_sphere_radius" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_bounding_sphere_radius">
+<span class="sig-name descname"><span class="pre">get_bounding_sphere_radius</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_bounding_sphere_radius" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>float</p>
@@ -1416,8 +1419,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_centroid">
-<code class="sig-name descname"><span class="pre">get_centroid</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_centroid" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_centroid">
+<span class="sig-name descname"><span class="pre">get_centroid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_centroid" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
@@ -1429,8 +1432,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_colors">
-<code class="sig-name descname"><span class="pre">get_colors</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_colors" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_colors">
+<span class="sig-name descname"><span class="pre">get_colors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_colors" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::vector&lt; glm::vec4,std::allocator&lt; glm::vec4 &gt; &gt;</p>
@@ -1442,8 +1445,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_count">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_count</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_count" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_count">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_count" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -1455,8 +1458,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_dirty_meshes">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_dirty_meshes</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_dirty_meshes" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_dirty_meshes">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_dirty_meshes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_dirty_meshes" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::set&lt; nvisii::Mesh * &gt;</p>
@@ -1468,14 +1471,14 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_edit_mutex">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_edit_mutex</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_edit_mutex" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_edit_mutex">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_edit_mutex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_edit_mutex" title="Permalink to this definition">¶</a></dt>
 <dd><p>For internal use. Returns the mutex used to lock entities for processing by the renderer.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_front">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_front</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_front" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_front">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_front</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_front" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></p>
@@ -1487,8 +1490,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_front_struct">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_front_struct</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_front_struct" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_front_struct">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_front_struct</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_front_struct" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>MeshStruct</p>
@@ -1500,8 +1503,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_id">
-<code class="sig-name descname"><span class="pre">get_id</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_id">
+<span class="sig-name descname"><span class="pre">get_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_id" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -1513,8 +1516,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_max_aabb_corner">
-<code class="sig-name descname"><span class="pre">get_max_aabb_corner</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_max_aabb_corner" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_max_aabb_corner">
+<span class="sig-name descname"><span class="pre">get_max_aabb_corner</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_max_aabb_corner" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
@@ -1526,8 +1529,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_min_aabb_corner">
-<code class="sig-name descname"><span class="pre">get_min_aabb_corner</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_min_aabb_corner" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_min_aabb_corner">
+<span class="sig-name descname"><span class="pre">get_min_aabb_corner</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_min_aabb_corner" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
@@ -1539,8 +1542,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_name">
-<code class="sig-name descname"><span class="pre">get_name</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_name" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -1552,8 +1555,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_name_to_id_map">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_name_to_id_map</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_name_to_id_map">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_name_to_id_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::map&lt; std::string,uint32_t,std::less&lt; std::string &gt;,std::allocator&lt; std::pair&lt; std::string const,uint32_t &gt; &gt; &gt;</p>
@@ -1565,8 +1568,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_normals">
-<code class="sig-name descname"><span class="pre">get_normals</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_normals" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_normals">
+<span class="sig-name descname"><span class="pre">get_normals</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_normals" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::vector&lt; glm::vec4,std::allocator&lt; glm::vec4 &gt; &gt;</p>
@@ -1578,8 +1581,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_tangents">
-<code class="sig-name descname"><span class="pre">get_tangents</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_tangents" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_tangents">
+<span class="sig-name descname"><span class="pre">get_tangents</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_tangents" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::vector&lt; glm::vec4,std::allocator&lt; glm::vec4 &gt; &gt;</p>
@@ -1591,8 +1594,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_tex_coords">
-<code class="sig-name descname"><span class="pre">get_tex_coords</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_tex_coords" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_tex_coords">
+<span class="sig-name descname"><span class="pre">get_tex_coords</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_tex_coords" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::vector&lt; glm::vec2,std::allocator&lt; glm::vec2 &gt; &gt;</p>
@@ -1604,8 +1607,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_triangle_indices">
-<code class="sig-name descname"><span class="pre">get_triangle_indices</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_triangle_indices" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_triangle_indices">
+<span class="sig-name descname"><span class="pre">get_triangle_indices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_triangle_indices" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::vector&lt; uint32_t,std::allocator&lt; uint32_t &gt; &gt;</p>
@@ -1617,8 +1620,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.get_vertices">
-<code class="sig-name descname"><span class="pre">get_vertices</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_vertices" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_vertices">
+<span class="sig-name descname"><span class="pre">get_vertices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_vertices" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>vertex_dimensions</strong> – The number of floats per vertex to return. Valid numbers are 3 or 4.</p>
@@ -1633,14 +1636,14 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.initialize_factory">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">initialize_factory</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.initialize_factory" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.initialize_factory">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">initialize_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.initialize_factory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allocates the tables used to store all mesh components</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.is_factory_initialized">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">is_factory_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.is_factory_initialized">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">is_factory_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -1652,8 +1655,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.is_initialized">
-<code class="sig-name descname"><span class="pre">is_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.is_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.is_initialized">
+<span class="sig-name descname"><span class="pre">is_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.is_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -1665,14 +1668,14 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.mark_dirty">
-<code class="sig-name descname"><span class="pre">mark_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.mark_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.mark_dirty">
+<span class="sig-name descname"><span class="pre">mark_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.mark_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tags the current component as being modified since the previous frame.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.remove">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">remove</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.remove" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.remove">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.remove" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the Mesh to remove</p>
@@ -1680,15 +1683,15 @@ Note that this does not take into account the surface area of each triangular fa
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt id="nvisii.mesh.thisown">
-<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">thisown</span></code><a class="headerlink" href="#nvisii.mesh.thisown" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="nvisii.mesh.thisown">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">thisown</span></span><a class="headerlink" href="#nvisii.mesh.thisown" title="Permalink to this definition">¶</a></dt>
 <dd><p>The membership flag</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.to_string">
-<code class="sig-name descname"><span class="pre">to_string</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.to_string" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.to_string" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -1700,8 +1703,8 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.mesh.update_components">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">update_components</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.update_components" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.update_components">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">update_components</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.update_components" title="Permalink to this definition">¶</a></dt>
 <dd><p>Iterates through all mesh components, computing mesh metadata for rendering purposes.</p>
 </dd></dl>
 

@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -167,21 +170,21 @@
   <div class="section" id="transform">
 <h1>Transform<a class="headerlink" href="#transform" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="nvisii.transform">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">nvisii.</span></span><span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform" title="Permalink to this definition">¶</a></dt>
 <dd><p>The “Transform” component places an entity into the scene.
 These transform components represent a scale, a rotation, and a translation, in that order.
 These transform components also keep track of the previous frame scale, rotation, and translation, which
 can optionally be used for creating motion blur and for temporal effects like reprojection.</p>
-<dl class="py method">
-<dt id="nvisii.transform.thisown">
-<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">thisown</span></code><a class="headerlink" href="#nvisii.transform.thisown" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="nvisii.transform.thisown">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">thisown</span></span><a class="headerlink" href="#nvisii.transform.thisown" title="Permalink to this definition">¶</a></dt>
 <dd><p>The membership flag</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.create">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.create" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.create">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a transform with the given name.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -202,8 +205,8 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.create_from_matrix">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.create_from_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.create_from_matrix">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.create_from_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a transform with the given name, initializing with the given matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -222,8 +225,8 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the transform to get</p>
@@ -238,8 +241,8 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_count">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_count</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_count" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_count">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_count" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -251,8 +254,8 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_name">
-<code class="sig-name descname"><span class="pre">get_name</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_name" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -264,8 +267,8 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_id">
-<code class="sig-name descname"><span class="pre">get_id</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_id">
+<span class="sig-name descname"><span class="pre">get_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_id" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -277,8 +280,8 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_name_to_id_map">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_name_to_id_map</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_name_to_id_map">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_name_to_id_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::map&lt; std::string,uint32_t,std::less&lt; std::string &gt;,std::allocator&lt; std::pair&lt; std::string const,uint32_t &gt; &gt; &gt;</p>
@@ -290,8 +293,8 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.remove">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">remove</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.remove" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.remove">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.remove" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the transform to remove</p>
@@ -300,14 +303,14 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.initialize_factory">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">initialize_factory</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.initialize_factory" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.initialize_factory">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">initialize_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.initialize_factory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allocates the tables used to store all transform components</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.is_initialized">
-<code class="sig-name descname"><span class="pre">is_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.is_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.is_initialized">
+<span class="sig-name descname"><span class="pre">is_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.is_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -319,14 +322,14 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.clear_all">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">clear_all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.clear_all" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.clear_all">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">clear_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.clear_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears any existing transform components.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.are_any_dirty">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">are_any_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.are_any_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.are_any_dirty">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">are_any_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.are_any_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -338,8 +341,8 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_dirty_transforms">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_dirty_transforms</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_dirty_transforms" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_dirty_transforms">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_dirty_transforms</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_dirty_transforms" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::set&lt; nvisii::Transform * &gt;</p>
@@ -351,8 +354,8 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.to_string">
-<code class="sig-name descname"><span class="pre">to_string</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.to_string" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.to_string" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -364,8 +367,8 @@ can optionally be used for creating motion blur and for temporal effects like re
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.transform_direction">
-<code class="sig-name descname"><span class="pre">transform_direction</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.transform_direction" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.transform_direction">
+<span class="sig-name descname"><span class="pre">transform_direction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.transform_direction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transforms direction from local to parent.
 This operation is not affected by scale or position of the transform.
 The returned vector has the same length as the input direction.</p>
@@ -386,8 +389,8 @@ The returned vector has the same length as the input direction.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.transform_point">
-<code class="sig-name descname"><span class="pre">transform_point</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.transform_point" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.transform_point">
+<span class="sig-name descname"><span class="pre">transform_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.transform_point" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transforms position from local to parent. Note, affected by scale.
 The opposite conversion, from parent to local, can be done with Transform.inverse_transform_point</p>
 <dl class="field-list simple">
@@ -407,8 +410,8 @@ The opposite conversion, from parent to local, can be done with Transform.invers
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.transform_vector">
-<code class="sig-name descname"><span class="pre">transform_vector</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.transform_vector" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.transform_vector">
+<span class="sig-name descname"><span class="pre">transform_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.transform_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transforms vector from local to parent.
 This is not affected by position of the transform, but is affected by scale.
 The returned vector may have a different length that the input vector.</p>
@@ -429,8 +432,8 @@ The returned vector may have a different length that the input vector.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.inverse_transform_direction">
-<code class="sig-name descname"><span class="pre">inverse_transform_direction</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.inverse_transform_direction" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.inverse_transform_direction">
+<span class="sig-name descname"><span class="pre">inverse_transform_direction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.inverse_transform_direction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transforms a direction from parent space to local space.
 The opposite of Transform.transform_direction.
 This operation is unaffected by scale.</p>
@@ -451,8 +454,8 @@ This operation is unaffected by scale.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.inverse_transform_point">
-<code class="sig-name descname"><span class="pre">inverse_transform_point</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.inverse_transform_point" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.inverse_transform_point">
+<span class="sig-name descname"><span class="pre">inverse_transform_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.inverse_transform_point" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transforms position from parent space to local space.
 Essentially the opposite of Transform.transform_point.
 Note, affected by scale.</p>
@@ -473,8 +476,8 @@ Note, affected by scale.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.inverse_transform_vector">
-<code class="sig-name descname"><span class="pre">inverse_transform_vector</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.inverse_transform_vector" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.inverse_transform_vector">
+<span class="sig-name descname"><span class="pre">inverse_transform_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.inverse_transform_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transforms a vector from parent space to local space.
 The opposite of Transform.transform_vector.
 This operation is affected by scale.</p>
@@ -495,8 +498,8 @@ This operation is affected by scale.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.look_at">
-<code class="sig-name descname"><span class="pre">look_at</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.look_at" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.look_at">
+<span class="sig-name descname"><span class="pre">look_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.look_at" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Rotates the transform so the forward vector points at the target’s current position.
 Then it rotates the transform to point its up direction vector in the direction hinted at
@@ -515,8 +518,8 @@ by the parentUp vector.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.rotate_around">
-<code class="sig-name descname"><span class="pre">rotate_around</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quaternion</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.rotate_around" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.rotate_around">
+<span class="sig-name descname"><span class="pre">rotate_around</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quaternion</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.rotate_around" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rotates the transform through the provided quaternion, passing through the provided point in parent
 coordinates.
 This modifies both the position and rotation of the transform.</p>
@@ -532,8 +535,8 @@ This modifies both the position and rotation of the transform.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.set_transform">
-<code class="sig-name descname"><span class="pre">set_transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decompose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_transform" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.set_transform">
+<span class="sig-name descname"><span class="pre">set_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decompose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_transform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets an optional additional transform, useful for representing normally unsupported transformations
 like sheers and projections.</p>
 <dl class="field-list simple">
@@ -551,8 +554,8 @@ controllable translation, rotation, and scale will be set to identity values.</p
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_rotation">
-<code class="sig-name descname"><span class="pre">get_rotation</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_rotation" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_rotation">
+<span class="sig-name descname"><span class="pre">get_rotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_rotation" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous rotation.</p>
@@ -567,8 +570,8 @@ controllable translation, rotation, and scale will be set to identity values.</p
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.set_rotation">
-<code class="sig-name descname"><span class="pre">set_rotation</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">newRotation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_rotation" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.set_rotation">
+<span class="sig-name descname"><span class="pre">set_rotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">newRotation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_rotation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the rotation of the transform from local to parent via a quaternion</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -581,8 +584,8 @@ controllable translation, rotation, and scale will be set to identity values.</p
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.set_angle_axis">
-<code class="sig-name descname"><span class="pre">set_angle_axis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">angle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_angle_axis" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.set_angle_axis">
+<span class="sig-name descname"><span class="pre">set_angle_axis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">angle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_angle_axis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the rotation of the transform from local to parent using an axis
 in local space to rotate about, and an angle in radians to drive the rotation.</p>
 <dl class="field-list simple">
@@ -597,8 +600,8 @@ in local space to rotate about, and an angle in radians to drive the rotation.</
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.add_rotation">
-<code class="sig-name descname"><span class="pre">add_rotation</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">additionalRotation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.add_rotation" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.add_rotation">
+<span class="sig-name descname"><span class="pre">add_rotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">additionalRotation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.add_rotation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a rotation to the existing transform rotation from local to parent
 via a quaternion.</p>
 <dl class="field-list simple">
@@ -612,8 +615,8 @@ via a quaternion.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.add_angle_axis">
-<code class="sig-name descname"><span class="pre">add_angle_axis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">angle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.add_angle_axis" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.add_angle_axis">
+<span class="sig-name descname"><span class="pre">add_angle_axis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">angle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.add_angle_axis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a rotation to the existing transform rotation from local to parent
 using an axis in local space to rotate about, and an angle in radians to
 drive the rotation</p>
@@ -629,8 +632,8 @@ drive the rotation</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_position">
-<code class="sig-name descname"><span class="pre">get_position</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_position" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_position">
+<span class="sig-name descname"><span class="pre">get_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_position" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous parent-space position.</p>
@@ -645,8 +648,8 @@ drive the rotation</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_right">
-<code class="sig-name descname"><span class="pre">get_right</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_right" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_right">
+<span class="sig-name descname"><span class="pre">get_right</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_right" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous parent-space right vector.</p>
@@ -661,8 +664,8 @@ drive the rotation</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_up">
-<code class="sig-name descname"><span class="pre">get_up</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_up" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_up">
+<span class="sig-name descname"><span class="pre">get_up</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_up" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous parent-space up vector.</p>
@@ -677,8 +680,8 @@ drive the rotation</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_forward">
-<code class="sig-name descname"><span class="pre">get_forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_forward" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_forward">
+<span class="sig-name descname"><span class="pre">get_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous parent-space forward vector.</p>
@@ -693,8 +696,8 @@ drive the rotation</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_world_position">
-<code class="sig-name descname"><span class="pre">get_world_position</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_world_position" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_world_position">
+<span class="sig-name descname"><span class="pre">get_world_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_world_position" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous world-space position.</p>
@@ -709,8 +712,8 @@ drive the rotation</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_world_right">
-<code class="sig-name descname"><span class="pre">get_world_right</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_world_right" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_world_right">
+<span class="sig-name descname"><span class="pre">get_world_right</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_world_right" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous world-space right vector.</p>
@@ -725,8 +728,8 @@ drive the rotation</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_world_up">
-<code class="sig-name descname"><span class="pre">get_world_up</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_world_up" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_world_up">
+<span class="sig-name descname"><span class="pre">get_world_up</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_world_up" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous world-space up vector.</p>
@@ -741,8 +744,8 @@ drive the rotation</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_world_forward">
-<code class="sig-name descname"><span class="pre">get_world_forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_world_forward" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_world_forward">
+<span class="sig-name descname"><span class="pre">get_world_forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_world_forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous world-space forward vector.</p>
@@ -757,8 +760,8 @@ drive the rotation</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.set_position">
-<code class="sig-name descname"><span class="pre">set_position</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">newPosition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_position" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.set_position">
+<span class="sig-name descname"><span class="pre">set_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">newPosition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_position" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the position vector describing where this transform should be translated to when placed in its
 parent space.</p>
 <dl class="field-list simple">
@@ -772,8 +775,8 @@ parent space.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.add_position">
-<code class="sig-name descname"><span class="pre">add_position</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">additionalPosition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.add_position" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.add_position">
+<span class="sig-name descname"><span class="pre">add_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">additionalPosition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.add_position" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds to the current the position vector describing where this transform should be translated to
 when placed in its parent space.</p>
 <dl class="field-list simple">
@@ -787,8 +790,8 @@ when placed in its parent space.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_scale">
-<code class="sig-name descname"><span class="pre">get_scale</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_scale" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_scale">
+<span class="sig-name descname"><span class="pre">get_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_scale" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous scale.</p>
@@ -804,8 +807,8 @@ directions respectively</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.set_scale">
-<code class="sig-name descname"><span class="pre">set_scale</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">newScale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_scale" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.set_scale">
+<span class="sig-name descname"><span class="pre">set_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">newScale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_scale" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the scale of this transform from local to parent space along its right, up, and forward
 directions respectively.</p>
 <dl class="field-list simple">
@@ -819,8 +822,8 @@ directions respectively.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.add_scale">
-<code class="sig-name descname"><span class="pre">add_scale</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">additionalScale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.add_scale" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.add_scale">
+<span class="sig-name descname"><span class="pre">add_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">additionalScale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.add_scale" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds to the current the scale of this transform from local to parent space along its right, up,
 and forward directions respectively</p>
 <dl class="field-list simple">
@@ -834,8 +837,8 @@ and forward directions respectively</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.set_linear_velocity">
-<code class="sig-name descname"><span class="pre">set_linear_velocity</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">velocity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames_per_second</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_linear_velocity" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.set_linear_velocity">
+<span class="sig-name descname"><span class="pre">set_linear_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">velocity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames_per_second</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_linear_velocity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the linear velocity vector describing how fast this transform is translating within its
 parent space. Causes motion blur.</p>
 <dl class="field-list simple">
@@ -849,8 +852,8 @@ parent space. Causes motion blur.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.set_angular_velocity">
-<code class="sig-name descname"><span class="pre">set_angular_velocity</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">velocity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames_per_second</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_angular_velocity" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.set_angular_velocity">
+<span class="sig-name descname"><span class="pre">set_angular_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">velocity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames_per_second</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_angular_velocity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the angular velocity vector describing how fast this transform is rotating within its
 parent space. Causes motion blur.</p>
 <dl class="field-list simple">
@@ -864,8 +867,8 @@ parent space. Causes motion blur.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.set_scalar_velocity">
-<code class="sig-name descname"><span class="pre">set_scalar_velocity</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">velocity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames_per_second</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_scalar_velocity" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.set_scalar_velocity">
+<span class="sig-name descname"><span class="pre">set_scalar_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">velocity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames_per_second</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_scalar_velocity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the scalar velocity vector describing how fast this transform is scaling within its
 parent space. Causes motion blur.</p>
 <dl class="field-list simple">
@@ -879,14 +882,14 @@ parent space. Causes motion blur.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.clear_motion">
-<code class="sig-name descname"><span class="pre">clear_motion</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.clear_motion" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.clear_motion">
+<span class="sig-name descname"><span class="pre">clear_motion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.clear_motion" title="Permalink to this definition">¶</a></dt>
 <dd><p>Resets any “previous” transform data, effectively clearing any current motion blur.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_parent_to_local_matrix">
-<code class="sig-name descname"><span class="pre">get_parent_to_local_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_parent_to_local_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_parent_to_local_matrix">
+<span class="sig-name descname"><span class="pre">get_parent_to_local_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_parent_to_local_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous parent-to-local matrix.</p>
@@ -902,8 +905,8 @@ local coordinate space</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_local_to_parent_matrix">
-<code class="sig-name descname"><span class="pre">get_local_to_parent_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_local_to_parent_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_local_to_parent_matrix">
+<span class="sig-name descname"><span class="pre">get_local_to_parent_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_local_to_parent_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous local-to-parent matrix.</p>
@@ -919,8 +922,8 @@ parents coordinate space</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_local_to_parent_translation_matrix">
-<code class="sig-name descname"><span class="pre">get_local_to_parent_translation_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_local_to_parent_translation_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_local_to_parent_translation_matrix">
+<span class="sig-name descname"><span class="pre">get_local_to_parent_translation_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_local_to_parent_translation_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous local-to-parent translation matrix.</p>
@@ -936,8 +939,8 @@ parent coordinate space</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_local_to_parent_scale_matrix">
-<code class="sig-name descname"><span class="pre">get_local_to_parent_scale_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_local_to_parent_scale_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_local_to_parent_scale_matrix">
+<span class="sig-name descname"><span class="pre">get_local_to_parent_scale_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_local_to_parent_scale_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous local-to-parent scale matrix.</p>
@@ -953,8 +956,8 @@ parent coordinate space</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_local_to_parent_rotation_matrix">
-<code class="sig-name descname"><span class="pre">get_local_to_parent_rotation_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_local_to_parent_rotation_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_local_to_parent_rotation_matrix">
+<span class="sig-name descname"><span class="pre">get_local_to_parent_rotation_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_local_to_parent_rotation_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous local-to-parent rotation matrix.</p>
@@ -970,8 +973,8 @@ parent coordinate space</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_parent_to_local_translation_matrix">
-<code class="sig-name descname"><span class="pre">get_parent_to_local_translation_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_parent_to_local_translation_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_parent_to_local_translation_matrix">
+<span class="sig-name descname"><span class="pre">get_parent_to_local_translation_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_parent_to_local_translation_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous parent-to-local translation matrix.</p>
@@ -987,8 +990,8 @@ local coordinate space</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_parent_to_local_scale_matrix">
-<code class="sig-name descname"><span class="pre">get_parent_to_local_scale_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_parent_to_local_scale_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_parent_to_local_scale_matrix">
+<span class="sig-name descname"><span class="pre">get_parent_to_local_scale_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_parent_to_local_scale_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous parent-to-local scale matrix.</p>
@@ -1004,8 +1007,8 @@ local coordinate space</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_parent_to_local_rotation_matrix">
-<code class="sig-name descname"><span class="pre">get_parent_to_local_rotation_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_parent_to_local_rotation_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_parent_to_local_rotation_matrix">
+<span class="sig-name descname"><span class="pre">get_parent_to_local_rotation_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_parent_to_local_rotation_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous parent-to-local rotation matrix.</p>
@@ -1021,8 +1024,8 @@ local coordinate space</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.set_parent">
-<code class="sig-name descname"><span class="pre">set_parent</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_parent" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.set_parent">
+<span class="sig-name descname"><span class="pre">set_parent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.set_parent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the parent of this transform, whose transformation will be applied after the current
 transform.</p>
 <dl class="field-list simple">
@@ -1033,14 +1036,14 @@ transform.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.clear_parent">
-<code class="sig-name descname"><span class="pre">clear_parent</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.clear_parent" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.clear_parent">
+<span class="sig-name descname"><span class="pre">clear_parent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.clear_parent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes the parent-child relationship affecting this node.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.add_child">
-<code class="sig-name descname"><span class="pre">add_child</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.add_child" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.add_child">
+<span class="sig-name descname"><span class="pre">add_child</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.add_child" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a child to this transform, whose transformation will be applied before the current
 transform.</p>
 <dl class="field-list simple">
@@ -1051,8 +1054,8 @@ transform.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.remove_child">
-<code class="sig-name descname"><span class="pre">remove_child</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.remove_child" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.remove_child">
+<span class="sig-name descname"><span class="pre">remove_child</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.remove_child" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes a child transform previously added to the current transform.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1062,8 +1065,8 @@ transform.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_world_to_local_matrix">
-<code class="sig-name descname"><span class="pre">get_world_to_local_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_world_to_local_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_world_to_local_matrix">
+<span class="sig-name descname"><span class="pre">get_world_to_local_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_world_to_local_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous world-to-local matrix.</p>
@@ -1079,8 +1082,8 @@ parent transforms into account.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.transform.get_local_to_world_matrix">
-<code class="sig-name descname"><span class="pre">get_local_to_world_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_local_to_world_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.transform.get_local_to_world_matrix">
+<span class="sig-name descname"><span class="pre">get_local_to_world_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.transform.get_local_to_world_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>previous</strong> (<em>boolean</em><em>, </em><em>optional</em>) – If true, returns the previous local-to-world matrix.</p>

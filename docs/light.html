@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -167,14 +170,14 @@
   <div class="section" id="light">
 <h1>Light<a class="headerlink" href="#light" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="nvisii.light">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">nvisii.</span></code><code class="sig-name descname"><span class="pre">light</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">nvisii.</span></span><span class="sig-name descname"><span class="pre">light</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light" title="Permalink to this definition">¶</a></dt>
 <dd><p>A “Light” component illuminates objects in a scene. Light components must
 be added to an entity with a transform component to have a visible
 impact on the scene.</p>
 <dl class="py method">
-<dt id="nvisii.light.are_any_dirty">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">are_any_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.are_any_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.are_any_dirty">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">are_any_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.are_any_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -187,14 +190,14 @@ and False otherwise</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.clear_all">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">clear_all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.clear_all" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.clear_all">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">clear_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.clear_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears any existing light components.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.clear_color_texture">
-<code class="sig-name descname"><span class="pre">clear_color_texture</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.clear_color_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.clear_color_texture">
+<span class="sig-name descname"><span class="pre">clear_color_texture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.clear_color_texture" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Disconnects the color texture, reverting back to any existing constant</p>
 </div></blockquote>
@@ -202,8 +205,8 @@ and False otherwise</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.create">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.create" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.create">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a light with the given name.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -219,8 +222,8 @@ and False otherwise</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.create_from_rgb">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_rgb</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.create_from_rgb" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.create_from_rgb">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_rgb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.create_from_rgb" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a light component which emits a given light color.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -234,8 +237,8 @@ and False otherwise</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.create_from_temperature">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">create_from_temperature</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kelvin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.create_from_temperature" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.create_from_temperature">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">create_from_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kelvin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.create_from_temperature" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a light component which emits a plausible light color based on
 standard temperature measurement.</p>
 <dl class="field-list simple">
@@ -257,8 +260,8 @@ Typical values range from 1000K (very warm) to 12000K (very cold).</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the light to get</p>
@@ -273,8 +276,8 @@ Typical values range from 1000K (very warm) to 12000K (very cold).</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get_color">
-<code class="sig-name descname"><span class="pre">get_color</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_color" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get_color">
+<span class="sig-name descname"><span class="pre">get_color</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_color" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
@@ -287,8 +290,8 @@ is set, this function should not be used.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get_count">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_count</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_count" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get_count">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_count" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
@@ -300,8 +303,8 @@ is set, this function should not be used.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get_edit_mutex">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_edit_mutex</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_edit_mutex" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get_edit_mutex">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_edit_mutex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_edit_mutex" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>For internal use. Returns the mutex used to lock entities for processing</p>
 </div></blockquote>
@@ -309,8 +312,8 @@ is set, this function should not be used.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get_exposure">
-<code class="sig-name descname"><span class="pre">get_exposure</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_exposure" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get_exposure">
+<span class="sig-name descname"><span class="pre">get_exposure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_exposure" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>float</p>
@@ -322,8 +325,8 @@ is set, this function should not be used.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get_falloff">
-<code class="sig-name descname"><span class="pre">get_falloff</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_falloff" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get_falloff">
+<span class="sig-name descname"><span class="pre">get_falloff</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_falloff" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>float</p>
@@ -335,8 +338,8 @@ is set, this function should not be used.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get_front">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_front</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_front" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get_front">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_front</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_front" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Light</span></code></p>
@@ -348,8 +351,8 @@ is set, this function should not be used.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get_front_struct">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_front_struct</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_front_struct" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get_front_struct">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_front_struct</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_front_struct" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>LightStruct</p>
@@ -361,8 +364,8 @@ is set, this function should not be used.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get_intensity">
-<code class="sig-name descname"><span class="pre">get_intensity</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_intensity" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get_intensity">
+<span class="sig-name descname"><span class="pre">get_intensity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_intensity" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>float</p>
@@ -374,8 +377,8 @@ is set, this function should not be used.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get_name">
-<code class="sig-name descname"><span class="pre">get_name</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_name" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -387,8 +390,8 @@ is set, this function should not be used.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get_name_to_id_map">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_name_to_id_map</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get_name_to_id_map">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_name_to_id_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_name_to_id_map" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>std::map&lt; std::string,uint32_t,std::less&lt; std::string &gt;,std::allocator&lt; std::pair&lt; std::string const,uint32_t &gt; &gt; &gt;</p>
@@ -401,20 +404,20 @@ that light</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.get_struct">
-<code class="sig-name descname"><span class="pre">get_struct</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_struct" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.get_struct">
+<span class="sig-name descname"><span class="pre">get_struct</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.get_struct" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the simplified struct used to represent the current component</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.initialize_factory">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">initialize_factory</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.initialize_factory" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.initialize_factory">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">initialize_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.initialize_factory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allocates the tables used to store all light components</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.is_clean">
-<code class="sig-name descname"><span class="pre">is_clean</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.is_clean" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.is_clean">
+<span class="sig-name descname"><span class="pre">is_clean</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.is_clean" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -427,8 +430,8 @@ and False otherwise</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.is_dirty">
-<code class="sig-name descname"><span class="pre">is_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.is_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.is_dirty">
+<span class="sig-name descname"><span class="pre">is_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.is_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -441,8 +444,8 @@ frame, and False otherwise</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.is_factory_initialized">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">is_factory_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.is_factory_initialized">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">is_factory_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.is_factory_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -455,8 +458,8 @@ allocated, and False otherwise</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.is_initialized">
-<code class="sig-name descname"><span class="pre">is_initialized</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.is_initialized" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.is_initialized">
+<span class="sig-name descname"><span class="pre">is_initialized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.is_initialized" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>boolean</p>
@@ -469,20 +472,20 @@ if the light was cleared or removed.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.mark_clean">
-<code class="sig-name descname"><span class="pre">mark_clean</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.mark_clean" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.mark_clean">
+<span class="sig-name descname"><span class="pre">mark_clean</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.mark_clean" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tags the current component as being unmodified since the previous frame.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.mark_dirty">
-<code class="sig-name descname"><span class="pre">mark_dirty</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.mark_dirty" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.mark_dirty">
+<span class="sig-name descname"><span class="pre">mark_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.mark_dirty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tags the current component as being modified since the previous frame.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.remove">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">remove</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.remove" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.remove">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.remove" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>string</em>) – The name of the Light to remove</p>
@@ -491,8 +494,8 @@ if the light was cleared or removed.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.set_color">
-<code class="sig-name descname"><span class="pre">set_color</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_color" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.set_color">
+<span class="sig-name descname"><span class="pre">set_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_color" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the color which this light component will emit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -502,8 +505,8 @@ if the light was cleared or removed.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.set_color_texture">
-<code class="sig-name descname"><span class="pre">set_color_texture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_color_texture" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.set_color_texture">
+<span class="sig-name descname"><span class="pre">set_color_texture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texture</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_color_texture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the color which this light component will emit. Texture is expected
 to be RGB. Overrides any existing constant light color.</p>
 <dl class="field-list simple">
@@ -515,8 +518,8 @@ Alpha channel is ignored.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.set_exposure">
-<code class="sig-name descname"><span class="pre">set_exposure</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exposure</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_exposure" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.set_exposure">
+<span class="sig-name descname"><span class="pre">set_exposure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exposure</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_exposure" title="Permalink to this definition">¶</a></dt>
 <dd><p>Modifies the intensity, or brightness, that this light component will emit
 it’s color by a power of 2.
 Increasing the exposure by 1 will double the energy emitted by the light.
@@ -531,8 +534,8 @@ light_intensity = intensity * pow(2, exposureExposure)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.set_falloff">
-<code class="sig-name descname"><span class="pre">set_falloff</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">falloff</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_falloff" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.set_falloff">
+<span class="sig-name descname"><span class="pre">set_falloff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">falloff</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_falloff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Modifies the falloff exponent that this light component will use to reduce
 intensity due to distance. Physically realistic light transport uses an
 r^2 falloff, where the falloff exponent equals 2. Many video games instead
@@ -546,8 +549,8 @@ in its entirety by setting falloff to 0.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.set_intensity">
-<code class="sig-name descname"><span class="pre">set_intensity</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_intensity" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.set_intensity">
+<span class="sig-name descname"><span class="pre">set_intensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_intensity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the intensity, or brightness, that this light component will emit
 it’s color.</p>
 <dl class="field-list simple">
@@ -558,8 +561,8 @@ it’s color.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.set_temperature">
-<code class="sig-name descname"><span class="pre">set_temperature</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kelvin</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_temperature" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.set_temperature">
+<span class="sig-name descname"><span class="pre">set_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kelvin</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.set_temperature" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets a realistic emission color via a temperature.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -569,15 +572,15 @@ range from 1000K (very warm) to 12000K (very cold).</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt id="nvisii.light.thisown">
-<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">thisown</span></code><a class="headerlink" href="#nvisii.light.thisown" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="nvisii.light.thisown">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">thisown</span></span><a class="headerlink" href="#nvisii.light.thisown" title="Permalink to this definition">¶</a></dt>
 <dd><p>The membership flag</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.to_string">
-<code class="sig-name descname"><span class="pre">to_string</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.to_string" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.to_string" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>string</p>
@@ -589,8 +592,8 @@ range from 1000K (very warm) to 12000K (very cold).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.update_components">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">update_components</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.update_components" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.update_components">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">update_components</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.update_components" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Iterates through all light components, computing light metadata for</p>
 </div></blockquote>
@@ -598,8 +601,8 @@ range from 1000K (very warm) to 12000K (very cold).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nvisii.light.use_surface_area">
-<code class="sig-name descname"><span class="pre">use_surface_area</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.use_surface_area" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.light.use_surface_area">
+<span class="sig-name descname"><span class="pre">use_surface_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.use_surface_area" title="Permalink to this definition">¶</a></dt>
 <dd><p>Controls whether or not the surface area of the light should effect
 overall light intensity.
 :type use: boolean
