@@ -1,4 +1,4 @@
-# Unified workflow for building, (TODO, building docs), and conditionally deploying to PyPI for NVISII
+# Unified workflow for building, building docs, and conditionally deploying to PyPI for NVISII
 name: CI
 
 on:
@@ -178,7 +178,7 @@ jobs:
         env:
           OPTIX_VERSION: ${{ matrix.optix-version }}
         run: |
-          pip install --upgrade pip setuptools setuptools_scm wheel numpy==1.19.5
+          pip install --upgrade setuptools setuptools_scm wheel numpy==1.19.5
           mkdir build
           cd build
           cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
