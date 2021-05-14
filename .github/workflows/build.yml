@@ -146,6 +146,8 @@ jobs:
           cd nvisii*
           cd nvisii
           patchelf --add-needed libcuda.so.1 _nvisii.so
+          # list libraries for manual verification
+          ldd _nvisii.so
           cd ..
           cd ..
           rm *.whl
