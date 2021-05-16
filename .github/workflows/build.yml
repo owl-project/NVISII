@@ -1,4 +1,4 @@
-# Unified workflow for building, (TODO, building docs), and conditionally deploying to PyPI for NVISII
+# Unified workflow for building, building docs, and conditionally deploying to PyPI for NVISII
 name: CI
 
 on:
@@ -146,12 +146,17 @@ jobs:
           cd nvisii*
           cd nvisii
           patchelf --add-needed libcuda.so.1 _nvisii.so
+          # list libraries for manual verification
+          ldd _nvisii.so
           cd ..
           cd ..
           rm *.whl
           NAME=$(ls -1 .)
           cd ${NAME}
           zip -r ../${NAME}.whl ./*
+          # move the modified manylinux wheel to the "install/dist" folder to be uploaded
+          rm ../../*.whl
+          cp ../*.whl ../../
       
       # Python configuration by github is only valid on their VMs (not inside the manylinux container), so only run on windows.
       - name: Configure Python on Windows
@@ -178,7 +183,7 @@ jobs:
         env:
           OPTIX_VERSION: ${{ matrix.optix-version }}
         run: |
-          pip install --upgrade pip setuptools setuptools_scm wheel numpy==1.19.5
+          pip install --upgrade setuptools setuptools_scm wheel numpy==1.19.5
           mkdir build
           cd build
           cmake ../ -DCUDA_TOOLKIT_ROOT_DIR="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2" -DPYTHON_VERSION="${{matrix.python-version}}"
