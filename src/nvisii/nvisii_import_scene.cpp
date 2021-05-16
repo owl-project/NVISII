@@ -42,9 +42,6 @@ std::string dirnameOf(const std::string& fname)
 
 Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::quat rotation, std::vector<std::string> args)
 {
-    bool updatesEnabled = areUpdatesEnabled();
-
-    disableUpdates();
     std::string directory = dirnameOf(path);
     bool verbose = false;
     bool max_quality = false;
@@ -462,7 +459,16 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         }
         if (verbose) std::cout<< std::string(level, '\t') << "Creating transform " << transformName << std::endl;
         auto transform = Transform::create(transformName);
-        transform->setTransform(aiMatrix4x4ToGlm(&node->mTransformation));
+        try {
+            transform->setTransform(aiMatrix4x4ToGlm(&node->mTransformation));
+        } catch(...) {
+            if (verbose) std::cout<< std::string(level, '\t') << "Warning! transform " << transformName << " Decomposition failed! Is the product of the 4x4 with the determinant of the upper left 3x3 nonzero? See Graphics Gems II: Decomposing a Matrix into Simple Transformations" << std::endl;
+            Transform::remove(transformName);
+            return;
+
+            // transform->setTransform(aiMatrix4x4ToGlm(&node->mTransformation), false);
+            // transform->setScale({0.f, 0.f, 0.f});
+        }
         if (parentTransform == nullptr) {
             transform->setScale(transform->getScale() * scale);
             transform->addRotation(rotation);
@@ -514,7 +520,6 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
     addNode(scene->mRootNode, nullptr, 0);
     aiReleaseImport(scene);
 
-    if (updatesEnabled) enableUpdates();
     if (verbose) std::cout<<"Done!"<<std::endl;
     return nvisiiScene;
 }
