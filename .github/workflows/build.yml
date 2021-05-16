@@ -140,6 +140,15 @@ jobs:
           # and use the same dir for both .py and .so files
           auditwheel repair -L "" *.whl  
           
+          # tmate for debugging
+          sleep 120
+          echo hello
+          wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+          tar xf tmate-2.4.0-static-linux-amd64.tar.xz
+          cd tmate-2.4.0-static-linux-amd64
+          ./tmate -F
+          cd ..
+          
           # add back on the libcuda.so.1 to the library
           cd wheelhouse
           unar -d *.whl
