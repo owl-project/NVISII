@@ -1148,8 +1148,8 @@ void updateComponents()
     anyUpdated |= Texture::areAnyDirty();
     anyUpdated |= Entity::areAnyDirty();
     anyUpdated |= Volume::areAnyDirty();
-
     if (!anyUpdated) return;
+
     resetAccumulation();
     
     std::recursive_mutex dummyMutex;
@@ -1360,7 +1360,8 @@ void updateComponents()
             if (!entities[eid].isInitialized()) continue;
             if (!entities[eid].getTransform()) continue;
             if (!entities[eid].getLight()) continue;
-            if (!entities[eid].getMesh()) continue;
+            // Edit: adding support for "point" lights that have no meshes
+            // if (!entities[eid].getMesh()) continue; 
             OD.lightEntities.push_back(eid);
         }
         owlBufferResize(OptixData.lightEntitiesBuffer, OD.lightEntities.size());

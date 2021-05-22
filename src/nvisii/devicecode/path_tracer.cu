@@ -244,93 +244,10 @@ void SampleDeltaTracking(
     }
 }
 
-// bool debug = (prd.primitiveID == -2);
-// if (debug) {
-//     if (!  ((mn[0] < x[0]) && (x[0] < mx[0]) && 
-//             (mn[1] < x[1]) && (x[1] < mx[1]) && 
-//             (mn[2] < x[2]) && (x[2] < mx[2]))
-//     ) {
-//         printf("X");
-//     } else {
-//         printf("O");
-//     }
-// }
-// if (debug) {
-//     printf("\n");
-// }
-
 OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
 {   
     auto &LP = optixLaunchParams;
     RayPayload &prd = owl::getPRD<RayPayload>();
-    // const auto &self = owl::getProgramData<VolumeGeomData>();
-    // LCGRand rng = prd.rng;
-
-    // // Load the volume we hit
-    // GET(VolumeStruct volume, VolumeStruct, LP.volumes, self.volumeID);
-    // uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(self.volumeID, __LINE__).data;
-    // const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
-    // const auto& tree = grid->tree();
-    // auto acc = tree.getAccessor();
-
-    // auto bbox = acc.root().bbox();    
-    // auto mx = bbox.max();
-    // auto mn = bbox.min();
-    // glm::vec3 offset = glm::vec3(mn[0], mn[1], mn[2]) + 
-    //             (glm::vec3(mx[0], mx[1], mx[2]) - 
-    //             glm::vec3(mn[0], mn[1], mn[2])) * .5f;
-
-    // float majorant_extinction = acc.root().valueMax();
-    // float gradient_factor = volume.gradient_factor;
-    // float linear_attenuation_unit = volume.scale;
-    // float absorption = volume.absorption;
-    // float scattering = volume.scattering;
-
-    // vec3 x = make_vec3(prd.objectSpaceRayOrigin) + offset;
-    // vec3 w = make_vec3(prd.objectSpaceRayDirection);
-
-    // linear_attenuation_unit /= length(w);
-
-    // // Move ray to volume boundary
-    // float t0 = prd.t0, t1 = prd.t1;
-    // x = x + t0 * w;
-    // t1 = t1 - t0;
-    // t0 = 0.f;
-
-    // // Sample the free path distance to see if our ray makes it to the boundary
-    // float t;
-    // int event;
-    // bool hitVolume = false;
-    // #define MAX_NULL_COLLISIONS 10000
-    // for (int dti = 0; dti < MAX_NULL_COLLISIONS; ++dti) {
-    //     SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, 
-    //         absorption, scattering, x, w, t1, t, event);
-    //     x = x + t * w;
-
-    //     // The boundary was hit
-    //     if (event == 0) {
-    //         break;
-    //     }
-
-    //     // An absorption / emission event occurred
-    //     if (event == 1) {
-    //         hitVolume = true;
-    //         break;
-    //     }
-
-    //     // A scattering event occurred
-    //     if (event == 2) {
-    //         hitVolume = true;
-    //         break;
-    //     }
-
-    //     // A null collision occurred.
-    //     if (event == 3) {
-    //         // update boundary in relation to the new collision x, w does not change.
-    //         t1 = t1 - t;
-    //     }
-    // }
-
     optixGetObjectToWorldTransformMatrix(prd.localToWorld);
 
     // If we don't need motion vectors, (or in the future if an object 
@@ -353,90 +270,10 @@ OPTIX_CLOSEST_HIT_PROGRAM(VolumeMesh)()
 
 OPTIX_CLOSEST_HIT_PROGRAM(VolumeShadowRay)()
 {
-    // auto &LP = optixLaunchParams;
-    // const auto &self = owl::getProgramData<VolumeGeomData>();
-    // RayPayload &prd = owl::getPRD<RayPayload>();
-    // LCGRand rng = prd.rng;
-
-    // GET(VolumeStruct volume, VolumeStruct, LP.volumes, self.volumeID);
-    // uint8_t *hdl = (uint8_t*)LP.volumeHandles.get(self.volumeID, __LINE__).data;
-    // const auto grid = reinterpret_cast<const nanovdb::FloatGrid*>(hdl);
-    // const auto& tree = grid->tree();
-    // auto acc = tree.getAccessor();
-
-    // auto bbox = acc.root().bbox();    
-    // auto mx = bbox.max();
-    // auto mn = bbox.min();
-    // glm::vec3 offset = glm::vec3(mn[0], mn[1], mn[2]) + 
-    //             (glm::vec3(mx[0], mx[1], mx[2]) - 
-    //             glm::vec3(mn[0], mn[1], mn[2])) * .5f;
-
-    // float majorant_extinction = acc.root().valueMax();
-    // float gradient_factor = volume.gradient_factor;
-    // float linear_attenuation_unit = volume.scale;
-    // float absorption = volume.absorption;
-    // float scattering = volume.scattering;
-
-    // vec3 x = make_vec3(prd.objectSpaceRayOrigin) + offset;
-    // vec3 w = make_vec3(prd.objectSpaceRayDirection);
-
-    // linear_attenuation_unit /= length(w);
-
-    // // Move ray to volume boundary
-    // float t0 = prd.t0, t1 = prd.t1;
-    // x = x + t0 * w;
-    // t1 = t1 - t0;
-    // t0 = 0.f;
-
-    // // Sample the free path distance to see if our ray makes it to the boundary
-    // float t;
-    // int event;
-    // bool hitVolume = false;
-    // #define MAX_NULL_COLLISIONS 10000
-    // for (int dti = 0; dti < MAX_NULL_COLLISIONS; ++dti) {
-    //     SampleDeltaTracking(rng, acc, majorant_extinction, linear_attenuation_unit, 
-    //         absorption, scattering, x, w, t1, t, event);
-    //     x = x + t * w;
-
-    //     // The boundary was hit
-    //     if (event == 0) {
-    //         break;
-    //     }
-
-    //     // An absorption / emission event occurred
-    //     if (event == 1) {
-    //         hitVolume = true;
-    //         break;
-    //     }
-
-    //     // A scattering event occurred
-    //     if (event == 2) {
-    //         hitVolume = true;
-    //         break;
-    //     }
-
-    //     // A null collision occurred.
-    //     if (event == 3) {
-    //         // update boundary in relation to the new collision x, w does not change.
-    //         t1 = t1 - t;
-    //     }
-    // }
-
-    // if (!hitVolume) {
-    //     prd.tHit = -1.f;
-    // }
-    // else {
-    //     prd.instanceID = optixGetInstanceIndex();
-    //     prd.eventID = event;
-    //     prd.tHit = t;
-    // }
 }
 
 OPTIX_INTERSECT_PROGRAM(VolumeIntersection)()
 {
-    // float old_tmax      = optixGetRayTmax();
-
-    // const int primID = optixGetPrimitiveIndex();
     auto &LP = optixLaunchParams;
     const auto &self = owl::getProgramData<VolumeGeomData>();
     RayPayload &prd = owl::getPRD<RayPayload>();
@@ -1361,47 +1198,58 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         // sample light sources
         else 
         {
+            // Sample the light to compute an incident light ray to this point
             if (numLights == 0) continue;
             GET( sampledLightID, int, LP.lightEntities, randomID );
             GET( EntityStruct light_entity, EntityStruct, LP.entities, sampledLightID );
             GET( LightStruct light_light, LightStruct, LP.lights, light_entity.light_id );
             GET( TransformStruct transform, TransformStruct, LP.transforms, light_entity.transform_id );
-            GET( MeshStruct mesh, MeshStruct, LP.meshes, light_entity.mesh_id );
-            uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
-            GET( Buffer<int3> indices, Buffer<int3>, LP.indexLists, light_entity.mesh_id );
-            GET( Buffer<float3> vertices, Buffer<float3>, LP.vertexLists, light_entity.mesh_id );
-            GET( Buffer<float4> normals, Buffer<float4>, LP.normalLists, light_entity.mesh_id );
-            GET( Buffer<float2> texCoords, Buffer<float2>, LP.texCoordLists, light_entity.mesh_id );
-            GET( int3 triIndex, int3, indices, random_tri_id );
-            
-            // Sample the light to compute an incident light ray to this point
+
             auto &ltw = transform.localToWorld;
             float3 dir; float2 uv;
             float3 pos = hit_p;
 
-            GET(float3 n1, float3, normals, triIndex.x );
-            GET(float3 n2, float3, normals, triIndex.y );
-            GET(float3 n3, float3, normals, triIndex.z );
-            GET(float3 v1, float3, vertices, triIndex.x );
-            GET(float3 v2, float3, vertices, triIndex.y );
-            GET(float3 v3, float3, vertices, triIndex.z );
-            GET(float2 uv1, float2, texCoords, triIndex.x );
-            GET(float2 uv2, float2, texCoords, triIndex.y );
-            GET(float2 uv3, float2, texCoords, triIndex.z );
-
-            // Might be a bug here with normal transform...
-            n1 = make_float3(ltw * make_float4(n1, 0.0f));
-            n2 = make_float3(ltw * make_float4(n2, 0.0f));
-            n3 = make_float3(ltw * make_float4(n3, 0.0f));
-            v1 = make_float3(ltw * make_float4(v1, 1.0f));
-            v2 = make_float3(ltw * make_float4(v2, 1.0f));
-            v3 = make_float3(ltw * make_float4(v3, 1.0f));
-            sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
-                lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDF, uv, 
-                /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
+            // The sampled light is a point light
+            if ((light_entity.mesh_id < 0) || (light_entity.mesh_id >= LP.meshes.count)) {
+                numTris = 1.f;
+                float3 tmp = make_float3(ltw[3]) - pos;
+                lightDistance = length(tmp);
+                dir = tmp / lightDistance;
+                lightPDF = PdfAtoW(1.f/(4.f * M_PI), lightDistance * lightDistance, 1.f);
+                uv = make_float2(0.f, 0.f);
+            } 
+            // The sampled light is a mesh light
+            else {    
+                GET( MeshStruct mesh, MeshStruct, LP.meshes, light_entity.mesh_id );
+                uint32_t random_tri_id = uint32_t(min(lcg_randomf(rng) * mesh.numTris, float(mesh.numTris - 1)));
+                GET( Buffer<int3> indices, Buffer<int3>, LP.indexLists, light_entity.mesh_id );
+                GET( Buffer<float3> vertices, Buffer<float3>, LP.vertexLists, light_entity.mesh_id );
+                GET( Buffer<float4> normals, Buffer<float4>, LP.normalLists, light_entity.mesh_id );
+                GET( Buffer<float2> texCoords, Buffer<float2>, LP.texCoordLists, light_entity.mesh_id );
+                GET( int3 triIndex, int3, indices, random_tri_id );
+                GET(float3 n1, float3, normals, triIndex.x );
+                GET(float3 n2, float3, normals, triIndex.y );
+                GET(float3 n3, float3, normals, triIndex.z );
+                GET(float3 v1, float3, vertices, triIndex.x );
+                GET(float3 v2, float3, vertices, triIndex.y );
+                GET(float3 v3, float3, vertices, triIndex.z );
+                GET(float2 uv1, float2, texCoords, triIndex.x );
+                GET(float2 uv2, float2, texCoords, triIndex.y );
+                GET(float2 uv3, float2, texCoords, triIndex.z );
+                // Might be a bug here with normal transform...
+                n1 = make_float3(ltw * make_float4(n1, 0.0f));
+                n2 = make_float3(ltw * make_float4(n2, 0.0f));
+                n3 = make_float3(ltw * make_float4(n3, 0.0f));
+                v1 = make_float3(ltw * make_float4(v1, 1.0f));
+                v2 = make_float3(ltw * make_float4(v2, 1.0f));
+                v3 = make_float3(ltw * make_float4(v3, 1.0f));
+                sampleTriangle(pos, n1, n2, n3, v1, v2, v3, uv1, uv2, uv3, 
+                    lcg_randomf(rng), lcg_randomf(rng), dir, lightDistance, lightPDF, uv, 
+                    /*double_sided*/ false, /*use surface area*/ light_light.use_surface_area);
+                numTris = mesh.numTris;
+            }
             
             falloff = light_light.falloff;
-            numTris = mesh.numTris;
             lightDir = make_float3(dir.x, dir.y, dir.z);
             if (light_light.color_texture_id == -1) lightEmission = make_float3(light_light.r, light_light.g, light_light.b) * (light_light.intensity * pow(2.f, light_light.exposure));
             else lightEmission = sampleTexture(light_light.color_texture_id, uv, make_float3(0.f, 0.f, 0.f)) * (light_light.intensity * pow(2.f, light_light.exposure));
