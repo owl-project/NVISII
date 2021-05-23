@@ -19,16 +19,17 @@
 #include "./buffer.h"
 
 struct LaunchParams {
+    Buffer<float> assignmentBuffer;
+
     glm::ivec2 frameSize;
     uint64_t frameID = 0;
     glm::vec4 *frameBuffer;
-    glm::vec4 *albedoBuffer;
+    uchar4 *albedoBuffer;
     glm::vec4 *normalBuffer;
     glm::vec4 *scratchBuffer;
     glm::vec4 *mvecBuffer;
     glm::vec4 *accumPtr;
-    OptixTraversableHandle surfacesIAS;
-    OptixTraversableHandle volumesIAS;
+    OptixTraversableHandle IAS;
     float domeLightIntensity = 1.f;
     float domeLightExposure = 0.f;
     glm::vec3 domeLightColor = glm::vec3(-1.f);
@@ -58,8 +59,7 @@ struct LaunchParams {
     Buffer<TextureStruct> textures;
     Buffer<VolumeStruct> volumes;
     Buffer<uint32_t> lightEntities;
-    Buffer<uint32_t> surfaceInstanceToEntity;
-    Buffer<uint32_t> volumeInstanceToEntity;
+    Buffer<uint32_t> instanceToEntity;
     uint32_t         numLightEntities = 0;
 
     Buffer<Buffer<float3>> vertexLists;
@@ -111,7 +111,9 @@ enum RenderDataFlags : uint32_t {
   TRANSMISSION_INDIRECT_LIGHTING = 17,
   RAY_DIRECTION = 18,
   HEATMAP = 19,
-  TEXTURE_COORDINATES = 20
+  TEXTURE_COORDINATES = 20,
+  DEVICE_ID = 21,
+  TANGENT = 22
 };
 
 #define MAX_LIGHT_SAMPLES 10

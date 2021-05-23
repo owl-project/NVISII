@@ -32,6 +32,7 @@ Entity::Entity(std::string name, uint32_t id) {
 	entity.material_id = -1;
 	entity.light_id = -1;
 	entity.mesh_id = -1;
+	entity.flags = (uint32_t)-1;
 }
 
 std::string Entity::toString()
@@ -253,7 +254,14 @@ Mesh* Entity::getMesh()
 	return &mesh;
 }
 
-void Entity::setVisibility(bool camera)
+void Entity::setVisibility(
+	bool camera, 
+	bool diffuse, 
+	bool glossy, 
+	bool transmission, 
+	bool volume_scatter, 
+	bool shadow
+)
 {
 	std::lock_guard<std::recursive_mutex> lock(*Entity::getEditMutex().get());
 	
@@ -262,6 +270,36 @@ void Entity::setVisibility(bool camera)
 		entity.flags |= ENTITY_VISIBILITY_CAMERA_RAYS;
 	} else {
 		entity.flags &= (~ENTITY_VISIBILITY_CAMERA_RAYS);
+	}
+
+	if (diffuse) {
+		entity.flags |= ENTITY_VISIBILITY_DIFFUSE_RAYS;
+	} else {
+		entity.flags &= (~ENTITY_VISIBILITY_DIFFUSE_RAYS);
+	}
+
+	if (glossy) {
+		entity.flags |= ENTITY_VISIBILITY_GLOSSY_RAYS;
+	} else {
+		entity.flags &= (~ENTITY_VISIBILITY_GLOSSY_RAYS);
+	}
+
+	if (transmission) {
+		entity.flags |= ENTITY_VISIBILITY_TRANSMISSION_RAYS;
+	} else {
+		entity.flags &= (~ENTITY_VISIBILITY_TRANSMISSION_RAYS);
+	}
+
+	if (volume_scatter) {
+		entity.flags |= ENTITY_VISIBILITY_VOLUME_SCATTER_RAYS;
+	} else {
+		entity.flags &= (~ENTITY_VISIBILITY_VOLUME_SCATTER_RAYS);
+	}
+
+	if (shadow) {
+		entity.flags |= ENTITY_VISIBILITY_SHADOW_RAYS;
+	} else {
+		entity.flags &= (~ENTITY_VISIBILITY_SHADOW_RAYS);
 	}
 	markDirty();
 }
@@ -279,6 +317,13 @@ glm::vec3 Entity::getMaxAabbCorner()
 glm::vec3 Entity::getAabbCenter()
 {
 	return entityStructs[id].bbmin + (entityStructs[id].bbmax - entityStructs[id].bbmin) * .5f;
+}
+
+glm::vec3 Entity::getCenter()
+{
+	if (!getTransform()) throw std::runtime_error("Error: no transform attached to entity");
+	if (!getMesh()) throw std::runtime_error("Error: no mesh attached to entity");
+	return glm::vec3(getTransform()->getLocalToWorldMatrix() * glm::vec4(getMesh()->getCenter(), 1.f));
 }
 
 void Entity::initializeFactory(uint32_t max_components)

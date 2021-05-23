@@ -293,6 +293,9 @@ find_program(BIN2C bin2c
   /usr/local/cuda/bin)
 
 # optix 7
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/include/nvisii/utilities/sutil/)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/include/nvisii/utilities/)
+
 if ($ENV{OPTIX_VERSION}) 
 set(OPTION_OPTIX_VERSION $ENV{OPTIX_VERSION})
 else()

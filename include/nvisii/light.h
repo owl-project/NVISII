@@ -11,7 +11,9 @@ class Texture;
 /**
  * A "Light" component illuminates objects in a scene. Light components must 
  * be added to an entity with a transform component to have a visible      
- * impact on the scene.                                                    
+ * impact on the scene. Lights attached to entities with no mesh components
+ * act like point lights. Otherwise, lights attached to entities with meshes
+ * will act like mesh lights.                                                  
 */
 class Light : public StaticFactory {
     friend class StaticFactory;

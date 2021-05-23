@@ -103,9 +103,9 @@ mat.set_roughness(1)
 mat.set_specular(0)
 
 # load an example brick texture 
-color_tex = nvisii.texture.create_from_file("color",'content/Bricks051_2K_Color.jpg')
-normal_tex = nvisii.texture.create_from_file("normal",'content/Bricks051_2K_Normal.jpg', linear = True)
-rough_tex = nvisii.texture.create_from_file("rough",'content/Bricks051_2K_Roughness.jpg', linear = True)
+color_tex = nvisii.texture.create_from_file("color",'./content/Bricks051_2K_Color.jpg')
+normal_tex = nvisii.texture.create_from_file("normal",'./content/Bricks051_2K_Normal.jpg', linear = True)
+rough_tex = nvisii.texture.create_from_file("rough",'./content/Bricks051_2K_Roughness.jpg', linear = True)
 
 color_tex.set_scale((.1,.1))
 normal_tex.set_scale((.1,.1))

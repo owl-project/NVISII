@@ -141,7 +141,7 @@ void Mesh::computeMetadata()
 	this->meshStructs[id].numVerts = uint32_t(positions.size());
 }
 
-glm::vec3 Mesh::getCentroid()
+glm::vec3 Mesh::getCenter()
 {
 	return vec3(meshStructs[id].center);
 }
@@ -211,6 +211,8 @@ void Mesh::loadData(
 	uint32_t position_dimensions,
 	std::vector<float> &normals_,
 	uint32_t normal_dimensions, 
+	std::vector<float> &tangents_,
+	uint32_t tangent_dimensions, 
 	std::vector<float> &colors_, 
 	uint32_t color_dimensions,
 	std::vector<float> &texcoords_, 
@@ -219,6 +221,7 @@ void Mesh::loadData(
 )
 {
 	bool readingNormals = normals_.size() > 0;
+	bool readingTangents = tangents_.size() > 0;
 	bool readingColors = colors_.size() > 0;
 	bool readingTexCoords = texcoords_.size() > 0;
 	bool readingIndices = indices_.size() > 0;
@@ -228,6 +231,9 @@ void Mesh::loadData(
 	
 	if ((normal_dimensions != 3) && (normal_dimensions != 4)) 
 		throw std::runtime_error( std::string("Error, invalid normal dimensions. Possible normal dimensions are 3 or 4."));
+	
+	if ((tangent_dimensions != 3) && (tangent_dimensions != 4)) 
+		throw std::runtime_error( std::string("Error, invalid tangent dimensions. Possible tangent dimensions are 3 or 4."));
 
 	if ((color_dimensions != 3) && (color_dimensions != 4)) 
 		throw std::runtime_error( std::string("Error, invalid color dimensions. Possible color dimensions are 3 or 4."));
@@ -246,6 +252,9 @@ void Mesh::loadData(
 	
 	if (readingNormals && ((normals_.size() / normal_dimensions) != (positions_.size() / position_dimensions)))
 		throw std::runtime_error( std::string("Error, length mismatch. Total normals: " + std::to_string(normals_.size() / normal_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
+
+	if (readingTangents && ((tangents_.size() / tangent_dimensions) != (positions_.size() / position_dimensions)))
+		throw std::runtime_error( std::string("Error, length mismatch. Total tangents: " + std::to_string(tangents_.size() / tangent_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
 
 	if (readingColors && ((colors_.size() / color_dimensions) != (positions_.size() / position_dimensions)))
 		throw std::runtime_error( std::string("Error, length mismatch. Total colors: " + std::to_string(colors_.size() / color_dimensions) + " does not equal total positions: " + std::to_string(positions_.size() / position_dimensions)));
@@ -274,6 +283,12 @@ void Mesh::loadData(
 			vertex.normal.y = normals_[i * normal_dimensions + 1];
 			vertex.normal.z = normals_[i * normal_dimensions + 2];
 			vertex.normal.w = (normal_dimensions == 4) ? normals_[i * normal_dimensions + 3] : 0.f;
+		}
+		if (readingTangents) {
+			vertex.tangent.x = tangents_[i * tangent_dimensions + 0];
+			vertex.tangent.y = tangents_[i * tangent_dimensions + 1];
+			vertex.tangent.z = tangents_[i * tangent_dimensions + 2];
+			vertex.tangent.w = (tangent_dimensions == 4) ? tangents_[i * tangent_dimensions + 3] : 0.f;
 		}
 		if (readingColors) {
 			vertex.color.x = colors_[i * color_dimensions + 0];
@@ -316,6 +331,7 @@ void Mesh::loadData(
 	this->positions.resize(uniqueVertices.size());
 	this->colors.resize(uniqueVertices.size());
 	this->normals.resize(uniqueVertices.size());
+	this->tangents.resize(uniqueVertices.size());
 	this->texCoords.resize(uniqueVertices.size());
 	for (int i = 0; i < uniqueVertices.size(); ++i)
 	{
@@ -323,11 +339,16 @@ void Mesh::loadData(
 		this->positions[i] = {v.point.x, v.point.y, v.point.z};
 		this->colors[i] = v.color;
 		this->normals[i] = v.normal;
+		this->tangents[i] = v.tangent;
 		this->texCoords[i] = v.texcoord;
 	}
 
 	if (!readingNormals) {
 		generateSmoothNormals();
+	}
+
+	if (!readingTangents) {
+		generateSmoothTangents();
 	}
 
 	computeMetadata();
@@ -1339,19 +1360,20 @@ Mesh* Mesh::createFromData(
 	uint32_t position_dimensions,
 	std::vector<float> normals_, 
 	uint32_t normal_dimensions, 
+	std::vector<float> tangents_, 
+	uint32_t tangent_dimensions, 
 	std::vector<float> colors_, 
 	uint32_t color_dimensions, 
 	std::vector<float> texcoords_, 
 	uint32_t texcoord_dimensions, 
 	std::vector<uint32_t> indices_
 ) {
-	auto create = [&positions_, position_dimensions, &normals_, normal_dimensions, 
+	auto create = [&positions_, position_dimensions, &normals_, normal_dimensions, &tangents_, tangent_dimensions, 
 				   &colors_, color_dimensions, &texcoords_, texcoord_dimensions, &indices_] 
 				   (Mesh* mesh) 
 	{
-		mesh->loadData(positions_, position_dimensions, normals_, normal_dimensions, 
+		mesh->loadData(positions_, position_dimensions, normals_, normal_dimensions, tangents_, tangent_dimensions, 
 			colors_, color_dimensions, texcoords_, texcoord_dimensions, indices_);
-		mesh->generateSmoothTangents();
 		dirtyMeshes.insert(mesh);
 	};
 	
