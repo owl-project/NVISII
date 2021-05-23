@@ -1485,9 +1485,9 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
         accum_color = make_float4((accum_illum + float(LP.frameID) * make_float3(prev_color)) / float(LP.frameID + 1), 1.0f);
 
-        if (debug) {
-            printf("output: %f %f %f\n", accum_color.x, accum_color.y, accum_color.z);
-        }
+        // if (debug) {
+        //     printf("output: %f %f %f\n", accum_color.x, accum_color.y, accum_color.z);
+        // }
     }
     
     
