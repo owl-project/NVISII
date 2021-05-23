@@ -101,6 +101,11 @@ bool Texture::isLinear() {
     return linear;
 }
 
+void Texture::setLinear(bool is_linear) {
+    linear = is_linear;
+    markDirty();
+}
+
 /* SSBO logic */
 void Texture::initializeFactory(uint32_t max_components)
 {

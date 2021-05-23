@@ -592,16 +592,19 @@ void initializeRenderData(float3 &renderData)
     auto &LP = optixLaunchParams;
     // these might change in the future...
     if (LP.renderDataMode == RenderDataFlags::NONE) {
-        renderData = make_float3(FLT_MAX);
+        renderData = make_float3(0.0f);
     }
     else if (LP.renderDataMode == RenderDataFlags::DEPTH) {
-        renderData = make_float3(FLT_MAX);
+        renderData = make_float3(-FLT_MAX);
     }
     else if (LP.renderDataMode == RenderDataFlags::POSITION) {
-        renderData = make_float3(FLT_MAX);
+        renderData = make_float3(-FLT_MAX);
     }
     else if (LP.renderDataMode == RenderDataFlags::NORMAL) {
-        renderData = make_float3(FLT_MAX);
+        renderData = make_float3(0.0f);
+    }
+    else if (LP.renderDataMode == RenderDataFlags::TANGENT) {
+        renderData = make_float3(0.0f);
     }
     else if (LP.renderDataMode == RenderDataFlags::SCREEN_SPACE_NORMAL) {
         renderData = make_float3(0.0f);
@@ -699,7 +702,7 @@ __device__
 void saveGeometricRenderData(
     float3 &renderData, 
     int bounce, float depth, 
-    float3 w_p, float3 w_n, float3 w_o, float2 uv, 
+    float3 w_p, float3 w_n, float3 w_x, float3 w_o, float2 uv, 
     int entity_id, float3 diffuse_mvec, float time,
     DisneyMaterial &mat)
 {
@@ -715,6 +718,9 @@ void saveGeometricRenderData(
     }
     else if (LP.renderDataMode == RenderDataFlags::NORMAL) {
         renderData = w_n;
+    }
+    else if (LP.renderDataMode == RenderDataFlags::TANGENT) {
+        renderData = w_x;
     }
     else if (LP.renderDataMode == RenderDataFlags::SCREEN_SPACE_NORMAL) {
         glm::quat r0 = glm::quat_cast(LP.viewT0);
@@ -945,7 +951,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             v_z = make_float3(normalize(nxfm * make_vec3(v_z)));
             v_x = make_float3(normalize(nxfm * make_vec3(v_x)));
             v_y = cross(v_z, v_x);
-            v_x = cross(v_y, v_z);
+            // v_x = cross(v_y, v_z);
 
             if (LP.renderDataMode != RenderDataFlags::NONE) {
                 glm::mat4 xfmt0 = to_mat4(payload.localToWorldT0);
@@ -1028,7 +1034,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         }
 
         // For segmentations, save geometric metadata
-        saveGeometricRenderData(renderData, depth, payload.tHit, hit_p, v_z, w_o, uv, entityID, diffuseMotion, time, mat);
+        saveGeometricRenderData(renderData, depth, payload.tHit, hit_p, v_z, v_x, w_o, uv, entityID, diffuseMotion, time, mat);
         if (depth == 0) {
             primaryAlbedo = mat.base_color;
             primaryNormal = v_z;
@@ -1470,7 +1476,18 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     else {
         // Override framebuffer output if user requested to render metadata
         accum_illum = make_float3(renderData.x, renderData.y, renderData.z);
+        if (isnan(renderData.x) || isnan(renderData.y) || isnan(renderData.z) || 
+            isinf(renderData.x) || isinf(renderData.y) || isinf(renderData.z) ||
+            isnan(prev_color.x) || isnan(prev_color.y) || isnan(prev_color.z) ||
+            isinf(prev_color.x) || isinf(prev_color.y) || isinf(prev_color.z)) {
+            accum_illum = make_float3(0.f, 0.f, 0.f);
+            prev_color = make_float4(0.f, 0.f, 0.f, 1.f);
+        }
         accum_color = make_float4((accum_illum + float(LP.frameID) * make_float3(prev_color)) / float(LP.frameID + 1), 1.0f);
+
+        if (debug) {
+            printf("output: %f %f %f\n", accum_color.x, accum_color.y, accum_color.z);
+        }
     }
     
     

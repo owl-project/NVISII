@@ -699,6 +699,8 @@ class Mesh : public StaticFactory
          * @param position_dimensions The number of floats per position. Valid numbers are 3 or 4.
          * @param normals A list of vertex normals. If indices aren't supplied, this must be a multiple of 3.
          * @param normal_dimensions The number of floats per normal. Valid numbers are 3 or 4.
+         * @param tangents A list of vertex tangents. If indices aren't supplied, this must be a multiple of 3.
+         * @param tangent_dimensions The number of floats per tangent. Valid numbers are 3 or 4.
          * @param colors A list of per-vertex colors. If indices aren't supplied, this must be a multiple of 3.
          * @param color_dimensions The number of floats per color. Valid numbers are 3 or 4.
          * @param texcoords A list of 2D per-vertex texture coordinates. If indices aren't supplied, this must be a multiple of 3.
@@ -712,6 +714,8 @@ class Mesh : public StaticFactory
             uint32_t position_dimensions = 3,
             std::vector<float> normals = std::vector<float>(), 
             uint32_t normal_dimensions = 3, 
+            std::vector<float> tangents = std::vector<float>(), 
+            uint32_t tangent_dimensions = 3, 
             std::vector<float> colors = std::vector<float>(), 
             uint32_t color_dimensions = 4, 
             std::vector<float> texcoords = std::vector<float>(), 
@@ -1012,6 +1016,8 @@ class Mesh : public StaticFactory
             uint32_t position_dimensions,
             std::vector<float> &normals_,
             uint32_t normal_dimensions, 
+            std::vector<float> &tangents_,
+            uint32_t tangent_dimensions, 
             std::vector<float> &colors_, 
             uint32_t color_dimensions,
             std::vector<float> &texcoords_, 

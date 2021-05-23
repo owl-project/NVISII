@@ -112,7 +112,8 @@ enum RenderDataFlags : uint32_t {
   RAY_DIRECTION = 18,
   HEATMAP = 19,
   TEXTURE_COORDINATES = 20,
-  DEVICE_ID = 21
+  DEVICE_ID = 21,
+  TANGENT = 22
 };
 
 #define MAX_LIGHT_SAMPLES 10

@@ -255,9 +255,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 }
             }
         }
-
-        
-        
+ 
         // todo, add texture paths to map above, load later and connect
         if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
             if (material->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
@@ -281,6 +279,10 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 std::string path = directory + "/" + std::string(Path.C_Str());
                 std::replace(path.begin(), path.end(), '\\', '/');
                 if (texture_map[path]) mat->setNormalMapTexture(texture_map[path]);
+                if (!texture_map[path]->isLinear()) {
+                    if (verbose) std::cout<<"WARNING: normal map texture " << path << " not marked as linear! Forcing texture into linear mode..." << std::endl;
+                    texture_map[path]->setLinear(true);
+                }
             }
         }
 
@@ -323,11 +325,13 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         auto &aiMesh = scene->mMeshes[meshIdx];
         auto &aiVertices = aiMesh->mVertices;
         auto &aiNormals = aiMesh->mNormals;
+        auto &aiTangents = aiMesh->mTangents;
         auto &aiFaces = aiMesh->mFaces;
         auto &aiTextureCoords = aiMesh->mTextureCoords;
 
         std::vector<float> positions;
         std::vector<float> normals;
+        std::vector<float> tangents;
         std::vector<float> texCoords;
         std::vector<uint32_t> indices;
 
@@ -346,6 +350,9 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         }
         if (!aiMesh->HasNormals()) {
             if (verbose) std::cout<<"\tWARNING: mesh " << meshName << " has no normals" << std::endl;
+        }
+        if (!aiMesh->HasTangentsAndBitangents()) {
+            if (verbose) std::cout<<"\tWARNING: mesh " << meshName << " has no tangents" << std::endl;
         }
         if (!aiMesh->HasTextureCoords(0)) {
             if (verbose) std::cout<<"\tWARNING: mesh " << meshName << " has no texture coordinates" << std::endl;
@@ -366,6 +373,12 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 v.normal.y = normal.y;
                 v.normal.z = normal.z;
             }
+            if (aiMesh->HasTangentsAndBitangents()) {
+                auto tangent = aiTangents[vid];
+                v.tangent.x = tangent.x;
+                v.tangent.y = tangent.y;
+                v.tangent.z = tangent.z;
+            }
             if (aiMesh->HasTextureCoords(0)) {
                 // just try to take the first texcoord
                 auto texCoord = aiTextureCoords[0][vid];						
@@ -378,6 +391,9 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
             normals.push_back(v.normal.x);
             normals.push_back(v.normal.y);
             normals.push_back(v.normal.z);
+            tangents.push_back(v.tangent.x);
+            tangents.push_back(v.tangent.y);
+            tangents.push_back(v.tangent.z);
             texCoords.push_back(v.texcoord.x);
             texCoords.push_back(v.texcoord.y);
         }
@@ -408,6 +424,7 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
                 meshName, 
                 positions, 3,
                 normals, 3,
+                tangents, 3,
                 /*colors*/{}, 3,
                 texCoords, 2,
                 indices
@@ -416,33 +433,6 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         catch (std::exception& e) {
             if (verbose) std::cout<<"Warning: unable to load mesh " << meshName <<  " : " << std::string(e.what()) <<std::endl;
             continue;
-        }
-    }
-
-    // load lights
-    for (uint32_t lightIdx = 0; lightIdx < scene->mNumLights; ++lightIdx) {
-        auto light = scene->mLights[lightIdx];
-        if (verbose) {
-            std::cout<<"Found light: " << std::string(light->mName.C_Str()) << std::endl;
-            if (light->mType == aiLightSource_DIRECTIONAL) {
-                std::cout<<"Directional"<<std::endl;
-            } else if (light->mType == aiLightSource_POINT) {
-                std::cout<<"Point"<<std::endl;
-            } else if (light->mType == aiLightSource_SPOT) {
-                std::cout<<"Spot"<<std::endl;
-            } else if (light->mType == aiLightSource_AMBIENT) {
-                std::cout<<"Ambient"<<std::endl;
-            } else if (light->mType == aiLightSource_AREA) {
-                std::cout<<"Area"<<std::endl;
-            } 
-        }
-    }
-
-    // load cameras
-    for (uint32_t cameraIdx = 0; cameraIdx < scene->mNumCameras; ++cameraIdx) {
-        auto camera = scene->mCameras[cameraIdx];
-        if (verbose) {
-            std::cout<<"Found camera: " << std::string(camera->mName.C_Str()) << std::endl;
         }
     }
 
@@ -516,8 +506,67 @@ Scene importScene(std::string path, glm::vec3 position, glm::vec3 scale, glm::qu
         for (uint32_t cid = 0; cid < node->mNumChildren; ++cid) 
             addNode(node->mChildren[cid], transform, level+1);
     };
-
     addNode(scene->mRootNode, nullptr, 0);
+
+
+    // load lights
+    for (uint32_t lightIdx = 0; lightIdx < scene->mNumLights; ++lightIdx) {
+        auto &aiLight = scene->mLights[lightIdx];
+        std::string lightName = std::string(aiLight->mName.C_Str());
+        // if (verbose) 
+        {
+            if (verbose) std::cout<<"Found light: " << lightName << std::endl;
+            if (aiLight->mType == aiLightSource_DIRECTIONAL) {
+                if (verbose) std::cout<<"Directional"<<std::endl;
+            } else if (aiLight->mType == aiLightSource_POINT) {
+                if (verbose) std::cout<<"Point"<<std::endl;
+
+                if (!Transform::get(lightName)) {
+                    if (verbose) std::cout<<"Error, can't find transform named " << lightName << std::endl;
+                    continue;
+                }
+                
+                int duplicateCount = 0;
+                std::string entityName = lightName;
+                while (Entity::get(entityName) != nullptr) {
+                    duplicateCount += 1;
+                    entityName += std::to_string(duplicateCount);
+                }    
+                if (verbose) std::cout<< std::string(1, '\t') << "Creating entity " << entityName << " with" <<std::endl;
+                auto entity = Entity::create(entityName);
+                
+                entity->setTransform(Transform::get(lightName));
+                if (verbose) std::cout<< std::string(1, '\t') << "transform: " << lightName <<std::endl;
+
+                duplicateCount = 0;
+                while (Entity::get(lightName) != nullptr) {
+                    duplicateCount += 1;
+                    lightName += std::to_string(duplicateCount);
+                }    
+                if (verbose) std::cout<< std::string(1, '\t') << "light: " << lightName <<std::endl;
+                auto light = Light::create(lightName);
+                entity->setLight(light);
+                light->setColor({aiLight->mColorDiffuse.r, aiLight->mColorDiffuse.g, aiLight->mColorDiffuse.b});
+                
+                nvisiiScene.entities.push_back(entity);
+            } else if (aiLight->mType == aiLightSource_SPOT) {
+                std::cout<<"Spot"<<std::endl;
+            } else if (aiLight->mType == aiLightSource_AMBIENT) {
+                std::cout<<"Ambient"<<std::endl;
+            } else if (aiLight->mType == aiLightSource_AREA) {
+                std::cout<<"Area"<<std::endl;
+            } 
+        }
+    }
+
+    // load cameras
+    for (uint32_t cameraIdx = 0; cameraIdx < scene->mNumCameras; ++cameraIdx) {
+        auto camera = scene->mCameras[cameraIdx];
+        if (verbose) {
+            std::cout<<"Found camera: " << std::string(camera->mName.C_Str()) << std::endl;
+        }
+    }
+
     aiReleaseImport(scene);
 
     if (verbose) std::cout<<"Done!"<<std::endl;

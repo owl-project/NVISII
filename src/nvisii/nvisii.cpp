@@ -2062,6 +2062,9 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
         else if (option == std::string("normal")) {
             OptixData.LP.renderDataMode = RenderDataFlags::NORMAL;
         }
+        else if (option == std::string("tangent")) {
+            OptixData.LP.renderDataMode = RenderDataFlags::TANGENT;
+        }
         else if (option == std::string("entity_id")) {
             OptixData.LP.renderDataMode = RenderDataFlags::ENTITY_ID;
         }
@@ -2765,6 +2768,9 @@ void __test__(std::vector<std::string> args) {
     }
     else if (option == std::string("normal")) {
         OptixData.LP.renderDataMode = RenderDataFlags::NORMAL;
+    }
+    else if (option == std::string("tangent")) {
+        OptixData.LP.renderDataMode = RenderDataFlags::TANGENT;
     }
     else if (option == std::string("entity_id")) {
         OptixData.LP.renderDataMode = RenderDataFlags::ENTITY_ID;

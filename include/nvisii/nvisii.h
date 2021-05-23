@@ -305,6 +305,7 @@ void renderToFile(uint32_t width, uint32_t height, uint32_t samples_per_pixel, s
  * "ray_direction" to render the direction that the ray was traced in world space,
  * "position" for rendering out the world space position of the path vertex, 
  * "normal" for rendering out the world space normal of the path vertex, 
+ * "tangent" for rendering out the world space tangent of the path vertex, 
  * "entity_id" for rendering out the entity ID whose surface the path vertex hit, 
  * "base_color" for rendering out the surface base color, 
  * "texture_coordinates" for rendering out the texture coordinates of the hit surface, 
