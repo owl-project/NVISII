@@ -146,12 +146,17 @@ jobs:
           cd nvisii*
           cd nvisii
           patchelf --add-needed libcuda.so.1 _nvisii.so
+          # list libraries for manual verification
+          ldd _nvisii.so
           cd ..
           cd ..
           rm *.whl
           NAME=$(ls -1 .)
           cd ${NAME}
           zip -r ../${NAME}.whl ./*
+          # move the modified manylinux wheel to the "install/dist" folder to be uploaded
+          rm ../../*.whl
+          cp ../*.whl ../../
       
       # Python configuration by github is only valid on their VMs (not inside the manylinux container), so only run on windows.
       - name: Configure Python on Windows

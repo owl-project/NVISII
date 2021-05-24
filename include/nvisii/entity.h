@@ -211,9 +211,21 @@ public:
 
 	/**
 	 * Objects can be set to be invisible to particular ray types:
-	 * @param camera Makes the object visible to camera rays
+	 * @param camera Makes the object visible to camera rays (the first rays to be traced from the camera).
+	 * @param diffuse Makes the object visible to diffuse rays (eg for diffuse GI)
+	 * @param glossy Makes the object visible to glossy rays (eg in reflections)
+	 * @param transmission Makes the object visible to transmission rays (eg from inside glass)
+	 * @param volume_scatter Makes the object visible to volume scatter rays (eg from light simulation inside a volume)
+	 * @param shadow Enables the object to cast shadows.
 	*/
-	void setVisibility(bool camera = true);
+	void setVisibility(
+		bool camera = true, 
+		bool diffuse = true, 
+		bool glossy = true, 
+		bool transmission = true, 
+		bool volume_scatter = true, 
+		bool shadow = true
+	);
 
 	/** @returns the minimum axis aligned bounding box position. Requires a transform and mesh component to be attached. */
 	glm::vec3 getMinAabbCorner();
@@ -223,6 +235,12 @@ public:
 
 	/** @returns the center of the aligned bounding box. Requires a transform and mesh component to be attached. */
 	glm::vec3 getAabbCenter();
+
+	/** 
+	 * @returns the average of the vertices of the mesh in world space, which will lay roughly in the center. Requires 
+	 * a transform and mesh component to be attached. 
+	 */
+	glm::vec3 getCenter();
 
 	/** For internal use. Returns the mutex used to lock entities for processing by the renderer. */
 	static std::shared_ptr<std::recursive_mutex> getEditMutex();

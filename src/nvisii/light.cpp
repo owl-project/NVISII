@@ -46,9 +46,9 @@ LightStruct &Light::getStruct() {
 void Light::setColor(glm::vec3 color)
 {
     auto &light = getStruct();
-    light.r = max(0.f, min(color.r, 1.f));
-    light.g = max(0.f, min(color.g, 1.f));
-    light.b = max(0.f, min(color.b, 1.f));
+    light.r = max(0.f, color.r);
+    light.g = max(0.f, color.g);
+    light.b = max(0.f, color.b);
     markDirty();
 }
 

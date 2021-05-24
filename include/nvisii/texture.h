@@ -209,6 +209,9 @@ class Texture : public StaticFactory
 	/** @returns True if the texture is represented linearly. Otherwise, the texture is in sRGB space */
     bool isLinear();
 
+	/** @param is_linear If True, texels will be interpreted as linear space. Otherwise, the texels will be interpreed as sRGB space */
+    void setLinear(bool is_linear);
+
   private:
   	/* TODO */
 	static std::shared_ptr<std::recursive_mutex> editMutex;

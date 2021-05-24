@@ -4,6 +4,6 @@ noise
 numpy
 pillow
 scipy
-pygame
 open3d
 PySide2
+opencv-python
