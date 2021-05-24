@@ -477,6 +477,8 @@ supplied per vertex data must be a multiple of 3 in length.</p>
 <li><p><strong>position_dimensions</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of floats per position. Valid numbers are 3 or 4.</p></li>
 <li><p><strong>normals</strong> (<em>std::vector&lt; float</em><em>,</em><em>std::allocator&lt; float &gt; &gt;</em><em>, </em><em>optional</em>) – A list of vertex normals. If indices aren’t supplied, this must be a multiple of 3.</p></li>
 <li><p><strong>normal_dimensions</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of floats per normal. Valid numbers are 3 or 4.</p></li>
+<li><p><strong>tangents</strong> (<em>std::vector&lt; float</em><em>,</em><em>std::allocator&lt; float &gt; &gt;</em><em>, </em><em>optional</em>) – A list of vertex tangents. If indices aren’t supplied, this must be a multiple of 3.</p></li>
+<li><p><strong>tangent_dimensions</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of floats per tangent. Valid numbers are 3 or 4.</p></li>
 <li><p><strong>colors</strong> (<em>std::vector&lt; float</em><em>,</em><em>std::allocator&lt; float &gt; &gt;</em><em>, </em><em>optional</em>) – A list of per-vertex colors. If indices aren’t supplied, this must be a multiple of 3.</p></li>
 <li><p><strong>color_dimensions</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of floats per color. Valid numbers are 3 or 4.</p></li>
 <li><p><strong>texcoords</strong> (<em>std::vector&lt; float</em><em>,</em><em>std::allocator&lt; float &gt; &gt;</em><em>, </em><em>optional</em>) – A list of 2D per-vertex texture coordinates. If indices aren’t supplied, this must be a multiple of 3.</p></li>
@@ -1419,14 +1421,14 @@ Note that this does not take into account the surface area of each triangular fa
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="nvisii.mesh.get_centroid">
-<span class="sig-name descname"><span class="pre">get_centroid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_centroid" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nvisii.mesh.get_center">
+<span class="sig-name descname"><span class="pre">get_center</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.mesh.get_center" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="all.html#nvisii.vec3" title="nvisii.vec3"><code class="xref py py-class docutils literal notranslate"><span class="pre">vec3</span></code></a></p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the last computed mesh centroid.</p>
+<dd class="field-even"><p>the average of the vertices of the mesh, which will lay roughly in the center.</p>
 </dd>
 </dl>
 </dd></dl>

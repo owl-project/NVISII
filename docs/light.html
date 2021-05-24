@@ -174,7 +174,9 @@
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">nvisii.</span></span><span class="sig-name descname"><span class="pre">light</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light" title="Permalink to this definition">¶</a></dt>
 <dd><p>A “Light” component illuminates objects in a scene. Light components must
 be added to an entity with a transform component to have a visible
-impact on the scene.</p>
+impact on the scene. Lights attached to entities with no mesh components
+act like point lights. Otherwise, lights attached to entities with meshes
+will act like mesh lights.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="nvisii.light.are_any_dirty">
 <em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">are_any_dirty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.light.are_any_dirty" title="Permalink to this definition">¶</a></dt>
