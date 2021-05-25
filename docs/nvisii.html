@@ -388,6 +388,15 @@ MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="nvisii.register_callback">
+<span class="sig-prename descclassname"><span class="pre">nvisii.</span></span><span class="sig-name descname"><span class="pre">register_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.register_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a callback which is called on the render thread before each rendered
+frame. This mechanism is useful for implementing camera controls and other
+routines dependent on cursor and button clicks. To disable the callback, pass
+nullptr/None here.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="nvisii.render">
 <span class="sig-prename descclassname"><span class="pre">nvisii.</span></span><span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples_per_pixel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nvisii.render" title="Permalink to this definition">¶</a></dt>
 <dd><p>Renders the current scene, returning the resulting framebuffer back to the user directly.</p>
