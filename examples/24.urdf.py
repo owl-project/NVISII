@@ -102,7 +102,7 @@ def interact():
     if nv.is_button_pressed("SPACE"):
         i = i + 1
         nv.render_to_file(nv.get_window_size().x, nv.get_window_size().y, 256, str(i) + ".png")
-nv.register_pre_render_callback(interact)
+nv.register_callback(interact)
 
 # This function translates the state of all PyBullet visual objects into
 # nvisii scene components
