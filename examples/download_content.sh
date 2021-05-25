@@ -13,3 +13,4 @@ unzip bmw.zip -d bmw/
 rm bmw.zip
 unzip bunny_cloud.zip
 unzip boston_teapot_256x256x178_uint8.zip
+unzip urdf.zip
