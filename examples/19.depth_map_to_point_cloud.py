@@ -18,7 +18,9 @@ opt.noise = False
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-nvisii.initialize(headless=True, verbose=True, lazy_updates = True)
+nvisii.initialize(headless=False, verbose=True)
+nvisii.set_dome_light_intensity(1)
+nvisii.set_dome_light_color(nvisii.vec3(1,1,1))
 
 if not opt.noise is True: 
     nvisii.enable_denoiser()
@@ -51,18 +53,6 @@ floor = nvisii.entity.create(
 
 floor.get_transform().set_scale((2,2,2))
 floor.get_material().set_roughness(1.0)
-areaLight1 = nvisii.entity.create(
-    name="areaLight1",
-    light = nvisii.light.create("areaLight1"),
-    transform = nvisii.transform.create("areaLight1"),
-    mesh = nvisii.mesh.create_plane("areaLight1"),
-)
-areaLight1.get_transform().set_rotation(nvisii.angleAxis(3.14, (1,0,0)))
-areaLight1.get_light().set_intensity(1)
-areaLight1.get_light().set_exposure(-3)
-areaLight1.get_light().set_temperature(8000)
-areaLight1.get_transform().set_position((0, 0, .6))
-areaLight1.get_transform().set_scale((.2, .2, .2))
 
 mesh1 = nvisii.entity.create(
     name="mesh1",
@@ -81,7 +71,6 @@ mesh1.get_material().set_base_color_texture(brick_base_color)
 mesh1.get_transform().set_position((0.0, 0.0, 0))
 mesh1.get_transform().set_scale((0.12, 0.12, 0.12))
 
-nvisii.set_dome_light_intensity(0)
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # nvisii offers different ways to export meta data
