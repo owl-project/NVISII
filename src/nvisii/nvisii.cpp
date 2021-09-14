@@ -2182,7 +2182,7 @@ std::string getFileExtension(const std::string &filename) {
 
 void renderDataToFile(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string field, std::string imagePath, uint32_t seed)
 {
-    std::vector<float> fb = renderData(width, height, startFrame, frameCount, bounce, field);
+    std::vector<float> fb = renderData(width, height, startFrame, frameCount, bounce, field, seed);
     std::string extension = getFileExtension(imagePath);
     if ((extension.compare("exr") == 0) || (extension.compare("EXR") == 0)) {
         std::vector<float> colors(4 * width * height);
