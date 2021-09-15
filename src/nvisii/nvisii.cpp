@@ -2497,7 +2497,7 @@ void initializeInteractive(
 }
 
 void initializeHeadless(
-    bool _verbose, 
+    bool _verbose,
     uint32_t maxEntities,
     uint32_t maxCameras,
     uint32_t maxTransforms,
@@ -2530,18 +2530,44 @@ void initializeHeadless(
 
         initializeOptix(/*headless = */ true);
 
+        int numGPUs = owlGetDeviceCount(OptixData.context);
+
         while (!stopped)
         {
             if(NVISII.callback){
                 NVISII.callback();
             }
+
+            if (!lazyUpdatesEnabled) {
+                updateFrameBuffer();
+                updateComponents();
+                updateLaunchParams();
+
+                for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
+                    cudaSetDevice(deviceID);
+                    cudaEventRecord(NVISII.events[deviceID].first, owlParamsGetCudaStream(OptixData.launchParams, deviceID));
+                    owlAsyncLaunch2DOnDevice(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, deviceID, OptixData.launchParams);
+                    cudaEventRecord(NVISII.events[deviceID].second, owlParamsGetCudaStream(OptixData.launchParams, deviceID));
+                }
+                owlLaunchSync(OptixData.launchParams);
+                for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
+                    cudaEventElapsedTime(&NVISII.times[deviceID], NVISII.events[deviceID].first, NVISII.events[deviceID].second);
+                }
+                updateGPUWeights();
+                mergeFrameBuffers();
+
+                if (OptixData.enableDenoiser) {
+                    denoiseImage();
+                }
+            }
+
             processCommandQueue();
             if (stopped) break;
         }
 
         if (OptixData.denoiser)
             OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
-        
+
         owlContextDestroy(OptixData.context);
     };
 
