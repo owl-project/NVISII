@@ -102,82 +102,88 @@ def interact():
     if nv.is_button_pressed("SPACE"):
         i = i + 1
         nv.render_to_file(nv.get_window_size().x, nv.get_window_size().y, 256, str(i) + ".png")
-nv.register_pre_render_callback(interact)
+nv.register_callback(interact)
 
 # This function translates the state of all PyBullet visual objects into
 # nvisii scene components
-def update_visual_objects(object_ids, pkg_path, objects):
+def update_visual_objects(object_ids, pkg_path, nv_objects=None):
+    # object ids are in pybullet engine
+    # pkg_path is for loading the object geometries
+    # nv_objects refers to the already entities loaded, otherwise it is going 
+    # to load the geometries and create entities. 
+    if nv_objects is None:
+        nv_objects = { }
     for object_id in object_ids:
-      for idx, visual in enumerate(p.getVisualShapeData(object_id)):
-          # Extract visual data from pybullet
-          objectUniqueId = visual[0]
-          linkIndex = visual[1]
-          visualGeometryType = visual[2]
-          dimensions = visual[3]
-          meshAssetFileName = visual[4]
-          local_visual_frame_position = visual[5]
-          local_visual_frame_orientation = visual[6]
-          rgbaColor = visual[7]
-          
-          world_link_frame_position = (0,0,0)
-          world_link_frame_orientation = (0,0,0,1)
-          if linkIndex == -1:
-              dynamics_info = p.getDynamicsInfo(object_id,-1)
-              inertial_frame_position = dynamics_info[3]
-              inertial_frame_orientation = dynamics_info[4]
-              base_state = p.getBasePositionAndOrientation(objectUniqueId)
-              world_link_frame_position = base_state[0]
-              world_link_frame_orientation = base_state[1]    
-              m1 = nv.translate(nv.mat4(1), nv.vec3(inertial_frame_position[0], inertial_frame_position[1], inertial_frame_position[2]))
-              m1 = m1 * nv.mat4_cast(nv.quat(inertial_frame_orientation[3], inertial_frame_orientation[0], inertial_frame_orientation[1], inertial_frame_orientation[2]))
-              m2 = nv.translate(nv.mat4(1), nv.vec3(world_link_frame_position[0], world_link_frame_position[1], world_link_frame_position[2]))
-              m2 = m2 * nv.mat4_cast(nv.quat(world_link_frame_orientation[3], world_link_frame_orientation[0], world_link_frame_orientation[1], world_link_frame_orientation[2]))
-              m = nv.inverse(m1) * m2
-              q = nv.quat_cast(m)
-              world_link_frame_position = m[3]
-              world_link_frame_orientation = q
-          else:
-              linkState = p.getLinkState(objectUniqueId, linkIndex)
-              world_link_frame_position = linkState[4]
-              world_link_frame_orientation = linkState[5]
-          
-          # Name to use for components
-          object_name = str(objectUniqueId) + "_" + str(linkIndex)
+        for idx, visual in enumerate(p.getVisualShapeData(object_id)):
+            # Extract visual data from pybullet
+            objectUniqueId = visual[0]
+            linkIndex = visual[1]
+            visualGeometryType = visual[2]
+            dimensions = visual[3]
+            meshAssetFileName = visual[4]
+            local_visual_frame_position = visual[5]
+            local_visual_frame_orientation = visual[6]
+            rgbaColor = visual[7]
+            
+            world_link_frame_position = (0,0,0)
+            world_link_frame_orientation = (0,0,0,1)
+            if linkIndex == -1:
+                dynamics_info = p.getDynamicsInfo(object_id,-1)
+                inertial_frame_position = dynamics_info[3]
+                inertial_frame_orientation = dynamics_info[4]
+                base_state = p.getBasePositionAndOrientation(objectUniqueId)
+                world_link_frame_position = base_state[0]
+                world_link_frame_orientation = base_state[1]    
+                m1 = nv.translate(nv.mat4(1), nv.vec3(inertial_frame_position[0], inertial_frame_position[1], inertial_frame_position[2]))
+                m1 = m1 * nv.mat4_cast(nv.quat(inertial_frame_orientation[3], inertial_frame_orientation[0], inertial_frame_orientation[1], inertial_frame_orientation[2]))
+                m2 = nv.translate(nv.mat4(1), nv.vec3(world_link_frame_position[0], world_link_frame_position[1], world_link_frame_position[2]))
+                m2 = m2 * nv.mat4_cast(nv.quat(world_link_frame_orientation[3], world_link_frame_orientation[0], world_link_frame_orientation[1], world_link_frame_orientation[2]))
+                m = nv.inverse(m1) * m2
+                q = nv.quat_cast(m)
+                world_link_frame_position = m[3]
+                world_link_frame_orientation = q
+            else:
+                linkState = p.getLinkState(objectUniqueId, linkIndex)
+                world_link_frame_position = linkState[4]
+                world_link_frame_orientation = linkState[5]
+            
+            # Name to use for components
+            object_name = str(objectUniqueId) + "_" + str(linkIndex)
 
-          meshAssetFileName = meshAssetFileName.decode('UTF-8')
-          if object_name not in objects:
-              # Create mesh component if not yet made
-              if visualGeometryType == p.GEOM_MESH:
-                  try:
-                      objects[object_name] = nv.import_scene(
-                          pkg_path + "/" + meshAssetFileName
-                      )
-                  except Exception as e:
-                      print(e)
-                      pass
-          
-          if visualGeometryType != 5: continue
+            meshAssetFileName = meshAssetFileName.decode('UTF-8')
+            if object_name not in nv_objects:
+                # Create mesh component if not yet made
+                if visualGeometryType == p.GEOM_MESH:
+                    try:
+                        nv_objects[object_name] = nv.import_scene(
+                            pkg_path + "/" + meshAssetFileName
+                        )
+                    except Exception as e:
+                        print(e)
+                        pass
+            
+            if visualGeometryType != 5: continue
 
-          if object_name not in objects: continue
+            if object_name not in nv_objects: continue
 
-          # Link transform
-          m1 = nv.translate(nv.mat4(1), nv.vec3(world_link_frame_position[0], world_link_frame_position[1], world_link_frame_position[2]))
-          m1 = m1 * nv.mat4_cast(nv.quat(world_link_frame_orientation[3], world_link_frame_orientation[0], world_link_frame_orientation[1], world_link_frame_orientation[2]))
+            # Link transform
+            m1 = nv.translate(nv.mat4(1), nv.vec3(world_link_frame_position[0], world_link_frame_position[1], world_link_frame_position[2]))
+            m1 = m1 * nv.mat4_cast(nv.quat(world_link_frame_orientation[3], world_link_frame_orientation[0], world_link_frame_orientation[1], world_link_frame_orientation[2]))
 
-          # Visual frame transform
-          m2 = nv.translate(nv.mat4(1), nv.vec3(local_visual_frame_position[0], local_visual_frame_position[1], local_visual_frame_position[2]))
-          m2 = m2 * nv.mat4_cast(nv.quat(local_visual_frame_orientation[3], local_visual_frame_orientation[0], local_visual_frame_orientation[1], local_visual_frame_orientation[2]))
-          
-          # Set root transform of visual objects collection to above transform
-          objects[object_name].transforms[0].set_transform(m1 * m2)
-          objects[object_name].transforms[0].set_scale(dimensions)
+            # Visual frame transform
+            m2 = nv.translate(nv.mat4(1), nv.vec3(local_visual_frame_position[0], local_visual_frame_position[1], local_visual_frame_position[2]))
+            m2 = m2 * nv.mat4_cast(nv.quat(local_visual_frame_orientation[3], local_visual_frame_orientation[0], local_visual_frame_orientation[1], local_visual_frame_orientation[2]))
+            
+            # Set root transform of visual objects collection to above transform
+            nv_objects[object_name].transforms[0].set_transform(m1 * m2)
+            nv_objects[object_name].transforms[0].set_scale(dimensions)
 
-          for m in objects[object_name].materials:
-              m.set_base_color((rgbaColor[0] ** 2.2, rgbaColor[1] ** 2.2, rgbaColor[2] ** 2.2))
+            for m in nv_objects[object_name].materials:
+                m.set_base_color((rgbaColor[0] ** 2.2, rgbaColor[1] ** 2.2, rgbaColor[2] ** 2.2))
 
-          # todo... add support for spheres, cylinders, etc
-          # print(visualGeometryType)
-
+            # todo... add support for spheres, cylinders, etc
+            # print(visualGeometryType)
+    return nv_objects
 
 # The below code is taken and modified from PyBullet's included examples.
 # Look for the calls to "update_visual_objects" for nvisi specifics:
@@ -199,8 +205,7 @@ cubeId2 = p.loadURDF("cube.urdf", [-1, -1, 2])
 cubeId3 = p.loadURDF("cube.urdf", [1, -1, 2])
 
 # Keep track of the cube objects
-objects = {}
-update_visual_objects([planeId, kukaId, cubeId1, cubeId2, cubeId3], ".", objects)
+nv_objects = update_visual_objects([planeId, kukaId, cubeId1, cubeId2, cubeId3], ".")
 
 #lower limits for null space
 ll = [-.967, -2, -2.96, 0.19, -2.96, -2.09, -3.05]
@@ -235,7 +240,7 @@ while 1:
   t = t + 0.01
 
   # Periodically update nvisii components to match pybullet
-  update_visual_objects([planeId, kukaId, cubeId1, cubeId2, cubeId3], ".", objects)
+  update_visual_objects([planeId, kukaId, cubeId1, cubeId2, cubeId3], ".", nv_objects)
 
   if (useSimulation):
     p.stepSimulation()    

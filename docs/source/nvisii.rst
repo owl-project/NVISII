@@ -5,7 +5,7 @@ NVISII
         initialize, 
         clear_all,
         deinitialize,
-        register_pre_render_callback,
+        register_callback,
         set_camera_entity,
         set_dome_light_intensity,
         set_dome_light_exposure,
