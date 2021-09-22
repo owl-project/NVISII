@@ -271,26 +271,6 @@ int getDeviceCount() {
     return owlGetDeviceCount(OptixData.context);
 }
 
-OWLMissProg missProgCreate(OWLContext context, OWLModule module, const char *programName, size_t sizeOfVarStruct, OWLVarDecl *vars, size_t numVars)
-{
-    return owlMissProgCreate(context, module, programName, sizeOfVarStruct, vars, numVars);
-}
-
-OWLRayGen rayGenCreate(OWLContext context, OWLModule module, const char *programName, size_t sizeOfVarStruct, OWLVarDecl *vars, size_t numVars) 
-{
-    return owlRayGenCreate(context, module, programName, sizeOfVarStruct, vars, numVars);
-}
-
-OWLGeomType geomTypeCreate(OWLContext context, OWLGeomKind kind, size_t sizeOfVarStruct, OWLVarDecl *vars, size_t numVars)
-{
-    return owlGeomTypeCreate(context, kind, sizeOfVarStruct, vars, numVars);
-}
-
-void geomTypeSetClosestHit(OWLGeomType type, int rayType, OWLModule module, const char *progName)
-{
-    owlGeomTypeSetClosestHit(type, rayType, module, progName);
-}
-
 OWLGeom geomCreate(OWLContext context, OWLGeomType type)
 {
     return owlGeomCreate(context, type);
@@ -703,7 +683,7 @@ void initializeOptix(bool headless)
     owlParamsSetRaw(OD.launchParams, "timeSamplingInterval", &OD.LP.timeSamplingInterval);
 
     OWLVarDecl trianglesGeomVars[] = {{/* sentinel to mark end of list */}};
-    OD.trianglesGeomType = geomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
+    OD.trianglesGeomType = owlGeomTypeCreate(OD.context, OWL_GEOM_TRIANGLES, sizeof(TrianglesGeomData), trianglesGeomVars,-1);
     OWLVarDecl volumeGeomVars[] = {
         { "bbmin", OWL_USER_TYPE(glm::vec4), OWL_OFFSETOF(VolumeGeomData, bbmin)},
         { "bbmax", OWL_USER_TYPE(glm::vec4), OWL_OFFSETOF(VolumeGeomData, bbmax)},
@@ -711,8 +691,8 @@ void initializeOptix(bool headless)
         {/* sentinel to mark end of list */}
     };
     OD.volumeGeomType = owlGeomTypeCreate(OD.context, OWL_GEOM_USER, sizeof(VolumeGeomData), volumeGeomVars, -1);
-    geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
-    geomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
+    owlGeomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 0, OD.module,"TriangleMesh");
+    owlGeomTypeSetClosestHit(OD.trianglesGeomType, /*ray type */ 1, OD.module,"ShadowRay");
     owlGeomTypeSetClosestHit(OD.volumeGeomType, /*ray type */ 0, OD.module,"VolumeMesh");
     owlGeomTypeSetClosestHit(OD.volumeGeomType, /*ray type */ 1, OD.module,"VolumeShadowRay");
     owlGeomTypeSetIntersectProg(OD.volumeGeomType, /*ray type */ 0, OD.module,"VolumeIntersection");
@@ -721,14 +701,14 @@ void initializeOptix(bool headless)
 
     // Setup miss prog 
     OWLVarDecl missProgVars[] = {{ /* sentinel to mark end of list */ }};
-    OD.missProg = missProgCreate(OD.context,OD.module,"miss",sizeof(MissProgData),missProgVars,-1);
+    OD.missProg = owlMissProgCreate(OD.context,OD.module,"miss",sizeof(MissProgData),missProgVars,-1);
     
     // Setup ray gen program
     OWLVarDecl rayGenVars[] = {
         { "deviceIndex",   OWL_DEVICE, OWL_OFFSETOF(RayGenData, deviceIndex)}, // this var is automatically set
         { "deviceCount",   OWL_INT,    OWL_OFFSETOF(RayGenData, deviceCount)},
         { /* sentinel to mark end of list */ }};
-    OD.rayGen = rayGenCreate(OD.context,OD.module,"rayGen", sizeof(RayGenData), rayGenVars,-1);
+    OD.rayGen = owlRayGenCreate(OD.context,OD.module,"rayGen", sizeof(RayGenData), rayGenVars,-1);
     owlRayGenSet1i(OD.rayGen, "deviceCount",  numGPUsFound);
 
     owlBuildPrograms(OD.context);
@@ -2182,7 +2162,7 @@ std::string getFileExtension(const std::string &filename) {
 
 void renderDataToFile(uint32_t width, uint32_t height, uint32_t startFrame, uint32_t frameCount, uint32_t bounce, std::string field, std::string imagePath, uint32_t seed)
 {
-    std::vector<float> fb = renderData(width, height, startFrame, frameCount, bounce, field);
+    std::vector<float> fb = renderData(width, height, startFrame, frameCount, bounce, field, seed);
     std::string extension = getFileExtension(imagePath);
     if ((extension.compare("exr") == 0) || (extension.compare("EXR") == 0)) {
         std::vector<float> colors(4 * width * height);
