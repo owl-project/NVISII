@@ -519,7 +519,7 @@ void initializeOptix(bool headless)
         { "instanceToEntity",        OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, instanceToEntity)},
         { "domeLightIntensity",      OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
         { "domeLightExposure",       OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightExposure)},
-        { "domeLightColor",          OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, domeLightColor)},
+        { "domeLightColor",          OWL_USER_TYPE(glm::vec4),          OWL_OFFSETOF(LaunchParams, domeLightColor)},
         { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
         { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
         { "maxDiffuseDepth",         OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxDiffuseDepth)},
@@ -892,13 +892,15 @@ void setDomeLightExposure(float exposure)
     resetAccumulation();
 }
 
-void setDomeLightColor(vec3 color)
+void setDomeLightColor(vec3 color, float alpha)
 {
     clearDomeLightTexture();
-    color.r = glm::max(0.f, glm::min(color.r, 1.f));
-    color.g = glm::max(0.f, glm::min(color.g, 1.f));
-    color.b = glm::max(0.f, glm::min(color.b, 1.f));
-    OptixData.LP.domeLightColor = color;
+    vec4 c;
+    c.r = glm::max(0.f, glm::min(color.r, 1.f));
+    c.g = glm::max(0.f, glm::min(color.g, 1.f));
+    c.b = glm::max(0.f, glm::min(color.b, 1.f));
+    c.a = glm::max(0.f, glm::min(alpha, 1.f));
+    OptixData.LP.domeLightColor = c;
     resetAccumulation();
 }
 
@@ -938,9 +940,9 @@ vec3 toPolar(vec2 uv)
     return n;
 }
 
-void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float saturation)
+void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float saturation, float alpha)
 {
-    enqueueCommand([sunPos, skyTint, atmosphereThickness, saturation] () {
+    enqueueCommand([sunPos, skyTint, atmosphereThickness, saturation, alpha] () {
         /* Generate procedural sky */
         uint32_t width = 1024/2;
         uint32_t height = 512/2;
@@ -950,7 +952,7 @@ void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float
                 glm::vec2 uv = glm::vec2(x / float(width), y / float(height));
                 glm::vec3 dir = toPolar(uv);
                 glm::vec3 c = ProceduralSkybox(glm::vec3(dir.x, -dir.z, dir.y), glm::vec3(sunPos.x, sunPos.z, sunPos.y), skyTint, atmosphereThickness, saturation);
-                texels[x + y * width] = glm::vec4(c.r, c.g, c.b, 1.0f);
+                texels[x + y * width] = glm::vec4(c.r, c.g, c.b, alpha);
             }
         }
 
@@ -1942,7 +1944,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
                 auto glfw = Libraries::GLFW::Get();
                 glfw->poll_events();
                 glfw->swap_buffers("NVISII");
-                glClearColor(1,1,1,1);
+                glClearColor(0,0,0,0);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
 
@@ -2111,7 +2113,7 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
                 auto glfw = Libraries::GLFW::Get();
                 glfw->poll_events();
                 glfw->swap_buffers("NVISII");
-                glClearColor(1,1,1,1);
+                glClearColor(0,0,0,0);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
 
@@ -2207,19 +2209,6 @@ void renderDataToFile(uint32_t width, uint32_t height, uint32_t startFrame, uint
     }
 }
 
-static bool renderToHDRDeprecatedShown = false;
-void renderToHDR(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
-{
-    if (renderToHDRDeprecatedShown == false) {
-        std::cout<<"Warning, render_to_hdr is deprecated and will be removed in a subsequent release. Please switch to render_to_file." << std::endl;
-        renderToHDRDeprecatedShown = true;
-    }
-
-    std::vector<float> fb = render(width, height, samplesPerPixel, seed);
-    stbi_flip_vertically_on_write(true);
-    stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
-}
-
 float linearToSRGB(float x) {
     if (x <= 0.0031308f) {
 		return 12.92f * x;
@@ -2246,36 +2235,6 @@ vec3 Uncharted2Tonemap(vec3 x)
 	float E_ = 0.02f;
 	float F = 0.30f;
 	return max(vec3(0.0f), ((x*(A*x+C*B)+D*E_)/(x*(A*x+B)+D*F))-E_/F);
-}
-
-static bool renderToPNGDeprecatedShown = false;
-void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
-{
-    if (renderToPNGDeprecatedShown == false) {
-        std::cout<<"Warning, render_to_png is deprecated and will be removed in a subsequent release. Please switch to render_to_file." << std::endl;
-        renderToPNGDeprecatedShown = true;
-    }
-
-    // float exposure = 2.f; // TODO: expose as a parameter
-
-    std::vector<float> fb = render(width, height, samplesPerPixel, seed);
-    std::vector<uint8_t> colors(4 * width * height);
-    for (size_t i = 0; i < (width * height); ++i) {     
-        vec3 color = vec3(fb[i * 4 + 0], fb[i * 4 + 1], fb[i * 4 + 2]);
-        float alpha = fb[i * 4 + 3];
-
-        // color = Uncharted2Tonemap(color * exposure);
-        // color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
-
-        color = glm::convertLinearToSRGB(color);
-
-        colors[i * 4 + 0] = uint8_t(glm::clamp(color.r * 255.f, 0.f, 255.f));
-        colors[i * 4 + 1] = uint8_t(glm::clamp(color.g * 255.f, 0.f, 255.f));
-        colors[i * 4 + 2] = uint8_t(glm::clamp(color.b * 255.f, 0.f, 255.f));
-        colors[i * 4 + 3] = uint8_t(glm::clamp(alpha * 255.f, 0.f, 255.f));
-    }
-    stbi_flip_vertically_on_write(true);
-    stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
 }
 
 void renderToFile(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
@@ -2394,12 +2353,15 @@ void initializeInteractive(
 
         int numGPUs = owlGetDeviceCount(OptixData.context);
 
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
         while (!stopped)
         {
             /* Poll events from the window */
             glfw->poll_events();
             glfw->swap_buffers("NVISII");
-            glClearColor(1,1,1,1);
+            glClearColor(0,0,0,0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             if (NVISII.callback && NVISII.callbackMutex.try_lock()) {

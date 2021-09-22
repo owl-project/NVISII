@@ -103,6 +103,7 @@ namespace Libraries {
         glfwWindowHint(GLFW_DECORATED, (decorated) ? GLFW_TRUE : GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, (resizable) ? GLFW_TRUE : GLFW_FALSE);
         glfwWindowHint(GLFW_FLOATING, (floating) ? GLFW_TRUE : GLFW_FALSE);
+        glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
         // glfwWindowHint( GLFW_DOUBLEBUFFER, GL_FALSE );
 
         Window window = {};

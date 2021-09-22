@@ -89,25 +89,27 @@ cudaTextureObject_t getEnvironmentTexture()
 }
 
 inline __device__
-float3 missColor(const float3 n_dir, cudaTextureObject_t &tex)
+float4 missColor(const float3 n_dir, cudaTextureObject_t &tex)
 {
     auto &LP = optixLaunchParams;
     vec3 rayDir = LP.environmentMapRotation * make_vec3(n_dir);
     if (tex)
     {
         vec2 tc = toUV(vec3(rayDir.x, rayDir.y, rayDir.z));
-        float4 texColor = tex2D<float4>(tex, tc.x,tc.y);
-        return make_float3(texColor);
+        return tex2D<float4>(tex, tc.x,tc.y);
     }
     
-    if (glm::any(glm::greaterThanEqual(LP.domeLightColor, glm::vec3(0.f)))) return make_float3(LP.domeLightColor);
+    // If none of the background color channels are negative, return that dome light color.
+    if (glm::any(glm::greaterThanEqual(LP.domeLightColor, glm::vec4(0.f)))) return make_float4(LP.domeLightColor);
+
+    // otherwise, we found a negative value, so revert to some default interpolated background value.
     float t = 0.5f*(rayDir.z + 1.0f);
     float3 c = (1.0f - t) * make_float3(pow(vec3(1.0f), vec3(2.2f))) + t * make_float3( pow(vec3(0.5f, 0.7f, 1.0f), vec3(2.2f)) );
-    return c;
+    return make_float4(c, 1.f);
 }
 
 inline __device__
-float3 missColor(const owl::Ray &ray, cudaTextureObject_t &tex)
+float4 missColor(const owl::Ray &ray, cudaTextureObject_t &tex)
 {
     return missColor(ray.direction, tex);
 }
@@ -843,6 +845,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     float3 renderData = make_float3(0.f);
     float3 primaryAlbedo = make_float3(0.f);
     float3 primaryNormal = make_float3(0.f);
+    float primaryAlpha = 1.f;
     initializeRenderData(renderData);
 
     uint8_t depth = 0;
@@ -875,13 +878,20 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
         if (payload.tHit <= 0.f) {
             // Compute lighting from environment
             if (depth == 0) {
-                float3 col = missColor(ray, envTex);
-                illum = illum + pathThroughput * (col * LP.domeLightIntensity);
+                // don't account for exposure if this is a primary ray. 
+                // (note, this is not physically correct... however, it makes directly visible lights more artist directable. )
+                // (todo, account for lights visible through specular chains...)
+                // Also store primary albedo for denoising
+                float4 col = missColor(ray, envTex);
+                illum = illum + pathThroughput * (make_float3(col) * LP.domeLightIntensity);
                 directIllum = illum;
-                primaryAlbedo = col;
+                primaryAlbedo = make_float3(col);
+                primaryAlpha = col.w;
             }
-            else if (enableDomeSampling)
-                illum = illum + pathThroughput * (missColor(ray, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+            else if (enableDomeSampling){
+                // else account for exposure of the dome light in addition to intensity.
+                illum = illum + pathThroughput * (make_float3(missColor(ray, envTex)) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+            }
             
             const float envDist = 10000.0f; // large value
             /* Compute miss motion vector */
@@ -1199,7 +1209,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             }
 
             numTris = 1.f;
-            lightEmission = (missColor(lightDir, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
+            lightEmission = (make_float3(missColor(lightDir, envTex)) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure));
         }
         // sample light sources
         else 
@@ -1340,7 +1350,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             if ((payload.instanceID == -1) && (sampledLightID == -1) && enableDomeSampling) {
                 // Case where we hit the background, and also previously sampled the background   
                 float w = power_heuristic(1.f, bsdfPDF, 1.f, lightPDF);
-                float3 lightEmission = missColor(ray, envTex) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure);
+                float3 lightEmission = make_float3(missColor(ray, envTex)) * LP.domeLightIntensity * pow(2.f, LP.domeLightExposure);
                 float3 Li = (lightEmission * w) / bsdfPDF;
                 
                 if (dotNWi > 0.f) {
@@ -1471,7 +1481,13 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
 
     if (LP.renderDataMode == RenderDataFlags::NONE) 
     {
-        accum_color = make_float4((accum_illum + float(LP.frameID) * make_float3(prev_color)) / float(LP.frameID + 1), 1.0f);
+        // accum_color = (make_float4(accum_illum, primaryAlpha) + float(LP.frameID) * prev_color) / float(LP.frameID + 1);
+        float3 c = (accum_illum + float(LP.frameID) * make_float3(prev_color)) / float(LP.frameID + 1);
+        float a = (primaryAlpha + float(LP.frameID) * prev_color.w) / float(LP.frameID + 1);
+        accum_color.x = c.x;
+        accum_color.y = c.y;
+        accum_color.z = c.z;
+        accum_color.w = a;
     }
     else {
         // Override framebuffer output if user requested to render metadata
@@ -1483,11 +1499,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
             accum_illum = make_float3(0.f, 0.f, 0.f);
             prev_color = make_float4(0.f, 0.f, 0.f, 1.f);
         }
-        accum_color = make_float4((accum_illum + float(LP.frameID) * make_float3(prev_color)) / float(LP.frameID + 1), 1.0f);
-
-        // if (debug) {
-        //     printf("output: %f %f %f\n", accum_color.x, accum_color.y, accum_color.z);
-        // }
+        accum_color = make_float4( (accum_illum + float(LP.frameID) * make_float3(prev_color)) / float(LP.frameID + 1), 1.0f);
     }
     
     
@@ -1496,7 +1508,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)()
     vec4 oldNormal = make_vec4(prev_normal);
     if (any(isnan(oldAlbedo))) oldAlbedo = vec4(0.f);
     if (any(isnan(oldNormal))) oldNormal = vec4(0.f);
-    vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, 1.f);
+    vec4 newAlbedo = vec4(primaryAlbedo.x, primaryAlbedo.y, primaryAlbedo.z, primaryAlpha);
     vec4 accumAlbedo = (newAlbedo + float(LP.frameID) * oldAlbedo) / float(LP.frameID + 1);
     vec4 newNormal = vec4(make_vec3(primaryNormal), 1.f);
     if (!all(equal(make_vec3(primaryNormal), vec3(0.f, 0.f, 0.f)))) {
