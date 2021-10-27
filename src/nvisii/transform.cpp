@@ -908,8 +908,6 @@ glm::mat4 Transform::getLocalToWorldMatrix(bool previous) {
 
 void Transform::updateChildren()
 {
-	if (children.size() == 0) return;
-
 	for (auto &c : children) {
 		auto &t = transforms[c];
 		t.updateChildren();
