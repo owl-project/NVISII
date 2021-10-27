@@ -11,41 +11,10 @@
 namespace nvisii {
 
 /**
-  * Deprecated. Please use initialize() instead.
-*/
-void initializeInteractive(
-  bool window_on_top = false, 
-  bool verbose = false,
-  uint32_t max_entities = 10000,
-  uint32_t max_cameras = 10,
-  uint32_t max_transforms = 10000,
-  uint32_t max_meshes = 10000,
-  uint32_t max_materials = 10000,
-  uint32_t max_lights = 100,
-  uint32_t max_textures = 1000,
-  uint32_t max_volumes = 1000);
-
-/**
-  * Deprecated. Please use initialize(headless = True) instead.
-*/
-void initializeHeadless(
-  bool verbose = false,
-  uint32_t max_entities = 10000,
-  uint32_t max_cameras = 10,
-  uint32_t max_transforms = 10000,
-  uint32_t max_meshes = 10000,
-  uint32_t max_materials = 10000,
-  uint32_t max_lights = 100,
-  uint32_t max_textures = 1000,
-  uint32_t max_volumes = 1000);
-
-/**
   * Initializes various backend systems required to render scene data.
   * 
   * @param headless If true, avoids using any OpenGL resources, to enable use on systems without displays.
   * @param window_on_top Keeps the window opened during an interactive session on top of any other windows. (assuming headless is False)
-  * @param lazy_updates If True, nvisii will only upload components to the GPU on call to 
-  * render/render_to_png/render_data for better scene editing performance. (assuming headless is False. Always on when headless is True)
   * @param verbose If false, nvisii will avoid outputing any unneccessary text
   * @param max_entities The max number of creatable Entity components.
   * @param max_cameras The max number of creatable Camera components.
@@ -58,7 +27,6 @@ void initializeHeadless(
 void initialize(
   bool headless = false, 
   bool window_on_top = false, 
-  bool lazy_updates = false, 
   bool verbose = false,
   uint32_t max_entities = 10000,
   uint32_t max_cameras = 10,

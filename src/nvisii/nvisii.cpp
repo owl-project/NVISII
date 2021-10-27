@@ -61,7 +61,7 @@ std::promise<void> exitSignal;
 std::thread renderThread;
 static bool initialized = false;
 static bool stopped = true;
-static bool lazyUpdatesEnabled = false;
+static bool paused = false;
 static bool verbose = true;
 
 static struct WindowData {
@@ -2360,20 +2360,21 @@ void initializeInteractive(
         {
             /* Poll events from the window */
             glfw->poll_events();
-            glfw->swap_buffers("NVISII");
-            glClearColor(0,0,0,0);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            
+            if (!paused) {
+                glfw->swap_buffers("NVISII");
+                glClearColor(0,0,0,0);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            if (NVISII.callback && NVISII.callbackMutex.try_lock()) {
-                NVISII.callback();
-                NVISII.callbackMutex.unlock();
-            }
+                if (NVISII.callback && NVISII.callbackMutex.try_lock()) {
+                    NVISII.callback();
+                    NVISII.callbackMutex.unlock();
+                }
 
-            static double start=0;
-            static double stop=0;
-            start = glfwGetTime();
+                static double start=0;
+                static double stop=0;
+                start = glfwGetTime();
 
-            if (!lazyUpdatesEnabled) {
                 updateFrameBuffer();
                 updateComponents();
                 updateLaunchParams();
@@ -2394,24 +2395,25 @@ void initializeInteractive(
                 if (OptixData.enableDenoiser) {
                     denoiseImage();
                 }
-            }
-            // glm::vec4* samplePtr = (glm::vec4*) owlBufferGetPointer(OptixData.accumBuffer,0);
-            // glm::vec4* mvecPtr = (glm::vec4*) owlBufferGetPointer(OptixData.mvecBuffer,0);
-            // glm::vec4* t0AlbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.scratchBuffer,0);
-            // glm::vec4* t1AlbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.albedoBuffer,0);
-            // glm::vec4* fbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
-            // glm::vec4* sPtr = (glm::vec4*) owlBufferGetPointer(OptixData.normalBuffer,0);
-            // int width = OptixData.LP.frameSize.x;
-            // int height = OptixData.LP.frameSize.y;
-            // reproject(samplePtr, t0AlbPtr, t1AlbPtr, mvecPtr, sPtr, fbPtr, width, height);
+                // glm::vec4* samplePtr = (glm::vec4*) owlBufferGetPointer(OptixData.accumBuffer,0);
+                // glm::vec4* mvecPtr = (glm::vec4*) owlBufferGetPointer(OptixData.mvecBuffer,0);
+                // glm::vec4* t0AlbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.scratchBuffer,0);
+                // glm::vec4* t1AlbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.albedoBuffer,0);
+                // glm::vec4* fbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
+                // glm::vec4* sPtr = (glm::vec4*) owlBufferGetPointer(OptixData.normalBuffer,0);
+                // int width = OptixData.LP.frameSize.x;
+                // int height = OptixData.LP.frameSize.y;
+                // reproject(samplePtr, t0AlbPtr, t1AlbPtr, mvecPtr, sPtr, fbPtr, width, height);
 
-            drawFrameBufferToWindow();
-            stop = glfwGetTime();
-            glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
-            drawGUI();
+                drawFrameBufferToWindow();
+                stop = glfwGetTime();
+                glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
+                drawGUI();
+            }
 
             processCommandQueue();
             checkForErrors();
+
             if (stopped) break;
         }
 
@@ -2496,7 +2498,6 @@ void initializeHeadless(
 void initialize(
     bool headless, 
     bool windowOnTop, 
-    bool _lazyUpdatesEnabled, 
     bool verbose,
     uint32_t maxEntities,
     uint32_t maxCameras,
@@ -2507,12 +2508,10 @@ void initialize(
     uint32_t maxTextures,
     uint32_t maxVolumes) 
 {
-    lazyUpdatesEnabled = _lazyUpdatesEnabled;
     // prevents deprecated warning from showing
     initializeInteractiveDeprecatedShown = true;
     initializeHeadlessDeprecatedShown = true;
 
-    lazyUpdatesEnabled = _lazyUpdatesEnabled;
     if (headless) 
         initializeHeadless(
             verbose, maxEntities, maxCameras, maxTransforms, maxMeshes, 
@@ -2584,17 +2583,17 @@ void updateSceneAabb(Entity* entity)
 
 void enableUpdates()
 {
-    enqueueCommandAndWait([] () { lazyUpdatesEnabled = false; });
+    enqueueCommandAndWait([] () { paused = false; });
 }
 
 void disableUpdates()
 {
-    enqueueCommandAndWait([] () { lazyUpdatesEnabled = true; });
+    enqueueCommandAndWait([] () { paused = true; });
 }
 
 bool areUpdatesEnabled()
 {
-    return lazyUpdatesEnabled == false;
+    return paused == false;
 }
 
 #ifdef __unix__
