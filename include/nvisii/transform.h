@@ -78,15 +78,6 @@ class Transform : public StaticFactory
     static std::vector<TransformStruct> transformStructs;
     static std::map<std::string, uint32_t> lookupTable;
     
-    /* Updates cached rotation values */
-    void updateRotation();
-
-    /* Updates cached position values */
-    void updatePosition();
-
-    /* Updates cached scale values */
-    void updateScale();
-
     /* Updates cached final local to parent matrix values */
     void updateMatrix();
 
