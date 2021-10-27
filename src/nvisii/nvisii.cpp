@@ -1143,6 +1143,15 @@ void updateComponents()
     std::lock_guard<std::recursive_mutex> texture_lock(Texture::areAnyDirty()     ? *Texture::getEditMutex().get() : dummyMutex);
     std::lock_guard<std::recursive_mutex> volume_lock(Volume::areAnyDirty()       ? *Volume::getEditMutex().get() : dummyMutex);
 
+    // Manage transforms
+    auto dirtyTransforms = Transform::getDirtyTransforms();
+    if (dirtyTransforms.size() > 0) {
+        Transform::updateComponents();
+
+        // cudaSetDevice(0);
+        owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
+    }  
+
     // Manage Meshes: Build / Rebuild BLAS
     auto dirtyMeshes = Mesh::getDirtyMeshes();
     if (dirtyMeshes.size() > 0) {
@@ -1489,15 +1498,6 @@ void updateComponents()
         owlBufferUpload(OptixData.textureBuffer, OptixData.textureStructs.data());
     }
     
-    // Manage transforms
-    auto dirtyTransforms = Transform::getDirtyTransforms();
-    if (dirtyTransforms.size() > 0) {
-        Transform::updateComponents();
-
-        // cudaSetDevice(0);
-        owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
-    }   
-
     // Manage Cameras
     if (Camera::areAnyDirty()) {
         Camera::updateComponents();
@@ -2306,10 +2306,8 @@ void initializeComponentFactories(
 
 void reproject(glm::vec4 *samplesBuffer, glm::vec4 *t0AlbedoBuffer, glm::vec4 *t1AlbedoBuffer, glm::vec4 *mvecBuffer, glm::vec4 *scratchBuffer, glm::vec4 *imageBuffer, int width, int height);
 
-
-static bool initializeInteractiveDeprecatedShown = false;
-static bool initializeHeadlessDeprecatedShown = false;
-void initializeInteractive(
+void initialize(
+    bool headless, 
     bool windowOnTop, 
     bool _verbose,
     uint32_t maxEntities,
@@ -2319,13 +2317,8 @@ void initializeInteractive(
     uint32_t maxMaterials,
     uint32_t maxLights,
     uint32_t maxTextures,
-    uint32_t maxVolumes)
+    uint32_t maxVolumes) 
 {
-    if (initializeInteractiveDeprecatedShown == false) {
-        std::cout<<"Warning, initialize_interactive is deprecated and will be removed in a subsequent release. Please switch to initialize." << std::endl;
-        initializeInteractiveDeprecatedShown = true;
-    }
-
     // don't initialize more than once
     if (initialized == true) {
         throw std::runtime_error("Error: already initialized!");
@@ -2335,56 +2328,67 @@ void initializeInteractive(
     stopped = false;
     verbose = _verbose;
     NVISII.callback = nullptr;
+    NVISII.headlessMode = headless;
 
     initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures, maxVolumes);
 
     auto loop = [windowOnTop]() {
         NVISII.render_thread_id = std::this_thread::get_id();
-        NVISII.headlessMode = false;
+        Libraries::GLFW *glfw = nullptr;
 
-        auto glfw = Libraries::GLFW::Get();
-        WindowData.window = glfw->create_window("NVISII", 512, 512, windowOnTop, true, true);
-        WindowData.currentSize = WindowData.lastSize = ivec2(512, 512);
-        glfw->make_context_current("NVISII");
-        glfw->poll_events();
+        if (!NVISII.headlessMode) 
+        {
+            glfw = Libraries::GLFW::Get();
+            WindowData.window = glfw->create_window("NVISII", 512, 512, windowOnTop, true, true);
+            WindowData.currentSize = WindowData.lastSize = ivec2(512, 512);
+            glfw->make_context_current("NVISII");
+            glfw->poll_events();
+        }
 
-        initializeOptix(/*headless = */ false);
-        initializeImgui();
+        initializeOptix(/*headless = */ NVISII.headlessMode);
 
         int numGPUs = owlGetDeviceCount(OptixData.context);
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        if (!NVISII.headlessMode) {
+            initializeImgui();
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        } 
 
         while (!stopped)
         {
-            /* Poll events from the window */
-            glfw->poll_events();
-            
             if (!paused) {
-                glfw->swap_buffers("NVISII");
-                glClearColor(0,0,0,0);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                if (!NVISII.headlessMode) {
+                    /* Poll events from the window */
+                    glfw->poll_events();
+                    glfw->swap_buffers("NVISII");
+                        glClearColor(0,0,0,0);
+                        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                }
 
                 if (NVISII.callback && NVISII.callbackMutex.try_lock()) {
                     NVISII.callback();
                     NVISII.callbackMutex.unlock();
                 }
-
+                
                 static double start=0;
                 static double stop=0;
-                start = glfwGetTime();
 
-                updateFrameBuffer();
+                if (!NVISII.headlessMode) {
+                    start = glfwGetTime();
+                    updateFrameBuffer();
+                }
+                
                 updateComponents();
                 updateLaunchParams();
-
+                
                 for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
                     cudaSetDevice(deviceID);
                     cudaEventRecord(NVISII.events[deviceID].first, owlParamsGetCudaStream(OptixData.launchParams, deviceID));
                     owlAsyncLaunch2DOnDevice(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, deviceID, OptixData.launchParams);
                     cudaEventRecord(NVISII.events[deviceID].second, owlParamsGetCudaStream(OptixData.launchParams, deviceID));
                 }
+
                 owlLaunchSync(OptixData.launchParams);
                 for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
                     cudaEventElapsedTime(&NVISII.times[deviceID], NVISII.events[deviceID].first, NVISII.events[deviceID].second);
@@ -2395,96 +2399,36 @@ void initializeInteractive(
                 if (OptixData.enableDenoiser) {
                     denoiseImage();
                 }
-                // glm::vec4* samplePtr = (glm::vec4*) owlBufferGetPointer(OptixData.accumBuffer,0);
-                // glm::vec4* mvecPtr = (glm::vec4*) owlBufferGetPointer(OptixData.mvecBuffer,0);
-                // glm::vec4* t0AlbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.scratchBuffer,0);
-                // glm::vec4* t1AlbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.albedoBuffer,0);
-                // glm::vec4* fbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
-                // glm::vec4* sPtr = (glm::vec4*) owlBufferGetPointer(OptixData.normalBuffer,0);
-                // int width = OptixData.LP.frameSize.x;
-                // int height = OptixData.LP.frameSize.y;
-                // reproject(samplePtr, t0AlbPtr, t1AlbPtr, mvecPtr, sPtr, fbPtr, width, height);
 
-                drawFrameBufferToWindow();
-                stop = glfwGetTime();
-                glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
-                drawGUI();
+                if (!NVISII.headlessMode) {
+                    drawFrameBufferToWindow();
+                    stop = glfwGetTime();
+                    glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
+                    drawGUI();            
+                }
             }
 
             processCommandQueue();
             checkForErrors();
-
             if (stopped) break;
         }
 
         if (OptixData.denoiser)
             OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
 
-        if (OptixData.imageTexID != -1) {
-            if (OptixData.cudaResourceTex) {
-                cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
-                OptixData.cudaResourceTex = 0;
+        if (!NVISII.headlessMode) {
+            if (OptixData.imageTexID != -1) {
+                if (OptixData.cudaResourceTex) {
+                    cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
+                    OptixData.cudaResourceTex = 0;
+                }
+                glDeleteTextures(1, &OptixData.imageTexID);
             }
-            glDeleteTextures(1, &OptixData.imageTexID);
+
+            ImGui::DestroyContext();
+            auto glfw = Libraries::GLFW::Get();
+            if (glfw->does_window_exist("NVISII")) glfw->destroy_window("NVISII");
         }
-
-        ImGui::DestroyContext();
-        if (glfw->does_window_exist("NVISII")) glfw->destroy_window("NVISII");
-
-        owlContextDestroy(OptixData.context);
-    };
-
-    renderThread = std::thread(loop);
-
-    // Waits for the render thread to start before returning
-    enqueueCommandAndWait([] () {});
-}
-
-void initializeHeadless(
-    bool _verbose, 
-    uint32_t maxEntities,
-    uint32_t maxCameras,
-    uint32_t maxTransforms,
-    uint32_t maxMeshes,
-    uint32_t maxMaterials,
-    uint32_t maxLights,
-    uint32_t maxTextures,
-    uint32_t maxVolumes)
-{
-    if (initializeHeadlessDeprecatedShown == false) {
-        std::cout<<"Warning, initialize_headless is deprecated and will be removed in a subsequent release. Please switch to initialize(headless = True)." << std::endl;
-        initializeHeadlessDeprecatedShown = true;
-    }
-
-    // don't initialize more than once
-    if (initialized == true) {
-        throw std::runtime_error("Error: already initialized!");
-    }
-
-    initialized = true;
-    stopped = false;
-    verbose = _verbose;
-    NVISII.callback = nullptr;
-
-    initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures, maxVolumes);
-
-    auto loop = []() {
-        NVISII.render_thread_id = std::this_thread::get_id();
-        NVISII.headlessMode = true;
-
-        initializeOptix(/*headless = */ true);
-
-        while (!stopped)
-        {
-            if(NVISII.callback){
-                NVISII.callback();
-            }
-            processCommandQueue();
-            if (stopped) break;
-        }
-
-        if (OptixData.denoiser)
-            OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
         
         owlContextDestroy(OptixData.context);
     };
@@ -2493,33 +2437,6 @@ void initializeHeadless(
 
     // Waits for the render thread to start before returning
     enqueueCommandAndWait([] () {});
-}
-
-void initialize(
-    bool headless, 
-    bool windowOnTop, 
-    bool verbose,
-    uint32_t maxEntities,
-    uint32_t maxCameras,
-    uint32_t maxTransforms,
-    uint32_t maxMeshes,
-    uint32_t maxMaterials,
-    uint32_t maxLights,
-    uint32_t maxTextures,
-    uint32_t maxVolumes) 
-{
-    // prevents deprecated warning from showing
-    initializeInteractiveDeprecatedShown = true;
-    initializeHeadlessDeprecatedShown = true;
-
-    if (headless) 
-        initializeHeadless(
-            verbose, maxEntities, maxCameras, maxTransforms, maxMeshes, 
-            maxMaterials, maxLights, maxTextures, maxVolumes);
-    else 
-        initializeInteractive(
-            windowOnTop, verbose, maxEntities, maxCameras, maxTransforms, 
-            maxMeshes, maxMaterials, maxLights, maxTextures, maxVolumes);
 }
 
 static bool registerPreRenderCallbackDeprecatedShown = false;

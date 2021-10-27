@@ -21,7 +21,6 @@ opt.out = '02_random_scene.png'
 nvisii.initialize(
     headless = True, 
     verbose = True, 
-    lazy_updates = True,
     max_entities = opt.nb_objs + 1,
     max_transforms = opt.nb_objs + 1,  
     max_materials = opt.nb_objs,
