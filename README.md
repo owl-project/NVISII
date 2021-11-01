@@ -11,7 +11,7 @@ load a complex scene defined in an obj file.
 NVISII can be used to export metadata about the scene, _e.g._, object segmentation. 
 For more information see our [ICLR workshop 2021 paper](https://arxiv.org/abs/2105.13962).
 
-[Documentation](https://nvisii.com).
+[Documentation](https://nvisii.com) and [quick tutorial](https://youtu.be/vg7FN7YDUy0).
 
 <!--
 This library provides a simple, primarily python-user targeted, interface to rendering images of a virtual scene. Its key cornerstones are:
