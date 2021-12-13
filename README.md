@@ -79,14 +79,25 @@ This will save a `tmp.png` in the root folder.
 ## Citation
 
 If you use this tool in your research project, please cite as follows:
-
-    @misc{Morrical20nvisii,
+```
+@misc{morrical2021nvisii,
+      title={NViSII: A Scriptable Tool for Photorealistic Image Generation}, 
+      author={Nathan Morrical and Jonathan Tremblay and Yunzhi Lin and Stephen Tyree and Stan Birchfield and Valerio Pascucci and Ingo Wald},
+      year={2021},
+      eprint={2105.13962},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
+```
+or 
+```
+@misc{Morrical20nvisii,
     author = {Nathan Morrical and Jonathan Tremblay and Stan Birchfield and Ingo Wald},
     note= {\url{ https://github.com/owl-project/NVISII/ }},
     title = {{NVISII}: NVIDIA Scene Imaging Interface},
     Year = 2020
     }
-
+```
 ## Extra examples
 
 [Falling teapots](https://imgur.com/Fzjg7ZQ)
