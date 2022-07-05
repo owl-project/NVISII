@@ -98,6 +98,20 @@ or
     Year = 2020
     }
 ```
+## Requested features
+
+- texture.set_translation() and texture.set_rotation() functions for more randomization opportunities (issue 106, 140)
+
+- material.get_XYZ_texture() functions, which would be useful for when importing things like OBJs, then wanting to modify their textures (issue 141)
+
+- Vertex colors are currently unused. The vertex colors should multiply with the base color. Useful for molecular visualization. (issue 133)
+
+- render_ray_data function, loosly following render_data but for only one ray. would be useful for querying certain pixels or objects, ray casting calls, etc., (issue 129)
+
+- Directional light sources. An entity with a transform and a light component whose type is directional, and with no mesh component. Only the transform rotation would be used. Not sure yet how a directional light with a mesh component would work... (issue 124)
+
+- Ability to construct one component as a copy of another (issue 100)
+
 ## Extra examples
 
 [Falling teapots](https://imgur.com/Fzjg7ZQ)
