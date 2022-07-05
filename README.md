@@ -11,7 +11,7 @@ load a complex scene defined in an obj file.
 NVISII can be used to export metadata about the scene, _e.g._, object segmentation. 
 For more information see our [ICLR workshop 2021 paper](https://arxiv.org/abs/2105.13962).
 
-[Documentation](https://nvisii.com).
+[Documentation](https://nvisii.com) and [quick tutorial](https://youtu.be/vg7FN7YDUy0).
 
 <!--
 This library provides a simple, primarily python-user targeted, interface to rendering images of a virtual scene. Its key cornerstones are:
@@ -79,13 +79,38 @@ This will save a `tmp.png` in the root folder.
 ## Citation
 
 If you use this tool in your research project, please cite as follows:
-
-    @misc{Morrical20nvisii,
+```
+@misc{morrical2021nvisii,
+      title={NViSII: A Scriptable Tool for Photorealistic Image Generation}, 
+      author={Nathan Morrical and Jonathan Tremblay and Yunzhi Lin and Stephen Tyree and Stan Birchfield and Valerio Pascucci and Ingo Wald},
+      year={2021},
+      eprint={2105.13962},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
+```
+or 
+```
+@misc{Morrical20nvisii,
     author = {Nathan Morrical and Jonathan Tremblay and Stan Birchfield and Ingo Wald},
     note= {\url{ https://github.com/owl-project/NVISII/ }},
     title = {{NVISII}: NVIDIA Scene Imaging Interface},
     Year = 2020
     }
+```
+## Requested features
+
+- texture.set_translation() and texture.set_rotation() functions for more randomization opportunities (issue 106, 140)
+
+- material.get_XYZ_texture() functions, which would be useful for when importing things like OBJs, then wanting to modify their textures (issue 141)
+
+- Vertex colors are currently unused. The vertex colors should multiply with the base color. Useful for molecular visualization. (issue 133)
+
+- render_ray_data function, loosly following render_data but for only one ray. would be useful for querying certain pixels or objects, ray casting calls, etc., (issue 129)
+
+- Directional light sources. An entity with a transform and a light component whose type is directional, and with no mesh component. Only the transform rotation would be used. Not sure yet how a directional light with a mesh component would work... (issue 124)
+
+- Ability to construct one component as a copy of another (issue 100)
 
 ## Extra examples
 
