@@ -70,7 +70,7 @@ static struct WindowData {
 } WindowData;
 
 /* Embedded via cmake */
-extern "C" char ptxCode[];
+extern "C" char deviceCode_ptx[];
 
 // struct MeshData {
 //     OWLBuffer vertices;
@@ -486,7 +486,7 @@ void initializeOptix(bool headless)
     owlEnableMotionBlur(OD.context);
     owlContextSetRayTypeCount(OD.context, 2);
     cudaSetDevice(0); // OWL leaves the device as num_devices - 1 after the context is created. set it back to 0.
-    OD.module = owlModuleCreate(OD.context, ptxCode);
+    OD.module = owlModuleCreate(OD.context, deviceCode_ptx);
     
     /* Setup Optix Launch Params */
     OWLVarDecl launchParamVars[] = {

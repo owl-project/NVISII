@@ -617,6 +617,7 @@ void initializeRenderData(float3 &renderData)
     else if (LP.renderDataMode == RenderDataFlags::BASE_COLOR) {
         renderData = make_float3(0.0, 0.0, 0.0);
     }
+    
     else if (LP.renderDataMode == RenderDataFlags::TEXTURE_COORDINATES) {
         renderData = make_float3(0.0, 0.0, 0.0);
     }
