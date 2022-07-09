@@ -24,9 +24,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-2019]
-        python-version: ['3.6', '3.7', '3.8', '3.9'] #, '3.10'
-        optix-version: [70, 71, 72]
+        os: [windows-2019] #ubuntu-20.04, 
+        python-version: ['3.6'] # , '3.7', '3.8', '3.9' #, '3.10'
+        optix-version: [70] # , 71, 72
         include:
           # Includes the value for matrix.container when the OS is Ubuntu, to use manylinux complaint CentOS version.
           # For Windows, matrix.container remains undefined and the build runs on the host VM instead of within a container.
