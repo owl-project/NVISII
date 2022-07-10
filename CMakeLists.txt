@@ -4,7 +4,17 @@
 # │  Projects Settings                                               │
 # └──────────────────────────────────────────────────────────────────┘
 cmake_minimum_required (VERSION 3.17)
+
+MESSAGE(WARN CUDACXX is $ENV{CUDACXX} )
+MESSAGE(WARN CUDA_PATH is $ENV{CUDA_PATH} )
+MESSAGE(WARN CUDAHOSTCXX is $ENV{CUDAHOSTCXX} )
+MESSAGE(WARN CUDAARCHS is $ENV{CUDAARCHS} )
+MESSAGE(WARN CUDAToolkit_ROOT is $ENV{CUDAToolkit_ROOT})
+
 project(NVISII CXX C CUDA)
+
+MESSAGE(now we are past line 10)
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/externals/owl/owl/cmake")
