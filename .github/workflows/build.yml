@@ -175,12 +175,17 @@ jobs:
           CUDA_REPO_PKG_LOCAL: "cuda_10.2.89_win10_network.exe"
           CUDA_PACKAGES: "nvcc_10.2 cudart_10.2 visual_studio_integration"
         run: |
+          $CUDA_VERSION_FULL="10.2.89"
+          $CUDA_REPO_PKG_REMOTE="http://developer.download.nvidia.com/compute/cuda/10.2/Prod/network_installers/cuda_10.2.89_win10_network.exe"
+          $CUDA_REPO_PKG_LOCAL="cuda_10.2.89_win10_network.exe"
+          $CUDA_PACKAGES="nvcc_10.2 cudart_10.2 visual_studio_integration"
+          
           echo "printing CUDA_REPO_PKG_REMOTE"
-          echo $CUDA_REPO_PKG_REMOTE
+          echo %CUDA_REPO_PKG_REMOTE%
           echo "printing CUDA_REPO_PKG_LOCAL"
-          echo $CUDA_REPO_PKG_LOCAL
+          echo %CUDA_REPO_PKG_LOCAL%
           echo "printing CUDA_PACKAGES"
-          echo $CUDA_PACKAGES
+          echo %CUDA_PACKAGES%
           # Download the cuda network installer
           Invoke-WebRequest $CUDA_REPO_PKG_REMOTE -OutFile $CUDA_REPO_PKG_LOCAL | Out-Null
           # Invoke silent install of CUDA (via network installer)
