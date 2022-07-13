@@ -169,16 +169,11 @@ jobs:
       - name: Windows Dependencies (CUDA)
         if: runner.os == 'Windows'
         shell: powershell
-        env:
-          CUDA_VERSION_FULL: "10.2.89"
-          CUDA_REPO_PKG_REMOTE: "http://developer.download.nvidia.com/compute/cuda/10.2/Prod/network_installers/cuda_10.2.89_win10_network.exe"
-          CUDA_REPO_PKG_LOCAL: "cuda_10.2.89_win10_network.exe"
-          CUDA_PACKAGES: "nvcc_10.2 cudart_10.2 visual_studio_integration"
         run: |
-          $CUDA_VERSION_FULL="10.2.89"
-          $CUDA_REPO_PKG_REMOTE="http://developer.download.nvidia.com/compute/cuda/10.2/Prod/network_installers/cuda_10.2.89_win10_network.exe"
-          $CUDA_REPO_PKG_LOCAL="cuda_10.2.89_win10_network.exe"
-          $CUDA_PACKAGES="nvcc_10.2 cudart_10.2 visual_studio_integration"
+          $CUDA_VERSION_FULL="11.7.0"
+          $CUDA_REPO_PKG_REMOTE="http://developer.download.nvidia.com/compute/cuda/11.7.0/network_installers/cuda_11.7.0_windows_network.exe"
+          $CUDA_REPO_PKG_LOCAL="cuda_11.7.0_windows_network.exe"
+          $CUDA_PACKAGES="nvcc_11.7 cudart_11.7 visual_studio_integration"
           
           echo "printing CUDA_REPO_PKG_REMOTE"
           echo %CUDA_REPO_PKG_REMOTE%
@@ -195,15 +190,15 @@ jobs:
         if: runner.os == 'Windows'
         env:
           OPTIX_VERSION: ${{ matrix.optix-version }}
-          CUDACXX: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2/bin/nvcc.exe
-          CUDA_PATH: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2/
+          CUDACXX: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/bin/nvcc.exe
+          CUDA_PATH: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/
         run: |
           pip install --upgrade setuptools setuptools_scm wheel numpy==1.19.5
           mkdir build
           cd build
           echo "printing CUDACXX"
           echo $CUDACXX
-          cmake ../ -DPYTHON_VERSION="${{matrix.python-version}}" -DCMAKE_CUDA_COMPILER="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.2/bin/nvcc.exe"
+          cmake ../ -DPYTHON_VERSION="${{matrix.python-version}}" -DCMAKE_CUDA_COMPILER="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/bin/nvcc.exe"
           cmake --build . --config Release --target install 
           cd ..
           cd install
