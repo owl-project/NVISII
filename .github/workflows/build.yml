@@ -44,120 +44,120 @@ jobs:
         with:
           fetch-depth: 0
       
-      - name: Linux Dependencies (CUDA, X, Python)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          # Install Python Dependencies
-          PY=${{ matrix.python-version }}
-          [[ ${PY:2:1} < 8 ]] && M=m || M=""
-          PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
-          PYEXEC=/opt/python/${PYVER}/bin/python
-          $PYEXEC -m pip install --upgrade pip
-          $PYEXEC -m pip install setuptools setuptools_scm numpy==1.19.5
+      # - name: Linux Dependencies (CUDA, X, Python)
+      #   if: runner.os == 'Linux'
+      #   shell: bash
+      #   run: |
+      #     # Install Python Dependencies
+      #     PY=${{ matrix.python-version }}
+      #     [[ ${PY:2:1} < 8 ]] && M=m || M=""
+      #     PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
+      #     PYEXEC=/opt/python/${PYVER}/bin/python
+      #     $PYEXEC -m pip install --upgrade pip
+      #     $PYEXEC -m pip install setuptools setuptools_scm numpy==1.19.5
           
-          # Install CMake
-          $PYEXEC -m pip install cmake
-          CMAKEEXEC=/opt/python/${PYVER}/bin/cmake 
-          $CMAKEEXEC --version          
+      #     # Install CMake
+      #     $PYEXEC -m pip install cmake
+      #     CMAKEEXEC=/opt/python/${PYVER}/bin/cmake 
+      #     $CMAKEEXEC --version          
           
-          # Install CUDA
-          yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
-          yum clean all
-          yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
-          yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
-          yum -y install cuda-compiler-10-2 cuda-cudart-dev-10-2 cuda-minimal-build-10-2 
-          yum -y install libXi-devel
-          yum -y install xorg-x11-server-devel
-          yum -y install libXinerama-devel
-          yum -y install glfw-devel
-          yum -y install wget
-          yum -y install pcre-devel
-          yum -y install unar  
-          yum -y install zip      
+      #     # Install CUDA
+      #     yum-config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
+      #     yum clean all
+      #     yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
+      #     yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
+      #     yum -y install cuda-compiler-10-2 cuda-cudart-dev-10-2 cuda-minimal-build-10-2 
+      #     yum -y install libXi-devel
+      #     yum -y install xorg-x11-server-devel
+      #     yum -y install libXinerama-devel
+      #     yum -y install glfw-devel
+      #     yum -y install wget
+      #     yum -y install pcre-devel
+      #     yum -y install unar  
+      #     yum -y install zip      
           
-          # This symlink comes as a part of the cuda-10.2 package, which is being specifically avoided,
-          # but this symlink makes CMake's FindCUDA behave nicely.
-          ln -s /usr/local/cuda-10.2 /usr/local/cuda
+      #     # This symlink comes as a part of the cuda-10.2 package, which is being specifically avoided,
+      #     # but this symlink makes CMake's FindCUDA behave nicely.
+      #     ln -s /usr/local/cuda-10.2 /usr/local/cuda
           
-          source /opt/rh/devtoolset-8/enable
+      #     source /opt/rh/devtoolset-8/enable
           
-          # Build a version of SWIG we can use
-          mkdir build
-          cd build
-          wget http://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz
-          tar xzf swig-4.0.2.tar.gz
-          cd swig-4.0.2
-          ./configure --prefix $(pwd)
-          make
-          make install
-          ls
-          cd ../
+      #     # Build a version of SWIG we can use
+      #     mkdir build
+      #     cd build
+      #     wget http://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz
+      #     tar xzf swig-4.0.2.tar.gz
+      #     cd swig-4.0.2
+      #     ./configure --prefix $(pwd)
+      #     make
+      #     make install
+      #     ls
+      #     cd ../
       
-      - name: Linux Build
-        if: runner.os == 'Linux'
-        shell: bash
-        env:
-          OPTIX_VERSION: ${{ matrix.optix-version }}
-        run: |
-          source /opt/rh/devtoolset-8/enable
+      # - name: Linux Build
+      #   if: runner.os == 'Linux'
+      #   shell: bash
+      #   env:
+      #     OPTIX_VERSION: ${{ matrix.optix-version }}
+      #   run: |
+      #     source /opt/rh/devtoolset-8/enable
           
-          PY=${{ matrix.python-version }}
-          [[ ${PY:2:1} < 8 ]] && M=m || M=""
-          PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
-          PYEXEC=/opt/python/${PYVER}/bin/python
-          CMAKEEXEC=/opt/python/${PYVER}/bin/cmake 
+      #     PY=${{ matrix.python-version }}
+      #     [[ ${PY:2:1} < 8 ]] && M=m || M=""
+      #     PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
+      #     PYEXEC=/opt/python/${PYVER}/bin/python
+      #     CMAKEEXEC=/opt/python/${PYVER}/bin/cmake 
           
-          cd build 
+      #     cd build 
           
-          $CMAKEEXEC ../ \
-          -DCMAKE_CUDA_COMPILER=/usr/local/cuda-10.2/bin/nvcc \
-          -DCUDA_CUDA_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/stubs/libcuda.so \
-          -DCUDA_NVCC_EXECUTABLE=/usr/local/cuda-10.2/bin/nvcc \
-          -DCUDA_INCLUDE_DIRS=/usr/local/cuda-10.2/targets/x86_64-linux/include \
-          -DCUDA_CUDART_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/libcudart.so \
-          -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
-          -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
-          -DPython_INCLUDE_DIRS=/opt/python/${PYVER}/include/python${PY:0:1}.${PY:2:1}${M}/ \
-          -DPython_NumPy_INCLUDE_DIRS=/opt/python/${PYVER}/lib/python${PY:0:1}.${PY:2:1}/site-packages/numpy/core/include/ \
-          -DPython_VERSION_MAJOR=${PY:0:1} \
-          -DPython_VERSION_MINOR=${PY:2:2} \
-          -DCMAKE_BUILD_TYPE=Release \
+      #     $CMAKEEXEC ../ \
+      #     -DCMAKE_CUDA_COMPILER=/usr/local/cuda-10.2/bin/nvcc \
+      #     -DCUDA_CUDA_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/stubs/libcuda.so \
+      #     -DCUDA_NVCC_EXECUTABLE=/usr/local/cuda-10.2/bin/nvcc \
+      #     -DCUDA_INCLUDE_DIRS=/usr/local/cuda-10.2/targets/x86_64-linux/include \
+      #     -DCUDA_CUDART_LIBRARY=/usr/local/cuda-10.2/targets/x86_64-linux/lib/libcudart.so \
+      #     -DSWIG_DIR="./swig-4.0.2/share/swig/4.0.2/" \
+      #     -DSWIG_EXECUTABLE="swig-4.0.2/bin/swig" \
+      #     -DPython_INCLUDE_DIRS=/opt/python/${PYVER}/include/python${PY:0:1}.${PY:2:1}${M}/ \
+      #     -DPython_NumPy_INCLUDE_DIRS=/opt/python/${PYVER}/lib/python${PY:0:1}.${PY:2:1}/site-packages/numpy/core/include/ \
+      #     -DPython_VERSION_MAJOR=${PY:0:1} \
+      #     -DPython_VERSION_MINOR=${PY:2:2} \
+      #     -DCMAKE_BUILD_TYPE=Release \
            
-          $CMAKEEXEC --build . --config Release --target install
-          cd ..
-          cd install
+      #     $CMAKEEXEC --build . --config Release --target install
+      #     cd ..
+      #     cd install
           
-          # need to temporarily remove libcuda.so.1 from library
-          cd nvisii
-          patchelf --remove-needed libcuda.so.1 _nvisii.so
-          cd ../
+      #     # need to temporarily remove libcuda.so.1 from library
+      #     cd nvisii
+      #     patchelf --remove-needed libcuda.so.1 _nvisii.so
+      #     cd ../
           
-          # now make the bdistwheel
-          $PYEXEC setup.py bdist_wheel
-          cd dist
+      #     # now make the bdistwheel
+      #     $PYEXEC setup.py bdist_wheel
+      #     cd dist
           
-          # audit the bdistwheel for use on all linux distros
-          # and use the same dir for both .py and .so files
-          auditwheel repair -L "" *.whl  
+      #     # audit the bdistwheel for use on all linux distros
+      #     # and use the same dir for both .py and .so files
+      #     auditwheel repair -L "" *.whl  
           
-          # add back on the libcuda.so.1 to the library
-          cd wheelhouse
-          unar -d *.whl
-          cd nvisii*
-          cd nvisii
-          patchelf --add-needed libcuda.so.1 _nvisii.so
-          # list libraries for manual verification
-          ldd _nvisii.so
-          cd ..
-          cd ..
-          rm *.whl
-          NAME=$(ls -1 .)
-          cd ${NAME}
-          zip -r ../${NAME}.whl ./*
-          # move the modified manylinux wheel to the "install/dist" folder to be uploaded
-          rm ../../*.whl
-          cp ../*.whl ../../
+      #     # add back on the libcuda.so.1 to the library
+      #     cd wheelhouse
+      #     unar -d *.whl
+      #     cd nvisii*
+      #     cd nvisii
+      #     patchelf --add-needed libcuda.so.1 _nvisii.so
+      #     # list libraries for manual verification
+      #     ldd _nvisii.so
+      #     cd ..
+      #     cd ..
+      #     rm *.whl
+      #     NAME=$(ls -1 .)
+      #     cd ${NAME}
+      #     zip -r ../${NAME}.whl ./*
+      #     # move the modified manylinux wheel to the "install/dist" folder to be uploaded
+      #     rm ../../*.whl
+      #     cp ../*.whl ../../
       
       # Python configuration by github is only valid on their VMs (not inside the manylinux container), so only run on windows.
       - name: Configure Python on Windows
@@ -169,18 +169,21 @@ jobs:
       - name: Windows Dependencies (CUDA)
         if: runner.os == 'Windows'
         shell: powershell
+        # $CUDA_PACKAGES="nvcc_11.7 cudart_11.7 visual_studio_integration"
         run: |
           $CUDA_VERSION_FULL="11.7.0"
           $CUDA_REPO_PKG_REMOTE="http://developer.download.nvidia.com/compute/cuda/11.7.0/network_installers/cuda_11.7.0_windows_network.exe"
           $CUDA_REPO_PKG_LOCAL="cuda_11.7.0_windows_network.exe"
-          $CUDA_PACKAGES="nvcc_11.7 cudart_11.7 visual_studio_integration"
-          
+
           echo "printing CUDA_REPO_PKG_REMOTE"
           echo %CUDA_REPO_PKG_REMOTE%
+          echo $CUDA_REPO_PKG_REMOTE%
           echo "printing CUDA_REPO_PKG_LOCAL"
           echo %CUDA_REPO_PKG_LOCAL%
+          echo $CUDA_REPO_PKG_LOCAL
           echo "printing CUDA_PACKAGES"
           echo %CUDA_PACKAGES%
+          echo $CUDA_PACKAGES
           # Download the cuda network installer
           Invoke-WebRequest $CUDA_REPO_PKG_REMOTE -OutFile $CUDA_REPO_PKG_LOCAL | Out-Null
           # Invoke silent install of CUDA (via network installer)
