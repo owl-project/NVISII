@@ -166,14 +166,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       
+      #$CUDA_PACKAGES="nvcc_11.7 cudart_11.7 visual_studio_integration"
       - name: Windows Dependencies (CUDA)
         if: runner.os == 'Windows'
         shell: powershell
         run: |
           $CUDA_VERSION_FULL="11.7.0"
           $CUDA_REPO_PKG_REMOTE="http://developer.download.nvidia.com/compute/cuda/11.7.0/network_installers/cuda_11.7.0_windows_network.exe"
-          $CUDA_REPO_PKG_LOCAL="cuda_11.7.0_windows_network.exe"
-          $CUDA_PACKAGES="nvcc_11.7 cudart_11.7 visual_studio_integration"
+          $CUDA_REPO_PKG_LOCAL="cuda_11.7.0_windows_network.exe"  
 
           echo "printing CUDA_REPO_PKG_REMOTE"
           echo %CUDA_REPO_PKG_REMOTE%
