@@ -17,6 +17,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -43,7 +44,72 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="nvisii.html">NVISII</a></li>
 <li class="toctree-l1"><a class="reference internal" href="entity.html">Entity</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Transform</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Transform</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.transform"><code class="docutils literal notranslate"><span class="pre">transform</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.thisown"><code class="docutils literal notranslate"><span class="pre">transform.thisown</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.create"><code class="docutils literal notranslate"><span class="pre">transform.create()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.create_from_matrix"><code class="docutils literal notranslate"><span class="pre">transform.create_from_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get"><code class="docutils literal notranslate"><span class="pre">transform.get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_count"><code class="docutils literal notranslate"><span class="pre">transform.get_count()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_name"><code class="docutils literal notranslate"><span class="pre">transform.get_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_id"><code class="docutils literal notranslate"><span class="pre">transform.get_id()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_name_to_id_map"><code class="docutils literal notranslate"><span class="pre">transform.get_name_to_id_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.remove"><code class="docutils literal notranslate"><span class="pre">transform.remove()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.initialize_factory"><code class="docutils literal notranslate"><span class="pre">transform.initialize_factory()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.is_initialized"><code class="docutils literal notranslate"><span class="pre">transform.is_initialized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.clear_all"><code class="docutils literal notranslate"><span class="pre">transform.clear_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.are_any_dirty"><code class="docutils literal notranslate"><span class="pre">transform.are_any_dirty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_dirty_transforms"><code class="docutils literal notranslate"><span class="pre">transform.get_dirty_transforms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.to_string"><code class="docutils literal notranslate"><span class="pre">transform.to_string()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.transform_direction"><code class="docutils literal notranslate"><span class="pre">transform.transform_direction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.transform_point"><code class="docutils literal notranslate"><span class="pre">transform.transform_point()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.transform_vector"><code class="docutils literal notranslate"><span class="pre">transform.transform_vector()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.inverse_transform_direction"><code class="docutils literal notranslate"><span class="pre">transform.inverse_transform_direction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.inverse_transform_point"><code class="docutils literal notranslate"><span class="pre">transform.inverse_transform_point()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.inverse_transform_vector"><code class="docutils literal notranslate"><span class="pre">transform.inverse_transform_vector()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.look_at"><code class="docutils literal notranslate"><span class="pre">transform.look_at()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.rotate_around"><code class="docutils literal notranslate"><span class="pre">transform.rotate_around()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.set_transform"><code class="docutils literal notranslate"><span class="pre">transform.set_transform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_rotation"><code class="docutils literal notranslate"><span class="pre">transform.get_rotation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.set_rotation"><code class="docutils literal notranslate"><span class="pre">transform.set_rotation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.set_angle_axis"><code class="docutils literal notranslate"><span class="pre">transform.set_angle_axis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.add_rotation"><code class="docutils literal notranslate"><span class="pre">transform.add_rotation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.add_angle_axis"><code class="docutils literal notranslate"><span class="pre">transform.add_angle_axis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_position"><code class="docutils literal notranslate"><span class="pre">transform.get_position()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_right"><code class="docutils literal notranslate"><span class="pre">transform.get_right()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_up"><code class="docutils literal notranslate"><span class="pre">transform.get_up()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_forward"><code class="docutils literal notranslate"><span class="pre">transform.get_forward()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_world_position"><code class="docutils literal notranslate"><span class="pre">transform.get_world_position()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_world_right"><code class="docutils literal notranslate"><span class="pre">transform.get_world_right()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_world_up"><code class="docutils literal notranslate"><span class="pre">transform.get_world_up()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_world_forward"><code class="docutils literal notranslate"><span class="pre">transform.get_world_forward()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.set_position"><code class="docutils literal notranslate"><span class="pre">transform.set_position()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.add_position"><code class="docutils literal notranslate"><span class="pre">transform.add_position()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_scale"><code class="docutils literal notranslate"><span class="pre">transform.get_scale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.set_scale"><code class="docutils literal notranslate"><span class="pre">transform.set_scale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.add_scale"><code class="docutils literal notranslate"><span class="pre">transform.add_scale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.set_linear_velocity"><code class="docutils literal notranslate"><span class="pre">transform.set_linear_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.set_angular_velocity"><code class="docutils literal notranslate"><span class="pre">transform.set_angular_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.set_scalar_velocity"><code class="docutils literal notranslate"><span class="pre">transform.set_scalar_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.clear_motion"><code class="docutils literal notranslate"><span class="pre">transform.clear_motion()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_parent_to_local_matrix"><code class="docutils literal notranslate"><span class="pre">transform.get_parent_to_local_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_local_to_parent_matrix"><code class="docutils literal notranslate"><span class="pre">transform.get_local_to_parent_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_local_to_parent_translation_matrix"><code class="docutils literal notranslate"><span class="pre">transform.get_local_to_parent_translation_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_local_to_parent_scale_matrix"><code class="docutils literal notranslate"><span class="pre">transform.get_local_to_parent_scale_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_local_to_parent_rotation_matrix"><code class="docutils literal notranslate"><span class="pre">transform.get_local_to_parent_rotation_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_parent_to_local_translation_matrix"><code class="docutils literal notranslate"><span class="pre">transform.get_parent_to_local_translation_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_parent_to_local_scale_matrix"><code class="docutils literal notranslate"><span class="pre">transform.get_parent_to_local_scale_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_parent_to_local_rotation_matrix"><code class="docutils literal notranslate"><span class="pre">transform.get_parent_to_local_rotation_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.set_parent"><code class="docutils literal notranslate"><span class="pre">transform.set_parent()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.clear_parent"><code class="docutils literal notranslate"><span class="pre">transform.clear_parent()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.add_child"><code class="docutils literal notranslate"><span class="pre">transform.add_child()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.remove_child"><code class="docutils literal notranslate"><span class="pre">transform.remove_child()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_world_to_local_matrix"><code class="docutils literal notranslate"><span class="pre">transform.get_world_to_local_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.transform.get_local_to_world_matrix"><code class="docutils literal notranslate"><span class="pre">transform.get_local_to_world_matrix()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mesh.html">Mesh</a></li>
 <li class="toctree-l1"><a class="reference internal" href="texture.html">Texture</a></li>

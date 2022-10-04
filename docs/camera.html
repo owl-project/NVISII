@@ -17,6 +17,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -49,7 +50,47 @@
 <li class="toctree-l1"><a class="reference internal" href="texture.html">Texture</a></li>
 <li class="toctree-l1"><a class="reference internal" href="light.html">Light</a></li>
 <li class="toctree-l1"><a class="reference internal" href="volume.html">Volume</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Camera</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Camera</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.camera"><code class="docutils literal notranslate"><span class="pre">camera</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.are_any_dirty"><code class="docutils literal notranslate"><span class="pre">camera.are_any_dirty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.clear_all"><code class="docutils literal notranslate"><span class="pre">camera.clear_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.create"><code class="docutils literal notranslate"><span class="pre">camera.create()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.create_from_focal_length"><code class="docutils literal notranslate"><span class="pre">camera.create_from_focal_length()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.create_from_fov"><code class="docutils literal notranslate"><span class="pre">camera.create_from_fov()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.create_from_intrinsics"><code class="docutils literal notranslate"><span class="pre">camera.create_from_intrinsics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.create_perspective_from_focal_length"><code class="docutils literal notranslate"><span class="pre">camera.create_perspective_from_focal_length()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.create_perspective_from_fov"><code class="docutils literal notranslate"><span class="pre">camera.create_perspective_from_fov()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.get"><code class="docutils literal notranslate"><span class="pre">camera.get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.get_count"><code class="docutils literal notranslate"><span class="pre">camera.get_count()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.get_edit_mutex"><code class="docutils literal notranslate"><span class="pre">camera.get_edit_mutex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.get_front"><code class="docutils literal notranslate"><span class="pre">camera.get_front()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.get_front_struct"><code class="docutils literal notranslate"><span class="pre">camera.get_front_struct()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.get_intrinsic_matrix"><code class="docutils literal notranslate"><span class="pre">camera.get_intrinsic_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.get_name"><code class="docutils literal notranslate"><span class="pre">camera.get_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.get_name_to_id_map"><code class="docutils literal notranslate"><span class="pre">camera.get_name_to_id_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.get_projection"><code class="docutils literal notranslate"><span class="pre">camera.get_projection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.get_struct"><code class="docutils literal notranslate"><span class="pre">camera.get_struct()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.initialize_factory"><code class="docutils literal notranslate"><span class="pre">camera.initialize_factory()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.is_clean"><code class="docutils literal notranslate"><span class="pre">camera.is_clean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.is_dirty"><code class="docutils literal notranslate"><span class="pre">camera.is_dirty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.is_factory_initialized"><code class="docutils literal notranslate"><span class="pre">camera.is_factory_initialized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.is_initialized"><code class="docutils literal notranslate"><span class="pre">camera.is_initialized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.mark_clean"><code class="docutils literal notranslate"><span class="pre">camera.mark_clean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.mark_dirty"><code class="docutils literal notranslate"><span class="pre">camera.mark_dirty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.remove"><code class="docutils literal notranslate"><span class="pre">camera.remove()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.set_aperture_diameter"><code class="docutils literal notranslate"><span class="pre">camera.set_aperture_diameter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.set_focal_distance"><code class="docutils literal notranslate"><span class="pre">camera.set_focal_distance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.set_focal_length"><code class="docutils literal notranslate"><span class="pre">camera.set_focal_length()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.set_fov"><code class="docutils literal notranslate"><span class="pre">camera.set_fov()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.set_intrinsics"><code class="docutils literal notranslate"><span class="pre">camera.set_intrinsics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.set_projection"><code class="docutils literal notranslate"><span class="pre">camera.set_projection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.thisown"><code class="docutils literal notranslate"><span class="pre">camera.thisown</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.to_string"><code class="docutils literal notranslate"><span class="pre">camera.to_string()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.camera.update_components"><code class="docutils literal notranslate"><span class="pre">camera.update_components()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="all.html">Full Reference</a></li>
 </ul>
 

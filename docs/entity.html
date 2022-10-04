@@ -17,6 +17,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -42,7 +43,52 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="nvisii.html">NVISII</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Entity</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Entity</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.entity"><code class="docutils literal notranslate"><span class="pre">entity</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.thisown"><code class="docutils literal notranslate"><span class="pre">entity.thisown</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.create"><code class="docutils literal notranslate"><span class="pre">entity.create()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get"><code class="docutils literal notranslate"><span class="pre">entity.get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_count"><code class="docutils literal notranslate"><span class="pre">entity.get_count()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_name"><code class="docutils literal notranslate"><span class="pre">entity.get_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_id"><code class="docutils literal notranslate"><span class="pre">entity.get_id()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_name_to_id_map"><code class="docutils literal notranslate"><span class="pre">entity.get_name_to_id_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.remove"><code class="docutils literal notranslate"><span class="pre">entity.remove()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.initialize_factory"><code class="docutils literal notranslate"><span class="pre">entity.initialize_factory()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.is_initialized"><code class="docutils literal notranslate"><span class="pre">entity.is_initialized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.clear_all"><code class="docutils literal notranslate"><span class="pre">entity.clear_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.to_string"><code class="docutils literal notranslate"><span class="pre">entity.to_string()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.are_any_dirty"><code class="docutils literal notranslate"><span class="pre">entity.are_any_dirty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_dirty_entities"><code class="docutils literal notranslate"><span class="pre">entity.get_dirty_entities()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_renderable_entities"><code class="docutils literal notranslate"><span class="pre">entity.get_renderable_entities()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.set_transform"><code class="docutils literal notranslate"><span class="pre">entity.set_transform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.clear_transform"><code class="docutils literal notranslate"><span class="pre">entity.clear_transform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_transform"><code class="docutils literal notranslate"><span class="pre">entity.get_transform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.set_camera"><code class="docutils literal notranslate"><span class="pre">entity.set_camera()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.clear_camera"><code class="docutils literal notranslate"><span class="pre">entity.clear_camera()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_camera"><code class="docutils literal notranslate"><span class="pre">entity.get_camera()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.set_material"><code class="docutils literal notranslate"><span class="pre">entity.set_material()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.clear_material"><code class="docutils literal notranslate"><span class="pre">entity.clear_material()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_material"><code class="docutils literal notranslate"><span class="pre">entity.get_material()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.set_light"><code class="docutils literal notranslate"><span class="pre">entity.set_light()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.clear_light"><code class="docutils literal notranslate"><span class="pre">entity.clear_light()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_light"><code class="docutils literal notranslate"><span class="pre">entity.get_light()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.set_mesh"><code class="docutils literal notranslate"><span class="pre">entity.set_mesh()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.clear_mesh"><code class="docutils literal notranslate"><span class="pre">entity.clear_mesh()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_mesh"><code class="docutils literal notranslate"><span class="pre">entity.get_mesh()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.set_volume"><code class="docutils literal notranslate"><span class="pre">entity.set_volume()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.clear_volume"><code class="docutils literal notranslate"><span class="pre">entity.clear_volume()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_volume"><code class="docutils literal notranslate"><span class="pre">entity.get_volume()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.set_visibility"><code class="docutils literal notranslate"><span class="pre">entity.set_visibility()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_min_aabb_corner"><code class="docutils literal notranslate"><span class="pre">entity.get_min_aabb_corner()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_max_aabb_corner"><code class="docutils literal notranslate"><span class="pre">entity.get_max_aabb_corner()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_aabb_center"><code class="docutils literal notranslate"><span class="pre">entity.get_aabb_center()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.get_center"><code class="docutils literal notranslate"><span class="pre">entity.get_center()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.compute_aabb"><code class="docutils literal notranslate"><span class="pre">entity.compute_aabb()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.entity.update_renderables"><code class="docutils literal notranslate"><span class="pre">entity.update_renderables()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="transform.html">Transform</a></li>
 <li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mesh.html">Mesh</a></li>

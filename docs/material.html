@@ -17,6 +17,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -44,7 +45,97 @@
 <li class="toctree-l1"><a class="reference internal" href="nvisii.html">NVISII</a></li>
 <li class="toctree-l1"><a class="reference internal" href="entity.html">Entity</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transform.html">Transform</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Material</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Material</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.material"><code class="docutils literal notranslate"><span class="pre">material</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.thisown"><code class="docutils literal notranslate"><span class="pre">material.thisown</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.create"><code class="docutils literal notranslate"><span class="pre">material.create()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get"><code class="docutils literal notranslate"><span class="pre">material.get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_count"><code class="docutils literal notranslate"><span class="pre">material.get_count()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_name"><code class="docutils literal notranslate"><span class="pre">material.get_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_name_to_id_map"><code class="docutils literal notranslate"><span class="pre">material.get_name_to_id_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.remove"><code class="docutils literal notranslate"><span class="pre">material.remove()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.initialize_factory"><code class="docutils literal notranslate"><span class="pre">material.initialize_factory()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.is_initialized"><code class="docutils literal notranslate"><span class="pre">material.is_initialized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_all"><code class="docutils literal notranslate"><span class="pre">material.clear_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.are_any_dirty"><code class="docutils literal notranslate"><span class="pre">material.are_any_dirty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.to_string"><code class="docutils literal notranslate"><span class="pre">material.to_string()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_base_color"><code class="docutils literal notranslate"><span class="pre">material.set_base_color()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_base_color_texture"><code class="docutils literal notranslate"><span class="pre">material.set_base_color_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_base_color_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_base_color_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_base_color"><code class="docutils literal notranslate"><span class="pre">material.get_base_color()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_subsurface"><code class="docutils literal notranslate"><span class="pre">material.set_subsurface()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_subsurface_texture"><code class="docutils literal notranslate"><span class="pre">material.set_subsurface_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_subsurface_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_subsurface_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_subsurface"><code class="docutils literal notranslate"><span class="pre">material.get_subsurface()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_subsurface_radius"><code class="docutils literal notranslate"><span class="pre">material.set_subsurface_radius()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_subsurface_radius_texture"><code class="docutils literal notranslate"><span class="pre">material.set_subsurface_radius_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_subsurface_radius_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_subsurface_radius_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_subsurface_radius"><code class="docutils literal notranslate"><span class="pre">material.get_subsurface_radius()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_subsurface_color"><code class="docutils literal notranslate"><span class="pre">material.set_subsurface_color()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_subsurface_color_texture"><code class="docutils literal notranslate"><span class="pre">material.set_subsurface_color_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_subsurface_color_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_subsurface_color_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_metallic"><code class="docutils literal notranslate"><span class="pre">material.set_metallic()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_metallic_texture"><code class="docutils literal notranslate"><span class="pre">material.set_metallic_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_metallic_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_metallic_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_metallic"><code class="docutils literal notranslate"><span class="pre">material.get_metallic()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_specular"><code class="docutils literal notranslate"><span class="pre">material.set_specular()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_specular_texture"><code class="docutils literal notranslate"><span class="pre">material.set_specular_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_specular_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_specular_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_specular"><code class="docutils literal notranslate"><span class="pre">material.get_specular()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_specular_tint"><code class="docutils literal notranslate"><span class="pre">material.set_specular_tint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_specular_tint_texture"><code class="docutils literal notranslate"><span class="pre">material.set_specular_tint_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_specular_tint_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_specular_tint_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_specular_tint"><code class="docutils literal notranslate"><span class="pre">material.get_specular_tint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_roughness"><code class="docutils literal notranslate"><span class="pre">material.set_roughness()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_roughness_texture"><code class="docutils literal notranslate"><span class="pre">material.set_roughness_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_roughness_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_roughness_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_roughness"><code class="docutils literal notranslate"><span class="pre">material.get_roughness()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_alpha"><code class="docutils literal notranslate"><span class="pre">material.set_alpha()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_alpha_texture"><code class="docutils literal notranslate"><span class="pre">material.set_alpha_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_alpha_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_alpha_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_alpha"><code class="docutils literal notranslate"><span class="pre">material.get_alpha()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_anisotropic"><code class="docutils literal notranslate"><span class="pre">material.set_anisotropic()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_anisotropic_texture"><code class="docutils literal notranslate"><span class="pre">material.set_anisotropic_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_anisotropic_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_anisotropic_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_anisotropic"><code class="docutils literal notranslate"><span class="pre">material.get_anisotropic()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_anisotropic_rotation"><code class="docutils literal notranslate"><span class="pre">material.set_anisotropic_rotation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_anisotropic_rotation_texture"><code class="docutils literal notranslate"><span class="pre">material.set_anisotropic_rotation_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_anisotropic_rotation_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_anisotropic_rotation_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_anisotropic_rotation"><code class="docutils literal notranslate"><span class="pre">material.get_anisotropic_rotation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_sheen"><code class="docutils literal notranslate"><span class="pre">material.set_sheen()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_sheen_texture"><code class="docutils literal notranslate"><span class="pre">material.set_sheen_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_sheen_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_sheen_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_sheen"><code class="docutils literal notranslate"><span class="pre">material.get_sheen()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_sheen_tint"><code class="docutils literal notranslate"><span class="pre">material.set_sheen_tint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_sheen_tint_texture"><code class="docutils literal notranslate"><span class="pre">material.set_sheen_tint_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_sheen_tint_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_sheen_tint_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_sheen_tint"><code class="docutils literal notranslate"><span class="pre">material.get_sheen_tint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_clearcoat"><code class="docutils literal notranslate"><span class="pre">material.set_clearcoat()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_clearcoat_texture"><code class="docutils literal notranslate"><span class="pre">material.set_clearcoat_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_clearcoat_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_clearcoat_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_clearcoat"><code class="docutils literal notranslate"><span class="pre">material.get_clearcoat()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_clearcoat_roughness"><code class="docutils literal notranslate"><span class="pre">material.set_clearcoat_roughness()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_clearcoat_roughness_texture"><code class="docutils literal notranslate"><span class="pre">material.set_clearcoat_roughness_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_clearcoat_roughness_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_clearcoat_roughness_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_clearcoat_roughness"><code class="docutils literal notranslate"><span class="pre">material.get_clearcoat_roughness()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_ior"><code class="docutils literal notranslate"><span class="pre">material.set_ior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_ior_texture"><code class="docutils literal notranslate"><span class="pre">material.set_ior_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_ior_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_ior_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_ior"><code class="docutils literal notranslate"><span class="pre">material.get_ior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_transmission"><code class="docutils literal notranslate"><span class="pre">material.set_transmission()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_transmission_texture"><code class="docutils literal notranslate"><span class="pre">material.set_transmission_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_transmission_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_transmission_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_transmission"><code class="docutils literal notranslate"><span class="pre">material.get_transmission()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_transmission_roughness"><code class="docutils literal notranslate"><span class="pre">material.set_transmission_roughness()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_transmission_roughness_texture"><code class="docutils literal notranslate"><span class="pre">material.set_transmission_roughness_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_transmission_roughness_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_transmission_roughness_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.get_transmission_roughness"><code class="docutils literal notranslate"><span class="pre">material.get_transmission_roughness()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.set_normal_map_texture"><code class="docutils literal notranslate"><span class="pre">material.set_normal_map_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.material.clear_normal_map_texture"><code class="docutils literal notranslate"><span class="pre">material.clear_normal_map_texture()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="mesh.html">Mesh</a></li>
 <li class="toctree-l1"><a class="reference internal" href="texture.html">Texture</a></li>
 <li class="toctree-l1"><a class="reference internal" href="light.html">Light</a></li>

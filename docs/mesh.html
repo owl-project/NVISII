@@ -17,6 +17,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -45,7 +46,78 @@
 <li class="toctree-l1"><a class="reference internal" href="entity.html">Entity</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transform.html">Transform</a></li>
 <li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Mesh</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Mesh</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.mesh"><code class="docutils literal notranslate"><span class="pre">mesh</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.are_any_dirty"><code class="docutils literal notranslate"><span class="pre">mesh.are_any_dirty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.clear_all"><code class="docutils literal notranslate"><span class="pre">mesh.clear_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.compute_metadata"><code class="docutils literal notranslate"><span class="pre">mesh.compute_metadata()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_box"><code class="docutils literal notranslate"><span class="pre">mesh.create_box()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_capped_cone"><code class="docutils literal notranslate"><span class="pre">mesh.create_capped_cone()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_capped_cylinder"><code class="docutils literal notranslate"><span class="pre">mesh.create_capped_cylinder()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_capped_tube"><code class="docutils literal notranslate"><span class="pre">mesh.create_capped_tube()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_capsule"><code class="docutils literal notranslate"><span class="pre">mesh.create_capsule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_cone"><code class="docutils literal notranslate"><span class="pre">mesh.create_cone()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_convex_polygon"><code class="docutils literal notranslate"><span class="pre">mesh.create_convex_polygon()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_convex_polygon_from_circle"><code class="docutils literal notranslate"><span class="pre">mesh.create_convex_polygon_from_circle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_cylinder"><code class="docutils literal notranslate"><span class="pre">mesh.create_cylinder()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_disk"><code class="docutils literal notranslate"><span class="pre">mesh.create_disk()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_dodecahedron"><code class="docutils literal notranslate"><span class="pre">mesh.create_dodecahedron()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_from_data"><code class="docutils literal notranslate"><span class="pre">mesh.create_from_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_from_file"><code class="docutils literal notranslate"><span class="pre">mesh.create_from_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_from_obj"><code class="docutils literal notranslate"><span class="pre">mesh.create_from_obj()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_icosahedron"><code class="docutils literal notranslate"><span class="pre">mesh.create_icosahedron()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_icosphere"><code class="docutils literal notranslate"><span class="pre">mesh.create_icosphere()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_line"><code class="docutils literal notranslate"><span class="pre">mesh.create_line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_plane"><code class="docutils literal notranslate"><span class="pre">mesh.create_plane()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_rectangle_tube_from_polyline"><code class="docutils literal notranslate"><span class="pre">mesh.create_rectangle_tube_from_polyline()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_rounded_box"><code class="docutils literal notranslate"><span class="pre">mesh.create_rounded_box()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_rounded_rectangle_tube_from_polyline"><code class="docutils literal notranslate"><span class="pre">mesh.create_rounded_rectangle_tube_from_polyline()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_sphere"><code class="docutils literal notranslate"><span class="pre">mesh.create_sphere()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_spherical_cone"><code class="docutils literal notranslate"><span class="pre">mesh.create_spherical_cone()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_spherical_triangle_from_sphere"><code class="docutils literal notranslate"><span class="pre">mesh.create_spherical_triangle_from_sphere()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_spherical_triangle_from_triangle"><code class="docutils literal notranslate"><span class="pre">mesh.create_spherical_triangle_from_triangle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_spring"><code class="docutils literal notranslate"><span class="pre">mesh.create_spring()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_teapotahedron"><code class="docutils literal notranslate"><span class="pre">mesh.create_teapotahedron()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_torus"><code class="docutils literal notranslate"><span class="pre">mesh.create_torus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_torus_knot"><code class="docutils literal notranslate"><span class="pre">mesh.create_torus_knot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_triangle"><code class="docutils literal notranslate"><span class="pre">mesh.create_triangle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_triangle_from_circumscribed_circle"><code class="docutils literal notranslate"><span class="pre">mesh.create_triangle_from_circumscribed_circle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_tube"><code class="docutils literal notranslate"><span class="pre">mesh.create_tube()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_tube_from_polyline"><code class="docutils literal notranslate"><span class="pre">mesh.create_tube_from_polyline()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.create_wireframe_bounding_box"><code class="docutils literal notranslate"><span class="pre">mesh.create_wireframe_bounding_box()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.generate_smooth_normals"><code class="docutils literal notranslate"><span class="pre">mesh.generate_smooth_normals()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get"><code class="docutils literal notranslate"><span class="pre">mesh.get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_aabb_center"><code class="docutils literal notranslate"><span class="pre">mesh.get_aabb_center()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_bounding_sphere_radius"><code class="docutils literal notranslate"><span class="pre">mesh.get_bounding_sphere_radius()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_center"><code class="docutils literal notranslate"><span class="pre">mesh.get_center()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_colors"><code class="docutils literal notranslate"><span class="pre">mesh.get_colors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_count"><code class="docutils literal notranslate"><span class="pre">mesh.get_count()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_dirty_meshes"><code class="docutils literal notranslate"><span class="pre">mesh.get_dirty_meshes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_edit_mutex"><code class="docutils literal notranslate"><span class="pre">mesh.get_edit_mutex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_front"><code class="docutils literal notranslate"><span class="pre">mesh.get_front()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_front_struct"><code class="docutils literal notranslate"><span class="pre">mesh.get_front_struct()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_id"><code class="docutils literal notranslate"><span class="pre">mesh.get_id()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_max_aabb_corner"><code class="docutils literal notranslate"><span class="pre">mesh.get_max_aabb_corner()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_min_aabb_corner"><code class="docutils literal notranslate"><span class="pre">mesh.get_min_aabb_corner()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_name"><code class="docutils literal notranslate"><span class="pre">mesh.get_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_name_to_id_map"><code class="docutils literal notranslate"><span class="pre">mesh.get_name_to_id_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_normals"><code class="docutils literal notranslate"><span class="pre">mesh.get_normals()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_tangents"><code class="docutils literal notranslate"><span class="pre">mesh.get_tangents()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_tex_coords"><code class="docutils literal notranslate"><span class="pre">mesh.get_tex_coords()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_triangle_indices"><code class="docutils literal notranslate"><span class="pre">mesh.get_triangle_indices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.get_vertices"><code class="docutils literal notranslate"><span class="pre">mesh.get_vertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.initialize_factory"><code class="docutils literal notranslate"><span class="pre">mesh.initialize_factory()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.is_factory_initialized"><code class="docutils literal notranslate"><span class="pre">mesh.is_factory_initialized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.is_initialized"><code class="docutils literal notranslate"><span class="pre">mesh.is_initialized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.mark_dirty"><code class="docutils literal notranslate"><span class="pre">mesh.mark_dirty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.remove"><code class="docutils literal notranslate"><span class="pre">mesh.remove()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.thisown"><code class="docutils literal notranslate"><span class="pre">mesh.thisown</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.to_string"><code class="docutils literal notranslate"><span class="pre">mesh.to_string()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.mesh.update_components"><code class="docutils literal notranslate"><span class="pre">mesh.update_components()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="texture.html">Texture</a></li>
 <li class="toctree-l1"><a class="reference internal" href="light.html">Light</a></li>
 <li class="toctree-l1"><a class="reference internal" href="volume.html">Volume</a></li>

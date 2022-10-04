@@ -17,6 +17,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -41,7 +42,50 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">NVISII</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">NVISII</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.clear_all"><code class="docutils literal notranslate"><span class="pre">clear_all()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.clear_dome_light_texture"><code class="docutils literal notranslate"><span class="pre">clear_dome_light_texture()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.configure_denoiser"><code class="docutils literal notranslate"><span class="pre">configure_denoiser()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.deinitialize"><code class="docutils literal notranslate"><span class="pre">deinitialize()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.disable_denoiser"><code class="docutils literal notranslate"><span class="pre">disable_denoiser()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.disable_dome_light_sampling"><code class="docutils literal notranslate"><span class="pre">disable_dome_light_sampling()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.disable_updates"><code class="docutils literal notranslate"><span class="pre">disable_updates()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.enable_denoiser"><code class="docutils literal notranslate"><span class="pre">enable_denoiser()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.enable_dome_light_sampling"><code class="docutils literal notranslate"><span class="pre">enable_dome_light_sampling()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.enable_updates"><code class="docutils literal notranslate"><span class="pre">enable_updates()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.get_cursor_pos"><code class="docutils literal notranslate"><span class="pre">get_cursor_pos()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.get_scene_aabb_center"><code class="docutils literal notranslate"><span class="pre">get_scene_aabb_center()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.get_scene_max_aabb_corner"><code class="docutils literal notranslate"><span class="pre">get_scene_max_aabb_corner()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.get_scene_min_aabb_corner"><code class="docutils literal notranslate"><span class="pre">get_scene_min_aabb_corner()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.get_window_size"><code class="docutils literal notranslate"><span class="pre">get_window_size()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.import_scene"><code class="docutils literal notranslate"><span class="pre">import_scene()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.initialize"><code class="docutils literal notranslate"><span class="pre">initialize()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.is_button_held"><code class="docutils literal notranslate"><span class="pre">is_button_held()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.is_button_pressed"><code class="docutils literal notranslate"><span class="pre">is_button_pressed()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.register_callback"><code class="docutils literal notranslate"><span class="pre">register_callback()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.render_data"><code class="docutils literal notranslate"><span class="pre">render_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.render_data_to_file"><code class="docutils literal notranslate"><span class="pre">render_data_to_file()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.render_to_hdr"><code class="docutils literal notranslate"><span class="pre">render_to_hdr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.render_to_png"><code class="docutils literal notranslate"><span class="pre">render_to_png()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.resize_window"><code class="docutils literal notranslate"><span class="pre">resize_window()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.sample_pixel_area"><code class="docutils literal notranslate"><span class="pre">sample_pixel_area()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.sample_time_interval"><code class="docutils literal notranslate"><span class="pre">sample_time_interval()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_camera_entity"><code class="docutils literal notranslate"><span class="pre">set_camera_entity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_cursor_mode"><code class="docutils literal notranslate"><span class="pre">set_cursor_mode()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_direct_lighting_clamp"><code class="docutils literal notranslate"><span class="pre">set_direct_lighting_clamp()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_dome_light_color"><code class="docutils literal notranslate"><span class="pre">set_dome_light_color()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_dome_light_exposure"><code class="docutils literal notranslate"><span class="pre">set_dome_light_exposure()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_dome_light_intensity"><code class="docutils literal notranslate"><span class="pre">set_dome_light_intensity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_dome_light_rotation"><code class="docutils literal notranslate"><span class="pre">set_dome_light_rotation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_dome_light_sky"><code class="docutils literal notranslate"><span class="pre">set_dome_light_sky()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_dome_light_texture"><code class="docutils literal notranslate"><span class="pre">set_dome_light_texture()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_indirect_lighting_clamp"><code class="docutils literal notranslate"><span class="pre">set_indirect_lighting_clamp()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_light_sample_count"><code class="docutils literal notranslate"><span class="pre">set_light_sample_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.set_max_bounce_depth"><code class="docutils literal notranslate"><span class="pre">set_max_bounce_depth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.should_window_close"><code class="docutils literal notranslate"><span class="pre">should_window_close()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="entity.html">Entity</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transform.html">Transform</a></li>
 <li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>

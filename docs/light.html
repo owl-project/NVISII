@@ -17,6 +17,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -47,7 +48,48 @@
 <li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mesh.html">Mesh</a></li>
 <li class="toctree-l1"><a class="reference internal" href="texture.html">Texture</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Light</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Light</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#nvisii.light"><code class="docutils literal notranslate"><span class="pre">light</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.are_any_dirty"><code class="docutils literal notranslate"><span class="pre">light.are_any_dirty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.clear_all"><code class="docutils literal notranslate"><span class="pre">light.clear_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.clear_color_texture"><code class="docutils literal notranslate"><span class="pre">light.clear_color_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.create"><code class="docutils literal notranslate"><span class="pre">light.create()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.create_from_rgb"><code class="docutils literal notranslate"><span class="pre">light.create_from_rgb()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.create_from_temperature"><code class="docutils literal notranslate"><span class="pre">light.create_from_temperature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get"><code class="docutils literal notranslate"><span class="pre">light.get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get_color"><code class="docutils literal notranslate"><span class="pre">light.get_color()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get_count"><code class="docutils literal notranslate"><span class="pre">light.get_count()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get_edit_mutex"><code class="docutils literal notranslate"><span class="pre">light.get_edit_mutex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get_exposure"><code class="docutils literal notranslate"><span class="pre">light.get_exposure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get_falloff"><code class="docutils literal notranslate"><span class="pre">light.get_falloff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get_front"><code class="docutils literal notranslate"><span class="pre">light.get_front()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get_front_struct"><code class="docutils literal notranslate"><span class="pre">light.get_front_struct()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get_intensity"><code class="docutils literal notranslate"><span class="pre">light.get_intensity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get_name"><code class="docutils literal notranslate"><span class="pre">light.get_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get_name_to_id_map"><code class="docutils literal notranslate"><span class="pre">light.get_name_to_id_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.get_struct"><code class="docutils literal notranslate"><span class="pre">light.get_struct()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.initialize_factory"><code class="docutils literal notranslate"><span class="pre">light.initialize_factory()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.is_clean"><code class="docutils literal notranslate"><span class="pre">light.is_clean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.is_dirty"><code class="docutils literal notranslate"><span class="pre">light.is_dirty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.is_factory_initialized"><code class="docutils literal notranslate"><span class="pre">light.is_factory_initialized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.is_initialized"><code class="docutils literal notranslate"><span class="pre">light.is_initialized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.mark_clean"><code class="docutils literal notranslate"><span class="pre">light.mark_clean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.mark_dirty"><code class="docutils literal notranslate"><span class="pre">light.mark_dirty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.remove"><code class="docutils literal notranslate"><span class="pre">light.remove()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.set_color"><code class="docutils literal notranslate"><span class="pre">light.set_color()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.set_color_texture"><code class="docutils literal notranslate"><span class="pre">light.set_color_texture()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.set_exposure"><code class="docutils literal notranslate"><span class="pre">light.set_exposure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.set_falloff"><code class="docutils literal notranslate"><span class="pre">light.set_falloff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.set_intensity"><code class="docutils literal notranslate"><span class="pre">light.set_intensity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.set_temperature"><code class="docutils literal notranslate"><span class="pre">light.set_temperature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.thisown"><code class="docutils literal notranslate"><span class="pre">light.thisown</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.to_string"><code class="docutils literal notranslate"><span class="pre">light.to_string()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.update_components"><code class="docutils literal notranslate"><span class="pre">light.update_components()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nvisii.light.use_surface_area"><code class="docutils literal notranslate"><span class="pre">light.use_surface_area()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="volume.html">Volume</a></li>
 <li class="toctree-l1"><a class="reference internal" href="camera.html">Camera</a></li>
 <li class="toctree-l1"><a class="reference internal" href="all.html">Full Reference</a></li>
