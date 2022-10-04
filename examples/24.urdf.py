@@ -6,8 +6,6 @@ import math
 
 import nvisii as nv
 
-# alternative for the box primitive
-BOX_PATH = os.path.join(pybullet_data.getDataPath(), "cube.obj")
 
 nv.initialize(window_on_top = True)
 
@@ -154,13 +152,6 @@ def update_visual_objects(object_ids, pkg_path, nv_objects=None):
             object_name = f"{objectUniqueId}_{linkIndex}_{idx}"
 
             meshAssetFileName = meshAssetFileName.decode('UTF-8')
-            if len(meshAssetFileName) == 0:
-                # alternative for box primitive in pybullet
-                # will use nvisii shapes to replace with other primitive shapes later
-                if visualGeometryType == p.GEOM_BOX:
-                    meshAssetFileName = BOX_PATH
-                    visualGeometryType = p.GEOM_MESH
-
             if object_name not in nv_objects:
                 # Create mesh component if not yet made
                 if visualGeometryType == p.GEOM_MESH:
@@ -170,6 +161,18 @@ def update_visual_objects(object_ids, pkg_path, nv_objects=None):
                         )
                     except Exception as e:
                         print(e)
+                elif visualGeometryType == p.GEOM_BOX:
+                    assert len(meshAssetFileName) == 0
+                    nv_objects[object_name] = nv.entity.create(
+                        name=object_name,
+                        mesh=nv.mesh.create_box(
+                            name=object_name,
+                            # half dim in NVISII v.s. pybullet
+                            size=nv.vec3(dimensions[0] / 2, dimensions[1] / 2, dimensions[2] / 2)
+                        ),
+                        transform=nv.transform.create(object_name),
+                        material=nv.material.create(object_name),
+                    )
                 elif visualGeometryType == p.GEOM_CYLINDER:
                     assert len(meshAssetFileName) == 0
                     length = dimensions[0]
