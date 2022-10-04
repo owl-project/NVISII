@@ -1,9 +1,12 @@
+import os
+
 import pybullet as p
-import time
+import pybullet_data
 import math
-import time
 
 import nvisii as nv
+
+
 nv.initialize(window_on_top = True)
 
 camera = nv.entity.create(
@@ -124,9 +127,7 @@ def update_visual_objects(object_ids, pkg_path, nv_objects=None):
             local_visual_frame_position = visual[5]
             local_visual_frame_orientation = visual[6]
             rgbaColor = visual[7]
-            
-            world_link_frame_position = (0,0,0)
-            world_link_frame_orientation = (0,0,0,1)
+
             if linkIndex == -1:
                 dynamics_info = p.getDynamicsInfo(object_id,-1)
                 inertial_frame_position = dynamics_info[3]
@@ -148,7 +149,7 @@ def update_visual_objects(object_ids, pkg_path, nv_objects=None):
                 world_link_frame_orientation = linkState[5]
             
             # Name to use for components
-            object_name = str(objectUniqueId) + "_" + str(linkIndex)
+            object_name = f"{objectUniqueId}_{linkIndex}_{idx}"
 
             meshAssetFileName = meshAssetFileName.decode('UTF-8')
             if object_name not in nv_objects:
@@ -160,9 +161,46 @@ def update_visual_objects(object_ids, pkg_path, nv_objects=None):
                         )
                     except Exception as e:
                         print(e)
-                        pass
-            
-            if visualGeometryType != 5: continue
+                elif visualGeometryType == p.GEOM_BOX:
+                    assert len(meshAssetFileName) == 0
+                    nv_objects[object_name] = nv.entity.create(
+                        name=object_name,
+                        mesh=nv.mesh.create_box(
+                            name=object_name,
+                            # half dim in NVISII v.s. pybullet
+                            size=nv.vec3(dimensions[0] / 2, dimensions[1] / 2, dimensions[2] / 2)
+                        ),
+                        transform=nv.transform.create(object_name),
+                        material=nv.material.create(object_name),
+                    )
+                elif visualGeometryType == p.GEOM_CYLINDER:
+                    assert len(meshAssetFileName) == 0
+                    length = dimensions[0]
+                    radius = dimensions[1]
+                    nv_objects[object_name] = nv.entity.create(
+                        name=object_name,
+                        mesh=nv.mesh.create_cylinder(
+                            name=object_name,
+                            radius=radius,
+                            size=length / 2,    # size in nvisii is half of the length in pybullet
+                        ),
+                        transform=nv.transform.create(object_name),
+                        material=nv.material.create(object_name),
+                    )
+                elif visualGeometryType == p.GEOM_SPHERE:
+                    assert len(meshAssetFileName) == 0
+                    nv_objects[object_name] = nv.entity.create(
+                        name=object_name,
+                        mesh=nv.mesh.create_sphere(
+                            name=object_name,
+                            radius=dimensions[0],
+                        ),
+                        transform=nv.transform.create(object_name),
+                        material=nv.material.create(object_name),
+                    )
+                else:
+                    # other primitive shapes currently not supported
+                    continue
 
             if object_name not in nv_objects: continue
 
@@ -173,25 +211,36 @@ def update_visual_objects(object_ids, pkg_path, nv_objects=None):
             # Visual frame transform
             m2 = nv.translate(nv.mat4(1), nv.vec3(local_visual_frame_position[0], local_visual_frame_position[1], local_visual_frame_position[2]))
             m2 = m2 * nv.mat4_cast(nv.quat(local_visual_frame_orientation[3], local_visual_frame_orientation[0], local_visual_frame_orientation[1], local_visual_frame_orientation[2]))
-            
-            # Set root transform of visual objects collection to above transform
-            nv_objects[object_name].transforms[0].set_transform(m1 * m2)
-            nv_objects[object_name].transforms[0].set_scale(dimensions)
 
-            for m in nv_objects[object_name].materials:
-                m.set_base_color((rgbaColor[0] ** 2.2, rgbaColor[1] ** 2.2, rgbaColor[2] ** 2.2))
+            # import scene directly with mesh files
+            if isinstance(nv_objects[object_name], nv.scene):
+                # Set root transform of visual objects collection to above transform
+                nv_objects[object_name].transforms[0].set_transform(m1 * m2)
+                nv_objects[object_name].transforms[0].set_scale(dimensions)
 
-            # todo... add support for spheres, cylinders, etc
+                for m in nv_objects[object_name].materials:
+                    m.set_base_color((rgbaColor[0] ** 2.2, rgbaColor[1] ** 2.2, rgbaColor[2] ** 2.2))
+            # for entities created for primitive shapes
+            else:
+                nv_objects[object_name].get_transform().set_transform(m1 * m2)
+                nv_objects[object_name].get_material().set_base_color(
+                    (
+                        rgbaColor[0] ** 2.2,
+                        rgbaColor[1] ** 2.2,
+                        rgbaColor[2] ** 2.2,
+                    )
+                )
             # print(visualGeometryType)
     return nv_objects
 
 # The below code is taken and modified from PyBullet's included examples.
-# Look for the calls to "update_visual_objects" for nvisi specifics:
+# Look for the calls to "update_visual_objects" for nvisii specifics:
 #clid = p.connect(p.SHARED_MEMORY)
-import pybullet_data
+
 
 p.connect(p.GUI)
-p.setAdditionalSearchPath("./content/urdf/")
+# p.setAdditionalSearchPath("./content/urdf/")
+p.setAdditionalSearchPath(pybullet_data.getDataPath())
 planeId = p.loadURDF("plane.urdf", [0, 0, .0], useFixedBase=True)
 kukaId = p.loadURDF("kuka_iiwa/model.urdf", [0, 0, 0], useFixedBase=True)
 p.resetBasePositionAndOrientation(kukaId, [0, 0, 0], [0, 0, 0, 1])
@@ -205,7 +254,7 @@ cubeId2 = p.loadURDF("cube.urdf", [-1, -1, 2])
 cubeId3 = p.loadURDF("cube.urdf", [1, -1, 2])
 
 # Keep track of the cube objects
-nv_objects = update_visual_objects([planeId, kukaId, cubeId1, cubeId2, cubeId3], ".")
+nv_objects = update_visual_objects([planeId, kukaId, cubeId1, cubeId2, cubeId3], "")
 
 #lower limits for null space
 ll = [-.967, -2, -2.96, 0.19, -2.96, -2.09, -3.05]
