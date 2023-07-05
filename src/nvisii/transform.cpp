@@ -42,6 +42,14 @@ std::set<Transform*> Transform::getDirtyTransforms()
 void Transform::updateComponents() 
 {
 	if (dirtyTransforms.size() == 0) return;
+	
+	// first, update transform matrices
+	for (auto &t : dirtyTransforms) {
+		if (!t->isInitialized()) continue;
+		t->updateMatrix();
+	}
+
+	// next, copy over the local to world matrices
 	for (auto &t : dirtyTransforms) {
 		if (!t->isInitialized()) continue;
 		transformStructs[t->id].localToWorld = t->getLocalToWorldMatrix(false);
@@ -299,7 +307,6 @@ void Transform::lookAt(vec3 at, vec3 up, vec3 eye, bool previous)
 // 	localToParentTranslation = glm::translate(glm::mat4(1.0), position);
 // 	parentToLocalTranslation = glm::translate(glm::mat4(1.0), -position);
 
-// 	updateMatrix();
 // 	markDirty();
 // }
 
@@ -326,7 +333,6 @@ void Transform::rotateAround(vec3 point, glm::quat rot, bool previous)
 	// ltpt = glm::translate(glm::mat4(1.0), t);
 	// ptlt = glm::translate(glm::mat4(1.0), -t);
 
-	updateMatrix();
 	markDirty();
 }
 
@@ -407,7 +413,6 @@ void Transform::setTransform(glm::mat4 transformation, bool decompose, bool prev
 			this->localToParentTransform = transformation;
 			// this->parentToLocalTransform = glm::inverse(transformation);
 		}
-		updateMatrix();
 	}
 	markDirty();
 }
@@ -423,7 +428,6 @@ void Transform::setRotation(quat newRotation, bool previous)
 	if (previous) useRelativeAngularMotionBlur = false;
 	auto &r = (previous) ? prevRotation : rotation;
 	r = glm::normalize(newRotation);
-	updateRotation();
 	markDirty();
 }
 
@@ -436,28 +440,12 @@ void Transform::addRotation(quat additionalRotation, bool previous)
 {
 	if (previous) useRelativeAngularMotionBlur = false;
 	setRotation(getRotation(previous) * additionalRotation, previous);
-	updateRotation();
 	markDirty();
 }
 
 void Transform::addAngleAxis(float angle, vec3 axis, bool previous)
 {
 	addRotation(glm::angleAxis(angle, axis), previous);
-}
-
-void Transform::updateRotation()
-{
-	// localToParentRotation = glm::toMat4(rotation);
-	// parentToLocalRotation = glm::inverse(localToParentRotation);
-
-	// if (useRelativeMotionBlur) {
-	// 	prevLocalToParentRotation = glm::toMat4(angularVelocity * rotation);
-	// } else {
-	// 	prevLocalToParentRotation = glm::toMat4(prevRotation);
-	// }
-	// prevParentToLocalRotation = glm::inverse(prevLocalToParentRotation);
-	updateMatrix();
-	markDirty();
 }
 
 vec3 Transform::getPosition(bool previous)
@@ -513,7 +501,6 @@ void Transform::setPosition(vec3 newPosition, bool previous)
 	if (previous) useRelativeLinearMotionBlur = false;
 	auto &p = (previous) ? prevPosition : position;
 	p = newPosition;
-	updatePosition();
 	markDirty();
 }
 
@@ -521,7 +508,6 @@ void Transform::addPosition(vec3 additionalPosition, bool previous)
 {
 	if (previous) useRelativeLinearMotionBlur = false;
 	setPosition(getPosition(previous) + additionalPosition, previous);
-	updatePosition();
 	markDirty();
 }
 
@@ -531,7 +517,6 @@ void Transform::setLinearVelocity(vec3 newLinearVelocity, float framesPerSecond,
 	mix = glm::clamp(mix, 0.f, 1.f);
 	newLinearVelocity /= framesPerSecond;
 	linearMotion = glm::mix(newLinearVelocity, linearMotion, mix);
-	updatePosition();
 	markDirty();
 }
 
@@ -543,7 +528,6 @@ void Transform::setAngularVelocity(quat newAngularVelocity, float framesPerSecon
 	newAngularVelocity[1] = newAngularVelocity[1] / framesPerSecond;
 	newAngularVelocity[2] = newAngularVelocity[2] / framesPerSecond;
 	angularMotion = glm::lerp(newAngularVelocity, angularMotion, mix);
-	updateRotation();
 	markDirty();
 }
 
@@ -553,7 +537,6 @@ void Transform::setScalarVelocity(vec3 newScalarVelocity, float framesPerSecond,
 	mix = glm::clamp(mix, 0.f, 1.f);
 	newScalarVelocity /= framesPerSecond;
 	scalarMotion = glm::mix(newScalarVelocity, scalarMotion, mix);
-	updateScale();
 	markDirty();
 }
 
@@ -565,7 +548,6 @@ void Transform::clearMotion()
 	scalarMotion = glm::vec3(0.f);
 	angularMotion = glm::quat(1.f, 0.f, 0.f, 0.f);
 	linearMotion = glm::vec3(0.f);
-	updateMatrix();
 	markDirty();
 }
 
@@ -581,21 +563,6 @@ void Transform::clearMotion()
 // 	markDirty();
 // }
 
-void Transform::updatePosition()
-{
-	// localToParentTranslation = glm::translate(glm::mat4(1.0), position);
-	// parentToLocalTranslation = glm::translate(glm::mat4(1.0), -position);
-	// if (useRelativeMotionBlur) {
-	// 	prevLocalToParentTranslation = glm::translate(glm::mat4(1.0), position + linearVelocity);
-	// 	prevParentToLocalTranslation = glm::translate(glm::mat4(1.0), -position + linearVelocity);
-	// } else {
-	// 	prevLocalToParentTranslation = glm::translate(glm::mat4(1.0), prevPosition);
-	// 	prevParentToLocalTranslation = glm::translate(glm::mat4(1.0), -prevPosition);
-	// }
-	updateMatrix();
-	markDirty();
-}
-
 vec3 Transform::getScale(bool previous)
 {
 	if (previous) return prevScale;
@@ -607,14 +574,12 @@ void Transform::setScale(vec3 newScale, bool previous)
 	if (previous) useRelativeScalarMotionBlur = false;
 	auto &s = (previous) ? prevScale : scale;
 	s = newScale;
-	updateScale();
 	markDirty();
 }
 
 // void Transform::setScale(float newScale)
 // {
 // 	scale = vec3(newScale, newScale, newScale);
-// 	updateScale();
 // 	markDirty();
 // }
 
@@ -622,7 +587,6 @@ void Transform::addScale(vec3 additionalScale, bool previous)
 {
 	if (previous) useRelativeScalarMotionBlur = false;
 	setScale(getScale(previous) + additionalScale, previous);
-	updateScale();
 	markDirty();
 }
 
@@ -644,41 +608,32 @@ void Transform::addScale(vec3 additionalScale, bool previous)
 // 	markDirty();
 // }
 
-void Transform::updateScale()
-{
-	// localToParentScale = glm::scale(glm::mat4(1.0), scale);
-	// parentToLocalScale = glm::scale(glm::mat4(1.0), glm::vec3(1.0 / scale.x, 1.0 / scale.y, 1.0 / scale.z));
-	// if (useRelativeMotionBlur) {
-	// 	prevLocalToParentScale = glm::scale(glm::mat4(1.0), scale + scalarVelocity);
-	// 	prevParentToLocalScale = glm::scale(glm::mat4(1.0), glm::vec3(1.0 / (scale.x + scalarVelocity.x), 1.0 / (scale.y + scalarVelocity.y), 1.0 / (scale.z + scalarVelocity.z)));
-	// } else {
-	// 	prevLocalToParentScale = glm::scale(glm::mat4(1.0), prevScale);
-	// 	prevParentToLocalScale = glm::scale(glm::mat4(1.0), glm::vec3(1.0 / prevScale.x, 1.0 / prevScale.y, 1.0 / prevScale.z));
-	// }
-	updateMatrix();
-	markDirty();
-}
-
 void Transform::updateMatrix()
 {
+	// Update the current transform matrices
 	localToParentMatrix = (localToParentTransform * getLocalToParentTranslationMatrix(false) * getLocalToParentRotationMatrix(false) * getLocalToParentScaleMatrix(false));
 	parentToLocalMatrix = (getParentToLocalScaleMatrix(false) * getParentToLocalRotationMatrix(false) * getParentToLocalTranslationMatrix(false) * glm::inverse(localToParentTransform));
 
 	prevLocalToParentMatrix = (prevLocalToParentTransform * getLocalToParentTranslationMatrix(true) * getLocalToParentRotationMatrix(true) * getLocalToParentScaleMatrix(true));
 	prevParentToLocalMatrix = (getParentToLocalScaleMatrix(true) * getParentToLocalRotationMatrix(true) * getParentToLocalTranslationMatrix(true) * glm::inverse(prevLocalToParentTransform));
 
-	// right = glm::vec3(localToParentMatrix[0]);
-	// up = glm::vec3(localToParentMatrix[1]);
-	// forward = glm::vec3(localToParentMatrix[2]);
-	// position = glm::vec3(localToParentMatrix[3]);
+	if (parent == -1) {
+		worldToLocalMatrix = parentToLocalMatrix;
+		localToWorldMatrix = localToParentMatrix;
+		prevWorldToLocalMatrix = prevParentToLocalMatrix;
+		prevLocalToWorldMatrix = prevLocalToParentMatrix;
+	} else {
+		worldToLocalMatrix = computeWorldToLocalMatrix(/*previous=*/false);
+		prevWorldToLocalMatrix = computeWorldToLocalMatrix(/*previous=*/true);
+		localToWorldMatrix = glm::inverse(worldToLocalMatrix); 
+		prevLocalToWorldMatrix = glm::inverse(prevWorldToLocalMatrix); 
+	}
 
-	// prevRight = glm::vec3(prevLocalToParentMatrix[0]);
-	// prevUp = glm::vec3(prevLocalToParentMatrix[1]);
-	// prevForward = glm::vec3(prevLocalToParentMatrix[2]);
-	// prevPosition = glm::vec3(prevLocalToParentMatrix[3]);
-
-	updateChildren();
-	markDirty();
+	// If this transform has children, update those too.
+	for (auto &c : children) {
+		auto &t = transforms[c];
+		t.updateMatrix();
+	}
 }
 
 glm::mat4 Transform::computeWorldToLocalMatrix(bool previous)
@@ -700,37 +655,6 @@ glm::mat4 Transform::computeWorldToLocalMatrix(bool previous)
 // 	}
 // 	else return getNextParentToLocalMatrix();
 // }
-
-void Transform::updateWorldMatrix()
-{
-	if (parent == -1) {
-		worldToLocalMatrix = parentToLocalMatrix;
-		localToWorldMatrix = localToParentMatrix;
-		prevWorldToLocalMatrix = prevParentToLocalMatrix;
-		prevLocalToWorldMatrix = prevLocalToParentMatrix;
-
-		// worldScale = scale;
-		// worldTranslation = position;
-		// worldRotation = rotation;
-		// worldSkew = glm::vec3(0.f, 0.f, 0.f);
-		// worldPerspective = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // not sure what this should default to...
-
-		// prevWorldScale = prevScale;
-		// prevWorldTranslation = prevPosition;
-		// prevWorldRotation = prevRotation;
-		// prevWorldSkew = glm::vec3(0.f, 0.f, 0.f);
-		// prevWorldPerspective = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // not sure what this should default to...
-	} else {
-		worldToLocalMatrix = computeWorldToLocalMatrix(/*previous=*/false);
-		prevWorldToLocalMatrix = computeWorldToLocalMatrix(/*previous=*/true);
-		localToWorldMatrix = glm::inverse(worldToLocalMatrix); 
-		prevLocalToWorldMatrix = glm::inverse(prevWorldToLocalMatrix); 
-		// glm::decompose(localToWorldMatrix, worldScale, worldRotation, worldTranslation, worldSkew, worldPerspective);
-		// glm::decompose(prevLocalToWorldMatrix, prevWorldScale, prevWorldRotation, prevWorldTranslation, prevWorldSkew, prevWorldPerspective);
-		// glm::decompose(nextLocalToWorldMatrix, worldScale, worldRotation, worldTranslation, worldSkew, worldPerspective);
-	}
-	markDirty();
-}
 
 glm::mat4 Transform::getParentToLocalMatrix(bool previous)
 {
@@ -832,7 +756,6 @@ void Transform::setParent(Transform *parent) {
 
 	this->parent = parent->getId();
 	transforms[parent->getId()].children.insert(this->id);
-	updateChildren();
 	markDirty();
 }
 
@@ -845,7 +768,6 @@ void Transform::clearParent()
 	
 	transforms[parent].children.erase(this->id);
 	this->parent = -1;
-	updateChildren();
 	markDirty();
 }
 
@@ -874,7 +796,6 @@ void Transform::removeChild(Transform *object) {
 
 	children.erase(object->getId());
 	transforms[object->getId()].parent = -1;
-	transforms[object->getId()].updateWorldMatrix();
 	transforms[object->getId()].markDirty();
 }
 
@@ -949,18 +870,6 @@ glm::mat4 Transform::getLocalToWorldMatrix(bool previous) {
 // 	m = glm::scale(m, (previous) ? prevWorldScale : worldScale);
 // 	return m;
 // }
-
-
-void Transform::updateChildren()
-{
-	for (auto &c : children) {
-		auto &t = transforms[c];
-		t.updateChildren();
-	}
-
-	updateWorldMatrix();
-	markDirty();
-}
 
 TransformStruct &Transform::getStruct()
 {

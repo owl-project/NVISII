@@ -11,41 +11,10 @@
 namespace nvisii {
 
 /**
-  * Deprecated. Please use initialize() instead.
-*/
-void initializeInteractive(
-  bool window_on_top = false, 
-  bool verbose = false,
-  uint32_t max_entities = 10000,
-  uint32_t max_cameras = 10,
-  uint32_t max_transforms = 10000,
-  uint32_t max_meshes = 10000,
-  uint32_t max_materials = 10000,
-  uint32_t max_lights = 100,
-  uint32_t max_textures = 1000,
-  uint32_t max_volumes = 1000);
-
-/**
-  * Deprecated. Please use initialize(headless = True) instead.
-*/
-void initializeHeadless(
-  bool verbose = false,
-  uint32_t max_entities = 10000,
-  uint32_t max_cameras = 10,
-  uint32_t max_transforms = 10000,
-  uint32_t max_meshes = 10000,
-  uint32_t max_materials = 10000,
-  uint32_t max_lights = 100,
-  uint32_t max_textures = 1000,
-  uint32_t max_volumes = 1000);
-
-/**
   * Initializes various backend systems required to render scene data.
   * 
   * @param headless If true, avoids using any OpenGL resources, to enable use on systems without displays.
   * @param window_on_top Keeps the window opened during an interactive session on top of any other windows. (assuming headless is False)
-  * @param lazy_updates If True, nvisii will only upload components to the GPU on call to 
-  * render/render_to_png/render_data for better scene editing performance. (assuming headless is False. Always on when headless is True)
   * @param verbose If false, nvisii will avoid outputing any unneccessary text
   * @param max_entities The max number of creatable Entity components.
   * @param max_cameras The max number of creatable Camera components.
@@ -58,7 +27,6 @@ void initializeHeadless(
 void initialize(
   bool headless = false, 
   bool window_on_top = false, 
-  bool lazy_updates = false, 
   bool verbose = false,
   uint32_t max_entities = 10000,
   uint32_t max_cameras = 10,
@@ -124,9 +92,10 @@ void setDomeLightExposure(float exposure);
 /** 
  * Sets the color which this dome light will emit.
  * 
- * @param The RGB color emitted that this dome light should emit.
+ * @param color The RGB color emitted that this dome light should emit.
+ * @param alpha The alpha transparency to use for the background if hit by primary rays.
  */ 
-void setDomeLightColor(glm::vec3 color);
+void setDomeLightColor(glm::vec3 color, float alpha = 1.0f);
 
 /** 
  * Configures the procedural sky for the dome light (aka the environment).
@@ -137,18 +106,21 @@ void setDomeLightColor(glm::vec3 color);
  * @param atmosphere_thickness effects Rayleigh scattering. Thin atmospheres look more 
  * like space, and thick atmospheres see more Rayleigh scattering.
  * @param saturation causes the sky to appear more or less "vibrant"
+ * @param alpha The alpha transparency to use for the background if hit by primary rays.
  */ 
 void setDomeLightSky(
     glm::vec3 sun_position, 
     glm::vec3 sky_tint = vec3(.5f, .5f, .5f), 
     float atmosphere_thickness = 1.0f,
-    float saturation = 1.0f);
+    float saturation = 1.0f,
+    float alpha = 1.0f);
 
 /** 
  * Sets the texture used to color the dome light (aka the environment). 
  * Textures are sampled using a 2D to 3D latitude/longitude strategy.
  * 
- * @param texture The texture to sample for the dome light.
+ * @param texture The texture to sample for the dome light. Alpha channel values 
+ * effect alpha transparency of background for primary rays. 
  * @param enable_cdf If True, reduces noise of sampling a dome light texture, 
  * but at the expense of frame rate. Useful for dome lights with bright lights 
  * that should cast shadows.
@@ -268,16 +240,6 @@ void configureDenoiser(bool use_albedo_guide = true, bool use_normal_guide = tru
  * @param seed A seed used to initialize the random number generator.
 */
 std::vector<float> render(uint32_t width, uint32_t height, uint32_t samples_per_pixel, uint32_t seed = 0);
-
-/** 
- * Deprecated. Please use renderToFile. 
-*/
-void renderToHDR(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path, uint32_t seed = 0);
-
-/** 
- * Deprecated. Please use renderToFile. 
-*/
-void renderToPNG(uint32_t width, uint32_t height, uint32_t samples_per_pixel, std::string image_path, uint32_t seed = 0);
 
 /** 
  * Renders the current scene, saving the resulting framebuffer to an image on disk.

@@ -21,12 +21,8 @@ nvisii.resize_window(int(opt.width), int(opt.height))
 dome = nvisii.texture.create_from_file("dome", "content/teatro_massimo_2k.hdr")
 
 # we can add HDR images to act as dome
-nvisii.set_dome_light_texture(dome)
+nvisii.set_dome_light_texture(dome, enable_cdf=True)
 nvisii.set_dome_light_rotation(nvisii.angleAxis(nvisii.pi() * .5, nvisii.vec3(0, 0, 1)))
-
-car_speed = 0
-car_speed_x = car_speed
-car_speed_y = -2 * car_speed
 
 camera_height = 80
 # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -46,19 +42,8 @@ camera = nvisii.entity.create(
 camera.get_transform().look_at(
     at = nvisii.vec3(-50,0,camera_height) , # look at (world coordinate)
     up = nvisii.vec3(0,0,1), # up vector
-    eye = nvisii.vec3(-500,500,100 + camera_height),
-    previous = False
+    eye = nvisii.vec3(-500,500,100 + camera_height)
 )
-
-camera.get_transform().look_at(
-    at = nvisii.vec3(-50,0,camera_height) + nvisii.vec3(car_speed_x, car_speed_y, .0) , # look at (world coordinate)
-    up = nvisii.vec3(0,0,1), # up vector
-    eye = nvisii.vec3(-500,500,100 + camera_height),
-    previous = True
-)
-
-camera.get_camera().set_aperture_diameter(5000)
-camera.get_camera().set_focal_distance(500)
 
 nvisii.set_camera_entity(camera)
 
@@ -71,7 +56,7 @@ floor = nvisii.entity.create(
 floor.get_transform().set_scale(nvisii.vec3(10000))
 floor.get_transform().set_position(nvisii.vec3(0, 0, -5))
 floor.get_material().set_base_color(nvisii.vec3(1.0))
-floor.get_material().set_roughness(1)
+floor.get_material().set_roughness(0)
 floor.get_material().set_specular(0)
 
 # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -102,8 +87,6 @@ for i_s, s in enumerate(sdb.entities):
     # print(s.get_name())
     # if 'car' in s.get_name():
     #     print(s.get_name())
-    s.get_transform().set_linear_velocity(nvisii.vec3(car_speed_x, car_speed_y, .0))
-
     print(s.get_name())
     if "carshell" in s.get_name().lower():
         s.get_material().set_clearcoat(1)
@@ -137,6 +120,11 @@ for i_s, s in enumerate(sdb.entities):
         s.get_material().set_transmission(1)
         s.get_material().set_roughness(0)
         s.get_material().set_metallic(0)
+        s.set_visibility(shadow = False)
+    
+    if "interior" in s.get_name().lower():
+        s.get_material().set_base_color((1,1,1))
+
     # elif 'light' in s.get_name().lower():
     #     print(s.get_name())
     #     s.set_light(nvisii.light.create('light' + str(i_s)))

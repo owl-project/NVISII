@@ -78,23 +78,8 @@ class Transform : public StaticFactory
     static std::vector<TransformStruct> transformStructs;
     static std::map<std::string, uint32_t> lookupTable;
     
-    /* Updates cached rotation values */
-    void updateRotation();
-
-    /* Updates cached position values */
-    void updatePosition();
-
-    /* Updates cached scale values */
-    void updateScale();
-
-    /* Updates cached final local to parent matrix values */
+    /* Updates cached final local to parent and local to world matrix values */
     void updateMatrix();
-
-    /* Updates cached final local to world matrix values */
-    void updateWorldMatrix();
-
-    /* updates all childrens cached final local to world matrix values */
-    void updateChildren();
 
     /* updates the struct for this transform which can be uploaded to the GPU. */
     void updateStruct();

@@ -61,7 +61,7 @@ std::promise<void> exitSignal;
 std::thread renderThread;
 static bool initialized = false;
 static bool stopped = true;
-static bool lazyUpdatesEnabled = false;
+static bool paused = false;
 static bool verbose = true;
 
 static struct WindowData {
@@ -70,7 +70,7 @@ static struct WindowData {
 } WindowData;
 
 /* Embedded via cmake */
-extern "C" char ptxCode[];
+extern "C" char deviceCode_ptx[];
 
 // struct MeshData {
 //     OWLBuffer vertices;
@@ -486,7 +486,7 @@ void initializeOptix(bool headless)
     owlEnableMotionBlur(OD.context);
     owlContextSetRayTypeCount(OD.context, 2);
     cudaSetDevice(0); // OWL leaves the device as num_devices - 1 after the context is created. set it back to 0.
-    OD.module = owlModuleCreate(OD.context, ptxCode);
+    OD.module = owlModuleCreate(OD.context, deviceCode_ptx);
     
     /* Setup Optix Launch Params */
     OWLVarDecl launchParamVars[] = {
@@ -519,7 +519,7 @@ void initializeOptix(bool headless)
         { "instanceToEntity",        OWL_BUFFER,                        OWL_OFFSETOF(LaunchParams, instanceToEntity)},
         { "domeLightIntensity",      OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightIntensity)},
         { "domeLightExposure",       OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, domeLightExposure)},
-        { "domeLightColor",          OWL_USER_TYPE(glm::vec3),          OWL_OFFSETOF(LaunchParams, domeLightColor)},
+        { "domeLightColor",          OWL_USER_TYPE(glm::vec4),          OWL_OFFSETOF(LaunchParams, domeLightColor)},
         { "directClamp",             OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, directClamp)},
         { "indirectClamp",           OWL_USER_TYPE(float),              OWL_OFFSETOF(LaunchParams, indirectClamp)},
         { "maxDiffuseDepth",         OWL_USER_TYPE(uint32_t),           OWL_OFFSETOF(LaunchParams, maxDiffuseDepth)},
@@ -892,13 +892,15 @@ void setDomeLightExposure(float exposure)
     resetAccumulation();
 }
 
-void setDomeLightColor(vec3 color)
+void setDomeLightColor(vec3 color, float alpha)
 {
     clearDomeLightTexture();
-    color.r = glm::max(0.f, glm::min(color.r, 1.f));
-    color.g = glm::max(0.f, glm::min(color.g, 1.f));
-    color.b = glm::max(0.f, glm::min(color.b, 1.f));
-    OptixData.LP.domeLightColor = color;
+    vec4 c;
+    c.r = glm::max(0.f, glm::min(color.r, 1.f));
+    c.g = glm::max(0.f, glm::min(color.g, 1.f));
+    c.b = glm::max(0.f, glm::min(color.b, 1.f));
+    c.a = glm::max(0.f, glm::min(alpha, 1.f));
+    OptixData.LP.domeLightColor = c;
     resetAccumulation();
 }
 
@@ -938,9 +940,9 @@ vec3 toPolar(vec2 uv)
     return n;
 }
 
-void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float saturation)
+void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float saturation, float alpha)
 {
-    enqueueCommand([sunPos, skyTint, atmosphereThickness, saturation] () {
+    enqueueCommand([sunPos, skyTint, atmosphereThickness, saturation, alpha] () {
         /* Generate procedural sky */
         uint32_t width = 1024/2;
         uint32_t height = 512/2;
@@ -950,7 +952,7 @@ void setDomeLightSky(vec3 sunPos, vec3 skyTint, float atmosphereThickness, float
                 glm::vec2 uv = glm::vec2(x / float(width), y / float(height));
                 glm::vec3 dir = toPolar(uv);
                 glm::vec3 c = ProceduralSkybox(glm::vec3(dir.x, -dir.z, dir.y), glm::vec3(sunPos.x, sunPos.z, sunPos.y), skyTint, atmosphereThickness, saturation);
-                texels[x + y * width] = glm::vec4(c.r, c.g, c.b, 1.0f);
+                texels[x + y * width] = glm::vec4(c.r, c.g, c.b, alpha);
             }
         }
 
@@ -1140,6 +1142,15 @@ void updateComponents()
     std::lock_guard<std::recursive_mutex> light_lock(Light::areAnyDirty()         ? *Light::getEditMutex().get() : dummyMutex);
     std::lock_guard<std::recursive_mutex> texture_lock(Texture::areAnyDirty()     ? *Texture::getEditMutex().get() : dummyMutex);
     std::lock_guard<std::recursive_mutex> volume_lock(Volume::areAnyDirty()       ? *Volume::getEditMutex().get() : dummyMutex);
+
+    // Manage transforms
+    auto dirtyTransforms = Transform::getDirtyTransforms();
+    if (dirtyTransforms.size() > 0) {
+        Transform::updateComponents();
+
+        // cudaSetDevice(0);
+        owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
+    }  
 
     // Manage Meshes: Build / Rebuild BLAS
     auto dirtyMeshes = Mesh::getDirtyMeshes();
@@ -1487,15 +1498,6 @@ void updateComponents()
         owlBufferUpload(OptixData.textureBuffer, OptixData.textureStructs.data());
     }
     
-    // Manage transforms
-    auto dirtyTransforms = Transform::getDirtyTransforms();
-    if (dirtyTransforms.size() > 0) {
-        Transform::updateComponents();
-
-        // cudaSetDevice(0);
-        owlBufferUpload(OptixData.transformBuffer, Transform::getFrontStruct());
-    }   
-
     // Manage Cameras
     if (Camera::areAnyDirty()) {
         Camera::updateComponents();
@@ -1942,7 +1944,7 @@ std::vector<float> render(uint32_t width, uint32_t height, uint32_t samplesPerPi
                 auto glfw = Libraries::GLFW::Get();
                 glfw->poll_events();
                 glfw->swap_buffers("NVISII");
-                glClearColor(1,1,1,1);
+                glClearColor(0,0,0,0);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
 
@@ -2111,7 +2113,7 @@ std::vector<float> renderData(uint32_t width, uint32_t height, uint32_t startFra
                 auto glfw = Libraries::GLFW::Get();
                 glfw->poll_events();
                 glfw->swap_buffers("NVISII");
-                glClearColor(1,1,1,1);
+                glClearColor(0,0,0,0);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
 
@@ -2207,19 +2209,6 @@ void renderDataToFile(uint32_t width, uint32_t height, uint32_t startFrame, uint
     }
 }
 
-static bool renderToHDRDeprecatedShown = false;
-void renderToHDR(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
-{
-    if (renderToHDRDeprecatedShown == false) {
-        std::cout<<"Warning, render_to_hdr is deprecated and will be removed in a subsequent release. Please switch to render_to_file." << std::endl;
-        renderToHDRDeprecatedShown = true;
-    }
-
-    std::vector<float> fb = render(width, height, samplesPerPixel, seed);
-    stbi_flip_vertically_on_write(true);
-    stbi_write_hdr(imagePath.c_str(), width, height, /* num channels*/ 4, fb.data());
-}
-
 float linearToSRGB(float x) {
     if (x <= 0.0031308f) {
 		return 12.92f * x;
@@ -2246,36 +2235,6 @@ vec3 Uncharted2Tonemap(vec3 x)
 	float E_ = 0.02f;
 	float F = 0.30f;
 	return max(vec3(0.0f), ((x*(A*x+C*B)+D*E_)/(x*(A*x+B)+D*F))-E_/F);
-}
-
-static bool renderToPNGDeprecatedShown = false;
-void renderToPNG(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
-{
-    if (renderToPNGDeprecatedShown == false) {
-        std::cout<<"Warning, render_to_png is deprecated and will be removed in a subsequent release. Please switch to render_to_file." << std::endl;
-        renderToPNGDeprecatedShown = true;
-    }
-
-    // float exposure = 2.f; // TODO: expose as a parameter
-
-    std::vector<float> fb = render(width, height, samplesPerPixel, seed);
-    std::vector<uint8_t> colors(4 * width * height);
-    for (size_t i = 0; i < (width * height); ++i) {     
-        vec3 color = vec3(fb[i * 4 + 0], fb[i * 4 + 1], fb[i * 4 + 2]);
-        float alpha = fb[i * 4 + 3];
-
-        // color = Uncharted2Tonemap(color * exposure);
-        // color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
-
-        color = glm::convertLinearToSRGB(color);
-
-        colors[i * 4 + 0] = uint8_t(glm::clamp(color.r * 255.f, 0.f, 255.f));
-        colors[i * 4 + 1] = uint8_t(glm::clamp(color.g * 255.f, 0.f, 255.f));
-        colors[i * 4 + 2] = uint8_t(glm::clamp(color.b * 255.f, 0.f, 255.f));
-        colors[i * 4 + 3] = uint8_t(glm::clamp(alpha * 255.f, 0.f, 255.f));
-    }
-    stbi_flip_vertically_on_write(true);
-    stbi_write_png(imagePath.c_str(), width, height, /* num channels*/ 4, colors.data(), /* stride in bytes */ width * 4);
 }
 
 void renderToFile(uint32_t width, uint32_t height, uint32_t samplesPerPixel, std::string imagePath, uint32_t seed)
@@ -2347,10 +2306,8 @@ void initializeComponentFactories(
 
 void reproject(glm::vec4 *samplesBuffer, glm::vec4 *t0AlbedoBuffer, glm::vec4 *t1AlbedoBuffer, glm::vec4 *mvecBuffer, glm::vec4 *scratchBuffer, glm::vec4 *imageBuffer, int width, int height);
 
-
-static bool initializeInteractiveDeprecatedShown = false;
-static bool initializeHeadlessDeprecatedShown = false;
-void initializeInteractive(
+void initialize(
+    bool headless, 
     bool windowOnTop, 
     bool _verbose,
     uint32_t maxEntities,
@@ -2360,13 +2317,8 @@ void initializeInteractive(
     uint32_t maxMaterials,
     uint32_t maxLights,
     uint32_t maxTextures,
-    uint32_t maxVolumes)
+    uint32_t maxVolumes) 
 {
-    if (initializeInteractiveDeprecatedShown == false) {
-        std::cout<<"Warning, initialize_interactive is deprecated and will be removed in a subsequent release. Please switch to initialize." << std::endl;
-        initializeInteractiveDeprecatedShown = true;
-    }
-
     // don't initialize more than once
     if (initialized == true) {
         throw std::runtime_error("Error: already initialized!");
@@ -2376,52 +2328,67 @@ void initializeInteractive(
     stopped = false;
     verbose = _verbose;
     NVISII.callback = nullptr;
+    NVISII.headlessMode = headless;
 
     initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures, maxVolumes);
 
     auto loop = [windowOnTop]() {
         NVISII.render_thread_id = std::this_thread::get_id();
-        NVISII.headlessMode = false;
+        Libraries::GLFW *glfw = nullptr;
 
-        auto glfw = Libraries::GLFW::Get();
-        WindowData.window = glfw->create_window("NVISII", 512, 512, windowOnTop, true, true);
-        WindowData.currentSize = WindowData.lastSize = ivec2(512, 512);
-        glfw->make_context_current("NVISII");
-        glfw->poll_events();
+        if (!NVISII.headlessMode) 
+        {
+            glfw = Libraries::GLFW::Get();
+            WindowData.window = glfw->create_window("NVISII", 512, 512, windowOnTop, true, true);
+            WindowData.currentSize = WindowData.lastSize = ivec2(512, 512);
+            glfw->make_context_current("NVISII");
+            glfw->poll_events();
+        }
 
-        initializeOptix(/*headless = */ false);
-        initializeImgui();
+        initializeOptix(/*headless = */ NVISII.headlessMode);
 
         int numGPUs = owlGetDeviceCount(OptixData.context);
 
+        if (!NVISII.headlessMode) {
+            initializeImgui();
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        } 
+
         while (!stopped)
         {
-            /* Poll events from the window */
-            glfw->poll_events();
-            glfw->swap_buffers("NVISII");
-            glClearColor(1,1,1,1);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            if (!paused) {
+                if (!NVISII.headlessMode) {
+                    /* Poll events from the window */
+                    glfw->poll_events();
+                    glfw->swap_buffers("NVISII");
+                        glClearColor(0,0,0,0);
+                        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                }
 
-            if (NVISII.callback && NVISII.callbackMutex.try_lock()) {
-                NVISII.callback();
-                NVISII.callbackMutex.unlock();
-            }
+                if (NVISII.callback && NVISII.callbackMutex.try_lock()) {
+                    NVISII.callback();
+                    NVISII.callbackMutex.unlock();
+                }
+                
+                static double start=0;
+                static double stop=0;
 
-            static double start=0;
-            static double stop=0;
-            start = glfwGetTime();
-
-            if (!lazyUpdatesEnabled) {
-                updateFrameBuffer();
+                if (!NVISII.headlessMode) {
+                    start = glfwGetTime();
+                    updateFrameBuffer();
+                }
+                
                 updateComponents();
                 updateLaunchParams();
-
+                
                 for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
                     cudaSetDevice(deviceID);
                     cudaEventRecord(NVISII.events[deviceID].first, owlParamsGetCudaStream(OptixData.launchParams, deviceID));
                     owlAsyncLaunch2DOnDevice(OptixData.rayGen, OptixData.LP.frameSize.x * OptixData.LP.frameSize.y, 1, deviceID, OptixData.launchParams);
                     cudaEventRecord(NVISII.events[deviceID].second, owlParamsGetCudaStream(OptixData.launchParams, deviceID));
                 }
+
                 owlLaunchSync(OptixData.launchParams);
                 for (uint32_t deviceID = 0; deviceID < numGPUs; deviceID++) {
                     cudaEventElapsedTime(&NVISII.times[deviceID], NVISII.events[deviceID].first, NVISII.events[deviceID].second);
@@ -2432,21 +2399,14 @@ void initializeInteractive(
                 if (OptixData.enableDenoiser) {
                     denoiseImage();
                 }
-            }
-            // glm::vec4* samplePtr = (glm::vec4*) owlBufferGetPointer(OptixData.accumBuffer,0);
-            // glm::vec4* mvecPtr = (glm::vec4*) owlBufferGetPointer(OptixData.mvecBuffer,0);
-            // glm::vec4* t0AlbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.scratchBuffer,0);
-            // glm::vec4* t1AlbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.albedoBuffer,0);
-            // glm::vec4* fbPtr = (glm::vec4*) owlBufferGetPointer(OptixData.frameBuffer,0);
-            // glm::vec4* sPtr = (glm::vec4*) owlBufferGetPointer(OptixData.normalBuffer,0);
-            // int width = OptixData.LP.frameSize.x;
-            // int height = OptixData.LP.frameSize.y;
-            // reproject(samplePtr, t0AlbPtr, t1AlbPtr, mvecPtr, sPtr, fbPtr, width, height);
 
-            drawFrameBufferToWindow();
-            stop = glfwGetTime();
-            glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
-            drawGUI();
+                if (!NVISII.headlessMode) {
+                    drawFrameBufferToWindow();
+                    stop = glfwGetTime();
+                    glfwSetWindowTitle(WindowData.window, std::to_string(1.f / (stop - start)).c_str());
+                    drawGUI();            
+                }
+            }
 
             processCommandQueue();
             checkForErrors();
@@ -2456,71 +2416,19 @@ void initializeInteractive(
         if (OptixData.denoiser)
             OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
 
-        if (OptixData.imageTexID != -1) {
-            if (OptixData.cudaResourceTex) {
-                cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
-                OptixData.cudaResourceTex = 0;
+        if (!NVISII.headlessMode) {
+            if (OptixData.imageTexID != -1) {
+                if (OptixData.cudaResourceTex) {
+                    cudaGraphicsUnregisterResource(OptixData.cudaResourceTex);
+                    OptixData.cudaResourceTex = 0;
+                }
+                glDeleteTextures(1, &OptixData.imageTexID);
             }
-            glDeleteTextures(1, &OptixData.imageTexID);
+
+            ImGui::DestroyContext();
+            auto glfw = Libraries::GLFW::Get();
+            if (glfw->does_window_exist("NVISII")) glfw->destroy_window("NVISII");
         }
-
-        ImGui::DestroyContext();
-        if (glfw->does_window_exist("NVISII")) glfw->destroy_window("NVISII");
-
-        owlContextDestroy(OptixData.context);
-    };
-
-    renderThread = std::thread(loop);
-
-    // Waits for the render thread to start before returning
-    enqueueCommandAndWait([] () {});
-}
-
-void initializeHeadless(
-    bool _verbose, 
-    uint32_t maxEntities,
-    uint32_t maxCameras,
-    uint32_t maxTransforms,
-    uint32_t maxMeshes,
-    uint32_t maxMaterials,
-    uint32_t maxLights,
-    uint32_t maxTextures,
-    uint32_t maxVolumes)
-{
-    if (initializeHeadlessDeprecatedShown == false) {
-        std::cout<<"Warning, initialize_headless is deprecated and will be removed in a subsequent release. Please switch to initialize(headless = True)." << std::endl;
-        initializeHeadlessDeprecatedShown = true;
-    }
-
-    // don't initialize more than once
-    if (initialized == true) {
-        throw std::runtime_error("Error: already initialized!");
-    }
-
-    initialized = true;
-    stopped = false;
-    verbose = _verbose;
-    NVISII.callback = nullptr;
-
-    initializeComponentFactories(maxEntities, maxCameras, maxTransforms, maxMeshes, maxMaterials, maxLights, maxTextures, maxVolumes);
-
-    auto loop = []() {
-        NVISII.render_thread_id = std::this_thread::get_id();
-        NVISII.headlessMode = true;
-
-        initializeOptix(/*headless = */ true);
-
-        while (!stopped)
-        {
-            if(NVISII.callback){
-                NVISII.callback();
-            }
-            processCommandQueue();
-            if (stopped) break;
-        }
-
-        if (OptixData.denoiser)
-            OPTIX_CHECK(optixDenoiserDestroy(OptixData.denoiser));
         
         owlContextDestroy(OptixData.context);
     };
@@ -2529,36 +2437,6 @@ void initializeHeadless(
 
     // Waits for the render thread to start before returning
     enqueueCommandAndWait([] () {});
-}
-
-void initialize(
-    bool headless, 
-    bool windowOnTop, 
-    bool _lazyUpdatesEnabled, 
-    bool verbose,
-    uint32_t maxEntities,
-    uint32_t maxCameras,
-    uint32_t maxTransforms,
-    uint32_t maxMeshes,
-    uint32_t maxMaterials,
-    uint32_t maxLights,
-    uint32_t maxTextures,
-    uint32_t maxVolumes) 
-{
-    lazyUpdatesEnabled = _lazyUpdatesEnabled;
-    // prevents deprecated warning from showing
-    initializeInteractiveDeprecatedShown = true;
-    initializeHeadlessDeprecatedShown = true;
-
-    lazyUpdatesEnabled = _lazyUpdatesEnabled;
-    if (headless) 
-        initializeHeadless(
-            verbose, maxEntities, maxCameras, maxTransforms, maxMeshes, 
-            maxMaterials, maxLights, maxTextures, maxVolumes);
-    else 
-        initializeInteractive(
-            windowOnTop, verbose, maxEntities, maxCameras, maxTransforms, 
-            maxMeshes, maxMaterials, maxLights, maxTextures, maxVolumes);
 }
 
 static bool registerPreRenderCallbackDeprecatedShown = false;
@@ -2622,17 +2500,17 @@ void updateSceneAabb(Entity* entity)
 
 void enableUpdates()
 {
-    enqueueCommandAndWait([] () { lazyUpdatesEnabled = false; });
+    enqueueCommandAndWait([] () { paused = false; });
 }
 
 void disableUpdates()
 {
-    enqueueCommandAndWait([] () { lazyUpdatesEnabled = true; });
+    enqueueCommandAndWait([] () { paused = true; });
 }
 
 bool areUpdatesEnabled()
 {
-    return lazyUpdatesEnabled == false;
+    return paused == false;
 }
 
 #ifdef __unix__

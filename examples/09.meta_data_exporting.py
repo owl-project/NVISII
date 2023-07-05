@@ -17,7 +17,7 @@ else:
     print(f'created folder {opt.outf}/')
 # # # # # # # # # # # # # # # # # # # # # # # # #
 
-nvisii.initialize(headless=False, verbose=True, lazy_updates = True)
+nvisii.initialize(headless=False, verbose=True)
 
 nvisii.enable_denoiser()
 

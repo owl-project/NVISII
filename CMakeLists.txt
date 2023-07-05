@@ -3,11 +3,22 @@
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Projects Settings                                               │
 # └──────────────────────────────────────────────────────────────────┘
-cmake_minimum_required (VERSION 3.13)
-cmake_policy( VERSION 3.13...3.14 )
-project(NVISII CXX C)
+cmake_minimum_required (VERSION 3.17)
+
+MESSAGE(WARN CUDACXX is $ENV{CUDACXX} )
+MESSAGE(WARN CUDA_PATH is $ENV{CUDA_PATH} )
+MESSAGE(WARN CUDAHOSTCXX is $ENV{CUDAHOSTCXX} )
+MESSAGE(WARN CUDAARCHS is $ENV{CUDAARCHS} )
+MESSAGE(WARN CUDAToolkit_ROOT is $ENV{CUDAToolkit_ROOT})
+
+project(NVISII CXX C CUDA)
+
+MESSAGE(now we are past line 10)
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+# set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/externals/owl/owl/cmake")
+
 
 # Force 64 bit builds
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
@@ -94,7 +105,7 @@ set(MY_DEFINITION
 # └──────────────────────────────────────────────────────────────────┘
 
 # Build options go here... Things like "Build Tests", or "Generate documentation"...
-option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" OFF)
+# option(NVCC_VERBOSE "verbose cuda -> ptx -> embedded build" OFF)
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	# Enable c++11 and hide symbols which shouldn't be visible
@@ -281,16 +292,16 @@ set(IMGUI_SRC
 # include_directories(${TBB_INCLUDE_DIR})
 
 # cuda
-if (${CUDA_TOOLKIT_ROOT_DIR})
-message(INFO " CUDA_TOOLKIT_DIR set to ${CUDA_TOOLKIT_ROOT_DIR}")
-endif()
+# if (${CUDA_TOOLKIT_ROOT_DIR})
+# message(INFO " CUDA_TOOLKIT_DIR set to ${CUDA_TOOLKIT_ROOT_DIR}")
+# endif()
 
-find_package(CUDA REQUIRED)
-include_directories(${CUDA_TOOLKIT_INCLUDE})
-find_program(BIN2C bin2c 
-  HINTS 
-  ${CUDA_TOOLKIT_ROOT_DIR}/bin/
-  /usr/local/cuda/bin)
+# find_package(CUDA REQUIRED)
+# include_directories(${CUDA_TOOLKIT_INCLUDE})
+# find_program(BIN2C bin2c 
+#   HINTS 
+#   ${CUDA_TOOLKIT_ROOT_DIR}/bin/
+#   /usr/local/cuda/bin)
 
 # optix 7
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/include/nvisii/utilities/sutil/)
@@ -320,14 +331,17 @@ endif()
 
 # owl
 #set(SET_UP_CONFIGURATIONS_DONE 1)
-#set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
-#set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
+set(OptiX_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/)
+set(OWL_BUILD_SAMPLES OFF CACHE STRING "" FORCE)
+set(OWL_BUILD_ADVANCED_TESTS OFF CACHE STRING "" FORCE)
 add_subdirectory(externals/owl EXCLUDE_FROM_ALL)
+include(embed_ptx)
+
 #include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/)
 #include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/include)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/cmake)
-include_directories(${OWL_INCLUDES})
-include(configure_cuda)
+# list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/externals/owl/owl/cmake)
+# include_directories(${OWL_INCLUDES})
+# include(configure_cuda)
 
 # add libraries to a list for linking
 set(
@@ -340,6 +354,8 @@ set(
   #owl
   ${OWL_LIBRARIES}
   assimp
+  OptiX::OptiX
+  owl::owl
   )
 
 set (
@@ -391,23 +407,23 @@ endif()
 # # └──────────────────────────────────────────────────────────────────┘
 
 # For compiling cuda kernels and embedding them as ptx
-if (NVCC_VERBOSE)
-set (NVCC_VERBOSE_FLAG --verbose)
-endif()
+# if (NVCC_VERBOSE)
+# set (NVCC_VERBOSE_FLAG --verbose)
+# endif()
 
-macro(cuda_compile_and_embed output_var cuda_file)
-  set(var_name ${output_var})
-  cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS --generate-line-info -use_fast_math -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --keep ${NVCC_VERBOSE_FLAG})
-  list(GET ptx_files 0 ptx_file)
-  set(embedded_file ${ptx_file}_embedded.c)
-  add_custom_command(
-    OUTPUT ${embedded_file}
-    COMMAND ${BIN2C} -c --padd 0 --type char --name ${var_name} ${ptx_file}  > ${embedded_file}
-    DEPENDS ${ptx_file}
-    COMMENT "compiling (and embedding ptx from) ${cuda_file}"
-    )
-  set(${output_var} ${embedded_file})
-endmacro()
+# macro(cuda_compile_and_embed output_var cuda_file)
+#   set(var_name ${output_var})
+#   cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS --generate-line-info -use_fast_math -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --keep ${NVCC_VERBOSE_FLAG})
+#   list(GET ptx_files 0 ptx_file)
+#   set(embedded_file ${ptx_file}_embedded.c)
+#   add_custom_command(
+#     OUTPUT ${embedded_file}
+#     COMMAND ${BIN2C} -c --padd 0 --type char --name ${var_name} ${ptx_file}  > ${embedded_file}
+#     DEPENDS ${ptx_file}
+#     COMMENT "compiling (and embedding ptx from) ${cuda_file}"
+#     )
+#   set(${output_var} ${embedded_file})
+# endmacro()
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  Add source files                                                │
@@ -431,12 +447,32 @@ set(HDR ${HDR} ${Externals_HDR})
 # │  CUDA PTX                                                        │
 # └──────────────────────────────────────────────────────────────────┘
 # OPTIONS -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored
-cuda_compile_and_embed(ptxCode ${SRC_CU})
+# compile_and_embed(ptxCode ${SRC_CU})
+
+embed_ptx(
+  OUTPUT_TARGET
+    deviceCode_ptx
+  EMBEDDED_SYMBOL_NAMES
+    deviceCode_ptx
+  PTX_LINK_LIBRARIES
+    owl::owl
+  SOURCES
+     ${SRC_CU}
+)
+set (
+  LIBRARIES
+  ${LIBRARIES}
+  deviceCode_ptx
+)
 
 # ┌──────────────────────────────────────────────────────────────────┐
 # │  NVISII Library                                                   │
 # └──────────────────────────────────────────────────────────────────┘
-cuda_add_library(nvisii_lib STATIC ${SRC} ${HDR} ${ptxCode} OPTIONS --expt-relaxed-constexpr -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored)
+add_library(nvisii_lib STATIC ${SRC} ${HDR} ${ptxCode} 
+# OPTIONS --expt-relaxed-constexpr -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored
+)
+set_property(TARGET nvisii_lib PROPERTY CUDA_ARCHITECTURES OFF) 
+
 set_target_properties(nvisii_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(nvisii_lib ${LIBRARIES})
 set_target_properties(nvisii_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
