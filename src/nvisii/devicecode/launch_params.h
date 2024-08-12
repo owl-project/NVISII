@@ -1,5 +1,7 @@
 #pragma once
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <owl/owl.h>
 #include <owl/owl_device_buffer.h>
 #include <glm/glm.hpp>
