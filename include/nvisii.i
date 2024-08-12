@@ -6,16 +6,28 @@
 #else
 %pythonbegin %{_built_major_version = 2%}
 #endif
-#if Python_VERSION_MINOR == 9
-%pythonbegin %{_built_minor_version = 9%}
-#elif Python_VERSION_MINOR == 8
-%pythonbegin %{_built_minor_version = 8%}
-#elif Python_VERSION_MINOR == 7
-%pythonbegin %{_built_minor_version = 7%}
+#if Python_VERSION_MINOR == 5
+%pythonbegin %{_built_minor_version = 5%}
 #elif Python_VERSION_MINOR == 6
 %pythonbegin %{_built_minor_version = 6%}
-#elif Python_VERSION_MINOR == 5
-%pythonbegin %{_built_minor_version = 5%}
+#elif Python_VERSION_MINOR == 7
+%pythonbegin %{_built_minor_version = 7%}
+#elif Python_VERSION_MINOR == 8
+%pythonbegin %{_built_minor_version = 8%}
+#elif Python_VERSION_MINOR == 9
+%pythonbegin %{_built_minor_version = 9%}
+#elif Python_VERSION_MINOR == 10
+%pythonbegin %{_built_minor_version = 10%}
+#elif Python_VERSION_MINOR == 11
+%pythonbegin %{_built_minor_version = 11%}
+#elif Python_VERSION_MINOR == 12
+%pythonbegin %{_built_minor_version = 12%}
+#elif Python_VERSION_MINOR == 13
+%pythonbegin %{_built_minor_version = 13%}
+#elif Python_VERSION_MINOR == 14
+%pythonbegin %{_built_minor_version = 14%}
+#elif Python_VERSION_MINOR == 15
+%pythonbegin %{_built_minor_version = 15%}
 #endif
 %pythonbegin %{
 from sys import version_info as _import_version_info
